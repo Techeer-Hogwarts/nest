@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 cleanWs()
-                git branch: 'develop', url: "https://github.com/Techeer-Hogwarts/nest.git"
+                git branch: 'main', url: "https://github.com/Techeer-Hogwarts/nest.git"
             }
         }
 
@@ -19,7 +19,6 @@ pipeline {
             steps {
                 script {
                     sh "docker --version"
-                    sh "docker compose --version"
                 }
             }
         }
@@ -28,7 +27,7 @@ pipeline {
             steps {
                 script {
                     // Set image tag based on branch name
-                    if (env.BRANCH_NAME == 'develop') {
+                    if (env.BRANCH_NAME == 'main') {
                         IMAGE_TAG = "1.0.${BUILD_NUMBER}"
                     } else {
                         IMAGE_TAG = "0.0.${BUILD_NUMBER}"
