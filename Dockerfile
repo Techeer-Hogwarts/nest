@@ -1,13 +1,34 @@
-FROM node:20.9.0-alpine
+# 빌드 스테이지
+FROM node:18-alpine AS builder
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package* .
+# Dependency 설치
+COPY package*.json ./
 
 RUN npm install
 
+# 소스코드 복사
 COPY . .
 
-EXPOSE 3000
+# 빌드
+RUN npm run build
 
-CMD ["npm", "run", "start"]
+# 베포용 빌드 이미지 스테이지
+FROM node:18-alpine
+
+# 프로덕션 환경변수
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY package*.json ./
+
+# 빌드된 파일들만 복사
+COPY --from=builder /app/dist ./dist
+
+# 포트
+EXPOSE 8000
+
+# 실행
+CMD ["node", "dist/main.js"]
