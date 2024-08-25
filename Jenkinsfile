@@ -19,6 +19,17 @@ pipeline {
             steps {
                 script {
                     sh "docker --version"
+                    sh "node -v"
+                }
+            }
+        }
+
+        stage('Lint') {  // Lint 스테이지 추가
+            steps {
+                script {
+                    sh "npm install" // 패키지 설치 (ESLint 등)
+                    sh "npm run lint" // ESLint 실행
+                    
                 }
             }
         }
