@@ -20,6 +20,8 @@ pipeline {
                 script {
                     sh "docker --version"
                     sh "node -v"
+                    sh "npm install"  // 의존성 설치
+                    sh "npm run test" // Jest 테스트 실행
                 }
             }
         }
