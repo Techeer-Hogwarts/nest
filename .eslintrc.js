@@ -26,7 +26,7 @@ module.exports = {
                 ArrayExpression: { multiline: true, minItems: 3 }, // 배열의 요소가 3개 이상일 경우, 각각 한 줄씩
             },
         ],
-        quotes: [2, 'single', { avoidEscape: false }], // ', `만 허용
+        // quotes: [2, 'single', { avoidEscape: false }], // ', `만 허용
         eqeqeq: [2, 'allow-null'], // == 금지
         'no-empty': ['error', { allowEmptyCatch: false }], // 빈 catch 금지
         'eol-last': 2, // 파일 끝에 개행문자가 없을 경우 경고
@@ -34,7 +34,7 @@ module.exports = {
         'space-in-parens': [2, 'never'], // () 안에 공백을 추가하지 않음
         'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }], // 빈 줄 최대 1개
         'space-before-blocks': [2, 'always'], // 블록 앞에 공백을 강제
-        'brace-style': [2, '1tbs', { allowSingleLine: true }], // 중괄호 스타일
+        // 'brace-style': [2, '1tbs', { allowSingleLine: true }], // 중괄호 스타일
         '@typescript-eslint/explicit-function-return-type': 2, // 명시적 함수 반환 타입 허용
         '@typescript-eslint/explicit-module-boundary-types': 0, // 명시적 모듈 바운더리 타입 허용
         '@typescript-eslint/no-explicit-any': 0, // any 허용
