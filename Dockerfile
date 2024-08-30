@@ -23,9 +23,14 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY package*.json ./
+RUN npm install --only=production
 
 # 빌드된 파일들만 복사
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma/schema.prisma ./dist/prisma/
+
+# Prisma 클라이언트 생성
+RUN npx prisma generate --schema=./dist/prisma/schema.prisma
 
 # 포트
 EXPOSE 8000

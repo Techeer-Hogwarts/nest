@@ -15,7 +15,7 @@ module.exports = {
         node: true,
         jest: true,
     },
-    ignorePatterns: ['.eslintrc.js'],
+    ignorePatterns: ['.eslintrc.js', 'dist/**'],
     rules: {
         'no-console': 'error', // console 명령어 금지
         // indent: ['error', 4],
