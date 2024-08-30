@@ -1,4 +1,4 @@
-version: “3”
+version: “3.8”
 
 services:
     nest:
@@ -28,7 +28,7 @@ services:
         volumes:
             - techeerism-db:/techeerism-db/postgres-data
         ports:
-            - '5432:5432'
+            - '5001:5432'
         networks:
             - techeerism
 
