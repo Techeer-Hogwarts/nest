@@ -18,8 +18,8 @@ module.exports = {
     ignorePatterns: ['.eslintrc.js'],
     rules: {
         'no-console': 'error', // console 명령어 금지
-        indent: ['error', 4],
-        semi: ['error', 'always'], // 세미콜론 사용
+        // indent: ['error', 4],
+        // semi: ['error', 'always'], // 세미콜론 사용
         'array-element-newline': [
             'error',
             {
@@ -44,7 +44,7 @@ module.exports = {
             { allowAllPropertiesOnSameLine: false },
         ], // 객체의 프로퍼티가 여러 줄일 경우, 첫번째 프로퍼티는 첫 줄에, 나머지는 각각 한 줄씩
         'object-curly-spacing': ['error', 'always'], // {} 사이 공백 강제
-        'function-call-argument-newline': ['error', 'never'], // 함수 호출 시 인자에 줄바꿈 금지
+        'function-call-argument-newline': ['off'], // 함수 호출 시 인자에 줄바꿈 금지
         'max-len': [2, 200, 4, { ignoreUrls: true }], // 한 줄의 최대 길이, url은 예외
     },
 };
