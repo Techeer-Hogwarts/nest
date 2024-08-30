@@ -1,39 +1,55 @@
-version: “3”
+version: “3.8”
 
 services:
-  nest:
-    container_name: nest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
-    environment:
-      - TZ=Asia/Seoul
-    ports:
-      - '8000:8000'
-    depends_on:
-      - postgresql
-    networks:
-      - techeerism
+    nest:
+        container_name: nest
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        environment:
+            - TZ=Asia/Seoul
+            - DATABASE_URL=${DATABASE_URL}
+        ports:
+            - '8000:8000'
+        depends_on:
+            - postgresql
+        networks:
+            - techeerism
 
-  postgresql:
-    container_name: postgresql
-    image: postgres:12.0-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USERNAME}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - techeerism-db:/techeerism-db/postgres-data
-    ports:
-      - '5432:5432'
-    networks:
-      - techeerism
+    postgresql:
+        container_name: postgresql
+        image: postgres:12.0-alpine
+        restart: always
+        environment:
+            POSTGRES_USER: ${POSTGRES_USERNAME}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+        volumes:
+            - techeerism-db:/techeerism-db/postgres-data
+        ports:
+            - '5001:5432'
+        networks:
+            - techeerism
+    
+    pgadmin:
+        image: dpage/pgadmin4
+        restart: always
+        container_name: pgadmin4
+        user: root
+        ports:
+            - "5050:80"
+        environment:
+            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+            PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+        volumes:
+            - techeerism-db:/techeerism-db/pgadmin-data
+        networks:
+            - techeerism
 
 networks:
-  techeerism:
-    driver: bridge
+    techeerism:
+        driver: bridge
 
 volumes:
-  techeerism-db:
+    techeerism-db:
