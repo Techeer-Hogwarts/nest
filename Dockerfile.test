@@ -14,21 +14,23 @@ COPY . .
 # 빌드
 RUN npm run build
 
-# 베포용 빌드 이미지 스테이지
-FROM node:18-alpine
+CMD ["node", "app/dist/main.js"]
 
-# 프로덕션 환경변수
-ENV NODE_ENV=production
+# # 베포용 빌드 이미지 스테이지
+# FROM node:18-alpine
 
-WORKDIR /app
+# # 프로덕션 환경변수
+# ENV NODE_ENV=production
 
-COPY package*.json ./
+# WORKDIR /app
 
-# 빌드된 파일들만 복사
-COPY --from=builder /app/dist ./dist
+# COPY package*.json ./
 
-# 포트
-EXPOSE 3000
+# # 빌드된 파일들만 복사
+# COPY --from=builder /app/dist ./dist
 
-# 실행
-CMD ["node", "dist/main.js"]
+# # 포트
+# EXPOSE 3000
+
+# # 실행
+# CMD ["node", "dist/main.js"]
