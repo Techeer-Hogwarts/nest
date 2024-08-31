@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 cleanWs()
-                url: "https://github.com/Techeer-Hogwarts/nest.git"
+                git branch: 'master', url: "https://github.com/Techeer-Hogwarts/nest.git"
             }
         }
 
