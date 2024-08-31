@@ -41,9 +41,9 @@ pipeline {
                 script {
                     // Set image tag based on branch name
                     if (env.BRANCH_NAME == 'main') {
-                        IMAGE_TAG = "1.0.${BUILD_NUMBER}"
+                        IMAGE_TAG = "1.1.${BUILD_NUMBER}"
                     } else {
-                        IMAGE_TAG = "0.0.${BUILD_NUMBER}"
+                        IMAGE_TAG = "0.1.${BUILD_NUMBER}"
                     }
                     echo "Image tag set to: ${IMAGE_TAG}"
                 }
