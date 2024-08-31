@@ -53,7 +53,7 @@ pipeline {
         stage('Building our image') {
             steps {
                 script {
-                    sh "docker build -t ${repository}:${IMAGE_TAG} -f Dockerfile ." // docker build
+                    sh "docker build -t ${repository}:${IMAGE_TAG} -f Dockerfile.test ." // docker build
 
                 }
             }

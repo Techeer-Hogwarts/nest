@@ -3,36 +3,39 @@ FROM oven/bun:alpine as builder
 
 WORKDIR /app
 
-# ENV PATH="/root/.bun/bin:$PATH"
-
 # Dependency 설치
-COPY package.json bun.lockb ./
+COPY package*.json ./
 
 RUN bun install
 
 # 소스코드 복사
 COPY . .
 
+# Prisma 클라이언트 생성 
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
 # 빌드
 RUN bun run build
 
 # 베포용 빌드 이미지 스테이지
-FROM oven/bun:latest
+FROM oven/bun:alpine
 
 # 프로덕션 환경변수
-# ENV NODE_ENV=production
+ENV NODE_ENV=production
 
 WORKDIR /app
 
-# ENV PATH="/root/.bun/bin:$PATH"
+# 프로덕션 종속성만 설치
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/bun.lockb ./
+RUN bun install --production
 
 # 빌드된 파일들만 복사
-COPY --from=builder /node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 
 # 포트
-EXPOSE 3000
+EXPOSE 8000
 
 # 실행
-CMD ["bun", "dist/main.js"]
+CMD ["bun", "run", "start:migrate:prod"]
