@@ -23,6 +23,7 @@ model User {
   role        String
 
   blogs       Blog[]       @relation("UserBlogs")
+  resumes     Resume[]     @relation("UserResumes")
 }
 
 model Blog {
@@ -37,4 +38,19 @@ model Blog {
   viewCount   Int
 
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
+}
+
+model Resume {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  userId      Int
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(100)
+  isMain      Boolean      @default(false)
+  likeCount   Int
+  viewCount   Int
+
+  user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
