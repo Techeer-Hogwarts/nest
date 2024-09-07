@@ -22,3 +22,30 @@ model User {
   isLft       Boolean      @default(false)
   role        String
 }
+
+model Bookmark{
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  contend_id  Int          
+  type        Type
+}
+
+enum Type {
+  RESUME
+  SESSION
+  BLOG
+}
+
+model Team{
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  isRecruited Boolean      @default(true)
+  isFinished  Boolean      @default(true)
+  name        String       @db.VarChar(100)
+  category    String       @db.VarChar(100)
+}
+
