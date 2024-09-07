@@ -81,4 +81,58 @@ model Team{
   category    String       @db.VarChar(100)
 }
 
+model Calendar {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  events      Event[]      @relation("CalendarEvents")
+  jobInfo     JobInfo[]    @relation("CalendarJobInfo")
+  conferences Conference[] @relation("CalendarConferences")
+}
 
+model Event {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  calendarId  Int
+  isOnline    Boolean      @default(false)
+  title       String       @db.VarChar(200)
+  place       String       @db.VarChar(200)
+  date        DateTime
+  description String       @db.VarChar(200)
+
+  calendar    Calendar    @relation("CalendarEvents", fields: [calendarId], references: [id])
+}
+
+model JobInfo {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  calendarId  Int
+  company     String       @db.VarChar(100)
+  description String       @db.VarChar(200)
+  url         String       @db.VarChar(200)
+  position    String       @db.VarChar(200)
+
+  calendar    Calendar    @relation("CalendarJobInfo", fields: [calendarId], references: [id])
+}
+
+model Conference {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  isDeleted   Boolean      @default(false)
+  calendarId  Int
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(200)
+  startDate   DateTime
+  endDate     DateTime
+  deadline    DateTime
+  price       Int
+  isOnline    Boolean      @default(false)
+
+  calendar    Calendar    @relation("CalendarConferences", fields: [calendarId], references: [id])
+}
