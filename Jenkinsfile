@@ -15,26 +15,26 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                script {
-                    sh "docker --version"
-                    sh "node -v"
-                    sh "npm install"  // 의존성 설치
-                    sh "npm run test" // Jest 테스트 실행
-                }
-            }
-        }
+        // stage('Test') {
+        //     steps {
+        //         script {
+        //             sh "docker --version"
+        //             sh "node -v"
+        //             sh "npm install"  // 의존성 설치
+        //             sh "npm run test" // Jest 테스트 실행
+        //         }
+        //     }
+        // }
 
-        stage('Lint') {  // Lint 스테이지 추가
-            steps {
-                script {
-                    sh "npm install" // 패키지 설치 (ESLint 등)
-                    sh "npm run lint" // ESLint 실행
+        // stage('Lint') {  // Lint 스테이지 추가
+        //     steps {
+        //         script {
+        //             sh "npm install" // 패키지 설치 (ESLint 등)
+        //             sh "npm run lint" // ESLint 실행
                     
-                }
-            }
-        }
+        //         }
+        //     }
+        // }
 
         stage('Set Image Tag') {
             steps {

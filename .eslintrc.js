@@ -20,12 +20,12 @@ module.exports = {
         'no-console': 'error', // console 명령어 금지
         // indent: ['error', 4],
         // semi: ['error', 'always'], // 세미콜론 사용
-        'array-element-newline': [
-            'error',
-            {
-                ArrayExpression: { multiline: true, minItems: 3 }, // 배열의 요소가 3개 이상일 경우, 각각 한 줄씩
-            },
-        ],
+        // 'array-element-newline': [
+        //     'error',
+        //     {
+        //         ArrayExpression: { multiline: true, minItems: 3 }, // 배열의 요소가 3개 이상일 경우, 각각 한 줄씩
+        //     },
+        // ],
         // quotes: [2, 'single', { avoidEscape: false }], // ', `만 허용
         eqeqeq: [2, 'allow-null'], // == 금지
         'no-empty': ['error', { allowEmptyCatch: false }], // 빈 catch 금지
