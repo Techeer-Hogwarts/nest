@@ -17,12 +17,11 @@ RUN npm run build
 # 베포용 빌드 이미지 스테이지
 FROM node:18-alpine
 
-# 프로덕션 환경변수
-ENV NODE_ENV=production
-
 WORKDIR /app
 
-COPY package*.json ./
+COPY --from=builder /app/package*.json ./
+
+RUN npm install
 
 # 빌드된 파일들만 복사
 COPY --from=builder /app/dist ./dist
@@ -31,4 +30,4 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 8000
 
 # 실행
-CMD ["node", "dist/main.js"]
+CMD ["npm", "run", "start"]

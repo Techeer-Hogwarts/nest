@@ -19,7 +19,7 @@ export class RabbitMQService {
 
     async sendToQueue(taskId: string, task: string): Promise<void> {
         await this.channel.sendToQueue('crawl_queue', Buffer.from(task), {
-            headers: { messageId: taskId },
+            messageId: taskId,
             contentType: 'text/plain',
         });
         console.log(`Sent task: ${task}`);

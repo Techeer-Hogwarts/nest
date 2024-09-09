@@ -34,6 +34,5 @@ export class TaskService {
         const taskID = `task-${Date.now()}`;
         await this.rabbitMQService.sendToQueue(taskID, task);
         await this.redisService.setTaskStatus(taskID, task);
-        console.log(`Received task: ${task}`);
     }
 }
