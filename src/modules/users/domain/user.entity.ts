@@ -5,13 +5,16 @@ export class UserEntity implements User {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
-    profile: string;
     name: string;
-    nickname: string;
     email: string;
-    password: string;
-    isActive: boolean;
     year: number;
+    password: string;
     isLft: boolean;
-    role: string;
+    githubUrl: string;
+    blogUrl: string;
+    mainPosition: string;
+    subPosition: string;
+    school: string;
+    class: string;
+    roleId: number;
 }

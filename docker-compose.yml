@@ -1,21 +1,21 @@
 version: “3.8”
 
 services:
-    nest:
-        container_name: nest
-        build:
-            context: .
-            dockerfile: Dockerfile
-        restart: always
-        environment:
-            - TZ=Asia/Seoul
-            - DATABASE_URL=${DATABASE_URL}
-        ports:
-            - '8000:8000'
-        depends_on:
-            - postgresql
-        networks:
-            - techeerism
+    # nest:
+    #     container_name: nest
+    #     build:
+    #         context: .
+    #         dockerfile: Dockerfile
+    #     restart: always
+    #     environment:
+    #         - TZ=Asia/Seoul
+    #         - DATABASE_URL=${DATABASE_URL}
+    #     ports:
+    #         - '8000:8000'
+    #     depends_on:
+    #         - postgresql
+    #     networks:
+    #         - techeerism
 
     postgresql:
         container_name: postgresql
