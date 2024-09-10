@@ -11,6 +11,8 @@ export class EventEntity implements Event {
     place: string;
     date: Date;
     description: string;
+    startDate : Date;
+    endDate: Date;
 
     calendar: Calendar;
 }

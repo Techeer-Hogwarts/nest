@@ -8,7 +8,7 @@ export class BookmarkEntity implements Bookmark {
     isDeleted: boolean;
     userId: number;
     contentId: number;
-    type: Type;
+    Bookmarktype : Type;
 
     user: User;
 }

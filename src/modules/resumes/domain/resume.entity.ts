@@ -11,6 +11,7 @@ export class ResumeEntity implements Resume {
     isMain: boolean;
     likeCount: number;
     viewCount: number;
+    ResumeType : string;
 
     user: User;
 }
