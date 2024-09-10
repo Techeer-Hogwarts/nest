@@ -1,4 +1,4 @@
-import { $Enums, Resume, User } from '@prisma/client';
+import { Resume, User, ResumeType } from '@prisma/client';
 
 export class ResumeEntity implements Resume {
     id: number;
@@ -11,7 +11,7 @@ export class ResumeEntity implements Resume {
     isMain: boolean;
     likeCount: number;
     viewCount: number;
-    ResumeType: $Enums.ResumeType;
+    ResumeType: ResumeType;
 
     user: User;
 }

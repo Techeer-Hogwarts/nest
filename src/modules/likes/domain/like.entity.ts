@@ -1,4 +1,4 @@
-import { Like, User, $Enums } from '@prisma/client';
+import { Like, User, Type } from '@prisma/client';
 
 export class LikeEntity implements Like {
     id: number;
@@ -7,7 +7,7 @@ export class LikeEntity implements Like {
     isDeleted: boolean;
     userId: number;
     contentId: number;
-    Liketype: $Enums.Type;
+    Liketype: Type;
 
     user: User;
 }
