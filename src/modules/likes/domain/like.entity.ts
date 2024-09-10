@@ -1,13 +1,13 @@
-import { Bookmark, User, Type } from '@prisma/client';
+import { Like, User, Type } from '@prisma/client';
 
-export class BookmarkEntity implements Bookmark {
+export class LikeEntity implements Like {
     id: number;
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
     userId: number;
     contentId: number;
-    Bookmarktype: Type;
+    Liketype: Type;
 
     user: User;
 }
