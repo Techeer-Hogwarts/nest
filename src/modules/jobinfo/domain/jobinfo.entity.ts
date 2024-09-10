@@ -10,7 +10,7 @@ export class JobInfoEntity implements JobInfo {
     description: string;
     url: string;
     position: string;
-    startDate : Date;
+    startDate: Date;
     endDate: Date;
 
     calendar: Calendar;
