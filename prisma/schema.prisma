@@ -136,8 +136,8 @@ model Blog {
   userId      Int
   title       String       @db.VarChar(100)
   url         String       @db.VarChar(100)
-  likeCount   Int
-  viewCount   Int
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
 
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }

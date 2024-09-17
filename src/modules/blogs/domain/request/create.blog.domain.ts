@@ -2,6 +2,7 @@ import { IsString, IsNumber, IsUrl, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBlogDomain {
+    // todo jwt 토큰
     @IsNumber()
     @ApiProperty({
         example: 1,

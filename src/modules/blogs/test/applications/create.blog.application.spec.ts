@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreateBlogApplicationImpl } from '../../applications/create.blog.application';
 import { CreateBlogService } from '../../interfaces/services/create.blog.service.interface';
 import { TYPES } from '../../interfaces/types';
-import { CreateBlogDomain } from '../../domain/create.blog.domain';
+import { CreateBlogDomain } from '../../domain/request/create.blog.domain';
 import { BlogEntity } from '../../domain/blog.entity';
 
-describe('CreateBlogApplicationImpl', () => {
+describe('CreateBlogApplication', () => {
     let service: CreateBlogApplicationImpl;
     let createBlogService: CreateBlogService;
 

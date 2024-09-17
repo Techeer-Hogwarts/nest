@@ -1,49 +1,47 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateBlogServiceImpl } from '../../services/create.blog.service';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { CreateBlogDomain } from '../../domain/request/create.blog.domain';
 import { BlogEntity } from '../../domain/blog.entity';
+import { GetBlogServiceImpl } from '../../services/get.blog.service';
+import { NotFoundException } from '@nestjs/common';
 
-describe('CreateBlogService', () => {
-    let service: CreateBlogServiceImpl;
+describe('GetBlogService', () => {
+    let service: GetBlogServiceImpl;
     let prisma: PrismaService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
-                CreateBlogServiceImpl,
+                GetBlogServiceImpl,
                 {
                     provide: PrismaService,
                     useValue: {
                         blog: {
-                            create: jest.fn(),
+                            findUnique: jest.fn(), // findUnique 메서드 모킹
                         },
                     },
                 },
             ],
         }).compile();
 
-        service = module.get<CreateBlogServiceImpl>(CreateBlogServiceImpl);
+        service = module.get<GetBlogServiceImpl>(GetBlogServiceImpl);
         prisma = module.get<PrismaService>(PrismaService);
     });
 
     it('should be defined', () => {
+        // 서비스가 정의되어 있는지 확인
         expect(service).toBeDefined();
     });
 
-    describe('createBlog', () => {
-        it('should create a blog and return the blog entity', async () => {
-            const blogData: CreateBlogDomain = {
-                userId: 1, // 예제에 맞게 조정
+    describe('getBlog', () => {
+        it('should return a blog entity if found', async () => {
+            const blogId = 1;
+            const blogEntity: BlogEntity = {
+                id: 1,
+                userId: 1,
                 title: 'Test Post',
                 url: 'https://example.com/blog',
                 date: new Date(),
                 category: 'Backend',
-            };
-
-            const createdBlog: BlogEntity = {
-                ...blogData,
-                id: 1,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 isDeleted: false,
@@ -69,15 +67,23 @@ describe('CreateBlogService', () => {
                 },
             };
 
-            jest.spyOn(prisma.blog, 'create').mockResolvedValue(createdBlog);
+            // prisma.blog.findUnique 메서드를 mock하여 blogEntity 반환
+            jest.spyOn(prisma.blog, 'findUnique').mockResolvedValue(blogEntity);
 
-            const result = await service.createBlog(blogData);
+            // getBlog 메서드가 mockBlog를 반환하는지 확인
+            expect(await service.getBlog(blogId)).toBe(blogEntity);
+        });
 
-            expect(result).toEqual(createdBlog);
-            expect(prisma.blog.create).toHaveBeenCalledWith({
-                data: { ...blogData },
-                include: { user: true },
-            });
+        it('should throw a NotFoundException if no blog is found', async () => {
+            const blogId = 1;
+
+            // prisma.blog.findUnique 메서드를 mock하여 null 반환
+            jest.spyOn(prisma.blog, 'findUnique').mockResolvedValue(null);
+
+            // getBlog 메서드가 NotFoundException을 던지는지 확인
+            await expect(service.getBlog(blogId)).rejects.toThrow(
+                NotFoundException,
+            );
         });
     });
 });

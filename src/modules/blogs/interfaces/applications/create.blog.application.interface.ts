@@ -1,4 +1,4 @@
-import { CreateBlogDomain } from '../../domain/create.blog.domain';
+import { CreateBlogDomain } from '../../domain/request/create.blog.domain';
 import { BlogEntity } from '../../domain/blog.entity';
 
 export interface CreateBlogApplication {

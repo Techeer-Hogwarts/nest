@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../domain/blog.entity';
-import { CreateBlogDomain } from '../domain/create.blog.domain';
+import { CreateBlogDomain } from '../domain/request/create.blog.domain';
 import { CreateBlogService } from '../interfaces/services/create.blog.service.interface';
 
 @Injectable()
