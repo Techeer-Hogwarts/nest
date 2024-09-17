@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { BlogDomain } from '../domain/blog.domain';
+import { CreateBlogDomain } from '../domain/create.blog.domain';
 import { CreateBlogApplication } from '../interfaces/applications/create.blog.application.interface';
 import { TYPES } from '../interfaces/types';
 
@@ -17,7 +17,7 @@ export class BlogController {
         summary: '블로그 게시물 생성',
         description: '새로운 블로그 게시물을 생성합니다.',
     })
-    async createBlog(@Body() blogDomain: BlogDomain): Promise<any> {
+    async createBlog(@Body() blogDomain: CreateBlogDomain): Promise<any> {
         const blog = await this.createBlogApplication.createBlog(blogDomain);
         return {
             code: 200,

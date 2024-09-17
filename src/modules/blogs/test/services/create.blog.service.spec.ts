@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateBlogServiceImpl } from '../../services/create.blog.service';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { BlogDomain } from '../../domain/blog.domain';
+import { CreateBlogDomain } from '../../domain/create.blog.domain';
 import { BlogEntity } from '../../domain/blog.entity';
 
 describe('CreateBlogService', () => {
@@ -33,7 +33,7 @@ describe('CreateBlogService', () => {
 
     describe('createBlog', () => {
         it('should create a blog and return the blog entity', async () => {
-            const blogData: BlogDomain = {
+            const blogData: CreateBlogDomain = {
                 userId: 1, // 예제에 맞게 조정
                 title: 'Test Post',
                 url: 'https://example.com/blog',

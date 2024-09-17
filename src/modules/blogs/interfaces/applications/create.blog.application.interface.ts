@@ -1,6 +1,6 @@
-import { BlogDomain } from '../../domain/blog.domain';
+import { CreateBlogDomain } from '../../domain/create.blog.domain';
 import { BlogEntity } from '../../domain/blog.entity';
 
 export interface CreateBlogApplication {
-    createBlog(blogDomain: BlogDomain): Promise<BlogEntity>;
+    createBlog(blogDomain: CreateBlogDomain): Promise<BlogEntity>;
 }

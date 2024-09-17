@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreateBlogApplicationImpl } from '../../applications/create.blog.application';
 import { CreateBlogService } from '../../interfaces/services/create.blog.service.interface';
 import { TYPES } from '../../interfaces/types';
-import { BlogDomain } from '../../domain/blog.domain';
+import { CreateBlogDomain } from '../../domain/create.blog.domain';
 import { BlogEntity } from '../../domain/blog.entity';
 
 describe('CreateBlogApplicationImpl', () => {
@@ -36,7 +36,7 @@ describe('CreateBlogApplicationImpl', () => {
 
     describe('createBlog', () => {
         it('should call createBlogService.createBlog with the correct argument', async () => {
-            const blogData: BlogDomain = {
+            const blogData: CreateBlogDomain = {
                 userId: 1, // 예제에 맞게 조정
                 title: 'Test Post',
                 url: 'https://example.com/blog',
