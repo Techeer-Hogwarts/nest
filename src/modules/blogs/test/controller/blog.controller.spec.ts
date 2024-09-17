@@ -70,16 +70,25 @@ describe('BlogController', () => {
                 },
             };
 
+            // createBlog 함수가 createdBlog를 반환하도록 mock 설정
             (createBlogApplication.createBlog as jest.Mock).mockResolvedValue(
                 createdBlog,
             );
 
+            // blogData를 createBlog 함수에 넘김
             const result = await controller.createBlog(blogData);
 
+            // createBlog 함수가 blogData로 호출되었는지 확인
             expect(createBlogApplication.createBlog).toHaveBeenCalledWith(
                 blogData,
             );
-            expect(result).toBe(createdBlog);
+
+            // 반환된 결과가 createdBlog와 일치하는지 확인
+            expect(result).toEqual({
+                code: 200,
+                message: '게시물을 생성했습니다.',
+                data: createdBlog, // 반환된 결과는 createdBlog 객체여야 함
+            });
         });
     });
 });
