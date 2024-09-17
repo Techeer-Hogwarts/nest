@@ -3,12 +3,14 @@ import { BlogService } from '../blog.service';
 import { BlogRepository } from '../repository/blog.repository';
 import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
+import { GetBlogDomain } from '../dto/response/get.blog.domain';
 
 describe('BlogService', () => {
     let service: BlogService;
     let repository: BlogRepository;
     let createBlogDomain: CreateBlogDomain;
     let blogEntity: BlogEntity;
+    let blogId: number;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -16,7 +18,10 @@ describe('BlogService', () => {
                 BlogService,
                 {
                     provide: BlogRepository,
-                    useValue: { createBlog: jest.fn() },
+                    useValue: {
+                        createBlog: jest.fn(),
+                        getBlog: jest.fn(),
+                    },
                 },
             ],
         }).compile();
@@ -63,6 +68,8 @@ describe('BlogService', () => {
                 roleId: 1,
             },
         };
+
+        blogId = 1;
     });
 
     it('should be defined', () => {
@@ -73,13 +80,26 @@ describe('BlogService', () => {
         it('should successfully create a blog', async () => {
             jest.spyOn(repository, 'createBlog').mockResolvedValue(blogEntity);
 
-            const result = await service.createBlog(createBlogDomain);
+            const result: BlogEntity =
+                await service.createBlog(createBlogDomain);
 
             expect(result).toEqual(blogEntity);
             expect(repository.createBlog).toHaveBeenCalledWith(
                 createBlogDomain,
             );
             expect(repository.createBlog).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getBlog', () => {
+        it('should return a GetBlogDomain when a blog is found', async () => {
+            jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity);
+
+            const result: GetBlogDomain = await service.getBlog(blogId);
+
+            expect(result).toEqual(new GetBlogDomain(blogEntity));
+            expect(result).toBeInstanceOf(GetBlogDomain);
+            expect(repository.getBlog).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { CreateBlogDomain } from './dto/request/create.blog.domain';
@@ -20,6 +20,16 @@ export class BlogController {
         return {
             code: 201,
             message: '게시물을 생성했습니다.',
+            data: blog,
+        };
+    }
+
+    @Get(':blogId')
+    async getBlog(@Param('blogId') blogId: string): Promise<any> {
+        const blog = await this.blogService.getBlog(parseInt(blogId, 10));
+        return {
+            code: 200,
+            message: '게시물을 조회했습니다.',
             data: blog,
         };
     }

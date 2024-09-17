@@ -3,12 +3,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { BlogRepository } from '../repository/blog.repository';
+import { NotFoundException } from '@nestjs/common';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
     let prismaService: PrismaService;
     let createBlogDomain: CreateBlogDomain;
     let blogEntity: BlogEntity;
+    let blogId: number;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -19,6 +21,7 @@ describe('BlogRepository', () => {
                     useValue: {
                         blog: {
                             create: jest.fn(),
+                            findUnique: jest.fn(),
                         },
                     },
                 },
@@ -67,6 +70,8 @@ describe('BlogRepository', () => {
                 roleId: 1,
             },
         };
+
+        blogId = 1;
     });
 
     it('should be defined', () => {
@@ -87,6 +92,29 @@ describe('BlogRepository', () => {
                 include: { user: true },
             });
             expect(prismaService.blog.create).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getBlog', () => {
+        it('should return a blog entity if found', async () => {
+            jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
+                blogEntity,
+            );
+
+            // getBlog 메서드가 mockBlog를 반환하는지 확인
+            expect(await repository.getBlog(blogId)).toBe(blogEntity);
+        });
+
+        it('should throw a NotFoundException if no blog is found', async () => {
+            // prisma.blog.findUnique 메서드를 mock하여 null 반환
+            jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
+                null,
+            );
+
+            // getBlog 메서드가 NotFoundException을 던지는지 확인
+            await expect(repository.getBlog(blogId)).rejects.toThrow(
+                NotFoundException,
+            );
         });
     });
 });
