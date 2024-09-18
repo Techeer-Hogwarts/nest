@@ -5,6 +5,7 @@ import { BlogEntity } from '../entities/blog.entity';
 import { BlogRepository } from '../repository/blog.repository';
 import { NotFoundException } from '@nestjs/common';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
+import { UpdateBlogDto } from '../dto/request/update.blog.dto';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
@@ -14,6 +15,8 @@ describe('BlogRepository', () => {
     let blogId: number;
     let query: GetBlogsQueryDto;
     let blogEntities: BlogEntity[];
+    let updateBlogDto: UpdateBlogDto;
+    let updatedBlogEntity: BlogEntity;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -150,6 +153,19 @@ describe('BlogRepository', () => {
                 },
             },
         ];
+
+        updateBlogDto = {
+            title: 'Updated Title',
+            url: 'https://example.com/updated-blog',
+            date: new Date(),
+        };
+
+        updatedBlogEntity = {
+            ...blogEntity,
+            title: updateBlogDto.title,
+            url: updateBlogDto.url,
+            date: updateBlogDto.date,
+        };
     });
 
     it('should be defined', () => {
@@ -282,6 +298,24 @@ describe('BlogRepository', () => {
             expect(prismaService.blog.update).toHaveBeenCalledWith({
                 where: { id: blogId },
                 data: { isDeleted: true },
+            });
+            expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('updateBlog', () => {
+        it('should successfully update a blog', async () => {
+            jest.spyOn(prismaService.blog, 'update').mockResolvedValue(
+                updatedBlogEntity,
+            );
+
+            const result = await repository.updateBlog(blogId, updateBlogDto);
+
+            expect(result).toEqual(updatedBlogEntity);
+            expect(prismaService.blog.update).toHaveBeenCalledWith({
+                where: { id: blogId },
+                data: updateBlogDto,
+                include: { user: true },
             });
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
         });

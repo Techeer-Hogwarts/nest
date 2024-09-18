@@ -6,6 +6,7 @@ import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogDomain } from '../dto/response/get.blog.domain';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
 import { NotFoundException } from '@nestjs/common';
+import { UpdateBlogDto } from '../dto/request/update.blog.dto';
 
 describe('BlogService', () => {
     let service: BlogService;
@@ -15,6 +16,8 @@ describe('BlogService', () => {
     let blogId: number;
     let query: GetBlogsQueryDto;
     let blogEntities: BlogEntity[];
+    let updateBlogDto: UpdateBlogDto;
+    let updatedBlogEntity: BlogEntity;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +31,7 @@ describe('BlogService', () => {
                         getBlogs: jest.fn(),
                         getBlogsByUserId: jest.fn(),
                         deleteBlog: jest.fn(),
+                        updateBlog: jest.fn(),
                     },
                 },
             ],
@@ -150,6 +154,19 @@ describe('BlogService', () => {
                 },
             },
         ];
+
+        updateBlogDto = {
+            title: 'Updated Title',
+            url: 'https://example.com/updated-blog',
+            date: new Date(),
+        };
+
+        updatedBlogEntity = {
+            ...blogEntity,
+            title: updateBlogDto.title,
+            url: updateBlogDto.url,
+            date: updateBlogDto.date,
+        };
     });
 
     it('should be defined', () => {
@@ -249,6 +266,53 @@ describe('BlogService', () => {
             );
             expect(repository.getBlog).toHaveBeenCalledWith(blogId);
             expect(repository.deleteBlog).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('updateBlog', () => {
+        it('should successfully update a blog and return a GetBlogDomain', async () => {
+            // getBlog가 블로그 엔티티를 반환하도록 mock 설정
+            jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity);
+            // updateBlog가 업데이트된 블로그 엔티티를 반환하도록 mock 설정
+            jest.spyOn(repository, 'updateBlog').mockResolvedValue(
+                updatedBlogEntity,
+            );
+
+            // 서비스의 updateBlog 메서드 호출
+            const result = await service.updateBlog(blogId, updateBlogDto);
+
+            // 결과가 GetBlogDomain의 인스턴스이며 업데이트된 블로그 엔티티와 같은지 확인
+            expect(result).toEqual(new GetBlogDomain(updatedBlogEntity));
+            expect(result).toBeInstanceOf(GetBlogDomain);
+
+            // getBlog 메서드가 블로그 ID와 함께 호출되었는지 확인
+            expect(repository.getBlog).toHaveBeenCalledWith(blogId);
+            // updateBlog 메서드가 블로그 ID와 DTO와 함께 호출되었는지 확인
+            expect(repository.updateBlog).toHaveBeenCalledWith(
+                blogId,
+                updateBlogDto,
+            );
+
+            // getBlog 메서드와 updateBlog 메서드가 각각 정확히 한 번 호출되었는지 확인
+            expect(repository.getBlog).toHaveBeenCalledTimes(1);
+            expect(repository.updateBlog).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the blog does not exist', async () => {
+            // getBlog가 NotFoundException을 던지도록 mock 설정
+            jest.spyOn(repository, 'getBlog').mockRejectedValue(
+                new NotFoundException(),
+            );
+
+            // 서비스의 updateBlog 메서드 호출 시 NotFoundException이 발생하는지 검증
+            await expect(
+                service.updateBlog(blogId, updateBlogDto),
+            ).rejects.toThrow(NotFoundException);
+
+            // getBlog 메서드가 블로그 ID와 함께 호출되었는지 확인
+            expect(repository.getBlog).toHaveBeenCalledWith(blogId);
+            // 블로그가 존재하지 않으므로 updateBlog 메서드는 호출되지 않아야 함
+            expect(repository.updateBlog).not.toHaveBeenCalled();
         });
     });
 });

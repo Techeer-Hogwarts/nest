@@ -5,6 +5,7 @@ import { BlogEntity } from './entities/blog.entity';
 import { GetBlogDomain } from './dto/response/get.blog.domain';
 import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
 import { PaginationQueryDto } from './dto/request/pagination.query.dto';
+import { UpdateBlogDto } from './dto/request/update.blog.dto';
 
 @Injectable()
 export class BlogService {
@@ -37,5 +38,17 @@ export class BlogService {
     async deleteBlog(blogId: number): Promise<void> {
         await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
         return this.blogRepository.deleteBlog(blogId);
+    }
+
+    async updateBlog(
+        blogId: number,
+        updateBlogDto: UpdateBlogDto,
+    ): Promise<GetBlogDomain> {
+        await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
+        const blog = await this.blogRepository.updateBlog(
+            blogId,
+            updateBlogDto,
+        );
+        return new GetBlogDomain(blog);
     }
 }

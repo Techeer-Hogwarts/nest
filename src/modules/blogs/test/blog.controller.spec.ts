@@ -5,6 +5,8 @@ import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogDomain } from '../dto/response/get.blog.domain';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
+import { UpdateBlogDto } from '../dto/request/update.blog.dto';
+import { NotFoundException } from '@nestjs/common';
 
 describe('BlogController', () => {
     let controller: BlogController;
@@ -15,6 +17,8 @@ describe('BlogController', () => {
     let blogId: number;
     let query: GetBlogsQueryDto;
     let blogEntities: BlogEntity[];
+    let updateBlogDto: UpdateBlogDto;
+    let updatedBlogEntity: BlogEntity;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +32,7 @@ describe('BlogController', () => {
                         getBlogs: jest.fn(),
                         getBlogsByUserId: jest.fn(),
                         deleteBlog: jest.fn(),
+                        updateBlog: jest.fn(),
                     },
                 },
             ],
@@ -152,6 +157,19 @@ describe('BlogController', () => {
                 },
             },
         ];
+
+        updateBlogDto = {
+            title: 'Updated Title',
+            url: 'https://example.com/updated-blog',
+            date: new Date(),
+        };
+
+        updatedBlogEntity = {
+            ...blogEntity,
+            title: updateBlogDto.title,
+            url: updateBlogDto.url,
+            date: updateBlogDto.date,
+        };
     });
 
     it('should be defined', () => {
@@ -251,6 +269,62 @@ describe('BlogController', () => {
             // deleteBlog가 blogId로 호출되었는지 확인
             expect(service.deleteBlog).toHaveBeenCalledWith(blogId);
             expect(service.deleteBlog).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the blog does not exist', async () => {
+            // deleteBlog가 NotFoundException을 던지도록 mock 설정
+            jest.spyOn(service, 'deleteBlog').mockRejectedValue(
+                new NotFoundException('게시물을 찾을 수 없습니다.'),
+            );
+
+            // deleteBlog 호출 시 NotFoundException 발생 확인
+            await expect(controller.deleteBlog(blogId)).rejects.toThrow(
+                NotFoundException,
+            );
+
+            // deleteBlog 메서드 호출 확인
+            expect(service.deleteBlog).toHaveBeenCalledWith(blogId);
+            expect(service.deleteBlog).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('updateBlog', () => {
+        it('should successfully update a blog', async () => {
+            jest.spyOn(service, 'updateBlog').mockResolvedValue(
+                new GetBlogDomain(updatedBlogEntity),
+            );
+
+            const result = await controller.updateBlog(blogId, updateBlogDto);
+
+            expect(result).toEqual({
+                code: 200,
+                message: '게시물이 수정되었습니다.',
+                data: new GetBlogDomain(updatedBlogEntity),
+            });
+            expect(service.updateBlog).toHaveBeenCalledWith(
+                blogId,
+                updateBlogDto,
+            );
+            expect(service.updateBlog).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the blog does not exist', async () => {
+            // updateBlog가 NotFoundException을 던지도록 mock 설정
+            jest.spyOn(service, 'updateBlog').mockRejectedValue(
+                new NotFoundException('게시물을 찾을 수 없습니다.'),
+            );
+
+            // updateBlog 호출 시 NotFoundException 발생 확인
+            await expect(
+                controller.updateBlog(blogId, updateBlogDto),
+            ).rejects.toThrow(NotFoundException);
+
+            // updateBlog 메서드 호출 확인
+            expect(service.updateBlog).toHaveBeenCalledWith(
+                blogId,
+                updateBlogDto,
+            );
+            expect(service.updateBlog).toHaveBeenCalledTimes(1);
         });
     });
 });

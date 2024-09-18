@@ -11,7 +11,7 @@ export class PaginationQueryDto {
     @Type(() => Number)
     @IsNumber()
     @Min(0)
-    offset?: number = 0;
+    readonly offset?: number = 0;
 
     @ApiPropertyOptional({
         description: '가져올 개수',
@@ -21,5 +21,5 @@ export class PaginationQueryDto {
     @Type(() => Number)
     @IsNumber()
     @Min(1)
-    limit?: number = 10;
+    readonly limit?: number = 10;
 }

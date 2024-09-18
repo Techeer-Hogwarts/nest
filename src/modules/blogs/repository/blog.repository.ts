@@ -4,6 +4,7 @@ import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
 import { PaginationQueryDto } from '../dto/request/pagination.query.dto';
+import { UpdateBlogDto } from '../dto/request/update.blog.dto';
 
 @Injectable()
 export class BlogRepository {
@@ -98,6 +99,27 @@ export class BlogRepository {
         await this.prisma.blog.update({
             where: { id: blogId },
             data: { isDeleted: true },
+        });
+    }
+
+    async updateBlog(
+        blogId: number,
+        updateBlogDto: UpdateBlogDto,
+    ): Promise<BlogEntity> {
+        const { title, url, date } = updateBlogDto;
+
+        return this.prisma.blog.update({
+            where: {
+                id: blogId,
+            },
+            data: {
+                title,
+                url,
+                date,
+            },
+            include: {
+                user: true,
+            },
         });
     }
 }

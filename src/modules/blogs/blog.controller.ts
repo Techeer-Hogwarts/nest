@@ -7,6 +7,7 @@ import {
     Query,
     ParseIntPipe,
     Delete,
+    Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
@@ -15,6 +16,7 @@ import { BlogEntity } from './entities/blog.entity';
 import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
 import { GetBlogDomain } from './dto/response/get.blog.domain';
 import { PaginationQueryDto } from './dto/request/pagination.query.dto';
+import { UpdateBlogDto } from './dto/request/update.blog.dto';
 
 @ApiTags('blogs')
 @Controller('/blog')
@@ -96,6 +98,23 @@ export class BlogController {
         return {
             code: 200,
             message: '게시물이 삭제되었습니다.',
+        };
+    }
+
+    @Patch(':blogId')
+    @ApiOperation({
+        summary: '블로그 게시물 수정',
+        description: '지정된 ID의 블로그 게시물 제목과 URL을 수정합니다.',
+    })
+    async updateBlog(
+        @Param('blogId') blogId: number,
+        @Body() updateBlogDto: UpdateBlogDto,
+    ): Promise<any> {
+        const blog = await this.blogService.updateBlog(blogId, updateBlogDto);
+        return {
+            code: 200,
+            message: '게시물이 수정되었습니다.',
+            data: blog,
         };
     }
 }
