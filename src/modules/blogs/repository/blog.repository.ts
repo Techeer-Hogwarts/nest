@@ -28,7 +28,7 @@ export class BlogRepository {
         });
 
         if (!blog) {
-            throw new NotFoundException('해당 게시물을 찾지 못했습니다.');
+            throw new NotFoundException('게시물을 찾을 수 없습니다.');
         }
         return blog;
     }
@@ -91,6 +91,13 @@ export class BlogRepository {
             },
             skip: offset,
             take: limit,
+        });
+    }
+
+    async deleteBlog(blogId: number): Promise<void> {
+        await this.prisma.blog.update({
+            where: { id: blogId },
+            data: { isDeleted: true },
         });
     }
 }

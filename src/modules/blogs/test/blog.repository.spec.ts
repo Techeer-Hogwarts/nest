@@ -26,6 +26,7 @@ describe('BlogRepository', () => {
                             create: jest.fn(),
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
+                            update: jest.fn(),
                         },
                     },
                 },
@@ -266,6 +267,23 @@ describe('BlogRepository', () => {
                 take: query.limit,
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('deleteBlog', () => {
+        it('should mark the blog as deleted', async () => {
+            jest.spyOn(prismaService.blog, 'update').mockResolvedValue({
+                ...blogEntity,
+                isDeleted: true,
+            });
+
+            await repository.deleteBlog(blogId);
+
+            expect(prismaService.blog.update).toHaveBeenCalledWith({
+                where: { id: blogId },
+                data: { isDeleted: true },
+            });
+            expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
         });
     });
 });

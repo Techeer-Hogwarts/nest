@@ -5,6 +5,7 @@ import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogDomain } from '../dto/response/get.blog.domain';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
+import { NotFoundException } from '@nestjs/common';
 
 describe('BlogService', () => {
     let service: BlogService;
@@ -26,6 +27,7 @@ describe('BlogService', () => {
                         getBlog: jest.fn(),
                         getBlogs: jest.fn(),
                         getBlogsByUserId: jest.fn(),
+                        deleteBlog: jest.fn(),
                     },
                 },
             ],
@@ -221,6 +223,32 @@ describe('BlogService', () => {
             expect(result.every((item) => item instanceof GetBlogDomain)).toBe(
                 true,
             );
+        });
+    });
+
+    describe('deleteBlog', () => {
+        it('should successfully delete a blog', async () => {
+            jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity); // 블로그 존재 여부 확인
+            jest.spyOn(repository, 'deleteBlog').mockResolvedValue(undefined); // 블로그 삭제 처리
+
+            await service.deleteBlog(blogId);
+
+            expect(repository.getBlog).toHaveBeenCalledWith(blogId);
+            expect(repository.getBlog).toHaveBeenCalledTimes(1);
+            expect(repository.deleteBlog).toHaveBeenCalledWith(blogId);
+            expect(repository.deleteBlog).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if blog does not exist', async () => {
+            jest.spyOn(repository, 'getBlog').mockRejectedValue(
+                new NotFoundException(),
+            );
+
+            await expect(service.deleteBlog(blogId)).rejects.toThrow(
+                NotFoundException,
+            );
+            expect(repository.getBlog).toHaveBeenCalledWith(blogId);
+            expect(repository.deleteBlog).not.toHaveBeenCalled();
         });
     });
 });

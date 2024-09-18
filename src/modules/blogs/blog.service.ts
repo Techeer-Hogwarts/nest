@@ -29,7 +29,13 @@ export class BlogService {
         userId: number,
         query: PaginationQueryDto,
     ): Promise<GetBlogDomain[]> {
+        // todo: 유저가 존재하는지 검사
         const blogs = await this.blogRepository.getBlogsByUserId(userId, query);
         return blogs.map((blog) => new GetBlogDomain(blog));
+    }
+
+    async deleteBlog(blogId: number): Promise<void> {
+        await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
+        return this.blogRepository.deleteBlog(blogId);
     }
 }

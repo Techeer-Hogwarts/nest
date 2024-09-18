@@ -27,6 +27,7 @@ describe('BlogController', () => {
                         getBlog: jest.fn(),
                         getBlogs: jest.fn(),
                         getBlogsByUserId: jest.fn(),
+                        deleteBlog: jest.fn(),
                     },
                 },
             ],
@@ -231,6 +232,25 @@ describe('BlogController', () => {
                 message: '블로그 게시물을 조회했습니다.',
                 data: blogEntities.map((blog) => new GetBlogDomain(blog)),
             });
+        });
+    });
+
+    describe('deleteBlog', () => {
+        it('should successfully delete a blog', async () => {
+            // deleteBlog 메서드를 모킹하여 성공 시 반환값을 설정
+            jest.spyOn(service, 'deleteBlog').mockResolvedValue();
+
+            // deleteBlog 메서드를 호출하고 그 결과가 성공적으로 반환되었는지 확인
+            const result = await controller.deleteBlog(blogId);
+
+            expect(result).toEqual({
+                code: 200,
+                message: '게시물이 삭제되었습니다.',
+            });
+
+            // deleteBlog가 blogId로 호출되었는지 확인
+            expect(service.deleteBlog).toHaveBeenCalledWith(blogId);
+            expect(service.deleteBlog).toHaveBeenCalledTimes(1);
         });
     });
 });
