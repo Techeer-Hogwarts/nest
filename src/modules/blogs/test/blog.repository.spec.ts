@@ -4,6 +4,7 @@ import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { BlogRepository } from '../repository/blog.repository';
 import { NotFoundException } from '@nestjs/common';
+import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
@@ -11,6 +12,8 @@ describe('BlogRepository', () => {
     let createBlogDomain: CreateBlogDomain;
     let blogEntity: BlogEntity;
     let blogId: number;
+    let query: GetBlogsQueryDto;
+    let blogEntities: BlogEntity[];
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -22,6 +25,7 @@ describe('BlogRepository', () => {
                         blog: {
                             create: jest.fn(),
                             findUnique: jest.fn(),
+                            findMany: jest.fn(),
                         },
                     },
                 },
@@ -72,6 +76,79 @@ describe('BlogRepository', () => {
         };
 
         blogId = 1;
+
+        query = {
+            keyword: 'Test',
+            category: 'Backend',
+            position: 'Backend',
+            offset: 0,
+            limit: 10,
+        };
+
+        blogEntities = [
+            {
+                id: 1,
+                userId: 1,
+                title: 'Test Post 1',
+                url: 'https://example.com/blog1',
+                date: new Date(),
+                category: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDeleted: false,
+                likeCount: 0,
+                viewCount: 0,
+                user: {
+                    id: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    isDeleted: false,
+                    name: 'testName1',
+                    email: 'test1@test.com',
+                    year: 2024,
+                    password: '1234',
+                    isLft: false,
+                    githubUrl: 'github1',
+                    blogUrl: 'blog1',
+                    mainPosition: 'Backend',
+                    subPosition: 'DevOps',
+                    school: 'Test University',
+                    class: '4학년',
+                    roleId: 1,
+                },
+            },
+            {
+                id: 2,
+                userId: 2,
+                title: 'Test Post 2',
+                url: 'https://example.com/blog2',
+                date: new Date(),
+                category: 'Frontend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDeleted: false,
+                likeCount: 0,
+                viewCount: 0,
+                user: {
+                    id: 2,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    isDeleted: false,
+                    name: 'testName2',
+                    email: 'test2@test.com',
+                    year: 2024,
+                    password: '1234',
+                    isLft: false,
+                    githubUrl: 'github2',
+                    blogUrl: 'blog2',
+                    mainPosition: 'Frontend',
+                    subPosition: 'UI/UX',
+                    school: 'Test University',
+                    class: '4학년',
+                    roleId: 2,
+                },
+            },
+        ];
     });
 
     it('should be defined', () => {
@@ -115,6 +192,55 @@ describe('BlogRepository', () => {
             await expect(repository.getBlog(blogId)).rejects.toThrow(
                 NotFoundException,
             );
+        });
+    });
+
+    describe('getBlogs', () => {
+        it('should return a list of blog entities based on query', async () => {
+            jest.spyOn(prismaService.blog, 'findMany').mockResolvedValue(
+                blogEntities,
+            );
+
+            const result = await repository.getBlogs(query);
+
+            expect(result).toEqual(blogEntities);
+            expect(prismaService.blog.findMany).toHaveBeenCalledWith({
+                where: {
+                    isDeleted: false,
+                    ...(query.keyword && {
+                        OR: [
+                            {
+                                title: {
+                                    contains: query.keyword,
+                                    mode: 'insensitive',
+                                },
+                            },
+                            {
+                                category: {
+                                    contains: query.keyword,
+                                    mode: 'insensitive',
+                                },
+                            },
+                            {
+                                user: {
+                                    name: {
+                                        contains: query.keyword,
+                                        mode: 'insensitive',
+                                    },
+                                },
+                            },
+                        ],
+                    }),
+                    ...(query.category && { category: query.category }),
+                    ...(query.position && {
+                        user: { mainPosition: query.position },
+                    }),
+                },
+                include: { user: true },
+                skip: query.offset,
+                take: query.limit,
+            });
+            expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
     });
 });

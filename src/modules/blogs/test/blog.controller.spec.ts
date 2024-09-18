@@ -4,6 +4,7 @@ import { BlogService } from '../blog.service';
 import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogDomain } from '../dto/response/get.blog.domain';
+import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
 
 describe('BlogController', () => {
     let controller: BlogController;
@@ -12,6 +13,8 @@ describe('BlogController', () => {
     let blogEntity: BlogEntity;
     let getBlogDomain: GetBlogDomain;
     let blogId: string;
+    let query: GetBlogsQueryDto;
+    let blogEntities: BlogEntity[];
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -22,6 +25,7 @@ describe('BlogController', () => {
                     useValue: {
                         createBlog: jest.fn(),
                         getBlog: jest.fn(),
+                        getBlogs: jest.fn(),
                     },
                 },
             ],
@@ -73,6 +77,79 @@ describe('BlogController', () => {
         getBlogDomain = new GetBlogDomain(blogEntity);
 
         blogId = '1';
+
+        query = {
+            keyword: 'Test',
+            category: 'Backend',
+            position: 'Backend',
+            offset: 0,
+            limit: 10,
+        };
+
+        blogEntities = [
+            {
+                id: 1,
+                userId: 1,
+                title: 'Test Post 1',
+                url: 'https://example.com/blog1',
+                date: new Date(),
+                category: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDeleted: false,
+                likeCount: 0,
+                viewCount: 0,
+                user: {
+                    id: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    isDeleted: false,
+                    name: 'testName1',
+                    email: 'test1@test.com',
+                    year: 2024,
+                    password: '1234',
+                    isLft: false,
+                    githubUrl: 'github1',
+                    blogUrl: 'blog1',
+                    mainPosition: 'Backend',
+                    subPosition: 'DevOps',
+                    school: 'Test University',
+                    class: '4학년',
+                    roleId: 1,
+                },
+            },
+            {
+                id: 2,
+                userId: 2,
+                title: 'Test Post 2',
+                url: 'https://example.com/blog2',
+                date: new Date(),
+                category: 'Frontend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDeleted: false,
+                likeCount: 0,
+                viewCount: 0,
+                user: {
+                    id: 2,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    isDeleted: false,
+                    name: 'testName2',
+                    email: 'test2@test.com',
+                    year: 2024,
+                    password: '1234',
+                    isLft: false,
+                    githubUrl: 'github2',
+                    blogUrl: 'blog2',
+                    mainPosition: 'Frontend',
+                    subPosition: 'UI/UX',
+                    school: 'Test University',
+                    class: '4학년',
+                    roleId: 2,
+                },
+            },
+        ];
     });
 
     it('should be defined', () => {
@@ -110,6 +187,24 @@ describe('BlogController', () => {
                 message: '게시물을 조회했습니다.',
                 data: getBlogDomain,
             });
+        });
+    });
+
+    describe('getBlogs', () => {
+        it('should return a list of blogs based on query', async () => {
+            jest.spyOn(service, 'getBlogs').mockResolvedValue(
+                blogEntities.map((blog) => new GetBlogDomain(blog)),
+            );
+
+            const result = await controller.getBlogs(query);
+
+            expect(result).toEqual({
+                code: 200,
+                message: '블로그 게시물을 조회했습니다.',
+                data: blogEntities.map((blog) => new GetBlogDomain(blog)),
+            });
+            expect(service.getBlogs).toHaveBeenCalledWith(query);
+            expect(service.getBlogs).toHaveBeenCalledTimes(1);
         });
     });
 });

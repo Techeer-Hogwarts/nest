@@ -4,6 +4,7 @@ import { BlogRepository } from '../repository/blog.repository';
 import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogDomain } from '../dto/response/get.blog.domain';
+import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
 
 describe('BlogService', () => {
     let service: BlogService;
@@ -11,6 +12,8 @@ describe('BlogService', () => {
     let createBlogDomain: CreateBlogDomain;
     let blogEntity: BlogEntity;
     let blogId: number;
+    let query: GetBlogsQueryDto;
+    let blogEntities: BlogEntity[];
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -21,6 +24,7 @@ describe('BlogService', () => {
                     useValue: {
                         createBlog: jest.fn(),
                         getBlog: jest.fn(),
+                        getBlogs: jest.fn(),
                     },
                 },
             ],
@@ -70,6 +74,79 @@ describe('BlogService', () => {
         };
 
         blogId = 1;
+
+        query = {
+            keyword: 'Test',
+            category: 'Backend',
+            position: 'Backend',
+            offset: 0,
+            limit: 10,
+        };
+
+        blogEntities = [
+            {
+                id: 1,
+                userId: 1,
+                title: 'Test Post 1',
+                url: 'https://example.com/blog1',
+                date: new Date(),
+                category: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDeleted: false,
+                likeCount: 0,
+                viewCount: 0,
+                user: {
+                    id: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    isDeleted: false,
+                    name: 'testName1',
+                    email: 'test1@test.com',
+                    year: 2024,
+                    password: '1234',
+                    isLft: false,
+                    githubUrl: 'github1',
+                    blogUrl: 'blog1',
+                    mainPosition: 'Backend',
+                    subPosition: 'DevOps',
+                    school: 'Test University',
+                    class: '4학년',
+                    roleId: 1,
+                },
+            },
+            {
+                id: 2,
+                userId: 2,
+                title: 'Test Post 2',
+                url: 'https://example.com/blog2',
+                date: new Date(),
+                category: 'Frontend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDeleted: false,
+                likeCount: 0,
+                viewCount: 0,
+                user: {
+                    id: 2,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    isDeleted: false,
+                    name: 'testName2',
+                    email: 'test2@test.com',
+                    year: 2024,
+                    password: '1234',
+                    isLft: false,
+                    githubUrl: 'github2',
+                    blogUrl: 'blog2',
+                    mainPosition: 'Frontend',
+                    subPosition: 'UI/UX',
+                    school: 'Test University',
+                    class: '4학년',
+                    roleId: 2,
+                },
+            },
+        ];
     });
 
     it('should be defined', () => {
@@ -100,6 +177,23 @@ describe('BlogService', () => {
             expect(result).toEqual(new GetBlogDomain(blogEntity));
             expect(result).toBeInstanceOf(GetBlogDomain);
             expect(repository.getBlog).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getBlogs', () => {
+        it('should return a list of GetBlogDomain objects based on query', async () => {
+            jest.spyOn(repository, 'getBlogs').mockResolvedValue(blogEntities);
+
+            const result = await service.getBlogs(query);
+
+            expect(result).toEqual(
+                blogEntities.map((blog) => new GetBlogDomain(blog)),
+            );
+            expect(result.every((item) => item instanceof GetBlogDomain)).toBe(
+                true,
+            );
+            expect(repository.getBlogs).toHaveBeenCalledWith(query);
+            expect(repository.getBlogs).toHaveBeenCalledTimes(1);
         });
     });
 });
