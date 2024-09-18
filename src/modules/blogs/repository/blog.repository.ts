@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBlogDomain } from '../dto/request/create.blog.domain';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
+import { PaginationQueryDto } from '../dto/request/pagination.query.dto';
 
 @Injectable()
 export class BlogRepository {
@@ -66,6 +67,24 @@ export class BlogRepository {
                 ...(position && {
                     user: { mainPosition: position },
                 }),
+            },
+            include: {
+                user: true,
+            },
+            skip: offset,
+            take: limit,
+        });
+    }
+
+    async getBlogsByUserId(
+        userId: number,
+        query: PaginationQueryDto,
+    ): Promise<BlogEntity[]> {
+        const { offset = 0, limit = 10 } = query;
+        return this.prisma.blog.findMany({
+            where: {
+                isDeleted: false,
+                userId: userId,
             },
             include: {
                 user: true,

@@ -4,6 +4,7 @@ import { CreateBlogDomain } from './dto/request/create.blog.domain';
 import { BlogEntity } from './entities/blog.entity';
 import { GetBlogDomain } from './dto/response/get.blog.domain';
 import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
+import { PaginationQueryDto } from './dto/request/pagination.query.dto';
 
 @Injectable()
 export class BlogService {
@@ -21,6 +22,14 @@ export class BlogService {
 
     async getBlogs(query: GetBlogsQueryDto): Promise<GetBlogDomain[]> {
         const blogs = await this.blogRepository.getBlogs(query);
+        return blogs.map((blog) => new GetBlogDomain(blog));
+    }
+
+    async getBlogsByUserId(
+        userId: number,
+        query: PaginationQueryDto,
+    ): Promise<GetBlogDomain[]> {
+        const blogs = await this.blogRepository.getBlogsByUserId(userId, query);
         return blogs.map((blog) => new GetBlogDomain(blog));
     }
 }

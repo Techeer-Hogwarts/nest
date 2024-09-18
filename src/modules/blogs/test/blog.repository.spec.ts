@@ -243,4 +243,29 @@ describe('BlogRepository', () => {
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe('getBlogsByUserId', () => {
+        it('should return a list of blog entities for the given user ID', async () => {
+            jest.spyOn(prismaService.blog, 'findMany').mockResolvedValue(
+                blogEntities,
+            );
+
+            const result = await repository.getBlogsByUserId(
+                createBlogDomain.userId,
+                query,
+            );
+
+            expect(result).toEqual(blogEntities);
+            expect(prismaService.blog.findMany).toHaveBeenCalledWith({
+                where: {
+                    isDeleted: false,
+                    userId: createBlogDomain.userId,
+                },
+                include: { user: true },
+                skip: query.offset,
+                take: query.limit,
+            });
+            expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
+        });
+    });
 });

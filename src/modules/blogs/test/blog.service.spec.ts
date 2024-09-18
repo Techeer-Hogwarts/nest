@@ -25,6 +25,7 @@ describe('BlogService', () => {
                         createBlog: jest.fn(),
                         getBlog: jest.fn(),
                         getBlogs: jest.fn(),
+                        getBlogsByUserId: jest.fn(),
                     },
                 },
             ],
@@ -194,6 +195,32 @@ describe('BlogService', () => {
             );
             expect(repository.getBlogs).toHaveBeenCalledWith(query);
             expect(repository.getBlogs).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getBlogsByUserId', () => {
+        it('should return a list of GetBlogDomain objects for a specific user', async () => {
+            jest.spyOn(repository, 'getBlogsByUserId').mockResolvedValue(
+                blogEntities,
+            );
+
+            const result = await service.getBlogsByUserId(
+                createBlogDomain.userId,
+                query,
+            );
+
+            expect(repository.getBlogsByUserId).toHaveBeenCalledWith(
+                createBlogDomain.userId,
+                query,
+            );
+            expect(repository.getBlogsByUserId).toHaveBeenCalledTimes(1);
+
+            expect(result).toEqual(
+                blogEntities.map((blog) => new GetBlogDomain(blog)),
+            );
+            expect(result.every((item) => item instanceof GetBlogDomain)).toBe(
+                true,
+            );
         });
     });
 });

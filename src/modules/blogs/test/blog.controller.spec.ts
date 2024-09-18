@@ -12,7 +12,7 @@ describe('BlogController', () => {
     let createBlogDomain: CreateBlogDomain;
     let blogEntity: BlogEntity;
     let getBlogDomain: GetBlogDomain;
-    let blogId: string;
+    let blogId: number;
     let query: GetBlogsQueryDto;
     let blogEntities: BlogEntity[];
 
@@ -26,6 +26,7 @@ describe('BlogController', () => {
                         createBlog: jest.fn(),
                         getBlog: jest.fn(),
                         getBlogs: jest.fn(),
+                        getBlogsByUserId: jest.fn(),
                     },
                 },
             ],
@@ -76,7 +77,7 @@ describe('BlogController', () => {
 
         getBlogDomain = new GetBlogDomain(blogEntity);
 
-        blogId = '1';
+        blogId = 1;
 
         query = {
             keyword: 'Test',
@@ -205,6 +206,31 @@ describe('BlogController', () => {
             });
             expect(service.getBlogs).toHaveBeenCalledWith(query);
             expect(service.getBlogs).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getBlogsByUserId', () => {
+        it('should return a list of blogs for a specific user', async () => {
+            jest.spyOn(service, 'getBlogsByUserId').mockResolvedValue(
+                blogEntities.map((blog) => new GetBlogDomain(blog)),
+            );
+
+            const result = await controller.getBlogsByUserId(
+                createBlogDomain.userId,
+                query,
+            );
+
+            expect(service.getBlogsByUserId).toHaveBeenCalledWith(
+                createBlogDomain.userId,
+                query,
+            );
+            expect(service.getBlogsByUserId).toHaveBeenCalledTimes(1);
+
+            expect(result).toEqual({
+                code: 200,
+                message: '블로그 게시물을 조회했습니다.',
+                data: blogEntities.map((blog) => new GetBlogDomain(blog)),
+            });
         });
     });
 });

@@ -1,10 +1,19 @@
-import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    Body,
+    Get,
+    Param,
+    Query,
+    ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { CreateBlogDomain } from './dto/request/create.blog.domain';
 import { BlogEntity } from './entities/blog.entity';
 import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
 import { GetBlogDomain } from './dto/response/get.blog.domain';
+import { PaginationQueryDto } from './dto/request/pagination.query.dto';
 
 @ApiTags('blogs')
 @Controller('/blog')
@@ -27,10 +36,8 @@ export class BlogController {
     }
 
     @Get(':blogId')
-    async getBlog(@Param('blogId') blogId: string): Promise<any> {
-        const blog: GetBlogDomain = await this.blogService.getBlog(
-            parseInt(blogId, 10),
-        );
+    async getBlog(@Param('blogId', ParseIntPipe) blogId: number): Promise<any> {
+        const blog: GetBlogDomain = await this.blogService.getBlog(blogId);
         return {
             code: 200,
             message: '게시물을 조회했습니다.',
@@ -41,6 +48,22 @@ export class BlogController {
     @Get()
     async getBlogs(@Query() query: GetBlogsQueryDto): Promise<any> {
         const blogs: GetBlogDomain[] = await this.blogService.getBlogs(query);
+        return {
+            code: 200,
+            message: '블로그 게시물을 조회했습니다.',
+            data: blogs,
+        };
+    }
+
+    @Get('/user/:userId')
+    async getBlogsByUserId(
+        @Param('userId', ParseIntPipe) userId: number,
+        @Query() query: PaginationQueryDto,
+    ): Promise<any> {
+        const blogs: GetBlogDomain[] = await this.blogService.getBlogsByUserId(
+            userId,
+            query,
+        );
         return {
             code: 200,
             message: '블로그 게시물을 조회했습니다.',
