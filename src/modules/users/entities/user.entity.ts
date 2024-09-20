@@ -17,4 +17,5 @@ export class UserEntity implements User {
     school: string;
     class: string;
     roleId: number;
+    isAuth: boolean;
 }

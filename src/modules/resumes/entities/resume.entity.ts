@@ -1,4 +1,5 @@
-import { Resume, User, ResumeType } from '@prisma/client';
+import { Resume, ResumeType } from '@prisma/client';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
 
 export class ResumeEntity implements Resume {
     id: number;
@@ -13,5 +14,5 @@ export class ResumeEntity implements Resume {
     viewCount: number;
     ResumeType: ResumeType;
 
-    user: User;
+    user: UserEntity;
 }

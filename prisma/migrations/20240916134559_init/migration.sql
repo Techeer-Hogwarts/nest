@@ -24,7 +24,7 @@ CREATE TABLE "User" (
     "subPosition" VARCHAR(100),
     "school" VARCHAR(100) NOT NULL,
     "class" VARCHAR(100) NOT NULL,
-    "roleId" INTEGER,
+    "roleId" INTEGER NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -32,7 +32,10 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Role" (
     "id" SERIAL NOT NULL,
-    "name" VARCHAR(100) NOT NULL,
+    "name" TEXT NOT NULL,
+    "parentId" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Role_pkey" PRIMARY KEY ("id")
 );
@@ -115,8 +118,8 @@ CREATE TABLE "Resume" (
     "title" VARCHAR(100) NOT NULL,
     "url" VARCHAR(100) NOT NULL,
     "isMain" BOOLEAN NOT NULL DEFAULT false,
-    "likeCount" INTEGER NOT NULL,
-    "viewCount" INTEGER NOT NULL,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
     "ResumeType" "ResumeType" NOT NULL,
 
     CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
@@ -245,8 +248,14 @@ CREATE TABLE "Session" (
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
+
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Role" ADD CONSTRAINT "Role_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
