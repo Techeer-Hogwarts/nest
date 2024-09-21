@@ -17,16 +17,7 @@ module.exports = {
     },
     ignorePatterns: ['.eslintrc.js', 'dist/**'],
     rules: {
-        'no-console': 'error', // console 명령어 금지
-        // indent: ['error', 4],
-        // semi: ['error', 'always'], // 세미콜론 사용
-        // 'array-element-newline': [
-        //     'error',
-        //     {
-        //         ArrayExpression: { multiline: true, minItems: 3 }, // 배열의 요소가 3개 이상일 경우, 각각 한 줄씩
-        //     },
-        // ],
-        // quotes: [2, 'single', { avoidEscape: false }], // ', `만 허용
+        'no-console': 'warn', // console 명령어 금지
         eqeqeq: [2, 'allow-null'], // == 금지
         'no-empty': ['error', { allowEmptyCatch: false }], // 빈 catch 금지
         'eol-last': 2, // 파일 끝에 개행문자가 없을 경우 경고
@@ -38,7 +29,7 @@ module.exports = {
         '@typescript-eslint/explicit-function-return-type': 2, // 명시적 함수 반환 타입 허용
         '@typescript-eslint/explicit-module-boundary-types': 0, // 명시적 모듈 바운더리 타입 허용
         '@typescript-eslint/no-explicit-any': 0, // any 허용
-        'function-paren-newline': ['error', 'consistent'], // 함수 생성 시 인자가 여러 줄일 경우, 첫번째 인자는 첫 줄에, 나머지는 각각 한 줄씩
+        // 'function-paren-newline': ['error', 'consistent'], // 함수 생성 시 인자가 여러 줄일 경우, 첫번째 인자는 첫 줄에, 나머지는 각각 한 줄씩
         'object-property-newline': [
             'error',
             { allowAllPropertiesOnSameLine: false },
