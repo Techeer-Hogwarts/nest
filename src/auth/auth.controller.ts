@@ -1,4 +1,4 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -8,23 +8,25 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @Post('/email')
-    async sendVerificationEmail(@Body('email') email: string): Promise<void> {
+    async sendVerificationEmail(@Body('email') email: string): Promise<any> {
         await this.authService.sendVerificationEmail(email);
+        return {
+            code: 201,
+            message: '인증 코드가 전송되었습니다.',
+            data: null,
+        };
     }
 
     @Post('/code')
     async verifyCode(
         @Body('email') email: string,
         @Body('code') code: string,
-    ): Promise<{ success: boolean }> {
-        const isVerified = await this.authService.verifyCode(email, code);
-
-        if (!isVerified) {
-            throw new BadRequestException('인증 코드가 일치하지 않습니다.');
-        }
-
-        await this.authService.markAsVerified(email);
-
-        return { success: true };
+    ): Promise<any> {
+        await this.authService.verifyCode(email, code);
+        return {
+            code: 200,
+            message: '이메일 인증이 완료되었습니다.',
+            data: null,
+        };
     }
 }

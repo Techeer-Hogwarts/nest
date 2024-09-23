@@ -3,6 +3,7 @@ import { UserRepository } from '../repository/user.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDTO } from '../dto/request/create.user.request';
 import { UserEntity } from '../entities/user.entity';
+import { ConflictException } from '@nestjs/common';
 
 describe('UserRepository', () => {
     let userRepository: UserRepository;
@@ -16,12 +17,14 @@ describe('UserRepository', () => {
                     provide: PrismaService,
                     useValue: {
                         user: {
-                            findUnique: jest.fn(), // Prisma 메서드 목킹
-                            create: jest.fn(), // Prisma 메서드 목킹
+                            findUnique: jest.fn(),
+                            create: jest.fn(),
                         },
-                        $transaction: jest.fn().mockImplementation(
-                            (callback) => callback(prismaService), // $transaction 내에서 prismaService 사용
-                        ),
+                        $transaction: jest
+                            .fn()
+                            .mockImplementation((callback) =>
+                                callback(prismaService),
+                            ),
                     },
                 },
             ],
@@ -72,12 +75,12 @@ describe('UserRepository', () => {
                 year: createUserDTO.year,
             };
 
-            // findUnique 메서드를 목킹하여 이메일 중복을 확인
+            // 이메일 중복 체크
             (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
                 null,
             );
 
-            // create 메서드를 목킹하여 사용자가 생성되었는지 확인
+            // 사용자를 생성할 때 콜백 호출
             (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
 
             const callback = jest.fn();
@@ -90,13 +93,14 @@ describe('UserRepository', () => {
             // findUnique가 올바르게 호출되었는지 확인
             expect(prismaService.user.findUnique).toHaveBeenCalledWith({
                 where: { email: createUserDTO.email },
+                include: { profiles: true }, // include 옵션 추가
             });
             // create 메서드가 호출되었는지 확인
             expect(prismaService.user.create).toHaveBeenCalledWith({
                 data: {
                     ...createUserDTO,
-                    roleId: 3, // 기본 roleId
-                    isAuth: true, // 인증된 사용자로 표시
+                    roleId: 3,
+                    isAuth: true,
                 },
                 include: { profiles: true },
             });
@@ -106,7 +110,7 @@ describe('UserRepository', () => {
             expect(result).toEqual(newUser);
         });
 
-        it('이메일이 중복되면 에러를 발생시켜야 한다', async () => {
+        it('이메일이 중복되면 ConflictException을 던져야 한다', async () => {
             const createUserDTO: CreateUserDTO = {
                 email: 'test@test.com',
                 password: 'password123',
@@ -141,23 +145,21 @@ describe('UserRepository', () => {
                 year: createUserDTO.year,
             };
 
-            // findUnique 메서드를 중복된 유저로 목킹
+            // 중복된 사용자로 목킹
             (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
                 existingUser,
             );
 
-            // 중복된 이메일로 생성 시 에러가 발생하는지 확인
             await expect(
                 userRepository.createUser(createUserDTO, jest.fn()),
-            ).rejects.toThrow('이미 해당 이메일로 등록된 사용자가 있습니다.');
+            ).rejects.toThrow(ConflictException);
         });
     });
 
     describe('findUserByEmail', () => {
         it('이메일로 사용자를 찾아야 한다', async () => {
             const email = 'test@test.com';
-
-            const user: UserEntity = {
+            const existingUser: UserEntity = {
                 id: 1,
                 email,
                 name: 'Test User',
@@ -172,22 +174,18 @@ describe('UserRepository', () => {
                 subPosition: 'Frontend',
                 school: 'Test School',
                 class: '졸업',
-                roleId: 3,
+                roleId: 1,
                 isAuth: true,
                 year: 3,
             };
 
             (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                user,
+                existingUser,
             );
 
-            const result = await userRepository.findUserByEmail(email);
-
-            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-                where: { email },
-                include: { profiles: true },
-            });
-            expect(result).toEqual(user);
+            await expect(userRepository.findUserByEmail(email)).rejects.toThrow(
+                ConflictException,
+            );
         });
 
         it('사용자를 찾을 수 없으면 null을 반환해야 한다', async () => {

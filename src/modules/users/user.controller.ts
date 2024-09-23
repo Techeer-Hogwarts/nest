@@ -1,32 +1,25 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { UserService } from './user.service';
-import { AuthService } from '../../auth/auth.service';
 import { CreateUserDTO } from './dto/request/create.user.request';
 import { CreateResumeDTO } from '../resumes/dto/request/create.resume.request';
-import { UserEntity } from './entities/user.entity';
 
 @Controller('/users')
 export class UserController {
-    constructor(
-        private readonly userService: UserService,
-        private readonly authService: AuthService,
-    ) {}
+    constructor(private readonly userService: UserService) {}
 
     @Post('/signup')
     async signUp(
-        @Body('createUserDTO') createUserDTO: CreateUserDTO,
-        @Body('createResumeDTO') createResumeDTO?: CreateResumeDTO,
-    ): Promise<UserEntity> {
-        const isVerified = await this.authService.checkIfVerified(
-            createUserDTO.email,
+        @Body() createUserDTO: CreateUserDTO,
+        @Body() createResumeDTO?: CreateResumeDTO,
+    ): Promise<any> {
+        const userEntity = await this.userService.signUp(
+            createUserDTO,
+            createResumeDTO,
         );
-
-        if (!isVerified) {
-            throw new UnauthorizedException(
-                '이메일 인증이 완료되지 않았습니다.',
-            );
-        }
-
-        return this.userService.createUser(createUserDTO, createResumeDTO);
+        return {
+            code: 201,
+            message: '회원가입이 완료되었습니다.',
+            data: userEntity,
+        };
     }
 }

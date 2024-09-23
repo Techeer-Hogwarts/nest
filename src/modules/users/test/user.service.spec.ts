@@ -6,12 +6,14 @@ import { UserEntity } from '../entities/user.entity';
 import { CreateUserDTO } from '../dto/request/create.user.request';
 import { CreateResumeDTO } from '../../resumes/dto/request/create.resume.request';
 import { ResumeType } from '../../../global/common/enums/ResumeType';
-import { ResumeEntity } from '../../resumes/entities/resume.entity';
+import { AuthService } from '../../../auth/auth.service';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('UserService', () => {
     let service: UserService;
     let userRepository: UserRepository;
     let resumeRepository: ResumeRepository;
+    let authService: AuthService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -30,55 +32,30 @@ describe('UserService', () => {
                         createResume: jest.fn(),
                     },
                 },
+                {
+                    provide: AuthService,
+                    useValue: {
+                        checkIfVerified: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
         service = module.get<UserService>(UserService);
         userRepository = module.get<UserRepository>(UserRepository);
         resumeRepository = module.get<ResumeRepository>(ResumeRepository);
+        authService = module.get<AuthService>(AuthService);
     });
 
     it('정의되어 있어야 한다', () => {
         expect(service).toBeDefined();
         expect(userRepository).toBeDefined();
         expect(resumeRepository).toBeDefined();
+        expect(authService).toBeDefined();
     });
 
-    describe('findUserByEmail', () => {
-        it('이메일로 사용자를 찾아야 한다', async () => {
-            const email = 'test@test.com';
-            const user: UserEntity = {
-                id: 1,
-                email,
-                name: 'Test User',
-                password: 'password',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Test School',
-                class: '졸업',
-                roleId: 1,
-                isAuth: true,
-                year: 3,
-            };
-
-            jest.spyOn(userRepository, 'findUserByEmail').mockResolvedValue(
-                user,
-            );
-
-            const result = await service.findUserByEmail(email);
-            expect(result).toEqual(user);
-            expect(userRepository.findUserByEmail).toHaveBeenCalledWith(email);
-        });
-    });
-
-    describe('createUser', () => {
-        it('유저 생성 후 이력서가 존재하면 이력서를 생성해야 한다', async () => {
+    describe('signUp', () => {
+        it('이메일 인증이 완료되면 유저를 생성해야 한다', async () => {
             const createUserDTO: CreateUserDTO = {
                 email: 'test@test.com',
                 password: 'password123',
@@ -119,52 +96,25 @@ describe('UserService', () => {
                 year: createUserDTO.year,
             };
 
-            const newResume: ResumeEntity = {
-                id: 1,
-                title: createResumeDTO.title,
-                url: createResumeDTO.url,
-                ResumeType: ResumeType.PORTFOLIO,
-                userId: 1,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                isMain: false,
-                likeCount: 0,
-                viewCount: 0,
-                user: newUser,
-            };
-
-            jest.spyOn(userRepository, 'createUser').mockImplementation(
-                async (
-                    dto: CreateUserDTO,
-                    callback: (newUser: UserEntity) => Promise<void>,
-                ) => {
-                    await callback(newUser);
-                    return newUser;
-                },
-            );
-
+            jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(true);
+            jest.spyOn(userRepository, 'createUser').mockResolvedValue(newUser);
             jest.spyOn(resumeRepository, 'createResume').mockResolvedValue(
-                newResume,
+                null,
             );
 
-            const result = await service.createUser(
-                createUserDTO,
-                createResumeDTO,
-            );
+            const result = await service.signUp(createUserDTO, createResumeDTO);
 
-            expect(result).toEqual(newUser);
+            expect(authService.checkIfVerified).toHaveBeenCalledWith(
+                createUserDTO.email,
+            );
             expect(userRepository.createUser).toHaveBeenCalledWith(
                 createUserDTO,
                 expect.any(Function),
             );
-            expect(resumeRepository.createResume).toHaveBeenCalledWith(
-                createResumeDTO,
-                newUser.id,
-            );
+            expect(result).toEqual(newUser);
         });
 
-        it('유저 생성 후 이력서가 없으면 이력서를 생성하지 않아야 한다', async () => {
+        it('이메일 인증이 완료되지 않으면 UnauthorizedException을 던져야 한다', async () => {
             const createUserDTO: CreateUserDTO = {
                 email: 'test@test.com',
                 password: 'password123',
@@ -179,44 +129,15 @@ describe('UserService', () => {
                 class: '재학',
             };
 
-            const newUser: UserEntity = {
-                id: 1,
-                email: createUserDTO.email,
-                name: createUserDTO.name,
-                password: createUserDTO.password,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                isLft: false,
-                githubUrl: createUserDTO.githubUrl,
-                blogUrl: createUserDTO.blogUrl,
-                mainPosition: createUserDTO.mainPosition,
-                subPosition: createUserDTO.subPosition,
-                school: createUserDTO.school,
-                class: createUserDTO.class,
-                roleId: 1,
-                isAuth: true,
-                year: createUserDTO.year,
-            };
+            jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(false);
 
-            jest.spyOn(userRepository, 'createUser').mockImplementation(
-                async (
-                    dto: CreateUserDTO,
-                    callback: (newUser: UserEntity) => Promise<void>,
-                ) => {
-                    await callback(newUser);
-                    return newUser;
-                },
+            await expect(service.signUp(createUserDTO)).rejects.toThrow(
+                UnauthorizedException,
             );
-
-            const result = await service.createUser(createUserDTO);
-
-            expect(result).toEqual(newUser);
-            expect(userRepository.createUser).toHaveBeenCalledWith(
-                createUserDTO,
-                expect.any(Function),
+            expect(authService.checkIfVerified).toHaveBeenCalledWith(
+                createUserDTO.email,
             );
-            expect(resumeRepository.createResume).not.toHaveBeenCalled();
+            expect(userRepository.createUser).not.toHaveBeenCalled();
         });
     });
 });

@@ -3,6 +3,7 @@ import {
     Inject,
     Logger,
     InternalServerErrorException,
+    BadRequestException,
 } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
@@ -80,20 +81,24 @@ export class AuthService {
     async verifyCode(email: string, code: string): Promise<boolean> {
         try {
             const cachedCode = await this.redisClient.get(email);
-            Logger.log(`인증 코드 확인: ${cachedCode} / 제공된 코드: ${code}`);
 
-            if (cachedCode === code) {
-                // 코드 일치 시 Redis에서 해당 키 삭제
-                await this.redisClient.del(email);
-
-                // 이메일 인증 확인 상태로 변경
-                await this.markAsVerified(email);
-
-                return true;
+            if (!cachedCode) {
+                throw new BadRequestException('인증 코드가 존재하지 않습니다.');
             }
 
-            return false;
+            if (cachedCode !== code) {
+                throw new BadRequestException('인증 코드가 일치하지 않습니다.');
+            }
+
+            // 코드가 일치하면 Redis에서 키를 삭제하고 true 반환
+            await this.redisClient.del(email);
+            await this.markAsVerified(email);
+
+            return true;
         } catch (error) {
+            if (error instanceof BadRequestException) {
+                throw error;
+            }
             Logger.error(
                 'Redis에서 인증 코드를 확인하는 중 오류가 발생했습니다:',
                 error,
@@ -104,10 +109,8 @@ export class AuthService {
         }
     }
 
-    // 이메일 인증 성공 처리 (Redis 또는 DB에 인증 상태 저장)
     async markAsVerified(email: string): Promise<void> {
         try {
-            // Redis에 인증된 이메일을 저장 (TTL 1시간)
             await this.redisClient.set(`verified_${email}`, 'true', 'EX', 6000);
         } catch (error) {
             Logger.error(
