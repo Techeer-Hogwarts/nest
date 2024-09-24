@@ -258,7 +258,8 @@ model Session {
   fileUrl     String       @db.VarChar(200)
   presenter   String       @db.VarChar(50)
   date        String       @db.VarChar(50)
-  category    String       @db.VarChar(200)
+  category    String       @db.VarChar(50)
+  position    String       @db.VarChar(50)
 
   user        User         @relation("UserSessions", fields: [userId], references: [id])
 
