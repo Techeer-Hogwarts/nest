@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Session" ALTER COLUMN "likeCount" SET DEFAULT 0,
+ALTER COLUMN "viewCount" SET DEFAULT 0;
