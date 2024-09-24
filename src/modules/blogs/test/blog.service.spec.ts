@@ -13,7 +13,7 @@ import {
     paginationQueryDto,
     updateBlogDto,
     updatedBlogEntity,
-} from './mock-date';
+} from './mock-data';
 import { GetBlogDto } from '../dto/response/get.blog.dto';
 
 describe('BlogService', () => {

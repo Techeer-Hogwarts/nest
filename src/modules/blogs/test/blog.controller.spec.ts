@@ -13,7 +13,7 @@ import {
     paginationQueryDto,
     updateBlogDto,
     updatedBlogEntity,
-} from './mock-date';
+} from './mock-data';
 
 describe('BlogController', () => {
     let controller: BlogController;

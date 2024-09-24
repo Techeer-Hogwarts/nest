@@ -11,7 +11,7 @@ import {
     paginationQueryDto,
     updateBlogDto,
     updatedBlogEntity,
-} from './mock-date';
+} from './mock-data';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
