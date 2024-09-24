@@ -1,16 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateBlogDomain } from '../dto/request/create.blog.domain';
+import { CreateBlogDto } from '../dto/request/create.blog.dto';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
 import { PaginationQueryDto } from '../dto/request/pagination.query.dto';
 import { UpdateBlogDto } from '../dto/request/update.blog.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async createBlog(createBlogDomain: CreateBlogDomain): Promise<BlogEntity> {
+    async createBlog(createBlogDomain: CreateBlogDto): Promise<BlogEntity> {
         return this.prisma.blog.create({
             data: { ...createBlogDomain },
             include: { user: true },
@@ -121,5 +122,20 @@ export class BlogRepository {
                 user: true,
             },
         });
+    }
+
+    async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {
+        const { offset = 0, limit = 10 } = query;
+        // 2주 계산
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        // SQL 쿼리
+        return this.prisma.$queryRaw<BlogEntity[]>(Prisma.sql`
+            SELECT * FROM "Blog"
+            WHERE "isDeleted" = false
+                AND "date" >= ${twoWeeksAgo}
+            ORDER BY ("viewCount" + "likeCount" * 10) DESC
+            LIMIT ${limit} OFFSET ${offset}
+        `);
     }
 }

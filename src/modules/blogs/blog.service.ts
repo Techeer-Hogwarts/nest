@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { BlogRepository } from './repository/blog.repository';
-import { CreateBlogDomain } from './dto/request/create.blog.domain';
+import { CreateBlogDto } from './dto/request/create.blog.dto';
 import { BlogEntity } from './entities/blog.entity';
-import { GetBlogDomain } from './dto/response/get.blog.domain';
+import { GetBlogDto } from './dto/response/get.blog.dto';
 import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
 import { PaginationQueryDto } from './dto/request/pagination.query.dto';
 import { UpdateBlogDto } from './dto/request/update.blog.dto';
@@ -11,28 +11,30 @@ import { UpdateBlogDto } from './dto/request/update.blog.dto';
 export class BlogService {
     constructor(private readonly blogRepository: BlogRepository) {}
 
-    async createBlog(createBlogDomain: CreateBlogDomain): Promise<BlogEntity> {
-        return this.blogRepository.createBlog(createBlogDomain);
+    async createBlog(createBlogDomain: CreateBlogDto): Promise<GetBlogDto> {
+        const blogEntity: BlogEntity =
+            await this.blogRepository.createBlog(createBlogDomain);
+        return new GetBlogDto(blogEntity);
     }
 
-    async getBlog(blogId: number): Promise<GetBlogDomain> {
+    async getBlog(blogId: number): Promise<GetBlogDto> {
         const blogEntity: BlogEntity =
             await this.blogRepository.getBlog(blogId);
-        return new GetBlogDomain(blogEntity);
+        return new GetBlogDto(blogEntity);
     }
 
-    async getBlogs(query: GetBlogsQueryDto): Promise<GetBlogDomain[]> {
+    async getBlogs(query: GetBlogsQueryDto): Promise<GetBlogDto[]> {
         const blogs = await this.blogRepository.getBlogs(query);
-        return blogs.map((blog) => new GetBlogDomain(blog));
+        return blogs.map((blog) => new GetBlogDto(blog));
     }
 
     async getBlogsByUserId(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<GetBlogDomain[]> {
+    ): Promise<GetBlogDto[]> {
         // todo: 유저가 존재하는지 검사
         const blogs = await this.blogRepository.getBlogsByUserId(userId, query);
-        return blogs.map((blog) => new GetBlogDomain(blog));
+        return blogs.map((blog) => new GetBlogDto(blog));
     }
 
     async deleteBlog(blogId: number): Promise<void> {
@@ -43,12 +45,17 @@ export class BlogService {
     async updateBlog(
         blogId: number,
         updateBlogDto: UpdateBlogDto,
-    ): Promise<GetBlogDomain> {
+    ): Promise<GetBlogDto> {
         await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
         const blog = await this.blogRepository.updateBlog(
             blogId,
             updateBlogDto,
         );
-        return new GetBlogDomain(blog);
+        return new GetBlogDto(blog);
+    }
+
+    async getBestBlogs(query: PaginationQueryDto): Promise<GetBlogDto[]> {
+        const blogs = await this.blogRepository.getBestBlogs(query);
+        return blogs.map((blog) => new GetBlogDto(blog));
     }
 }

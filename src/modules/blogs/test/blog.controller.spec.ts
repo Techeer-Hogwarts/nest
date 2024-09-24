@@ -1,24 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogController } from '../blog.controller';
 import { BlogService } from '../blog.service';
-import { CreateBlogDomain } from '../dto/request/create.blog.domain';
-import { BlogEntity } from '../entities/blog.entity';
-import { GetBlogDomain } from '../dto/response/get.blog.domain';
-import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
-import { UpdateBlogDto } from '../dto/request/update.blog.dto';
+import { GetBlogDto } from '../dto/response/get.blog.dto';
 import { NotFoundException } from '@nestjs/common';
+import {
+    blogEntities,
+    createBlogDto,
+    getBestBlogDtoList,
+    getBlogDto,
+    getBlogDtoList,
+    getBlogsQueryDto,
+    paginationQueryDto,
+    updateBlogDto,
+    updatedBlogEntity,
+} from './mock-date';
 
 describe('BlogController', () => {
     let controller: BlogController;
     let service: BlogService;
-    let createBlogDomain: CreateBlogDomain;
-    let blogEntity: BlogEntity;
-    let getBlogDomain: GetBlogDomain;
-    let blogId: number;
-    let query: GetBlogsQueryDto;
-    let blogEntities: BlogEntity[];
-    let updateBlogDto: UpdateBlogDto;
-    let updatedBlogEntity: BlogEntity;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +27,7 @@ describe('BlogController', () => {
                     provide: BlogService,
                     useValue: {
                         createBlog: jest.fn(),
+                        getBestBlogs: jest.fn(),
                         getBlog: jest.fn(),
                         getBlogs: jest.fn(),
                         getBlogsByUserId: jest.fn(),
@@ -40,136 +40,6 @@ describe('BlogController', () => {
 
         controller = module.get<BlogController>(BlogController);
         service = module.get<BlogService>(BlogService);
-
-        createBlogDomain = {
-            userId: 1,
-            title: 'Test Post',
-            url: 'https://example.com/blog',
-            date: new Date(),
-            category: 'Backend',
-        };
-
-        blogEntity = {
-            id: 1,
-            userId: createBlogDomain.userId,
-            title: createBlogDomain.title,
-            url: createBlogDomain.url,
-            date: createBlogDomain.date,
-            category: createBlogDomain.category,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            isDeleted: false,
-            likeCount: 0,
-            viewCount: 0,
-            user: {
-                id: 1,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                name: 'testName',
-                email: 'test@test.com',
-                year: 2024,
-                password: '1234',
-                isLft: false,
-                githubUrl: 'github',
-                blogUrl: 'blog',
-                mainPosition: 'Backend',
-                subPosition: 'DevOps',
-                school: 'Test University',
-                class: '4학년',
-                roleId: 1,
-            },
-        };
-
-        getBlogDomain = new GetBlogDomain(blogEntity);
-
-        blogId = 1;
-
-        query = {
-            keyword: 'Test',
-            category: 'Backend',
-            position: 'Backend',
-            offset: 0,
-            limit: 10,
-        };
-
-        blogEntities = [
-            {
-                id: 1,
-                userId: 1,
-                title: 'Test Post 1',
-                url: 'https://example.com/blog1',
-                date: new Date(),
-                category: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                likeCount: 0,
-                viewCount: 0,
-                user: {
-                    id: 1,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    isDeleted: false,
-                    name: 'testName1',
-                    email: 'test1@test.com',
-                    year: 2024,
-                    password: '1234',
-                    isLft: false,
-                    githubUrl: 'github1',
-                    blogUrl: 'blog1',
-                    mainPosition: 'Backend',
-                    subPosition: 'DevOps',
-                    school: 'Test University',
-                    class: '4학년',
-                    roleId: 1,
-                },
-            },
-            {
-                id: 2,
-                userId: 2,
-                title: 'Test Post 2',
-                url: 'https://example.com/blog2',
-                date: new Date(),
-                category: 'Frontend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                likeCount: 0,
-                viewCount: 0,
-                user: {
-                    id: 2,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    isDeleted: false,
-                    name: 'testName2',
-                    email: 'test2@test.com',
-                    year: 2024,
-                    password: '1234',
-                    isLft: false,
-                    githubUrl: 'github2',
-                    blogUrl: 'blog2',
-                    mainPosition: 'Frontend',
-                    subPosition: 'UI/UX',
-                    school: 'Test University',
-                    class: '4학년',
-                    roleId: 2,
-                },
-            },
-        ];
-
-        updateBlogDto = {
-            title: 'Updated Title',
-            url: 'https://example.com/updated-blog',
-            date: new Date(),
-        };
-
-        updatedBlogEntity = {
-            ...blogEntity,
-            title: updateBlogDto.title,
-            url: updateBlogDto.url,
-            date: updateBlogDto.date,
-        };
     });
 
     it('should be defined', () => {
@@ -178,52 +48,68 @@ describe('BlogController', () => {
 
     describe('createBlog', () => {
         it('should successfully create a blog', async () => {
-            jest.spyOn(service, 'createBlog').mockResolvedValue(blogEntity);
+            jest.spyOn(service, 'createBlog').mockResolvedValue(getBlogDto);
 
-            const result = await controller.createBlog(createBlogDomain);
+            const result = await controller.createBlog(createBlogDto);
 
             expect(result).toEqual({
                 code: 201,
                 message: '게시물을 생성했습니다.',
-                data: blogEntity,
+                data: getBlogDto,
             });
-            expect(service.createBlog).toHaveBeenCalledWith(createBlogDomain);
+            expect(service.createBlog).toHaveBeenCalledWith(createBlogDto);
             expect(service.createBlog).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getBlog', () => {
-        it('should return a blog when found', async () => {
-            (service.getBlog as jest.Mock).mockResolvedValue(getBlogDomain);
+    describe('getBestBlogs', () => {
+        it('should return a list of best blogs based on popularity', async () => {
+            jest.spyOn(service, 'getBestBlogs').mockResolvedValue(
+                getBestBlogDtoList,
+            );
 
-            const result = await controller.getBlog(blogId);
+            const result = await controller.getBestBlogs(paginationQueryDto);
 
-            // getBlog 함수가 blogId로 호출되었는지 확인
-            expect(service.getBlog).toHaveBeenCalledWith(1);
-
-            // 반환된 결과가 createdBlog와 일치하는지 확인
             expect(result).toEqual({
                 code: 200,
-                message: '게시물을 조회했습니다.',
-                data: getBlogDomain,
+                message: '인기 게시물을 조회했습니다.',
+                data: getBestBlogDtoList,
             });
+            expect(service.getBestBlogs).toHaveBeenCalledWith(
+                paginationQueryDto,
+            );
+            expect(service.getBestBlogs).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getBlog', () => {
+        it('should return a list of blogs based on query', async () => {
+            jest.spyOn(service, 'getBlog').mockResolvedValue(getBlogDto);
+
+            const result = await controller.getBlog(1);
+
+            expect(result).toEqual({
+                code: 200,
+                message: '블로그 게시물을 조회했습니다.',
+                data: getBlogDto,
+            });
+            expect(service.getBlog).toHaveBeenCalledWith(1);
+            expect(service.getBlog).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getBlogs', () => {
         it('should return a list of blogs based on query', async () => {
-            jest.spyOn(service, 'getBlogs').mockResolvedValue(
-                blogEntities.map((blog) => new GetBlogDomain(blog)),
-            );
+            jest.spyOn(service, 'getBlogs').mockResolvedValue(getBlogDtoList);
 
-            const result = await controller.getBlogs(query);
+            const result = await controller.getBlogs(getBlogsQueryDto);
 
             expect(result).toEqual({
                 code: 200,
-                message: '블로그 게시물을 조회했습니다.',
-                data: blogEntities.map((blog) => new GetBlogDomain(blog)),
+                message: '블로그 게시물 목록을 조회했습니다.',
+                data: getBlogDtoList,
             });
-            expect(service.getBlogs).toHaveBeenCalledWith(query);
+            expect(service.getBlogs).toHaveBeenCalledWith(getBlogsQueryDto);
             expect(service.getBlogs).toHaveBeenCalledTimes(1);
         });
     });
@@ -231,59 +117,53 @@ describe('BlogController', () => {
     describe('getBlogsByUserId', () => {
         it('should return a list of blogs for a specific user', async () => {
             jest.spyOn(service, 'getBlogsByUserId').mockResolvedValue(
-                blogEntities.map((blog) => new GetBlogDomain(blog)),
+                blogEntities.map((blog) => new GetBlogDto(blog)),
             );
 
             const result = await controller.getBlogsByUserId(
-                createBlogDomain.userId,
-                query,
+                1,
+                paginationQueryDto,
             );
 
             expect(service.getBlogsByUserId).toHaveBeenCalledWith(
-                createBlogDomain.userId,
-                query,
+                1,
+                paginationQueryDto,
             );
             expect(service.getBlogsByUserId).toHaveBeenCalledTimes(1);
 
             expect(result).toEqual({
                 code: 200,
                 message: '블로그 게시물을 조회했습니다.',
-                data: blogEntities.map((blog) => new GetBlogDomain(blog)),
+                data: blogEntities.map((blog) => new GetBlogDto(blog)),
             });
         });
     });
 
     describe('deleteBlog', () => {
         it('should successfully delete a blog', async () => {
-            // deleteBlog 메서드를 모킹하여 성공 시 반환값을 설정
             jest.spyOn(service, 'deleteBlog').mockResolvedValue();
 
-            // deleteBlog 메서드를 호출하고 그 결과가 성공적으로 반환되었는지 확인
-            const result = await controller.deleteBlog(blogId);
+            const result = await controller.deleteBlog(1);
 
             expect(result).toEqual({
                 code: 200,
                 message: '게시물이 삭제되었습니다.',
             });
 
-            // deleteBlog가 blogId로 호출되었는지 확인
-            expect(service.deleteBlog).toHaveBeenCalledWith(blogId);
+            expect(service.deleteBlog).toHaveBeenCalledWith(1);
             expect(service.deleteBlog).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if the blog does not exist', async () => {
-            // deleteBlog가 NotFoundException을 던지도록 mock 설정
             jest.spyOn(service, 'deleteBlog').mockRejectedValue(
                 new NotFoundException('게시물을 찾을 수 없습니다.'),
             );
 
-            // deleteBlog 호출 시 NotFoundException 발생 확인
-            await expect(controller.deleteBlog(blogId)).rejects.toThrow(
+            await expect(controller.deleteBlog(1)).rejects.toThrow(
                 NotFoundException,
             );
 
-            // deleteBlog 메서드 호출 확인
-            expect(service.deleteBlog).toHaveBeenCalledWith(blogId);
+            expect(service.deleteBlog).toHaveBeenCalledWith(1);
             expect(service.deleteBlog).toHaveBeenCalledTimes(1);
         });
     });
@@ -291,39 +171,30 @@ describe('BlogController', () => {
     describe('updateBlog', () => {
         it('should successfully update a blog', async () => {
             jest.spyOn(service, 'updateBlog').mockResolvedValue(
-                new GetBlogDomain(updatedBlogEntity),
+                new GetBlogDto(updatedBlogEntity),
             );
 
-            const result = await controller.updateBlog(blogId, updateBlogDto);
+            const result = await controller.updateBlog(1, updateBlogDto);
 
             expect(result).toEqual({
                 code: 200,
                 message: '게시물이 수정되었습니다.',
-                data: new GetBlogDomain(updatedBlogEntity),
+                data: new GetBlogDto(updatedBlogEntity),
             });
-            expect(service.updateBlog).toHaveBeenCalledWith(
-                blogId,
-                updateBlogDto,
-            );
+            expect(service.updateBlog).toHaveBeenCalledWith(1, updateBlogDto);
             expect(service.updateBlog).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if the blog does not exist', async () => {
-            // updateBlog가 NotFoundException을 던지도록 mock 설정
             jest.spyOn(service, 'updateBlog').mockRejectedValue(
                 new NotFoundException('게시물을 찾을 수 없습니다.'),
             );
 
-            // updateBlog 호출 시 NotFoundException 발생 확인
             await expect(
-                controller.updateBlog(blogId, updateBlogDto),
+                controller.updateBlog(1, updateBlogDto),
             ).rejects.toThrow(NotFoundException);
 
-            // updateBlog 메서드 호출 확인
-            expect(service.updateBlog).toHaveBeenCalledWith(
-                blogId,
-                updateBlogDto,
-            );
+            expect(service.updateBlog).toHaveBeenCalledWith(1, updateBlogDto);
             expect(service.updateBlog).toHaveBeenCalledTimes(1);
         });
     });

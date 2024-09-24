@@ -11,10 +11,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
-import { CreateBlogDomain } from './dto/request/create.blog.domain';
-import { BlogEntity } from './entities/blog.entity';
+import { CreateBlogDto } from './dto/request/create.blog.dto';
 import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
-import { GetBlogDomain } from './dto/response/get.blog.domain';
+import { GetBlogDto } from './dto/response/get.blog.dto';
 import { PaginationQueryDto } from './dto/request/pagination.query.dto';
 import { UpdateBlogDto } from './dto/request/update.blog.dto';
 
@@ -28,13 +27,27 @@ export class BlogController {
         summary: '블로그 게시물 생성',
         description: '새로운 블로그 게시물을 생성합니다.',
     })
-    async createBlog(@Body() createBlogDomain: CreateBlogDomain): Promise<any> {
-        const blog: BlogEntity =
+    async createBlog(@Body() createBlogDomain: CreateBlogDto): Promise<any> {
+        const blog: GetBlogDto =
             await this.blogService.createBlog(createBlogDomain);
         return {
             code: 201,
             message: '게시물을 생성했습니다.',
             data: blog,
+        };
+    }
+
+    @Get('/best')
+    @ApiOperation({
+        summary: '블로그 게시물의 인기글 목록 조회',
+        description: '(조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
+    })
+    async getBestBlogs(@Query() query: PaginationQueryDto): Promise<any> {
+        const blogs: GetBlogDto[] = await this.blogService.getBestBlogs(query);
+        return {
+            code: 200,
+            message: '인기 게시물을 조회했습니다.',
+            data: blogs,
         };
     }
 
@@ -44,10 +57,10 @@ export class BlogController {
         description: '지정된 ID의 블로그 게시물을 조회합니다.',
     })
     async getBlog(@Param('blogId', ParseIntPipe) blogId: number): Promise<any> {
-        const blog: GetBlogDomain = await this.blogService.getBlog(blogId);
+        const blog: GetBlogDto = await this.blogService.getBlog(blogId);
         return {
             code: 200,
-            message: '게시물을 조회했습니다.',
+            message: '블로그 게시물을 조회했습니다.',
             data: blog,
         };
     }
@@ -58,10 +71,10 @@ export class BlogController {
         description: '블로그 게시물을 조회하고 검색합니다.',
     })
     async getBlogs(@Query() query: GetBlogsQueryDto): Promise<any> {
-        const blogs: GetBlogDomain[] = await this.blogService.getBlogs(query);
+        const blogs: GetBlogDto[] = await this.blogService.getBlogs(query);
         return {
             code: 200,
-            message: '블로그 게시물을 조회했습니다.',
+            message: '블로그 게시물 목록을 조회했습니다.',
             data: blogs,
         };
     }
@@ -75,7 +88,7 @@ export class BlogController {
         @Param('userId', ParseIntPipe) userId: number,
         @Query() query: PaginationQueryDto,
     ): Promise<any> {
-        const blogs: GetBlogDomain[] = await this.blogService.getBlogsByUserId(
+        const blogs: GetBlogDto[] = await this.blogService.getBlogsByUserId(
             userId,
             query,
         );

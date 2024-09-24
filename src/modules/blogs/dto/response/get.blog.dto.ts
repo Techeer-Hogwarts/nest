@@ -1,7 +1,7 @@
 import { User } from '@prisma/client';
 import { BlogEntity } from '../../entities/blog.entity';
 
-export class GetBlogDomain {
+export class GetBlogDto {
     readonly id: number;
     readonly userId: number;
     readonly title: string;

@@ -1,22 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateBlogDomain } from '../dto/request/create.blog.domain';
-import { BlogEntity } from '../entities/blog.entity';
 import { BlogRepository } from '../repository/blog.repository';
 import { NotFoundException } from '@nestjs/common';
-import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
-import { UpdateBlogDto } from '../dto/request/update.blog.dto';
+import {
+    bestBlogEntities,
+    blogEntities,
+    blogEntity,
+    createBlogDto,
+    getBlogsQueryDto,
+    paginationQueryDto,
+    updateBlogDto,
+    updatedBlogEntity,
+} from './mock-date';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
     let prismaService: PrismaService;
-    let createBlogDomain: CreateBlogDomain;
-    let blogEntity: BlogEntity;
-    let blogId: number;
-    let query: GetBlogsQueryDto;
-    let blogEntities: BlogEntity[];
-    let updateBlogDto: UpdateBlogDto;
-    let updatedBlogEntity: BlogEntity;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -25,6 +24,7 @@ describe('BlogRepository', () => {
                 {
                     provide: PrismaService,
                     useValue: {
+                        $queryRaw: jest.fn(),
                         blog: {
                             create: jest.fn(),
                             findUnique: jest.fn(),
@@ -38,134 +38,6 @@ describe('BlogRepository', () => {
 
         repository = module.get<BlogRepository>(BlogRepository);
         prismaService = module.get<PrismaService>(PrismaService);
-
-        createBlogDomain = {
-            userId: 1,
-            title: 'Test Post',
-            url: 'https://example.com/blog',
-            date: new Date(),
-            category: 'Backend',
-        };
-
-        blogEntity = {
-            id: 1,
-            userId: createBlogDomain.userId,
-            title: createBlogDomain.title,
-            url: createBlogDomain.url,
-            date: createBlogDomain.date,
-            category: createBlogDomain.category,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            isDeleted: false,
-            likeCount: 0,
-            viewCount: 0,
-            user: {
-                id: 1,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                name: 'testName',
-                email: 'test@test.com',
-                year: 2024,
-                password: '1234',
-                isLft: false,
-                githubUrl: 'github',
-                blogUrl: 'blog',
-                mainPosition: 'Backend',
-                subPosition: 'DevOps',
-                school: 'Test University',
-                class: '4학년',
-                roleId: 1,
-            },
-        };
-
-        blogId = 1;
-
-        query = {
-            keyword: 'Test',
-            category: 'Backend',
-            position: 'Backend',
-            offset: 0,
-            limit: 10,
-        };
-
-        blogEntities = [
-            {
-                id: 1,
-                userId: 1,
-                title: 'Test Post 1',
-                url: 'https://example.com/blog1',
-                date: new Date(),
-                category: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                likeCount: 0,
-                viewCount: 0,
-                user: {
-                    id: 1,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    isDeleted: false,
-                    name: 'testName1',
-                    email: 'test1@test.com',
-                    year: 2024,
-                    password: '1234',
-                    isLft: false,
-                    githubUrl: 'github1',
-                    blogUrl: 'blog1',
-                    mainPosition: 'Backend',
-                    subPosition: 'DevOps',
-                    school: 'Test University',
-                    class: '4학년',
-                    roleId: 1,
-                },
-            },
-            {
-                id: 2,
-                userId: 2,
-                title: 'Test Post 2',
-                url: 'https://example.com/blog2',
-                date: new Date(),
-                category: 'Frontend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                likeCount: 0,
-                viewCount: 0,
-                user: {
-                    id: 2,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    isDeleted: false,
-                    name: 'testName2',
-                    email: 'test2@test.com',
-                    year: 2024,
-                    password: '1234',
-                    isLft: false,
-                    githubUrl: 'github2',
-                    blogUrl: 'blog2',
-                    mainPosition: 'Frontend',
-                    subPosition: 'UI/UX',
-                    school: 'Test University',
-                    class: '4학년',
-                    roleId: 2,
-                },
-            },
-        ];
-
-        updateBlogDto = {
-            title: 'Updated Title',
-            url: 'https://example.com/updated-blog',
-            date: new Date(),
-        };
-
-        updatedBlogEntity = {
-            ...blogEntity,
-            title: updateBlogDto.title,
-            url: updateBlogDto.url,
-            date: updateBlogDto.date,
-        };
     });
 
     it('should be defined', () => {
@@ -175,38 +47,51 @@ describe('BlogRepository', () => {
     describe('createBlog', () => {
         it('should successfully create a blog', async () => {
             jest.spyOn(prismaService.blog, 'create').mockResolvedValue(
-                blogEntity,
+                blogEntity(),
             );
 
-            const result = await repository.createBlog(createBlogDomain);
+            const result = await repository.createBlog(createBlogDto);
 
-            expect(result).toEqual(blogEntity);
+            expect(result).toEqual(blogEntity());
             expect(prismaService.blog.create).toHaveBeenCalledWith({
-                data: createBlogDomain,
+                data: createBlogDto,
                 include: { user: true },
             });
             expect(prismaService.blog.create).toHaveBeenCalledTimes(1);
         });
     });
 
+    describe('getBestBlogs', () => {
+        it('should return a list of BlogEntity based on pagination query', async () => {
+            jest.spyOn(prismaService, '$queryRaw').mockResolvedValue(
+                bestBlogEntities,
+            );
+
+            const result = await repository.getBestBlogs(paginationQueryDto);
+
+            expect(result).toEqual(bestBlogEntities);
+            expect(prismaService.$queryRaw).toHaveBeenCalledWith(
+                expect.anything(),
+            );
+            expect(prismaService.$queryRaw).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('getBlog', () => {
         it('should return a blog entity if found', async () => {
             jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
-                blogEntity,
+                blogEntity(),
             );
 
-            // getBlog 메서드가 mockBlog를 반환하는지 확인
-            expect(await repository.getBlog(blogId)).toBe(blogEntity);
+            expect(await repository.getBlog(1)).toEqual(blogEntity());
         });
 
         it('should throw a NotFoundException if no blog is found', async () => {
-            // prisma.blog.findUnique 메서드를 mock하여 null 반환
             jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
                 null,
             );
 
-            // getBlog 메서드가 NotFoundException을 던지는지 확인
-            await expect(repository.getBlog(blogId)).rejects.toThrow(
+            await expect(repository.getBlog(1)).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -218,44 +103,46 @@ describe('BlogRepository', () => {
                 blogEntities,
             );
 
-            const result = await repository.getBlogs(query);
+            const result = await repository.getBlogs(getBlogsQueryDto);
 
             expect(result).toEqual(blogEntities);
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    ...(query.keyword && {
+                    ...(getBlogsQueryDto.keyword && {
                         OR: [
                             {
                                 title: {
-                                    contains: query.keyword,
+                                    contains: getBlogsQueryDto.keyword,
                                     mode: 'insensitive',
                                 },
                             },
                             {
                                 category: {
-                                    contains: query.keyword,
+                                    contains: getBlogsQueryDto.keyword,
                                     mode: 'insensitive',
                                 },
                             },
                             {
                                 user: {
                                     name: {
-                                        contains: query.keyword,
+                                        contains: getBlogsQueryDto.keyword,
                                         mode: 'insensitive',
                                     },
                                 },
                             },
                         ],
                     }),
-                    ...(query.category && { category: query.category }),
-                    ...(query.position && {
-                        user: { mainPosition: query.position },
+                    ...(getBlogsQueryDto.category && {
+                        category: getBlogsQueryDto.category,
+                    }),
+                    ...(getBlogsQueryDto.position && {
+                        user: { mainPosition: getBlogsQueryDto.position },
                     }),
                 },
                 include: { user: true },
-                skip: query.offset,
-                take: query.limit,
+                skip: getBlogsQueryDto.offset,
+                take: getBlogsQueryDto.limit,
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
@@ -268,19 +155,19 @@ describe('BlogRepository', () => {
             );
 
             const result = await repository.getBlogsByUserId(
-                createBlogDomain.userId,
-                query,
+                1,
+                paginationQueryDto,
             );
 
             expect(result).toEqual(blogEntities);
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    userId: createBlogDomain.userId,
+                    userId: 1,
                 },
                 include: { user: true },
-                skip: query.offset,
-                take: query.limit,
+                skip: paginationQueryDto.offset,
+                take: paginationQueryDto.limit,
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
@@ -289,14 +176,14 @@ describe('BlogRepository', () => {
     describe('deleteBlog', () => {
         it('should mark the blog as deleted', async () => {
             jest.spyOn(prismaService.blog, 'update').mockResolvedValue({
-                ...blogEntity,
+                ...blogEntity(),
                 isDeleted: true,
             });
 
-            await repository.deleteBlog(blogId);
+            await repository.deleteBlog(1);
 
             expect(prismaService.blog.update).toHaveBeenCalledWith({
-                where: { id: blogId },
+                where: { id: 1 },
                 data: { isDeleted: true },
             });
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
@@ -309,11 +196,11 @@ describe('BlogRepository', () => {
                 updatedBlogEntity,
             );
 
-            const result = await repository.updateBlog(blogId, updateBlogDto);
+            const result = await repository.updateBlog(1, updateBlogDto);
 
             expect(result).toEqual(updatedBlogEntity);
             expect(prismaService.blog.update).toHaveBeenCalledWith({
-                where: { id: blogId },
+                where: { id: 1 },
                 data: updateBlogDto,
                 include: { user: true },
             });
