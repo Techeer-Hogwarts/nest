@@ -18,11 +18,11 @@ import { PaginationQueryDto } from './dto/request/pagination.query.dto';
 import { UpdateBlogDto } from './dto/request/update.blog.dto';
 
 @ApiTags('blogs')
-@Controller('/blog')
+@Controller('/blogs')
 export class BlogController {
     constructor(private readonly blogService: BlogService) {}
 
-    @Post('/create')
+    @Post('')
     @ApiOperation({
         summary: '블로그 게시물 생성',
         description: '새로운 블로그 게시물을 생성합니다.',
