@@ -24,6 +24,7 @@ CREATE TABLE "User" (
     "subPosition" VARCHAR(100),
     "school" VARCHAR(100) NOT NULL,
     "class" VARCHAR(100) NOT NULL,
+    "isAuth" BOOLEAN NOT NULL DEFAULT false,
     "roleId" INTEGER NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -247,6 +248,9 @@ CREATE TABLE "Session" (
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");

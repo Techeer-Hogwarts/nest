@@ -5,6 +5,9 @@ import { CreateUserDTO } from '../dto/request/create.user.request';
 import { CreateResumeDTO } from '../../resumes/dto/request/create.resume.request';
 import { UserEntity } from '../entities/user.entity';
 import { ResumeType } from '../../../global/common/enums/ResumeType';
+import { LoginDTO } from '../dto/request/login.user.request';
+import { UnauthorizedException } from '@nestjs/common';
+import { Response, Request } from 'express';
 
 describe('UserController', () => {
     let userController: UserController;
@@ -18,6 +21,8 @@ describe('UserController', () => {
                     provide: UserService,
                     useValue: {
                         signUp: jest.fn(),
+                        login: jest.fn(),
+                        refresh: jest.fn(),
                     },
                 },
             ],
@@ -75,10 +80,10 @@ describe('UserController', () => {
 
             jest.spyOn(userService, 'signUp').mockResolvedValue(userEntity);
 
-            const result = await userController.signUp(
+            const result = await userController.signUp({
                 createUserDTO,
                 createResumeDTO,
-            );
+            });
 
             expect(userService.signUp).toHaveBeenCalledWith(
                 createUserDTO,
@@ -88,6 +93,130 @@ describe('UserController', () => {
                 code: 201,
                 message: '회원가입이 완료되었습니다.',
                 data: userEntity,
+            });
+        });
+    });
+
+    describe('login', () => {
+        it('로그인에 성공하면 JWT 토큰을 반환해야 한다', async () => {
+            const loginDTO: LoginDTO = {
+                email: 'test@test.com',
+                password: 'password123',
+            };
+
+            const accessToken = 'mockAccessToken';
+            const refreshToken = 'mockRefreshToken';
+            const mockResponse = {
+                cookie: jest.fn(),
+            } as unknown as Response;
+
+            jest.spyOn(userService, 'login').mockResolvedValue({
+                accessToken,
+                refreshToken,
+            });
+
+            const result = await userController.login(loginDTO, mockResponse);
+
+            expect(userService.login).toHaveBeenCalledWith(
+                loginDTO.email,
+                loginDTO.password,
+            );
+            expect(mockResponse.cookie).toHaveBeenCalledWith(
+                'access_token',
+                accessToken,
+                expect.any(Object),
+            );
+            expect(mockResponse.cookie).toHaveBeenCalledWith(
+                'refresh_token',
+                refreshToken,
+                expect.any(Object),
+            );
+            expect(result).toEqual({
+                code: 200,
+                message: '로그인이 완료되었습니다.',
+                data: {
+                    accessToken,
+                    refreshToken,
+                },
+            });
+        });
+
+        describe('logout', () => {
+            it('로그아웃 시 쿠키에서 JWT가 삭제되어야 한다', async () => {
+                const mockResponse = {
+                    cookie: jest.fn(),
+                } as unknown as Response;
+
+                const result = await userController.logout(mockResponse);
+
+                expect(mockResponse.cookie).toHaveBeenCalledWith(
+                    'access_token',
+                    '',
+                    expect.any(Object),
+                );
+                expect(mockResponse.cookie).toHaveBeenCalledWith(
+                    'refresh_token',
+                    '',
+                    expect.any(Object),
+                );
+                expect(result).toEqual({
+                    code: 200,
+                    message: '로그아웃이 완료되었습니다.',
+                    data: null,
+                });
+            });
+        });
+
+        describe('refresh', () => {
+            it('리프레시 토큰으로 액세스 토큰을 재발급해야 한다', async () => {
+                const mockRequest = {
+                    cookies: {
+                        refresh_token: 'mockRefreshToken',
+                    },
+                } as unknown as Request;
+
+                const mockResponse = {
+                    cookie: jest.fn(),
+                } as unknown as Response;
+
+                const newAccessToken = 'newMockAccessToken';
+
+                jest.spyOn(userService, 'refresh').mockResolvedValue(
+                    newAccessToken,
+                );
+
+                const result = await userController.refresh(
+                    mockRequest,
+                    mockResponse,
+                );
+
+                expect(userService.refresh).toHaveBeenCalledWith(
+                    'mockRefreshToken',
+                );
+                expect(mockResponse.cookie).toHaveBeenCalledWith(
+                    'access_token',
+                    newAccessToken,
+                    expect.any(Object),
+                );
+                expect(result).toEqual({
+                    code: 200,
+                    message: '토큰 재발급이 완료되었습니다.',
+                    data: { newAccessToken },
+                });
+            });
+
+            it('리프레시 토큰이 없으면 UnauthorizedException이 발생해야 한다', async () => {
+                const mockRequest = {
+                    cookies: {},
+                } as unknown as Request;
+
+                const mockResponse = {} as unknown as Response;
+
+                await expect(
+                    userController.refresh(mockRequest, mockResponse),
+                ).rejects.toThrow(
+                    new UnauthorizedException('No refresh token provided'),
+                );
             });
         });
     });

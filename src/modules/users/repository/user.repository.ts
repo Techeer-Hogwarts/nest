@@ -50,4 +50,26 @@ export class UserRepository {
 
         return user;
     }
+
+    // 이메일로 사용자 검색
+    async findOneByEmail(email: string): Promise<any> {
+        try {
+            // Prisma로 이메일로 사용자 검색
+            const user = await this.prisma.user.findUnique({
+                where: { email },
+            });
+
+            return user;
+        } catch (error) {
+            throw new Error('사용자 조회 중 오류가 발생했습니다.');
+        }
+    }
+
+    // ID로 사용자 찾기 (프로필 포함)
+    async findById(id: number): Promise<any> {
+        return await this.prisma.user.findUnique({
+            where: { id },
+            include: { profiles: true }, // 필요한 경우 관련된 프로필 정보 포함
+        });
+    }
 }

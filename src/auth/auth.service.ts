@@ -8,7 +8,6 @@ import {
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-
 @Injectable()
 export class AuthService {
     private transporter: nodemailer.Transporter;
