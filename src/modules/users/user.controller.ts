@@ -4,8 +4,6 @@ import {
     Body,
     Res,
     Req,
-    HttpCode,
-    HttpStatus,
     UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -88,7 +86,6 @@ export class UserController {
         summary: '로그아웃',
         description: '로그아웃을 진행합니다.',
     })
-    @HttpCode(HttpStatus.OK)
     async logout(@Res({ passthrough: true }) response: Response): Promise<any> {
         // 쿠키에서 JWT 삭제
         response.cookie('access_token', '', {
