@@ -45,6 +45,22 @@ services:
             - techeerism-db:/techeerism-db/pgadmin-data
         networks:
             - techeerism
+    
+    redis:
+        container_name: redis
+        image: redis:6.0.9-alpine
+        restart: always
+        ports:
+            - '6379:6379'
+    
+    redis-insight:
+        container_name: redis-insight
+        image: redislabs/redisinsight:latest
+        restart: always
+        ports:
+            - '8001:8001'
+        networks:
+            - techeerism    
 
 networks:
     techeerism:
