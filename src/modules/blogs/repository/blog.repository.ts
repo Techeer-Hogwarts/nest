@@ -1,17 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateBlogDto } from '../dto/request/create.blog.dto';
+import { CreateBlogRequest } from '../dto/request/create.blog.request';
 import { BlogEntity } from '../entities/blog.entity';
-import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
-import { PaginationQueryDto } from '../dto/request/pagination.query.dto';
-import { UpdateBlogDto } from '../dto/request/update.blog.dto';
+import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
+import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async createBlog(createBlogDomain: CreateBlogDto): Promise<BlogEntity> {
+    async createBlog(createBlogDomain: CreateBlogRequest): Promise<BlogEntity> {
         return this.prisma.blog.create({
             data: { ...createBlogDomain },
             include: { user: true },
@@ -19,7 +19,7 @@ export class BlogRepository {
     }
 
     async getBlog(blogId: number): Promise<BlogEntity> {
-        const blog = await this.prisma.blog.findUnique({
+        const blog: BlogEntity = await this.prisma.blog.findUnique({
             where: {
                 id: blogId,
                 isDeleted: false,
@@ -35,8 +35,14 @@ export class BlogRepository {
         return blog;
     }
 
-    async getBlogList(query: GetBlogsQueryDto): Promise<BlogEntity[]> {
-        const { keyword, category, position, offset = 0, limit = 10 } = query;
+    async getBlogList(query: GetBlogsQueryRequest): Promise<BlogEntity[]> {
+        const {
+            keyword,
+            category,
+            position,
+            offset = 0,
+            limit = 10,
+        }: GetBlogsQueryRequest = query;
 
         return this.prisma.blog.findMany({
             where: {
@@ -82,7 +88,7 @@ export class BlogRepository {
         userId: number,
         query: PaginationQueryDto,
     ): Promise<BlogEntity[]> {
-        const { offset = 0, limit = 10 } = query;
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         return this.prisma.blog.findMany({
             where: {
                 isDeleted: false,
@@ -105,9 +111,9 @@ export class BlogRepository {
 
     async updateBlog(
         blogId: number,
-        updateBlogDto: UpdateBlogDto,
+        updateBlogRequest: UpdateBlogRequest,
     ): Promise<BlogEntity> {
-        const { title, url, date } = updateBlogDto;
+        const { title, url, date }: UpdateBlogRequest = updateBlogRequest;
 
         return this.prisma.blog.update({
             where: {
@@ -125,9 +131,9 @@ export class BlogRepository {
     }
 
     async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {
-        const { offset = 0, limit = 10 } = query;
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         // 2주 계산
-        const twoWeeksAgo = new Date();
+        const twoWeeksAgo: Date = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
         // SQL 쿼리
         return this.prisma.$queryRaw<BlogEntity[]>(Prisma.sql`

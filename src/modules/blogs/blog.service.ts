@@ -1,40 +1,46 @@
 import { Injectable } from '@nestjs/common';
 import { BlogRepository } from './repository/blog.repository';
-import { CreateBlogDto } from './dto/request/create.blog.dto';
+import { CreateBlogRequest } from './dto/request/create.blog.request';
 import { BlogEntity } from './entities/blog.entity';
-import { GetBlogDto } from './dto/response/get.blog.dto';
-import { GetBlogsQueryDto } from './dto/request/get.blog.query.dto';
-import { PaginationQueryDto } from './dto/request/pagination.query.dto';
-import { UpdateBlogDto } from './dto/request/update.blog.dto';
+import { GetBlogResponse } from './dto/response/get.blog.response';
+import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
+import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
+import { UpdateBlogRequest } from './dto/request/update.blog.request';
 
 @Injectable()
 export class BlogService {
     constructor(private readonly blogRepository: BlogRepository) {}
 
-    async createBlog(createBlogDomain: CreateBlogDto): Promise<GetBlogDto> {
+    async createBlog(
+        createBlogRequest: CreateBlogRequest,
+    ): Promise<GetBlogResponse> {
         const blogEntity: BlogEntity =
-            await this.blogRepository.createBlog(createBlogDomain);
-        return new GetBlogDto(blogEntity);
+            await this.blogRepository.createBlog(createBlogRequest);
+        return new GetBlogResponse(blogEntity);
     }
 
-    async getBlog(blogId: number): Promise<GetBlogDto> {
+    async getBlog(blogId: number): Promise<GetBlogResponse> {
         const blogEntity: BlogEntity =
             await this.blogRepository.getBlog(blogId);
-        return new GetBlogDto(blogEntity);
+        return new GetBlogResponse(blogEntity);
     }
 
-    async getBlogList(query: GetBlogsQueryDto): Promise<GetBlogDto[]> {
-        const blogs = await this.blogRepository.getBlogList(query);
-        return blogs.map((blog) => new GetBlogDto(blog));
+    async getBlogList(query: GetBlogsQueryRequest): Promise<GetBlogResponse[]> {
+        const blogs: BlogEntity[] =
+            await this.blogRepository.getBlogList(query);
+        return blogs.map((blog: BlogEntity) => new GetBlogResponse(blog));
     }
 
     async getBlogsByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<GetBlogDto[]> {
+    ): Promise<GetBlogResponse[]> {
         // todo: 유저가 존재하는지 검사
-        const blogs = await this.blogRepository.getBlogsByUser(userId, query);
-        return blogs.map((blog) => new GetBlogDto(blog));
+        const blogs: BlogEntity[] = await this.blogRepository.getBlogsByUser(
+            userId,
+            query,
+        );
+        return blogs.map((blog: BlogEntity) => new GetBlogResponse(blog));
     }
 
     async deleteBlog(blogId: number): Promise<void> {
@@ -44,18 +50,19 @@ export class BlogService {
 
     async updateBlog(
         blogId: number,
-        updateBlogDto: UpdateBlogDto,
-    ): Promise<GetBlogDto> {
+        updateBlogRequest: UpdateBlogRequest,
+    ): Promise<GetBlogResponse> {
         await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
-        const blog = await this.blogRepository.updateBlog(
+        const blog: BlogEntity = await this.blogRepository.updateBlog(
             blogId,
-            updateBlogDto,
+            updateBlogRequest,
         );
-        return new GetBlogDto(blog);
+        return new GetBlogResponse(blog);
     }
 
-    async getBestBlogs(query: PaginationQueryDto): Promise<GetBlogDto[]> {
-        const blogs = await this.blogRepository.getBestBlogs(query);
-        return blogs.map((blog) => new GetBlogDto(blog));
+    async getBestBlogs(query: PaginationQueryDto): Promise<GetBlogResponse[]> {
+        const blogs: BlogEntity[] =
+            await this.blogRepository.getBestBlogs(query);
+        return blogs.map((blog: BlogEntity) => new GetBlogResponse(blog));
     }
 }

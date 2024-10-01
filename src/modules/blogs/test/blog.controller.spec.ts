@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogController } from '../blog.controller';
 import { BlogService } from '../blog.service';
-import { GetBlogDto } from '../dto/response/get.blog.dto';
+import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { NotFoundException } from '@nestjs/common';
 import {
     blogEntities,
@@ -14,12 +14,13 @@ import {
     updateBlogDto,
     updatedBlogEntity,
 } from './mock-data';
+import { BlogEntity } from '../entities/blog.entity';
 
 describe('BlogController', () => {
     let controller: BlogController;
     let service: BlogService;
 
-    beforeEach(async () => {
+    beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [BlogController],
             providers: [
@@ -42,12 +43,12 @@ describe('BlogController', () => {
         service = module.get<BlogService>(BlogService);
     });
 
-    it('should be defined', () => {
+    it('should be defined', (): void => {
         expect(controller).toBeDefined();
     });
 
-    describe('createBlog', () => {
-        it('should successfully create a blog', async () => {
+    describe('createBlog', (): void => {
+        it('should successfully create a blog', async (): Promise<void> => {
             jest.spyOn(service, 'createBlog').mockResolvedValue(getBlogDto);
 
             const result = await controller.createBlog(createBlogDto);
@@ -62,8 +63,8 @@ describe('BlogController', () => {
         });
     });
 
-    describe('getBestBlogs', () => {
-        it('should return a list of best blogs based on popularity', async () => {
+    describe('getBestBlogs', (): void => {
+        it('should return a list of best blogs based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestBlogs').mockResolvedValue(
                 getBestBlogDtoList,
             );
@@ -82,8 +83,8 @@ describe('BlogController', () => {
         });
     });
 
-    describe('getBlog', () => {
-        it('should return a list of blogs based on query', async () => {
+    describe('getBlog', (): void => {
+        it('should return a list of blogs based on query', async (): Promise<void> => {
             jest.spyOn(service, 'getBlog').mockResolvedValue(getBlogDto);
 
             const result = await controller.getBlog(1);
@@ -98,8 +99,8 @@ describe('BlogController', () => {
         });
     });
 
-    describe('getBlogList', () => {
-        it('should return a list of blogs based on query', async () => {
+    describe('getBlogList', (): void => {
+        it('should return a list of blogs based on query', async (): Promise<void> => {
             jest.spyOn(service, 'getBlogList').mockResolvedValue(
                 getBlogDtoList,
             );
@@ -116,10 +117,12 @@ describe('BlogController', () => {
         });
     });
 
-    describe('getBlogsByUser', () => {
-        it('should return a list of blogs for a specific user', async () => {
+    describe('getBlogsByUser', (): void => {
+        it('should return a list of blogs for a specific user', async (): Promise<void> => {
             jest.spyOn(service, 'getBlogsByUser').mockResolvedValue(
-                blogEntities.map((blog) => new GetBlogDto(blog)),
+                blogEntities.map(
+                    (blog: BlogEntity) => new GetBlogResponse(blog),
+                ),
             );
 
             const result = await controller.getBlogsByUser(
@@ -136,13 +139,15 @@ describe('BlogController', () => {
             expect(result).toEqual({
                 code: 200,
                 message: '블로그 게시물을 조회했습니다.',
-                data: blogEntities.map((blog) => new GetBlogDto(blog)),
+                data: blogEntities.map(
+                    (blog: BlogEntity) => new GetBlogResponse(blog),
+                ),
             });
         });
     });
 
-    describe('deleteBlog', () => {
-        it('should successfully delete a blog', async () => {
+    describe('deleteBlog', (): void => {
+        it('should successfully delete a blog', async (): Promise<any> => {
             jest.spyOn(service, 'deleteBlog').mockResolvedValue();
 
             const result = await controller.deleteBlog(1);
@@ -156,7 +161,7 @@ describe('BlogController', () => {
             expect(service.deleteBlog).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the blog does not exist', async () => {
+        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'deleteBlog').mockRejectedValue(
                 new NotFoundException('게시물을 찾을 수 없습니다.'),
             );
@@ -170,10 +175,10 @@ describe('BlogController', () => {
         });
     });
 
-    describe('updateBlog', () => {
-        it('should successfully update a blog', async () => {
+    describe('updateBlog', (): void => {
+        it('should successfully update a blog', async (): Promise<void> => {
             jest.spyOn(service, 'updateBlog').mockResolvedValue(
-                new GetBlogDto(updatedBlogEntity),
+                new GetBlogResponse(updatedBlogEntity),
             );
 
             const result = await controller.updateBlog(1, updateBlogDto);
@@ -181,13 +186,13 @@ describe('BlogController', () => {
             expect(result).toEqual({
                 code: 200,
                 message: '게시물이 수정되었습니다.',
-                data: new GetBlogDto(updatedBlogEntity),
+                data: new GetBlogResponse(updatedBlogEntity),
             });
             expect(service.updateBlog).toHaveBeenCalledWith(1, updateBlogDto);
             expect(service.updateBlog).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the blog does not exist', async () => {
+        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'updateBlog').mockRejectedValue(
                 new NotFoundException('게시물을 찾을 수 없습니다.'),
             );

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsString, IsUrl } from 'class-validator';
 
-export class UpdateBlogDto {
+export class UpdateBlogRequest {
     @IsString()
     @ApiProperty({
         example: '[Recoil] 상태관리란',

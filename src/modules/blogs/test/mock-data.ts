@@ -1,12 +1,12 @@
 // mock-data.ts
 import { BlogEntity } from '../entities/blog.entity';
-import { CreateBlogDto } from '../dto/request/create.blog.dto';
-import { GetBlogDto } from '../dto/response/get.blog.dto';
-import { GetBlogsQueryDto } from '../dto/request/get.blog.query.dto';
-import { UpdateBlogDto } from '../dto/request/update.blog.dto';
-import { PaginationQueryDto } from '../dto/request/pagination.query.dto';
+import { CreateBlogRequest } from '../dto/request/create.blog.request';
+import { GetBlogResponse } from '../dto/response/get.blog.response';
+import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
+import { UpdateBlogRequest } from '../dto/request/update.blog.request';
+import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 
-export const createBlogDto: CreateBlogDto = {
+export const createBlogDto: CreateBlogRequest = {
     userId: 1,
     title: 'Test Post',
     url: 'https://example.com/blog',
@@ -55,7 +55,7 @@ export const blogEntities: BlogEntity[] = [
     blogEntity({ id: 2 }),
 ];
 
-export const getBlogsQueryDto: GetBlogsQueryDto = {
+export const getBlogsQueryDto: GetBlogsQueryRequest = {
     keyword: 'Test',
     category: 'Backend',
     position: 'Backend',
@@ -63,13 +63,13 @@ export const getBlogsQueryDto: GetBlogsQueryDto = {
     limit: 10,
 };
 
-export const getBlogDto: GetBlogDto = new GetBlogDto(blogEntity());
+export const getBlogDto: GetBlogResponse = new GetBlogResponse(blogEntity());
 
-export const getBlogDtoList: GetBlogDto[] = blogEntities.map(
-    (blog) => new GetBlogDto(blog),
+export const getBlogDtoList: GetBlogResponse[] = blogEntities.map(
+    (blog) => new GetBlogResponse(blog),
 );
 
-export const updateBlogDto: UpdateBlogDto = {
+export const updateBlogDto: UpdateBlogRequest = {
     title: 'Updated Title',
     url: 'https://example.com/updated-blog',
     date: createBlogDto.date,
@@ -112,6 +112,6 @@ export const bestBlogEntities: BlogEntity[] = [
     }),
 ];
 
-export const getBestBlogDtoList: GetBlogDto[] = bestBlogEntities.map(
-    (blog) => new GetBlogDto(blog),
+export const getBestBlogDtoList: GetBlogResponse[] = bestBlogEntities.map(
+    (blog) => new GetBlogResponse(blog),
 );

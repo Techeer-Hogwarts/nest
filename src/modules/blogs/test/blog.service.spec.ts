@@ -14,13 +14,14 @@ import {
     updateBlogDto,
     updatedBlogEntity,
 } from './mock-data';
-import { GetBlogDto } from '../dto/response/get.blog.dto';
+import { GetBlogResponse } from '../dto/response/get.blog.response';
+import { BlogEntity } from '../entities/blog.entity';
 
-describe('BlogService', () => {
+describe('BlogService', (): void => {
     let service: BlogService;
     let repository: BlogRepository;
 
-    beforeEach(async () => {
+    beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 BlogService,
@@ -43,17 +44,18 @@ describe('BlogService', () => {
         repository = module.get<BlogRepository>(BlogRepository);
     });
 
-    it('should be defined', () => {
+    it('should be defined', (): void => {
         expect(service).toBeDefined();
     });
 
-    describe('createBlog', () => {
-        it('should successfully create a blog', async () => {
+    describe('createBlog', (): void => {
+        it('should successfully create a blog', async (): Promise<void> => {
             jest.spyOn(repository, 'createBlog').mockResolvedValue(
                 blogEntity(),
             );
 
-            const result: GetBlogDto = await service.createBlog(createBlogDto);
+            const result: GetBlogResponse =
+                await service.createBlog(createBlogDto);
 
             expect(result).toEqual(getBlogDto);
             expect(repository.createBlog).toHaveBeenCalledWith(createBlogDto);
@@ -61,19 +63,23 @@ describe('BlogService', () => {
         });
     });
 
-    describe('getBestBlogs', () => {
-        it('should return a list of GetBlogDto objects based on pagination query', async () => {
+    describe('getBestBlogs', (): void => {
+        it('should return a list of GetBlogResponse objects based on pagination query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBestBlogs').mockResolvedValue(
                 bestBlogEntities,
             );
 
-            const result = await service.getBestBlogs(paginationQueryDto);
+            const result: GetBlogResponse[] =
+                await service.getBestBlogs(paginationQueryDto);
 
             expect(result).toEqual(getBestBlogDtoList);
             // 반환된 모든 요소가 GetBlogDto의 인스턴스인지 확인
-            expect(result.every((item) => item instanceof GetBlogDto)).toBe(
-                true,
-            );
+            expect(
+                result.every(
+                    (item: GetBlogResponse): boolean =>
+                        item instanceof GetBlogResponse,
+                ),
+            ).toBe(true);
 
             expect(repository.getBestBlogs).toHaveBeenCalledWith(
                 paginationQueryDto,
@@ -82,32 +88,38 @@ describe('BlogService', () => {
         });
     });
 
-    describe('getBlog', () => {
-        it('should return a GetBlogDto when a blog is found', async () => {
+    describe('getBlog', (): void => {
+        it('should return a GetBlogResponse when a blog is found', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity());
 
-            const result: GetBlogDto = await service.getBlog(1);
+            const result: GetBlogResponse = await service.getBlog(1);
 
             expect(result).toEqual(getBlogDto);
-            expect(result).toBeInstanceOf(GetBlogDto);
+            expect(result).toBeInstanceOf(GetBlogResponse);
             expect(repository.getBlog).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getBlogList', () => {
-        it('should return a list of GetBlogDto objects based on query', async () => {
+    describe('getBlogList', (): void => {
+        it('should return a list of GetBlogResponse objects based on query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlogList').mockResolvedValue(
                 blogEntities,
             );
 
-            const result = await service.getBlogList(getBlogsQueryDto);
+            const result: GetBlogResponse[] =
+                await service.getBlogList(getBlogsQueryDto);
 
             expect(result).toEqual(
-                blogEntities.map((blog) => new GetBlogDto(blog)),
+                blogEntities.map(
+                    (blog: BlogEntity) => new GetBlogResponse(blog),
+                ),
             );
-            expect(result.every((item) => item instanceof GetBlogDto)).toBe(
-                true,
-            );
+            expect(
+                result.every(
+                    (item: GetBlogResponse): boolean =>
+                        item instanceof GetBlogResponse,
+                ),
+            ).toBe(true);
             expect(repository.getBlogList).toHaveBeenCalledWith(
                 getBlogsQueryDto,
             );
@@ -115,13 +127,16 @@ describe('BlogService', () => {
         });
     });
 
-    describe('getBlogsByUser', () => {
-        it('should return a list of GetBlogDto objects for a specific user', async () => {
+    describe('getBlogsByUser', (): void => {
+        it('should return a list of GetBlogResponse objects for a specific user', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlogsByUser').mockResolvedValue(
                 blogEntities,
             );
 
-            const result = await service.getBlogsByUser(1, paginationQueryDto);
+            const result: GetBlogResponse[] = await service.getBlogsByUser(
+                1,
+                paginationQueryDto,
+            );
 
             expect(repository.getBlogsByUser).toHaveBeenCalledWith(
                 1,
@@ -130,16 +145,21 @@ describe('BlogService', () => {
             expect(repository.getBlogsByUser).toHaveBeenCalledTimes(1);
 
             expect(result).toEqual(
-                blogEntities.map((blog) => new GetBlogDto(blog)),
+                blogEntities.map(
+                    (blog: BlogEntity) => new GetBlogResponse(blog),
+                ),
             );
-            expect(result.every((item) => item instanceof GetBlogDto)).toBe(
-                true,
-            );
+            expect(
+                result.every(
+                    (item: GetBlogResponse): boolean =>
+                        item instanceof GetBlogResponse,
+                ),
+            ).toBe(true);
         });
     });
 
-    describe('deleteBlog', () => {
-        it('should successfully delete a blog', async () => {
+    describe('deleteBlog', (): void => {
+        it('should successfully delete a blog', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity());
             jest.spyOn(repository, 'deleteBlog').mockResolvedValue(undefined);
 
@@ -151,7 +171,7 @@ describe('BlogService', () => {
             expect(repository.deleteBlog).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if blog does not exist', async () => {
+        it('should throw NotFoundException if blog does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlog').mockRejectedValue(
                 new NotFoundException(),
             );
@@ -164,17 +184,20 @@ describe('BlogService', () => {
         });
     });
 
-    describe('updateBlog', () => {
-        it('should successfully update a blog and return a GetBlogDto', async () => {
+    describe('updateBlog', (): void => {
+        it('should successfully update a blog and return a GetBlogResponse', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity());
             jest.spyOn(repository, 'updateBlog').mockResolvedValue(
                 updatedBlogEntity,
             );
 
-            const result = await service.updateBlog(1, updateBlogDto);
+            const result: GetBlogResponse = await service.updateBlog(
+                1,
+                updateBlogDto,
+            );
 
-            expect(result).toEqual(new GetBlogDto(updatedBlogEntity));
-            expect(result).toBeInstanceOf(GetBlogDto);
+            expect(result).toEqual(new GetBlogResponse(updatedBlogEntity));
+            expect(result).toBeInstanceOf(GetBlogResponse);
 
             expect(repository.getBlog).toHaveBeenCalledWith(1);
             expect(repository.updateBlog).toHaveBeenCalledWith(
@@ -186,7 +209,7 @@ describe('BlogService', () => {
             expect(repository.updateBlog).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the blog does not exist', async () => {
+        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlog').mockRejectedValue(
                 new NotFoundException(),
             );
