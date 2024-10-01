@@ -97,7 +97,7 @@ describe('BlogRepository', () => {
         });
     });
 
-    describe('getBlogs', () => {
+    describe('getBlogList', () => {
         it('should return a list of blog entities based on query', async () => {
             jest.spyOn(prismaService.blog, 'findMany').mockResolvedValue(
                 blogEntities,
@@ -148,13 +148,13 @@ describe('BlogRepository', () => {
         });
     });
 
-    describe('getBlogsByUserId', () => {
+    describe('getBlogsByUser', () => {
         it('should return a list of blog entities for the given user ID', async () => {
             jest.spyOn(prismaService.blog, 'findMany').mockResolvedValue(
                 blogEntities,
             );
 
-            const result = await repository.getBlogsByUserId(
+            const result = await repository.getBlogsByUser(
                 1,
                 paginationQueryDto,
             );

@@ -28,12 +28,12 @@ export class BlogService {
         return blogs.map((blog) => new GetBlogDto(blog));
     }
 
-    async getBlogsByUserId(
+    async getBlogsByUser(
         userId: number,
         query: PaginationQueryDto,
     ): Promise<GetBlogDto[]> {
         // todo: 유저가 존재하는지 검사
-        const blogs = await this.blogRepository.getBlogsByUserId(userId, query);
+        const blogs = await this.blogRepository.getBlogsByUser(userId, query);
         return blogs.map((blog) => new GetBlogDto(blog));
     }
 

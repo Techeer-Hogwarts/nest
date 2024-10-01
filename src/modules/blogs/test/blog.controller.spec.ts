@@ -30,7 +30,7 @@ describe('BlogController', () => {
                         getBestBlogs: jest.fn(),
                         getBlog: jest.fn(),
                         getBlogList: jest.fn(),
-                        getBlogsByUserId: jest.fn(),
+                        getBlogsByUser: jest.fn(),
                         deleteBlog: jest.fn(),
                         updateBlog: jest.fn(),
                     },
@@ -116,22 +116,22 @@ describe('BlogController', () => {
         });
     });
 
-    describe('getBlogsByUserId', () => {
+    describe('getBlogsByUser', () => {
         it('should return a list of blogs for a specific user', async () => {
-            jest.spyOn(service, 'getBlogsByUserId').mockResolvedValue(
+            jest.spyOn(service, 'getBlogsByUser').mockResolvedValue(
                 blogEntities.map((blog) => new GetBlogDto(blog)),
             );
 
-            const result = await controller.getBlogsByUserId(
+            const result = await controller.getBlogsByUser(
                 1,
                 paginationQueryDto,
             );
 
-            expect(service.getBlogsByUserId).toHaveBeenCalledWith(
+            expect(service.getBlogsByUser).toHaveBeenCalledWith(
                 1,
                 paginationQueryDto,
             );
-            expect(service.getBlogsByUserId).toHaveBeenCalledTimes(1);
+            expect(service.getBlogsByUser).toHaveBeenCalledTimes(1);
 
             expect(result).toEqual({
                 code: 200,

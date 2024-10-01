@@ -78,7 +78,7 @@ export class BlogRepository {
         });
     }
 
-    async getBlogsByUserId(
+    async getBlogsByUser(
         userId: number,
         query: PaginationQueryDto,
     ): Promise<BlogEntity[]> {

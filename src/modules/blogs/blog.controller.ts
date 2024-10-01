@@ -83,11 +83,11 @@ export class BlogController {
         summary: '유저 별 블로그 게시물 목록 조회',
         description: '지정된 유저의 블로그 게시물을 조회합니다.',
     })
-    async getBlogsByUserId(
+    async getBlogsByUser(
         @Param('userId') userId: number,
         @Query() query: PaginationQueryDto,
     ): Promise<any> {
-        const blogs: GetBlogDto[] = await this.blogService.getBlogsByUserId(
+        const blogs: GetBlogDto[] = await this.blogService.getBlogsByUser(
             userId,
             query,
         );
