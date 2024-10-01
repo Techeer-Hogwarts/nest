@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRepository } from '../repository/user.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateUserDTO } from '../dto/request/create.user.request';
+import { CreateUserRequest } from '../dto/request/create.user.request';
 import { UserEntity } from '../entities/user.entity';
 import { ConflictException } from '@nestjs/common';
 
@@ -41,7 +41,7 @@ describe('UserRepository', () => {
 
     describe('createUser', () => {
         it('사용자를 생성하고 콜백을 호출해야 한다', async () => {
-            const createUserDTO: CreateUserDTO = {
+            const createUserDTO: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
                 name: 'Test User',
@@ -111,7 +111,7 @@ describe('UserRepository', () => {
         });
 
         it('이메일이 중복되면 ConflictException을 던져야 한다', async () => {
-            const createUserDTO: CreateUserDTO = {
+            const createUserDTO: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
                 name: 'Test User',

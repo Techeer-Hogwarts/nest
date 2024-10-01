@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRepository } from '../repository/user.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateUserDTO } from '../dto/request/create.user.request';
+import { CreateUserRequest } from '../dto/request/create.user.request';
 import { UserEntity } from '../entities/user.entity';
 import { ConflictException } from '@nestjs/common';
 
@@ -41,7 +41,7 @@ describe('UserRepository', () => {
 
     describe('createUser', () => {
         it('사용자를 생성하고 콜백을 호출해야 한다', async () => {
-            const createUserDTO: CreateUserDTO = {
+            const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
                 name: 'Test User',
@@ -57,22 +57,22 @@ describe('UserRepository', () => {
 
             const newUser: UserEntity = {
                 id: 1,
-                email: createUserDTO.email,
-                name: createUserDTO.name,
-                password: createUserDTO.password,
+                email: createUserRequest.email,
+                name: createUserRequest.name,
+                password: createUserRequest.password,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 isDeleted: false,
                 isLft: false,
-                githubUrl: createUserDTO.githubUrl,
-                blogUrl: createUserDTO.blogUrl,
-                mainPosition: createUserDTO.mainPosition,
-                subPosition: createUserDTO.subPosition,
-                school: createUserDTO.school,
-                class: createUserDTO.class,
+                githubUrl: createUserRequest.githubUrl,
+                blogUrl: createUserRequest.blogUrl,
+                mainPosition: createUserRequest.mainPosition,
+                subPosition: createUserRequest.subPosition,
+                school: createUserRequest.school,
+                class: createUserRequest.class,
                 roleId: 3,
                 isAuth: true,
-                year: createUserDTO.year,
+                year: createUserRequest.year,
             };
 
             // 이메일 중복 체크
@@ -86,19 +86,19 @@ describe('UserRepository', () => {
             const callback = jest.fn();
 
             const result = await userRepository.createUser(
-                createUserDTO,
+                createUserRequest,
                 callback,
             );
 
             // findUnique가 올바르게 호출되었는지 확인
             expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-                where: { email: createUserDTO.email },
+                where: { email: createUserRequest.email },
                 include: { profiles: true }, // include 옵션 추가
             });
             // create 메서드가 호출되었는지 확인
             expect(prismaService.user.create).toHaveBeenCalledWith({
                 data: {
-                    ...createUserDTO,
+                    ...createUserRequest,
                     roleId: 3,
                     isAuth: true,
                 },
@@ -111,7 +111,7 @@ describe('UserRepository', () => {
         });
 
         it('이메일이 중복되면 ConflictException을 던져야 한다', async () => {
-            const createUserDTO: CreateUserDTO = {
+            const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
                 name: 'Test User',
@@ -127,7 +127,7 @@ describe('UserRepository', () => {
 
             const existingUser: UserEntity = {
                 id: 1,
-                email: createUserDTO.email,
+                email: createUserRequest.email,
                 name: 'Test User',
                 password: 'password123',
                 createdAt: new Date(),
@@ -142,7 +142,7 @@ describe('UserRepository', () => {
                 class: '재학',
                 roleId: 3,
                 isAuth: true,
-                year: createUserDTO.year,
+                year: createUserRequest.year,
             };
 
             // 중복된 사용자로 목킹
@@ -151,7 +151,7 @@ describe('UserRepository', () => {
             );
 
             await expect(
-                userRepository.createUser(createUserDTO, jest.fn()),
+                userRepository.createUser(createUserRequest, jest.fn()),
             ).rejects.toThrow(ConflictException);
         });
     });

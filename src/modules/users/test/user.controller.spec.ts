@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../user.controller';
 import { UserService } from '../user.service';
-import { CreateUserDTO } from '../dto/request/create.user.request';
+import { CreateUserRequest } from '../dto/request/create.user.request';
 import { CreateResumeDTO } from '../../resumes/dto/request/create.resume.request';
 import { UserEntity } from '../entities/user.entity';
 import { ResumeType } from '../../../global/common/enums/ResumeType';
-import { LoginDTO } from '../dto/request/login.user.request';
+import { LoginRequest } from '../dto/request/login.user.request';
 import { UnauthorizedException } from '@nestjs/common';
 import { Response, Request } from 'express';
 
@@ -38,7 +38,7 @@ describe('UserController', () => {
 
     describe('signUp', () => {
         it('이메일 인증이 완료되면 유저를 생성해야 한다', async () => {
-            const createUserDTO: CreateUserDTO = {
+            const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
                 name: 'test',
@@ -60,17 +60,17 @@ describe('UserController', () => {
 
             const userEntity: UserEntity = {
                 id: 1,
-                email: createUserDTO.email,
-                name: createUserDTO.name,
-                password: createUserDTO.password,
-                year: createUserDTO.year,
-                isLft: createUserDTO.isLft,
-                githubUrl: createUserDTO.githubUrl,
-                blogUrl: createUserDTO.blogUrl,
-                mainPosition: createUserDTO.mainPosition,
-                subPosition: createUserDTO.subPosition,
-                school: createUserDTO.school,
-                class: createUserDTO.class,
+                email: createUserRequest.email,
+                name: createUserRequest.name,
+                password: createUserRequest.password,
+                year: createUserRequest.year,
+                isLft: createUserRequest.isLft,
+                githubUrl: createUserRequest.githubUrl,
+                blogUrl: createUserRequest.blogUrl,
+                mainPosition: createUserRequest.mainPosition,
+                subPosition: createUserRequest.subPosition,
+                school: createUserRequest.school,
+                class: createUserRequest.class,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 isDeleted: false,
@@ -81,12 +81,12 @@ describe('UserController', () => {
             jest.spyOn(userService, 'signUp').mockResolvedValue(userEntity);
 
             const result = await userController.signUp({
-                createUserDTO,
+                createUserRequest,
                 createResumeDTO,
             });
 
             expect(userService.signUp).toHaveBeenCalledWith(
-                createUserDTO,
+                createUserRequest,
                 createResumeDTO,
             );
             expect(result).toEqual({
@@ -99,7 +99,7 @@ describe('UserController', () => {
 
     describe('login', () => {
         it('로그인에 성공하면 JWT 토큰을 반환해야 한다', async () => {
-            const loginDTO: LoginDTO = {
+            const loginDTO: LoginRequest = {
                 email: 'test@test.com',
                 password: 'password123',
             };
