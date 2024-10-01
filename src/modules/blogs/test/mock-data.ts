@@ -44,6 +44,7 @@ export const blogEntity = (overrides?: Partial<BlogEntity>): BlogEntity => {
             school: 'Test University',
             class: '4학년',
             roleId: 1,
+            isAuth: true,
         },
         ...overrides,
     };

@@ -1,4 +1,4 @@
-version: “3.8”
+version: "3.8"
 
 services:
     nest:
@@ -7,9 +7,8 @@ services:
             context: .
             dockerfile: Dockerfile
         restart: always
-        environment:
-            - TZ=Asia/Seoul
-            - DATABASE_URL=${DATABASE_URL}
+        env_file:
+            - .env
         ports:
             - '8000:8000'
         depends_on:
@@ -44,6 +43,22 @@ services:
             PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
         volumes:
             - techeerism-db:/techeerism-db/pgadmin-data
+        networks:
+            - techeerism
+
+    redis:
+        container_name: redis
+        image: redis:6.0.9-alpine
+        restart: always
+        ports:
+            - '6379:6379'
+
+    redis-insight:
+        container_name: redis-insight
+        image: redislabs/redisinsight:latest
+        restart: always
+        ports:
+            - '8001:8001'
         networks:
             - techeerism
 
