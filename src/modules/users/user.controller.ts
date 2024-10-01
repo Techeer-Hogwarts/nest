@@ -7,7 +7,7 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { LoginDTO } from './dto/request/login.user.request';
+import { LoginRequest } from './dto/request/login.user.request';
 import { Response, Request } from 'express';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { CreateUserWithResumeDTO } from './dto/request/create.user.with.resume.request';
@@ -27,11 +27,12 @@ export class UserController {
         type: CreateUserWithResumeDTO,
     })
     async signUp(
-        @Body() createUserWithResumeDTO: CreateUserWithResumeDTO,
+        @Body()
+        createUserWithResumeDTO: CreateUserWithResumeDTO,
     ): Promise<any> {
-        const { createUserDTO, createResumeDTO } = createUserWithResumeDTO;
+        const { createUserRequest, createResumeDTO } = createUserWithResumeDTO;
         const userEntity = await this.userService.signUp(
-            createUserDTO,
+            createUserRequest,
             createResumeDTO,
         );
         return {
@@ -45,19 +46,19 @@ export class UserController {
     @Post('/login')
     @ApiBody({
         description: '로그인에 필요한 정보',
-        type: LoginDTO,
+        type: LoginRequest,
     })
     @ApiOperation({
         summary: '로그인',
         description: '로그인을 진행합니다.',
     })
     async login(
-        @Body('loginDTO') loginDTO: LoginDTO,
+        @Body('') loginRequest: LoginRequest,
         @Res({ passthrough: true }) response: Response,
     ): Promise<any> {
         const { accessToken, refreshToken } = await this.userService.login(
-            loginDTO.email,
-            loginDTO.password,
+            loginRequest.email,
+            loginRequest.password,
         );
         // JWT를 HTTP-Only 쿠키로 저장
         response.cookie('access_token', accessToken, {

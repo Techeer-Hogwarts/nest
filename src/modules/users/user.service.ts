@@ -6,7 +6,7 @@ import {
 import { UserRepository } from './repository/user.repository';
 import { ResumeRepository } from '../resumes/repository/resume.repository';
 import { UserEntity } from './entities/user.entity';
-import { CreateUserDTO } from './dto/request/create.user.request';
+import { CreateUserRequest } from './dto/request/create.user.request';
 import { CreateResumeDTO } from '../resumes/dto/request/create.resume.request';
 import { AuthService } from '../../auth/auth.service';
 import * as bcrypt from 'bcryptjs';
@@ -22,12 +22,12 @@ export class UserService {
     ) {}
 
     async signUp(
-        createUserDTO: CreateUserDTO,
+        createUserRequest: CreateUserRequest,
         resumeData?: CreateResumeDTO,
     ): Promise<UserEntity> {
         // 이메일 인증 확인
         const isVerified = await this.authService.checkIfVerified(
-            createUserDTO.email,
+            createUserRequest.email,
         );
 
         if (!isVerified) {
@@ -37,23 +37,29 @@ export class UserService {
         }
 
         // 비밀번호 해시화
-        const hashedPassword = await bcrypt.hash(createUserDTO.password, 10);
-
-        // 새 객체에 해시된 비밀번호를 포함하여 유저 생성
+        const hashedPassword = await bcrypt.hash(
+            createUserRequest.password,
+            10,
+        );
         const newUserDTO = {
-            ...createUserDTO,
+            ...createUserRequest,
             password: hashedPassword,
         };
 
-        // 유저 생성 및 이력서 생성
-        return this.userRepository.createUser(newUserDTO, async (newUser) => {
-            if (resumeData) {
-                await this.resumeRepository.createResume(
-                    resumeData,
-                    newUser.id,
-                );
-            }
-        });
+        // 트랜잭션을 통해 User 생성 (Resume은 트랜잭션 외부에서 처리)
+        const newUser = await this.userRepository.createUser(
+            newUserDTO,
+            async () => {
+                // 추가 작업 없음
+            },
+        );
+
+        // 유저 생성 후 이력서 생성 (트랜잭션 외부에서 처리)
+        if (resumeData) {
+            await this.resumeRepository.createResume(resumeData, newUser.id);
+        }
+
+        return newUser;
     }
 
     // ID로 사용자 찾기

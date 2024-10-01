@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateUserDTO {
+export class CreateUserRequest {
     @IsString()
     @ApiProperty({
         example: '김테커',

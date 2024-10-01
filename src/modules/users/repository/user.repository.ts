@@ -1,30 +1,37 @@
 import { Injectable, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserEntity } from '../entities/user.entity';
-import { CreateUserDTO } from '../dto/request/create.user.request';
+import { CreateUserRequest } from '../dto/request/create.user.request';
 
 @Injectable()
 export class UserRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     async createUser(
-        createUserDTO: CreateUserDTO,
+        createUserRequest: CreateUserRequest,
         callback: (user: UserEntity) => Promise<void>,
     ): Promise<UserEntity> {
         return this.prisma.$transaction(async (tx) => {
-            await this.findUserByEmail(createUserDTO.email, tx);
-
+            // 이메일 중복 확인
+            const existingUser = await this.findUserByEmail(
+                createUserRequest.email,
+                tx,
+            );
+            if (existingUser) {
+                throw new ConflictException('이미 등록된 이메일입니다.');
+            }
+            // 유저 생성
             const newUser = await tx.user.create({
                 data: {
-                    ...createUserDTO,
+                    ...createUserRequest,
                     roleId: 3, // 기본 roleId
                     isAuth: true, // 인증된 사용자로 표시
                 },
-                include: { profiles: true },
+                include: { profiles: true }, // 필요한 관계 로드
             });
-
+            // 생성된 유저에 대한 추가 작업 (이력서 생성 등)
             try {
-                await callback(newUser);
+                await callback(newUser); // 이력서 생성
             } catch (error) {
                 Logger.error('사용자 생성 중 에러가 발생했습니다.', error);
                 throw error;

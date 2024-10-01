@@ -1,12 +1,12 @@
-import { CreateUserDTO } from './create.user.request';
+import { CreateUserRequest } from './create.user.request';
 import { CreateResumeDTO } from '../../../resumes/dto/request/create.resume.request';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserWithResumeDTO {
     @ApiProperty({
-        type: CreateUserDTO,
+        type: CreateUserRequest,
     })
-    createUserDTO: CreateUserDTO;
+    createUserRequest: CreateUserRequest;
 
     @ApiProperty({
         type: CreateResumeDTO,
