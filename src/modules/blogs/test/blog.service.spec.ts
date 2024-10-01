@@ -30,7 +30,7 @@ describe('BlogService', () => {
                         createBlog: jest.fn(),
                         getBestBlogs: jest.fn(),
                         getBlog: jest.fn(),
-                        getBlogs: jest.fn(),
+                        getBlogList: jest.fn(),
                         getBlogsByUserId: jest.fn(),
                         deleteBlog: jest.fn(),
                         updateBlog: jest.fn(),
@@ -94,11 +94,13 @@ describe('BlogService', () => {
         });
     });
 
-    describe('getBlogs', () => {
+    describe('getBlogList', () => {
         it('should return a list of GetBlogDto objects based on query', async () => {
-            jest.spyOn(repository, 'getBlogs').mockResolvedValue(blogEntities);
+            jest.spyOn(repository, 'getBlogList').mockResolvedValue(
+                blogEntities,
+            );
 
-            const result = await service.getBlogs(getBlogsQueryDto);
+            const result = await service.getBlogList(getBlogsQueryDto);
 
             expect(result).toEqual(
                 blogEntities.map((blog) => new GetBlogDto(blog)),
@@ -106,8 +108,10 @@ describe('BlogService', () => {
             expect(result.every((item) => item instanceof GetBlogDto)).toBe(
                 true,
             );
-            expect(repository.getBlogs).toHaveBeenCalledWith(getBlogsQueryDto);
-            expect(repository.getBlogs).toHaveBeenCalledTimes(1);
+            expect(repository.getBlogList).toHaveBeenCalledWith(
+                getBlogsQueryDto,
+            );
+            expect(repository.getBlogList).toHaveBeenCalledTimes(1);
         });
     });
 

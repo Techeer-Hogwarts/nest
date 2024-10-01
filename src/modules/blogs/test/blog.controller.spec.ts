@@ -29,7 +29,7 @@ describe('BlogController', () => {
                         createBlog: jest.fn(),
                         getBestBlogs: jest.fn(),
                         getBlog: jest.fn(),
-                        getBlogs: jest.fn(),
+                        getBlogList: jest.fn(),
                         getBlogsByUserId: jest.fn(),
                         deleteBlog: jest.fn(),
                         updateBlog: jest.fn(),
@@ -98,19 +98,21 @@ describe('BlogController', () => {
         });
     });
 
-    describe('getBlogs', () => {
+    describe('getBlogList', () => {
         it('should return a list of blogs based on query', async () => {
-            jest.spyOn(service, 'getBlogs').mockResolvedValue(getBlogDtoList);
+            jest.spyOn(service, 'getBlogList').mockResolvedValue(
+                getBlogDtoList,
+            );
 
-            const result = await controller.getBlogs(getBlogsQueryDto);
+            const result = await controller.getBlogList(getBlogsQueryDto);
 
             expect(result).toEqual({
                 code: 200,
                 message: '블로그 게시물 목록을 조회했습니다.',
                 data: getBlogDtoList,
             });
-            expect(service.getBlogs).toHaveBeenCalledWith(getBlogsQueryDto);
-            expect(service.getBlogs).toHaveBeenCalledTimes(1);
+            expect(service.getBlogList).toHaveBeenCalledWith(getBlogsQueryDto);
+            expect(service.getBlogList).toHaveBeenCalledTimes(1);
         });
     });
 

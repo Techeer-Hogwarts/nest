@@ -35,7 +35,7 @@ export class BlogRepository {
         return blog;
     }
 
-    async getBlogs(query: GetBlogsQueryDto): Promise<BlogEntity[]> {
+    async getBlogList(query: GetBlogsQueryDto): Promise<BlogEntity[]> {
         const { keyword, category, position, offset = 0, limit = 10 } = query;
 
         return this.prisma.blog.findMany({

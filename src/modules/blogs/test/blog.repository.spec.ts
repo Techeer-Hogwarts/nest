@@ -103,7 +103,7 @@ describe('BlogRepository', () => {
                 blogEntities,
             );
 
-            const result = await repository.getBlogs(getBlogsQueryDto);
+            const result = await repository.getBlogList(getBlogsQueryDto);
 
             expect(result).toEqual(blogEntities);
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({

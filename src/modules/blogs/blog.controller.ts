@@ -5,7 +5,6 @@ import {
     Get,
     Param,
     Query,
-    ParseIntPipe,
     Delete,
     Patch,
 } from '@nestjs/common';
@@ -56,7 +55,7 @@ export class BlogController {
         summary: '단일 블로그 게시물 조회',
         description: '지정된 ID의 블로그 게시물을 조회합니다.',
     })
-    async getBlog(@Param('blogId', ParseIntPipe) blogId: number): Promise<any> {
+    async getBlog(@Param('blogId') blogId: number): Promise<any> {
         const blog: GetBlogDto = await this.blogService.getBlog(blogId);
         return {
             code: 200,
@@ -70,8 +69,8 @@ export class BlogController {
         summary: '블로그 게시물 목록 조회 및 검색',
         description: '블로그 게시물을 조회하고 검색합니다.',
     })
-    async getBlogs(@Query() query: GetBlogsQueryDto): Promise<any> {
-        const blogs: GetBlogDto[] = await this.blogService.getBlogs(query);
+    async getBlogList(@Query() query: GetBlogsQueryDto): Promise<any> {
+        const blogs: GetBlogDto[] = await this.blogService.getBlogList(query);
         return {
             code: 200,
             message: '블로그 게시물 목록을 조회했습니다.',
@@ -85,7 +84,7 @@ export class BlogController {
         description: '지정된 유저의 블로그 게시물을 조회합니다.',
     })
     async getBlogsByUserId(
-        @Param('userId', ParseIntPipe) userId: number,
+        @Param('userId') userId: number,
         @Query() query: PaginationQueryDto,
     ): Promise<any> {
         const blogs: GetBlogDto[] = await this.blogService.getBlogsByUserId(
@@ -104,9 +103,7 @@ export class BlogController {
         summary: '블로그 게시물 삭제',
         description: '지정된 ID의 블로그 게시물을 삭제합니다.',
     })
-    async deleteBlog(
-        @Param('blogId', ParseIntPipe) blogId: number,
-    ): Promise<any> {
+    async deleteBlog(@Param('blogId') blogId: number): Promise<any> {
         await this.blogService.deleteBlog(blogId);
         return {
             code: 200,

@@ -23,8 +23,8 @@ export class BlogService {
         return new GetBlogDto(blogEntity);
     }
 
-    async getBlogs(query: GetBlogsQueryDto): Promise<GetBlogDto[]> {
-        const blogs = await this.blogRepository.getBlogs(query);
+    async getBlogList(query: GetBlogsQueryDto): Promise<GetBlogDto[]> {
+        const blogs = await this.blogRepository.getBlogList(query);
         return blogs.map((blog) => new GetBlogDto(blog));
     }
 
