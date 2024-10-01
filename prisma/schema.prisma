@@ -10,10 +10,10 @@ datasource db {
 model User {
   id            Int          @id @default(autoincrement())
   createdAt     DateTime     @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime     @updatedAt
   isDeleted     Boolean      @default(false)
   name          String
-  email         String
+  email         String       @unique
   year          Int
   password      String
   isLft         Boolean      @default(false)
@@ -23,7 +23,8 @@ model User {
   subPosition   String?      @db.VarChar(100) 
   school        String       @db.VarChar(100)
   class         String       @db.VarChar(100)
-  roleId        Int?
+  isAuth        Boolean      @default(false)
+  roleId        Int
 
   role          Role?          @relation("UserRoles", fields: [roleId], references: [id])          
   blogs         Blog[]         @relation("UserBlogs")
@@ -36,16 +37,20 @@ model User {
 }
 
 model Role {
-  id    Int    @id @default(autoincrement())
-  name  String @db.VarChar(100)
-
-  users User[] @relation("UserRoles")
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  users     User[]   @relation("UserRoles")
+  parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
+  parentId  Int?     
+  children  Role[]   @relation("RoleParent")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Profile {
   id            Int          @id @default(autoincrement())
   createdAt     DateTime     @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime     @updatedAt
   isDeleted     Boolean      @default(false)
   nickname      String       @db.VarChar(200)
   profileImage  String       @db.VarChar(200)
@@ -115,14 +120,14 @@ model TeamStack {
 model Resume {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   userId      Int
   title       String       @db.VarChar(100)
   url         String       @db.VarChar(100)
   isMain      Boolean      @default(false)
-  likeCount   Int
-  viewCount   Int
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
   ResumeType  ResumeType
 
   user        User         @relation("UserResumes", fields: [userId], references: [id])
