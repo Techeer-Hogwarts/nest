@@ -8,6 +8,8 @@ export class BlogEntity implements Blog {
     userId: number;
     title: string;
     url: string;
+    date: Date;
+    category: string;
     likeCount: number;
     viewCount: number;
 

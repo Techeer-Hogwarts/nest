@@ -136,13 +136,15 @@ model Resume {
 model Blog {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   userId      Int
   title       String       @db.VarChar(100)
   url         String       @db.VarChar(100)
-  likeCount   Int
-  viewCount   Int
+  date        DateTime
+  category    String       @db.VarChar(200)
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
 
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
