@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionController } from '../session.controller';
 import { SessionService } from '../session.service';
-import { GetSessionDto } from '../dto/response/get.session.dto';
+import { GetSessionDto } from '../dto/response/get.session.response';
 import { NotFoundException } from '@nestjs/common';
 import {
     createSessionDto,

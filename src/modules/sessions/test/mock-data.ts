@@ -1,9 +1,9 @@
 import { SessionEntity } from '../entities/session.entity';
-import { CreateSessionDto } from '../dto/request/create.session.dto';
-import { GetSessionDto } from '../dto/response/get.session.dto';
-import { UpdateSessionDto } from '../dto/request/update.session.dto';
-import { PaginationQueryDto } from '../dto/request/pagination.query.dto';
-import { GetSessionsQueryDto } from '../dto/request/get.session.query.dto';
+import { CreateSessionDto } from '../dto/request/create.session.request';
+import { GetSessionDto } from '../dto/response/get.session.response';
+import { UpdateSessionDto } from '../dto/request/update.session.request';
+import { PaginationQueryDto } from '../dto/request/pagination.query.request';
+import { GetSessionsQueryDto } from '../dto/request/get.session.query.request';
 
 const fixedDate = new Date('2024-09-24T10:00:00Z');
 
