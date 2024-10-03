@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
-export class UpdateSessionDto {
+export class UpdateSessionRequest {
     @IsString()
     @ApiProperty({
         example: 'https://example.com',

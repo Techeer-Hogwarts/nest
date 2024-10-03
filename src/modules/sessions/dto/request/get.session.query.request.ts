@@ -2,7 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class GetSessionsQueryDto {
+export class GetSessionsQueryRequest {
     @ApiPropertyOptional({ description: '검색할 키워드' })
     @IsOptional()
     @IsString()

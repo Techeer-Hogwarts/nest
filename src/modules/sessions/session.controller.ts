@@ -10,12 +10,12 @@ import {
     Query,
 } from '@nestjs/common';
 import { SessionService } from './session.service';
-import { CreateSessionDto } from './dto/request/create.session.request';
+import { CreateSessionRequest } from './dto/request/create.session.request';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { GetSessionDto } from './dto/response/get.session.response';
-import { UpdateSessionDto } from './dto/request/update.session.request';
-import { PaginationQueryDto } from './dto/request/pagination.query.request';
-import { GetSessionsQueryDto } from './dto/request/get.session.query.request';
+import { GetSessionResponse } from './dto/response/get.session.response';
+import { UpdateSessionRequest } from './dto/request/update.session.request';
+import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
+import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 
 @ApiTags('sessions')
 @Controller('/sessions')
@@ -28,10 +28,10 @@ export class SessionController {
         description: '새로운 세션 게시물을 생성합니다.',
     })
     async createSession(
-        @Body() createSessionDto: CreateSessionDto,
+        @Body() createSessionRequest: CreateSessionRequest,
     ): Promise<any> {
-        const session: GetSessionDto =
-            await this.sessionService.createSession(createSessionDto);
+        const session: GetSessionResponse =
+            await this.sessionService.createSession(createSessionRequest);
         return {
             code: 201,
             message: '세션 게시물을 생성했습니다.',
@@ -45,7 +45,7 @@ export class SessionController {
         description: '(조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
     })
     async getBestSessions(@Query() query: PaginationQueryDto): Promise<any> {
-        const sessions: GetSessionDto[] =
+        const sessions: GetSessionResponse[] =
             await this.sessionService.getBestSessions(query);
         return {
             code: 200,
@@ -59,8 +59,10 @@ export class SessionController {
         summary: '세션 게시물 목록 조회 및 검색',
         description: '세션 게시물을 조회하고 검색합니다.',
     })
-    async getSessionList(@Query() query: GetSessionsQueryDto): Promise<any> {
-        const sessions: GetSessionDto[] =
+    async getSessionList(
+        @Query() query: GetSessionsQueryRequest,
+    ): Promise<any> {
+        const sessions: GetSessionResponse[] =
             await this.sessionService.getSessionList(query);
         return {
             code: 200,
@@ -77,7 +79,7 @@ export class SessionController {
     async getSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
     ): Promise<any> {
-        const session: GetSessionDto =
+        const session: GetSessionResponse =
             await this.sessionService.getSession(sessionId);
         return {
             code: 200,
@@ -91,12 +93,12 @@ export class SessionController {
         summary: '유저 별 세션 게시물 목록 조회',
         description: '지정된 유저의 세션 게시물 목록을 조회합니다.',
     })
-    async getSessionsByUserId(
+    async getSessionsByUser(
         @Param('userId', ParseIntPipe) userId: number,
         @Query() query: PaginationQueryDto,
     ): Promise<any> {
-        const sessions: GetSessionDto[] =
-            await this.sessionService.getSessionsByUserId(userId, query);
+        const sessions: GetSessionResponse[] =
+            await this.sessionService.getSessionsByUser(userId, query);
         return {
             code: 200,
             message: '해당 유저의 세션 게시물 목록을 조회했습니다.',
@@ -126,11 +128,11 @@ export class SessionController {
     })
     async updateSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
-        @Body() updateSessionDto: UpdateSessionDto,
+        @Body() updateSessionRequest: UpdateSessionRequest,
     ): Promise<any> {
         const session = await this.sessionService.updateSession(
             sessionId,
-            updateSessionDto,
+            updateSessionRequest,
         );
         return {
             code: 200,

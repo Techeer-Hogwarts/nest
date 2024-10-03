@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionController } from '../session.controller';
 import { SessionService } from '../session.service';
-import { GetSessionDto } from '../dto/response/get.session.response';
+import { GetSessionResponse } from '../dto/response/get.session.response';
 import { NotFoundException } from '@nestjs/common';
 import {
-    createSessionDto,
-    getSessionDto,
-    getSessionDtoList,
-    getSessionsQueryDto,
+    createSessionRequest,
+    getSessionResponse,
+    getSessionListResponse,
+    getSessionsQueryRequest,
     paginationQueryDto,
     sessionEntities,
-    updateSessionDto,
+    updateSessionRequest,
     updatedSessionEntity,
 } from './mock-data';
 
@@ -18,7 +18,7 @@ describe('SessionController', () => {
     let controller: SessionController;
     let service: SessionService;
 
-    beforeEach(async () => {
+    beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [SessionController],
             providers: [
@@ -29,7 +29,7 @@ describe('SessionController', () => {
                         getSession: jest.fn(),
                         getBestSessions: jest.fn(),
                         getSessionList: jest.fn(),
-                        getSessionsByUserId: jest.fn(),
+                        getSessionsByUser: jest.fn(),
                         deleteSession: jest.fn(),
                         updateSession: jest.fn(),
                     },
@@ -41,50 +41,54 @@ describe('SessionController', () => {
         service = module.get<SessionService>(SessionService);
     });
 
-    it('should be defined', () => {
+    it('should be defined', (): void => {
         expect(controller).toBeDefined();
     });
 
-    describe('createSession', () => {
-        it('should successfully create a session', async () => {
+    describe('createSession', (): void => {
+        it('should successfully create a session', async (): Promise<void> => {
             jest.spyOn(service, 'createSession').mockResolvedValue(
-                getSessionDto,
+                getSessionResponse,
             );
 
-            const result = await controller.createSession(createSessionDto);
+            const result = await controller.createSession(createSessionRequest);
 
             expect(result).toEqual({
                 code: 201,
                 message: '세션 게시물을 생성했습니다.',
-                data: getSessionDto,
+                data: getSessionResponse,
             });
             expect(service.createSession).toHaveBeenCalledWith(
-                createSessionDto,
+                createSessionRequest,
             );
             expect(service.createSession).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getSession', () => {
-        it('should return a session', async () => {
-            jest.spyOn(service, 'getSession').mockResolvedValue(getSessionDto);
+    describe('getSession', (): void => {
+        it('should return a session', async (): Promise<void> => {
+            jest.spyOn(service, 'getSession').mockResolvedValue(
+                getSessionResponse,
+            );
 
             const result = await controller.getSession(1);
 
             expect(result).toEqual({
                 code: 200,
                 message: '세션 게시물을 조회했습니다.',
-                data: getSessionDto,
+                data: getSessionResponse,
             });
             expect(service.getSession).toHaveBeenCalledWith(1);
             expect(service.getSession).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getBestSessions', () => {
-        it('should return a list of best sessions based on popularity', async () => {
+    describe('getBestSessions', (): void => {
+        it('should return a list of best sessions based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestSessions').mockResolvedValue(
-                sessionEntities.map((session) => new GetSessionDto(session)),
+                sessionEntities.map(
+                    (session) => new GetSessionResponse(session),
+                ),
             );
 
             const result = await controller.getBestSessions(paginationQueryDto);
@@ -93,40 +97,44 @@ describe('SessionController', () => {
                 code: 200,
                 message: '인기 세션 게시물 목록을 조회했습니다.',
                 data: sessionEntities.map(
-                    (session) => new GetSessionDto(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             });
             expect(service.getBestSessions).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getSessionList', () => {
-        it('should return a list of sessions based on query', async () => {
+    describe('getSessionList', (): void => {
+        it('should return a list of sessions based on query', async (): Promise<void> => {
             jest.spyOn(service, 'getSessionList').mockResolvedValue(
-                getSessionDtoList,
+                getSessionListResponse,
             );
 
-            const result = await controller.getSessionList(getSessionsQueryDto);
+            const result = await controller.getSessionList(
+                getSessionsQueryRequest,
+            );
 
             expect(result).toEqual({
                 code: 200,
                 message: '세션 게시물 목록을 조회했습니다.',
-                data: getSessionDtoList,
+                data: getSessionListResponse,
             });
             expect(service.getSessionList).toHaveBeenCalledWith(
-                getSessionsQueryDto,
+                getSessionsQueryRequest,
             );
             expect(service.getSessionList).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getSessionsByUserId', () => {
-        it('should return a list of sessions for a specific user', async () => {
-            jest.spyOn(service, 'getSessionsByUserId').mockResolvedValue(
-                sessionEntities.map((session) => new GetSessionDto(session)),
+    describe('getSessionsByUser', (): void => {
+        it('should return a list of sessions for a specific user', async (): Promise<void> => {
+            jest.spyOn(service, 'getSessionsByUser').mockResolvedValue(
+                sessionEntities.map(
+                    (session) => new GetSessionResponse(session),
+                ),
             );
 
-            const result = await controller.getSessionsByUserId(
+            const result = await controller.getSessionsByUser(
                 1,
                 paginationQueryDto,
             );
@@ -135,19 +143,19 @@ describe('SessionController', () => {
                 code: 200,
                 message: '해당 유저의 세션 게시물 목록을 조회했습니다.',
                 data: sessionEntities.map(
-                    (session) => new GetSessionDto(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             });
-            expect(service.getSessionsByUserId).toHaveBeenCalledWith(
+            expect(service.getSessionsByUser).toHaveBeenCalledWith(
                 1,
                 paginationQueryDto,
             );
-            expect(service.getSessionsByUserId).toHaveBeenCalledTimes(1);
+            expect(service.getSessionsByUser).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('deleteSession', () => {
-        it('should successfully delete a session', async () => {
+    describe('deleteSession', (): void => {
+        it('should successfully delete a session', async (): Promise<void> => {
             jest.spyOn(service, 'deleteSession').mockResolvedValue();
 
             const result = await controller.deleteSession(1);
@@ -161,7 +169,7 @@ describe('SessionController', () => {
             expect(service.deleteSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the session does not exist', async () => {
+        it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'deleteSession').mockRejectedValue(
                 new NotFoundException('게시물을 찾을 수 없습니다.'),
             );
@@ -175,38 +183,41 @@ describe('SessionController', () => {
         });
     });
 
-    describe('updateSession', () => {
-        it('should successfully update a session', async () => {
+    describe('updateSession', (): void => {
+        it('should successfully update a session', async (): Promise<void> => {
             jest.spyOn(service, 'updateSession').mockResolvedValue(
-                new GetSessionDto(updatedSessionEntity),
+                new GetSessionResponse(updatedSessionEntity),
             );
 
-            const result = await controller.updateSession(1, updateSessionDto);
+            const result = await controller.updateSession(
+                1,
+                updateSessionRequest,
+            );
 
             expect(result).toEqual({
                 code: 200,
                 message: '세션 게시물이 수정되었습니다.',
-                data: new GetSessionDto(updatedSessionEntity),
+                data: new GetSessionResponse(updatedSessionEntity),
             });
             expect(service.updateSession).toHaveBeenCalledWith(
                 1,
-                updateSessionDto,
+                updateSessionRequest,
             );
             expect(service.updateSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the session does not exist', async () => {
+        it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'updateSession').mockRejectedValue(
                 new NotFoundException('게시물을 찾을 수 없습니다.'),
             );
 
             await expect(
-                controller.updateSession(1, updateSessionDto),
+                controller.updateSession(1, updateSessionRequest),
             ).rejects.toThrow(NotFoundException);
 
             expect(service.updateSession).toHaveBeenCalledWith(
                 1,
-                updateSessionDto,
+                updateSessionRequest,
             );
             expect(service.updateSession).toHaveBeenCalledTimes(1);
         });

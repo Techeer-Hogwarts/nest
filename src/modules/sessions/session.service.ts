@@ -1,49 +1,53 @@
 import { Injectable } from '@nestjs/common';
-import { CreateSessionDto } from './dto/request/create.session.request';
+import { CreateSessionRequest } from './dto/request/create.session.request';
 import { SessionRepository } from './repository/session.repository';
 import { SessionEntity } from './entities/session.entity';
-import { GetSessionDto } from './dto/response/get.session.response';
-import { UpdateSessionDto } from './dto/request/update.session.request';
-import { PaginationQueryDto } from './dto/request/pagination.query.request';
-import { GetSessionsQueryDto } from './dto/request/get.session.query.request';
+import { GetSessionResponse } from './dto/response/get.session.response';
+import { UpdateSessionRequest } from './dto/request/update.session.request';
+import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
+import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 
 @Injectable()
 export class SessionService {
     constructor(private readonly sessionRepository: SessionRepository) {}
 
     async createSession(
-        createSessionDto: CreateSessionDto,
-    ): Promise<GetSessionDto> {
+        createSessionRequest: CreateSessionRequest,
+    ): Promise<GetSessionResponse> {
         const sessionEntity: SessionEntity =
-            await this.sessionRepository.createSession(createSessionDto);
-        return new GetSessionDto(sessionEntity);
+            await this.sessionRepository.createSession(createSessionRequest);
+        return new GetSessionResponse(sessionEntity);
     }
 
-    async getSession(sessionId: number): Promise<GetSessionDto> {
+    async getSession(sessionId: number): Promise<GetSessionResponse> {
         const sessionEntity: SessionEntity =
             await this.sessionRepository.getSession(sessionId);
-        return new GetSessionDto(sessionEntity);
+        return new GetSessionResponse(sessionEntity);
     }
 
-    async getBestSessions(query: PaginationQueryDto): Promise<GetSessionDto[]> {
+    async getBestSessions(
+        query: PaginationQueryDto,
+    ): Promise<GetSessionResponse[]> {
         const sessions = await this.sessionRepository.getBestSessions(query);
-        return sessions.map((session) => new GetSessionDto(session));
+        return sessions.map((session) => new GetSessionResponse(session));
     }
 
-    async getSessionList(query: GetSessionsQueryDto): Promise<GetSessionDto[]> {
+    async getSessionList(
+        query: GetSessionsQueryRequest,
+    ): Promise<GetSessionResponse[]> {
         const sessions = await this.sessionRepository.getSessionList(query);
-        return sessions.map((session) => new GetSessionDto(session));
+        return sessions.map((session) => new GetSessionResponse(session));
     }
 
-    async getSessionsByUserId(
+    async getSessionsByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<GetSessionDto[]> {
-        const sessions = await this.sessionRepository.getSessionsByUserId(
+    ): Promise<GetSessionResponse[]> {
+        const sessions = await this.sessionRepository.getSessionsByUser(
             userId,
             query,
         );
-        return sessions.map((session) => new GetSessionDto(session));
+        return sessions.map((session) => new GetSessionResponse(session));
     }
 
     async deleteSession(sessionId: number): Promise<void> {
@@ -53,13 +57,13 @@ export class SessionService {
 
     async updateSession(
         sessionId: number,
-        updateSessionDto: UpdateSessionDto,
-    ): Promise<GetSessionDto> {
+        updateSessionRequest: UpdateSessionRequest,
+    ): Promise<GetSessionResponse> {
         await this.sessionRepository.getSession(sessionId);
         const session = await this.sessionRepository.updateSession(
             sessionId,
-            updateSessionDto,
+            updateSessionRequest,
         );
-        return new GetSessionDto(session);
+        return new GetSessionResponse(session);
     }
 }

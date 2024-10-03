@@ -1,21 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateSessionDto } from '../dto/request/create.session.request';
+import { CreateSessionRequest } from '../dto/request/create.session.request';
 import { SessionEntity } from '../entities/session.entity';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateSessionDto } from '../dto/request/update.session.request';
-import { PaginationQueryDto } from '../dto/request/pagination.query.request';
+import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { Prisma } from '@prisma/client';
-import { GetSessionsQueryDto } from '../dto/request/get.session.query.request';
+import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
+import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 
 @Injectable()
 export class SessionRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     async createSession(
-        createSessionDto: CreateSessionDto,
+        createSessionRequest: CreateSessionRequest,
     ): Promise<SessionEntity> {
         return this.prisma.session.create({
-            data: { ...createSessionDto },
+            data: { ...createSessionRequest },
             include: { user: true },
         });
     }
@@ -52,7 +52,9 @@ export class SessionRepository {
         `);
     }
 
-    async getSessionList(query: GetSessionsQueryDto): Promise<SessionEntity[]> {
+    async getSessionList(
+        query: GetSessionsQueryRequest,
+    ): Promise<SessionEntity[]> {
         const {
             keyword,
             category,
@@ -86,7 +88,7 @@ export class SessionRepository {
         });
     }
 
-    async getSessionsByUserId(
+    async getSessionsByUser(
         userId: number,
         query: PaginationQueryDto,
     ): Promise<SessionEntity[]> {
@@ -113,7 +115,7 @@ export class SessionRepository {
 
     async updateSession(
         sessionId: number,
-        updateSessionDto: UpdateSessionDto,
+        updateSessionRequest: UpdateSessionRequest,
     ): Promise<SessionEntity> {
         const {
             thumbnail,
@@ -124,7 +126,7 @@ export class SessionRepository {
             category,
             videoUrl,
             fileUrl,
-        } = updateSessionDto;
+        } = updateSessionRequest;
 
         return this.prisma.session.update({
             where: {

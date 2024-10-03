@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString } from 'class-validator';
 
-export class CreateSessionDto {
+export class CreateSessionRequest {
     @IsNumber()
     @ApiProperty({
         example: 1,

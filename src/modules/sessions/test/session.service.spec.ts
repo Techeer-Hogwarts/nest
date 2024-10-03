@@ -1,26 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionService } from '../session.service';
 import { SessionRepository } from '../repository/session.repository';
-import { GetSessionDto } from '../dto/response/get.session.response';
+import { GetSessionResponse } from '../dto/response/get.session.response';
 import { NotFoundException } from '@nestjs/common';
 import {
     sessionEntity,
-    createSessionDto,
-    getSessionDto,
-    updateSessionDto,
+    createSessionRequest,
+    getSessionResponse,
+    updateSessionRequest,
     updatedSessionEntity,
     sessionEntities,
     paginationQueryDto,
     bestSessionEntities,
-    getBestSessionDtoList,
-    getSessionsQueryDto,
+    getBestSessionsResponse,
+    getSessionsQueryRequest,
 } from './mock-data';
 
 describe('SessionService', () => {
     let service: SessionService;
     let repository: SessionRepository;
 
-    beforeEach(async () => {
+    beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 SessionService,
@@ -31,7 +31,7 @@ describe('SessionService', () => {
                         getSession: jest.fn(),
                         getBestSessions: jest.fn(),
                         getSessionList: jest.fn(),
-                        getSessionsByUserId: jest.fn(),
+                        getSessionsByUser: jest.fn(),
                         deleteSession: jest.fn(),
                         updateSession: jest.fn(),
                     },
@@ -43,53 +43,53 @@ describe('SessionService', () => {
         repository = module.get<SessionRepository>(SessionRepository);
     });
 
-    it('should be defined', () => {
+    it('should be defined', (): void => {
         expect(service).toBeDefined();
     });
 
-    describe('createSession', () => {
-        it('should successfully create a session', async () => {
+    describe('createSession', (): void => {
+        it('should successfully create a session', async (): Promise<void> => {
             jest.spyOn(repository, 'createSession').mockResolvedValue(
                 sessionEntity(),
             );
 
-            const result: GetSessionDto =
-                await service.createSession(createSessionDto);
+            const result: GetSessionResponse =
+                await service.createSession(createSessionRequest);
 
-            expect(result).toEqual(getSessionDto);
+            expect(result).toEqual(getSessionResponse);
             expect(repository.createSession).toHaveBeenCalledWith(
-                createSessionDto,
+                createSessionRequest,
             );
             expect(repository.createSession).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getSession', () => {
-        it('should return a GetSessionDto when a session is found', async () => {
+    describe('getSession', (): void => {
+        it('should return a GetSessionDto when a session is found', async (): Promise<void> => {
             jest.spyOn(repository, 'getSession').mockResolvedValue(
                 sessionEntity(),
             );
 
-            const result: GetSessionDto = await service.getSession(1);
+            const result: GetSessionResponse = await service.getSession(1);
 
-            expect(result).toEqual(getSessionDto);
-            expect(result).toBeInstanceOf(GetSessionDto);
+            expect(result).toEqual(getSessionResponse);
+            expect(result).toBeInstanceOf(GetSessionResponse);
             expect(repository.getSession).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getBestSessions', () => {
-        it('should return a list of GetSessionDto objects based on pagination query', async () => {
+    describe('getBestSessions', (): void => {
+        it('should return a list of GetSessionDto objects based on pagination query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBestSessions').mockResolvedValue(
                 bestSessionEntities,
             );
 
             const result = await service.getBestSessions(paginationQueryDto);
 
-            expect(result).toEqual(getBestSessionDtoList);
-            expect(result.every((item) => item instanceof GetSessionDto)).toBe(
-                true,
-            );
+            expect(result).toEqual(getBestSessionsResponse);
+            expect(
+                result.every((item) => item instanceof GetSessionResponse),
+            ).toBe(true);
             expect(repository.getBestSessions).toHaveBeenCalledWith(
                 paginationQueryDto,
             );
@@ -97,54 +97,60 @@ describe('SessionService', () => {
         });
     });
 
-    describe('getSessionList', () => {
-        it('should return a list of GetSessionDto objects based on query', async () => {
+    describe('getSessionList', (): void => {
+        it('should return a list of GetSessionDto objects based on query', async (): Promise<void> => {
             jest.spyOn(repository, 'getSessionList').mockResolvedValue(
                 sessionEntities,
             );
 
-            const result = await service.getSessionList(getSessionsQueryDto);
+            const result = await service.getSessionList(
+                getSessionsQueryRequest,
+            );
 
             expect(result).toEqual(
-                sessionEntities.map((session) => new GetSessionDto(session)),
+                sessionEntities.map(
+                    (session) => new GetSessionResponse(session),
+                ),
             );
-            expect(result.every((item) => item instanceof GetSessionDto)).toBe(
-                true,
-            );
+            expect(
+                result.every((item) => item instanceof GetSessionResponse),
+            ).toBe(true);
             expect(repository.getSessionList).toHaveBeenCalledWith(
-                getSessionsQueryDto,
+                getSessionsQueryRequest,
             );
             expect(repository.getSessionList).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('getSesisonsByUserId', () => {
-        it('should return a list of GetSessionDto objects for a specific user', async () => {
-            jest.spyOn(repository, 'getSessionsByUserId').mockResolvedValue(
+    describe('getSesisonsByUser', (): void => {
+        it('should return a list of GetSessionDto objects for a specific user', async (): Promise<void> => {
+            jest.spyOn(repository, 'getSessionsByUser').mockResolvedValue(
                 sessionEntities,
             );
 
-            const result = await service.getSessionsByUserId(
+            const result = await service.getSessionsByUser(
                 1,
                 paginationQueryDto,
             );
 
-            expect(repository.getSessionsByUserId).toHaveBeenCalledWith(
+            expect(repository.getSessionsByUser).toHaveBeenCalledWith(
                 1,
                 paginationQueryDto,
             );
-            expect(repository.getSessionsByUserId).toHaveBeenCalledTimes(1);
+            expect(repository.getSessionsByUser).toHaveBeenCalledTimes(1);
             expect(result).toEqual(
-                sessionEntities.map((session) => new GetSessionDto(session)),
+                sessionEntities.map(
+                    (session) => new GetSessionResponse(session),
+                ),
             );
-            expect(result.every((item) => item instanceof GetSessionDto)).toBe(
-                true,
-            );
+            expect(
+                result.every((item) => item instanceof GetSessionResponse),
+            ).toBe(true);
         });
     });
 
-    describe('deleteSession', () => {
-        it('should successfully delete a session', async () => {
+    describe('deleteSession', (): void => {
+        it('should successfully delete a session', async (): Promise<void> => {
             jest.spyOn(repository, 'getSession').mockResolvedValue(
                 sessionEntity(),
             );
@@ -160,7 +166,7 @@ describe('SessionService', () => {
             expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if session does not exist', async () => {
+        it('should throw NotFoundException if session does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'getSession').mockRejectedValue(
                 new NotFoundException(),
             );
@@ -173,8 +179,8 @@ describe('SessionService', () => {
         });
     });
 
-    describe('updateSession', () => {
-        it('should successfully update a session and return a GetSessionDto', async () => {
+    describe('updateSession', (): void => {
+        it('should successfully update a session and return a GetSessionDto', async (): Promise<void> => {
             jest.spyOn(repository, 'getSession').mockResolvedValue(
                 sessionEntity(),
             );
@@ -182,28 +188,30 @@ describe('SessionService', () => {
                 updatedSessionEntity,
             );
 
-            const result = await service.updateSession(1, updateSessionDto);
+            const result = await service.updateSession(1, updateSessionRequest);
 
-            expect(result).toEqual(new GetSessionDto(updatedSessionEntity));
-            expect(result).toBeInstanceOf(GetSessionDto);
+            expect(result).toEqual(
+                new GetSessionResponse(updatedSessionEntity),
+            );
+            expect(result).toBeInstanceOf(GetSessionResponse);
 
             expect(repository.getSession).toHaveBeenCalledWith(1);
             expect(repository.updateSession).toHaveBeenCalledWith(
                 1,
-                updateSessionDto,
+                updateSessionRequest,
             );
 
             expect(repository.getSession).toHaveBeenCalledTimes(1);
             expect(repository.updateSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the session does not exist', async () => {
+        it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'getSession').mockRejectedValue(
                 new NotFoundException(),
             );
 
             await expect(
-                service.updateSession(1, updateSessionDto),
+                service.updateSession(1, updateSessionRequest),
             ).rejects.toThrow(NotFoundException);
 
             expect(repository.getSession).toHaveBeenCalledWith(1);

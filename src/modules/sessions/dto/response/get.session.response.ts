@@ -1,7 +1,7 @@
 import { User } from '@prisma/client';
 import { SessionEntity } from '../../entities/session.entity';
 
-export class GetSessionDto {
+export class GetSessionResponse {
     readonly id: number;
     readonly userId: number;
     readonly thumbnail: string;

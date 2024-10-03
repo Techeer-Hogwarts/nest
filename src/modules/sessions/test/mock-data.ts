@@ -1,13 +1,13 @@
 import { SessionEntity } from '../entities/session.entity';
-import { CreateSessionDto } from '../dto/request/create.session.request';
-import { GetSessionDto } from '../dto/response/get.session.response';
-import { UpdateSessionDto } from '../dto/request/update.session.request';
-import { PaginationQueryDto } from '../dto/request/pagination.query.request';
-import { GetSessionsQueryDto } from '../dto/request/get.session.query.request';
+import { CreateSessionRequest } from '../dto/request/create.session.request';
+import { GetSessionResponse } from '../dto/response/get.session.response';
+import { UpdateSessionRequest } from '../dto/request/update.session.request';
+import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
+import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 
 const fixedDate = new Date('2024-09-24T10:00:00Z');
 
-export const createSessionDto: CreateSessionDto = {
+export const createSessionRequest: CreateSessionRequest = {
     userId: 1,
     thumbnail: 'https://example.com',
     title: 'Test Post',
@@ -24,22 +24,22 @@ export const sessionEntity = (
 ): SessionEntity => {
     return {
         id: 1,
-        userId: createSessionDto.userId,
-        thumbnail: createSessionDto.thumbnail,
-        title: createSessionDto.title,
-        presenter: createSessionDto.presenter,
-        date: createSessionDto.date,
-        position: createSessionDto.position,
-        category: createSessionDto.category,
-        videoUrl: createSessionDto.videoUrl,
-        fileUrl: createSessionDto.fileUrl,
+        userId: createSessionRequest.userId,
+        thumbnail: createSessionRequest.thumbnail,
+        title: createSessionRequest.title,
+        presenter: createSessionRequest.presenter,
+        date: createSessionRequest.date,
+        position: createSessionRequest.position,
+        category: createSessionRequest.category,
+        videoUrl: createSessionRequest.videoUrl,
+        fileUrl: createSessionRequest.fileUrl,
         createdAt: fixedDate,
         updatedAt: fixedDate,
         isDeleted: false,
         likeCount: 0,
         viewCount: 0,
         user: {
-            id: createSessionDto.userId,
+            id: createSessionRequest.userId,
             createdAt: fixedDate,
             updatedAt: fixedDate,
             isDeleted: false,
@@ -61,7 +61,9 @@ export const sessionEntity = (
     };
 };
 
-export const getSessionDto: GetSessionDto = new GetSessionDto(sessionEntity());
+export const getSessionResponse: GetSessionResponse = new GetSessionResponse(
+    sessionEntity(),
+);
 
 export const sessionEntities: SessionEntity[] = [
     sessionEntity({ id: 1 }),
@@ -101,11 +103,10 @@ export const bestSessionEntities: SessionEntity[] = [
     }),
 ];
 
-export const getBestSessionDtoList: GetSessionDto[] = bestSessionEntities.map(
-    (session) => new GetSessionDto(session),
-);
+export const getBestSessionsResponse: GetSessionResponse[] =
+    bestSessionEntities.map((session) => new GetSessionResponse(session));
 
-export const getSessionsQueryDto: GetSessionsQueryDto = {
+export const getSessionsQueryRequest: GetSessionsQueryRequest = {
     keyword: 'Test',
     category: '부트캠프',
     date: '2024 여름',
@@ -114,11 +115,11 @@ export const getSessionsQueryDto: GetSessionsQueryDto = {
     limit: 10,
 };
 
-export const getSessionDtoList: GetSessionDto[] = sessionEntities.map(
-    (session) => new GetSessionDto(session),
+export const getSessionListResponse: GetSessionResponse[] = sessionEntities.map(
+    (session) => new GetSessionResponse(session),
 );
 
-export const updateSessionDto: UpdateSessionDto = {
+export const updateSessionRequest: UpdateSessionRequest = {
     thumbnail: 'https://example.com/update',
     title: 'Test Post',
     presenter: '발표자',
@@ -130,5 +131,5 @@ export const updateSessionDto: UpdateSessionDto = {
 };
 
 export const updatedSessionEntity: SessionEntity = sessionEntity({
-    ...updateSessionDto,
+    ...updateSessionRequest,
 });
