@@ -16,7 +16,7 @@ import {
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
 
-describe('BlogController', () => {
+describe('BlogController', (): void => {
     let controller: BlogController;
     let service: BlogService;
 

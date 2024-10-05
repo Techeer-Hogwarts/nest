@@ -1,14 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { Prisma } from '@prisma/client';
+import { UpdateResumeRequest } from '../dto/request/update.resume.request';
 
 @Injectable()
 export class ResumeRepository {
     constructor(private readonly prisma: PrismaService) {}
+
+    async createResume(
+        createResumeRequest: CreateResumeRequest,
+        userId: number,
+    ): Promise<ResumeEntity> {
+        return this.prisma.resume.create({
+            data: {
+                ...createResumeRequest,
+                user: { connect: { id: userId } },
+            },
+            include: { user: true },
+        });
+    }
+
+    async getResume(resumeId: number): Promise<ResumeEntity> {
+        const resume: ResumeEntity = await this.prisma.resume.findUnique({
+            where: {
+                id: resumeId,
+                isDeleted: false,
+            },
+            include: {
+                user: true,
+            },
+        });
+
+        if (!resume) {
+            throw new NotFoundException('이력서를 찾을 수 없습니다.');
+        }
+        return resume;
+    }
 
     async getBestResumes(query: PaginationQueryDto): Promise<ResumeEntity[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
@@ -23,20 +54,6 @@ export class ResumeRepository {
             ORDER BY ("viewCount" + "likeCount" * 10) DESC
             LIMIT ${limit} OFFSET ${offset}
         `);
-    }
-
-    // 이력서 생성 로직
-    async createResume(
-        createResumeRequest: CreateResumeRequest,
-        userId: number,
-    ): Promise<ResumeEntity> {
-        return this.prisma.resume.create({
-            data: {
-                ...createResumeRequest,
-                user: { connect: { id: userId } }, // user와 연결
-            },
-            include: { user: true }, // user 관계를 포함하여 반환
-        });
     }
 
     async getResumeList(
@@ -67,18 +84,6 @@ export class ResumeRepository {
         });
     }
 
-    async getResume(resumeId: number): Promise<ResumeEntity> {
-        return this.prisma.resume.findUnique({
-            where: {
-                id: resumeId,
-                isDeleted: false,
-            },
-            include: {
-                user: true,
-            },
-        });
-    }
-
     async getResumesByUser(
         userId: number,
         query: PaginationQueryDto,
@@ -94,6 +99,40 @@ export class ResumeRepository {
             },
             skip: offset,
             take: limit,
+        });
+    }
+
+    async deleteResume(resumeId: number): Promise<void> {
+        await this.prisma.resume.update({
+            where: {
+                id: resumeId,
+                isDeleted: false,
+            },
+            data: { isDeleted: true },
+        });
+    }
+
+    async updateResume(
+        resumeId: number,
+        updateResumeRequest: UpdateResumeRequest,
+    ): Promise<ResumeEntity> {
+        const { title, url, isMain, type }: UpdateResumeRequest =
+            updateResumeRequest;
+
+        return this.prisma.resume.update({
+            where: {
+                id: resumeId,
+                isDeleted: false,
+            },
+            data: {
+                title,
+                url,
+                isMain,
+                type,
+            },
+            include: {
+                user: true,
+            },
         });
     }
 }

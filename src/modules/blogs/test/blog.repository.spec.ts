@@ -187,7 +187,10 @@ describe('BlogRepository', () => {
             await repository.deleteBlog(1);
 
             expect(prismaService.blog.update).toHaveBeenCalledWith({
-                where: { id: 1 },
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
                 data: { isDeleted: true },
             });
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);

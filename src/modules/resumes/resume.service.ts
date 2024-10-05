@@ -5,6 +5,7 @@ import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeEntity } from './entities/resume.entity';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
+import { UpdateResumeRequest } from './dto/request/update.resume.request';
 
 @Injectable()
 export class ResumeService {
@@ -21,8 +22,8 @@ export class ResumeService {
     }
 
     async createResume(
-        userId: number,
         createResumeRequest: CreateResumeRequest,
+        userId: number,
     ): Promise<GetResumeResponse> {
         const resume: ResumeEntity = await this.resumeRepository.createResume(
             createResumeRequest,
@@ -57,6 +58,25 @@ export class ResumeService {
         // todo: 유저가 존재하는지 검사
         const resumes: ResumeEntity[] =
             await this.resumeRepository.getResumesByUser(userId, query);
-        return resumes.map((resume) => new GetResumeResponse(resume));
+        return resumes.map(
+            (resume: ResumeEntity) => new GetResumeResponse(resume),
+        );
+    }
+
+    async deleteResume(resumeId: number): Promise<void> {
+        await this.resumeRepository.getResume(resumeId); // 이력서 존재 여부 검사
+        return this.resumeRepository.deleteResume(resumeId);
+    }
+
+    async updateResume(
+        resumeId: number,
+        updateResumeRequest: UpdateResumeRequest,
+    ): Promise<GetResumeResponse> {
+        await this.resumeRepository.getResume(resumeId); // 이력서 존재 여부 검사
+        const resume: ResumeEntity = await this.resumeRepository.updateResume(
+            resumeId,
+            updateResumeRequest,
+        );
+        return new GetResumeResponse(resume);
     }
 }
