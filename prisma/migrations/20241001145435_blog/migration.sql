@@ -235,18 +235,19 @@ CREATE TABLE "Conference" (
 -- CreateTable
 CREATE TABLE "Session" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "isPublic" BOOLEAN NOT NULL,
     "title" VARCHAR(200) NOT NULL,
-    "description" VARCHAR(200) NOT NULL,
     "likeCount" INTEGER NOT NULL,
     "viewCount" INTEGER NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
+    "thumbnail" VARCHAR(200) NOT NULL,
+    "videoUrl" VARCHAR(200) NOT NULL,
+    "fileUrl" VARCHAR(200) NOT NULL,
+    "presenter" VARCHAR(50) NOT NULL,
+    "date" VARCHAR(50) NOT NULL,
     "category" VARCHAR(200) NOT NULL,
-    "userId" INTEGER NOT NULL,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );

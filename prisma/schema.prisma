@@ -33,7 +33,7 @@ model User {
   bookmarks     Bookmark[]     @relation("UserBookmarks")
   likes         Like[]         @relation("UserLikes")
   teamMembers   TeamMember[] 
-  sessions      Session[]
+  sessions      Session[]      @relation("UserSessions")
 }
 
 model Role {
@@ -248,18 +248,21 @@ model Conference {
 
 model Session {
   id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime
-  isDeleted   Boolean      @default(false)
-  isPublic    Boolean      
-  title       String       @db.VarChar(200)
-  description String       @db.VarChar(200)
-  likeCount   Int          
-  viewCount   Int
-  url         String       @db.VarChar(200)
-  date        DateTime
-  category    String       @db.VarChar(200)
-
-  user        User     @relation(fields: [userId], references: [id])
   userId      Int 
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  title       String       @db.VarChar(200)
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
+  thumbnail   String       @db.VarChar(200)
+  videoUrl    String       @db.VarChar(200)
+  fileUrl     String       @db.VarChar(200)
+  presenter   String       @db.VarChar(50)
+  date        String       @db.VarChar(50)
+  category    String       @db.VarChar(50)
+  position    String       @db.VarChar(50)
+
+  user        User         @relation("UserSessions", fields: [userId], references: [id])
+
 }
