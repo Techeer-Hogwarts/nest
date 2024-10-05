@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ResumeRepository } from './repository/resume.repository';
 import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
@@ -28,5 +28,14 @@ export class ResumeService {
         return resumes.map(
             (resume: ResumeEntity) => new GetResumeResponse(resume),
         );
+    }
+
+    async getResume(resumeId: number): Promise<GetResumeResponse> {
+        const resume: ResumeEntity =
+            await this.resumeRepository.getResume(resumeId);
+        if (!resume) {
+            throw new NotFoundException('이력서를 찾을 수 없습니다.');
+        }
+        return new GetResumeResponse(resume);
     }
 }

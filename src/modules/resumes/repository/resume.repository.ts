@@ -49,4 +49,16 @@ export class ResumeRepository {
             take: limit,
         });
     }
+
+    async getResume(resumeId: number): Promise<ResumeEntity> {
+        return this.prisma.resume.findUnique({
+            where: {
+                id: resumeId,
+                isDeleted: false,
+            },
+            include: {
+                user: true,
+            },
+        });
+    }
 }

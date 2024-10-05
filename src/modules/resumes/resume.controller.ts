@@ -52,4 +52,21 @@ export class ResumeController {
             data: resumes,
         };
     }
+
+    @Get(':resumeId')
+    @ApiOperation({
+        summary: '단일 이력서 조회',
+        description: '지정된 ID의 이력서를 조회합니다.',
+    })
+    async getResume(
+        @Param('resumeId', ParseIntPipe) resumeId: number,
+    ): Promise<any> {
+        const resume: GetResumeResponse =
+            await this.resumeService.getResume(resumeId);
+        return {
+            code: 200,
+            message: '블로그 게시물을 조회했습니다.',
+            data: resume,
+        };
+    }
 }
