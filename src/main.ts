@@ -25,7 +25,6 @@ async function bootstrap(): Promise<void> {
             .setTitle('Techeer Zip')
             .setDescription('API 설명')
             .setVersion('1.0')
-            .addTag('users')
             .build();
 
         logger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');

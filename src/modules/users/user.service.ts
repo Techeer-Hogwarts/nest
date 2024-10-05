@@ -3,7 +3,7 @@ import { UserRepository } from './repository/user.repository';
 import { ResumeRepository } from '../resumes/repository/resume.repository';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserDTO } from './dto/request/create.user.request';
-import { CreateResumeDTO } from '../resumes/dto/request/create.resume.request';
+import { CreateResumeRequest } from '../resumes/dto/request/create.resume.request';
 
 @Injectable()
 export class UserService {
@@ -17,7 +17,7 @@ export class UserService {
     }
     async createUser(
         createUserDTO: CreateUserDTO,
-        resumeData?: CreateResumeDTO,
+        resumeData?: CreateResumeRequest,
     ): Promise<UserEntity> {
         return this.userRepository.createUser(
             createUserDTO,

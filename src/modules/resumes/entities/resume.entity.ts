@@ -12,7 +12,7 @@ export class ResumeEntity implements Resume {
     isMain: boolean;
     likeCount: number;
     viewCount: number;
-    ResumeType: ResumeType;
+    type: ResumeType;
 
     user: UserEntity;
 }

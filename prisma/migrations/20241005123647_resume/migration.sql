@@ -121,7 +121,7 @@ CREATE TABLE "Resume" (
     "isMain" BOOLEAN NOT NULL DEFAULT false,
     "likeCount" INTEGER NOT NULL DEFAULT 0,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
-    "ResumeType" "ResumeType" NOT NULL,
+    "type" "ResumeType" NOT NULL,
 
     CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
 );
@@ -240,14 +240,15 @@ CREATE TABLE "Session" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "title" VARCHAR(200) NOT NULL,
-    "likeCount" INTEGER NOT NULL,
-    "viewCount" INTEGER NOT NULL,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
     "thumbnail" VARCHAR(200) NOT NULL,
     "videoUrl" VARCHAR(200) NOT NULL,
     "fileUrl" VARCHAR(200) NOT NULL,
     "presenter" VARCHAR(50) NOT NULL,
     "date" VARCHAR(50) NOT NULL,
-    "category" VARCHAR(200) NOT NULL,
+    "category" VARCHAR(50) NOT NULL,
+    "position" VARCHAR(50) NOT NULL,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
