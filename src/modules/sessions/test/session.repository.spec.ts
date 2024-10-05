@@ -12,8 +12,9 @@ import {
     bestSessionEntities,
     getSessionsQueryRequest,
 } from './mock-data';
+import { SessionEntity } from '../entities/session.entity';
 
-describe('SessionRepository', () => {
+describe('SessionRepository', (): void => {
     let repository: SessionRepository;
     let prismaService: PrismaService;
 
@@ -50,7 +51,8 @@ describe('SessionRepository', () => {
                 sessionEntity(),
             );
 
-            const result = await repository.createSession(createSessionRequest);
+            const result: SessionEntity =
+                await repository.createSession(createSessionRequest);
 
             expect(result).toEqual(sessionEntity());
             expect(prismaService.session.create).toHaveBeenCalledWith({
@@ -87,7 +89,8 @@ describe('SessionRepository', () => {
                 bestSessionEntities,
             );
 
-            const result = await repository.getBestSessions(paginationQueryDto);
+            const result: SessionEntity[] =
+                await repository.getBestSessions(paginationQueryDto);
 
             expect(result).toEqual(bestSessionEntities);
             expect(prismaService.$queryRaw).toHaveBeenCalledWith(
@@ -103,7 +106,7 @@ describe('SessionRepository', () => {
                 sessionEntities,
             );
 
-            const result = await repository.getSessionList(
+            const result: SessionEntity[] = await repository.getSessionList(
                 getSessionsQueryRequest,
             );
 
@@ -145,7 +148,7 @@ describe('SessionRepository', () => {
                 sessionEntities,
             );
 
-            const result = await repository.getSessionsByUser(
+            const result: SessionEntity[] = await repository.getSessionsByUser(
                 1,
                 paginationQueryDto,
             );
@@ -187,7 +190,7 @@ describe('SessionRepository', () => {
                 updatedSessionEntity,
             );
 
-            const result = await repository.updateSession(
+            const result: SessionEntity = await repository.updateSession(
                 1,
                 updateSessionRequest,
             );

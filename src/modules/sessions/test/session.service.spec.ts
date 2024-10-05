@@ -15,8 +15,9 @@ import {
     getBestSessionsResponse,
     getSessionsQueryRequest,
 } from './mock-data';
+import { SessionEntity } from '../entities/session.entity';
 
-describe('SessionService', () => {
+describe('SessionService', (): void => {
     let service: SessionService;
     let repository: SessionRepository;
 
@@ -84,11 +85,15 @@ describe('SessionService', () => {
                 bestSessionEntities,
             );
 
-            const result = await service.getBestSessions(paginationQueryDto);
+            const result: GetSessionResponse[] =
+                await service.getBestSessions(paginationQueryDto);
 
             expect(result).toEqual(getBestSessionsResponse);
             expect(
-                result.every((item) => item instanceof GetSessionResponse),
+                result.every(
+                    (item: SessionEntity): boolean =>
+                        item instanceof GetSessionResponse,
+                ),
             ).toBe(true);
             expect(repository.getBestSessions).toHaveBeenCalledWith(
                 paginationQueryDto,
@@ -103,17 +108,20 @@ describe('SessionService', () => {
                 sessionEntities,
             );
 
-            const result = await service.getSessionList(
+            const result: GetSessionResponse[] = await service.getSessionList(
                 getSessionsQueryRequest,
             );
 
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session) => new GetSessionResponse(session),
+                    (session: SessionEntity) => new GetSessionResponse(session),
                 ),
             );
             expect(
-                result.every((item) => item instanceof GetSessionResponse),
+                result.every(
+                    (item: GetSessionResponse): boolean =>
+                        item instanceof GetSessionResponse,
+                ),
             ).toBe(true);
             expect(repository.getSessionList).toHaveBeenCalledWith(
                 getSessionsQueryRequest,
@@ -128,10 +136,8 @@ describe('SessionService', () => {
                 sessionEntities,
             );
 
-            const result = await service.getSessionsByUser(
-                1,
-                paginationQueryDto,
-            );
+            const result: GetSessionResponse[] =
+                await service.getSessionsByUser(1, paginationQueryDto);
 
             expect(repository.getSessionsByUser).toHaveBeenCalledWith(
                 1,
@@ -140,11 +146,14 @@ describe('SessionService', () => {
             expect(repository.getSessionsByUser).toHaveBeenCalledTimes(1);
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session) => new GetSessionResponse(session),
+                    (session: SessionEntity) => new GetSessionResponse(session),
                 ),
             );
             expect(
-                result.every((item) => item instanceof GetSessionResponse),
+                result.every(
+                    (item: GetSessionResponse): boolean =>
+                        item instanceof GetSessionResponse,
+                ),
             ).toBe(true);
         });
     });
@@ -188,7 +197,10 @@ describe('SessionService', () => {
                 updatedSessionEntity,
             );
 
-            const result = await service.updateSession(1, updateSessionRequest);
+            const result: GetSessionResponse = await service.updateSession(
+                1,
+                updateSessionRequest,
+            );
 
             expect(result).toEqual(
                 new GetSessionResponse(updatedSessionEntity),

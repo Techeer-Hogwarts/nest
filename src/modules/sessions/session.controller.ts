@@ -130,10 +130,11 @@ export class SessionController {
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Body() updateSessionRequest: UpdateSessionRequest,
     ): Promise<any> {
-        const session = await this.sessionService.updateSession(
-            sessionId,
-            updateSessionRequest,
-        );
+        const session: GetSessionResponse =
+            await this.sessionService.updateSession(
+                sessionId,
+                updateSessionRequest,
+            );
         return {
             code: 200,
             message: '세션 게시물이 수정되었습니다.',

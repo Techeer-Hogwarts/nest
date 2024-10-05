@@ -5,7 +5,7 @@ import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 
-const fixedDate = new Date('2024-09-24T10:00:00Z');
+const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
 export const createSessionRequest: CreateSessionRequest = {
     userId: 1,
@@ -104,7 +104,9 @@ export const bestSessionEntities: SessionEntity[] = [
 ];
 
 export const getBestSessionsResponse: GetSessionResponse[] =
-    bestSessionEntities.map((session) => new GetSessionResponse(session));
+    bestSessionEntities.map(
+        (session: SessionEntity) => new GetSessionResponse(session),
+    );
 
 export const getSessionsQueryRequest: GetSessionsQueryRequest = {
     keyword: 'Test',
@@ -116,7 +118,7 @@ export const getSessionsQueryRequest: GetSessionsQueryRequest = {
 };
 
 export const getSessionListResponse: GetSessionResponse[] = sessionEntities.map(
-    (session) => new GetSessionResponse(session),
+    (session: SessionEntity) => new GetSessionResponse(session),
 );
 
 export const updateSessionRequest: UpdateSessionRequest = {

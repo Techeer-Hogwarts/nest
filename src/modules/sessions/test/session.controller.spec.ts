@@ -13,6 +13,7 @@ import {
     updateSessionRequest,
     updatedSessionEntity,
 } from './mock-data';
+import { SessionEntity } from '../entities/session.entity';
 
 describe('SessionController', () => {
     let controller: SessionController;
@@ -87,7 +88,7 @@ describe('SessionController', () => {
         it('should return a list of best sessions based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestSessions').mockResolvedValue(
                 sessionEntities.map(
-                    (session) => new GetSessionResponse(session),
+                    (session: SessionEntity) => new GetSessionResponse(session),
                 ),
             );
 
@@ -97,7 +98,7 @@ describe('SessionController', () => {
                 code: 200,
                 message: '인기 세션 게시물 목록을 조회했습니다.',
                 data: sessionEntities.map(
-                    (session) => new GetSessionResponse(session),
+                    (session: SessionEntity) => new GetSessionResponse(session),
                 ),
             });
             expect(service.getBestSessions).toHaveBeenCalledTimes(1);
@@ -130,7 +131,7 @@ describe('SessionController', () => {
         it('should return a list of sessions for a specific user', async (): Promise<void> => {
             jest.spyOn(service, 'getSessionsByUser').mockResolvedValue(
                 sessionEntities.map(
-                    (session) => new GetSessionResponse(session),
+                    (session: SessionEntity) => new GetSessionResponse(session),
                 ),
             );
 
@@ -143,7 +144,7 @@ describe('SessionController', () => {
                 code: 200,
                 message: '해당 유저의 세션 게시물 목록을 조회했습니다.',
                 data: sessionEntities.map(
-                    (session) => new GetSessionResponse(session),
+                    (session: SessionEntity) => new GetSessionResponse(session),
                 ),
             });
             expect(service.getSessionsByUser).toHaveBeenCalledWith(

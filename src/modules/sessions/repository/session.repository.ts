@@ -21,7 +21,7 @@ export class SessionRepository {
     }
 
     async getSession(sessionId: number): Promise<SessionEntity> {
-        const session = await this.prisma.session.findUnique({
+        const session: SessionEntity = await this.prisma.session.findUnique({
             where: {
                 id: sessionId,
                 isDeleted: false,
@@ -38,7 +38,7 @@ export class SessionRepository {
     }
 
     async getBestSessions(query: PaginationQueryDto): Promise<SessionEntity[]> {
-        const { offset = 0, limit = 10 } = query;
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         // 2주 계산
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -62,7 +62,7 @@ export class SessionRepository {
             position,
             offset = 0,
             limit = 10,
-        } = query;
+        }: GetSessionsQueryRequest = query;
         return this.prisma.session.findMany({
             where: {
                 isDeleted: false,
@@ -92,7 +92,7 @@ export class SessionRepository {
         userId: number,
         query: PaginationQueryDto,
     ): Promise<SessionEntity[]> {
-        const { offset = 0, limit = 10 } = query;
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         return this.prisma.session.findMany({
             where: {
                 isDeleted: false,
@@ -126,7 +126,7 @@ export class SessionRepository {
             category,
             videoUrl,
             fileUrl,
-        } = updateSessionRequest;
+        }: UpdateSessionRequest = updateSessionRequest;
 
         return this.prisma.session.update({
             where: {

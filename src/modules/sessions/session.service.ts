@@ -28,26 +28,32 @@ export class SessionService {
     async getBestSessions(
         query: PaginationQueryDto,
     ): Promise<GetSessionResponse[]> {
-        const sessions = await this.sessionRepository.getBestSessions(query);
-        return sessions.map((session) => new GetSessionResponse(session));
+        const sessions: SessionEntity[] =
+            await this.sessionRepository.getBestSessions(query);
+        return sessions.map(
+            (session: SessionEntity) => new GetSessionResponse(session),
+        );
     }
 
     async getSessionList(
         query: GetSessionsQueryRequest,
     ): Promise<GetSessionResponse[]> {
-        const sessions = await this.sessionRepository.getSessionList(query);
-        return sessions.map((session) => new GetSessionResponse(session));
+        const sessions: SessionEntity[] =
+            await this.sessionRepository.getSessionList(query);
+        return sessions.map(
+            (session: SessionEntity) => new GetSessionResponse(session),
+        );
     }
 
     async getSessionsByUser(
         userId: number,
         query: PaginationQueryDto,
     ): Promise<GetSessionResponse[]> {
-        const sessions = await this.sessionRepository.getSessionsByUser(
-            userId,
-            query,
+        const sessions: SessionEntity[] =
+            await this.sessionRepository.getSessionsByUser(userId, query);
+        return sessions.map(
+            (session: SessionEntity) => new GetSessionResponse(session),
         );
-        return sessions.map((session) => new GetSessionResponse(session));
     }
 
     async deleteSession(sessionId: number): Promise<void> {
@@ -60,10 +66,11 @@ export class SessionService {
         updateSessionRequest: UpdateSessionRequest,
     ): Promise<GetSessionResponse> {
         await this.sessionRepository.getSession(sessionId);
-        const session = await this.sessionRepository.updateSession(
-            sessionId,
-            updateSessionRequest,
-        );
+        const session: SessionEntity =
+            await this.sessionRepository.updateSession(
+                sessionId,
+                updateSessionRequest,
+            );
         return new GetSessionResponse(session);
     }
 }
