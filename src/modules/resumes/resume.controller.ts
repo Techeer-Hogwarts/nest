@@ -12,6 +12,7 @@ import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
+import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 
 @ApiTags('resumes')
 @Controller('resumes')
@@ -67,6 +68,24 @@ export class ResumeController {
             code: 200,
             message: '블로그 게시물을 조회했습니다.',
             data: resume,
+        };
+    }
+
+    @Get('/user/:userId')
+    @ApiOperation({
+        summary: '유저 별 블로그 게시물 목록 조회',
+        description: '지정된 유저의 블로그 게시물을 조회합니다.',
+    })
+    async getResumesByUser(
+        @Param('userId') userId: number,
+        @Query() query: PaginationQueryDto,
+    ): Promise<any> {
+        const resumes: GetResumeResponse[] =
+            await this.resumeService.getResumesByUser(userId, query);
+        return {
+            code: 200,
+            message: '블로그 게시물을 조회했습니다.',
+            data: resumes,
         };
     }
 }

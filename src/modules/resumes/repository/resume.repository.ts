@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
+import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 
 @Injectable()
 export class ResumeRepository {
@@ -59,6 +60,24 @@ export class ResumeRepository {
             include: {
                 user: true,
             },
+        });
+    }
+
+    async getResumesByUser(
+        userId: number,
+        query: PaginationQueryDto,
+    ): Promise<ResumeEntity[]> {
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
+        return this.prisma.resume.findMany({
+            where: {
+                isDeleted: false,
+                userId: userId,
+            },
+            include: {
+                user: true,
+            },
+            skip: offset,
+            take: limit,
         });
     }
 }
