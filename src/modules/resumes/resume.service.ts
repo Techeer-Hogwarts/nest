@@ -10,6 +10,16 @@ import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 export class ResumeService {
     constructor(private readonly resumeRepository: ResumeRepository) {}
 
+    async getBestResumes(
+        query: PaginationQueryDto,
+    ): Promise<GetResumeResponse[]> {
+        const resumes: ResumeEntity[] =
+            await this.resumeRepository.getBestResumes(query);
+        return resumes.map(
+            (resume: ResumeEntity) => new GetResumeResponse(resume),
+        );
+    }
+
     async createResume(
         userId: number,
         createResumeRequest: CreateResumeRequest,

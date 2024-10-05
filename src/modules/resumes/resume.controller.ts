@@ -19,6 +19,22 @@ import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 export class ResumeController {
     constructor(private readonly resumeService: ResumeService) {}
 
+    @Get('/best')
+    @ApiOperation({
+        summary: '인기 이력서 목록 조회',
+        description:
+            '(조회수 + 좋아요수*10)을 기준으로 인기 이력서를 조회합니다.',
+    })
+    async getBestResumes(@Query() query: PaginationQueryDto): Promise<any> {
+        const resumes: GetResumeResponse[] =
+            await this.resumeService.getBestResumes(query);
+        return {
+            code: 200,
+            message: '인기 이력서를 조회했습니다.',
+            data: resumes,
+        };
+    }
+
     @Post(':userId') // JWT 토큰 이전 임시 파라미터
     @ApiOperation({
         summary: '이력서 생성',

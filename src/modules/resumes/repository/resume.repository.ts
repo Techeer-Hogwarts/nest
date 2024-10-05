@@ -4,10 +4,26 @@ import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ResumeRepository {
     constructor(private readonly prisma: PrismaService) {}
+
+    async getBestResumes(query: PaginationQueryDto): Promise<ResumeEntity[]> {
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
+        // 2주 계산
+        const twoWeeksAgo: Date = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        // SQL 쿼리
+        return this.prisma.$queryRaw<ResumeEntity[]>(Prisma.sql`
+            SELECT * FROM "Resume"
+            WHERE "isDeleted" = false
+                AND "createdAt" >= ${twoWeeksAgo}
+            ORDER BY ("viewCount" + "likeCount" * 10) DESC
+            LIMIT ${limit} OFFSET ${offset}
+        `);
+    }
 
     // 이력서 생성 로직
     async createResume(
