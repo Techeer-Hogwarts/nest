@@ -3,7 +3,7 @@ import { UserRepository } from '../repository/user.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserRequest } from '../dto/request/create.user.request';
 import { UserEntity } from '../entities/user.entity';
-import { ConflictException } from '@nestjs/common';
+import { UpdateUserRequest } from '../dto/request/update.user.request';
 
 describe('UserRepository', () => {
     let userRepository: UserRepository;
@@ -17,8 +17,9 @@ describe('UserRepository', () => {
                     provide: PrismaService,
                     useValue: {
                         user: {
-                            findUnique: jest.fn(),
-                            create: jest.fn(),
+                            findUnique: jest.fn(), // Prisma 메서드 목킹
+                            create: jest.fn(), // Prisma 메서드 목킹
+                            update: jest.fn(), // Prisma 메서드 목킹
                         },
                         $transaction: jest
                             .fn()
@@ -41,151 +42,126 @@ describe('UserRepository', () => {
 
     describe('createUser', () => {
         it('사용자를 생성하고 콜백을 호출해야 한다', async () => {
-            const createUserDTO: CreateUserRequest = {
+            const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
-                name: 'Test User',
-                year: 3,
+                name: 'test',
+                year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
+                blogUrl: 'https://example.com/blog',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
-                school: 'Test School',
-                class: '재학',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
             };
 
             const newUser: UserEntity = {
                 id: 1,
-                email: createUserDTO.email,
-                name: createUserDTO.name,
-                password: createUserDTO.password,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                isDeleted: false,
-                isLft: false,
-                githubUrl: createUserDTO.githubUrl,
-                blogUrl: createUserDTO.blogUrl,
-                mainPosition: createUserDTO.mainPosition,
-                subPosition: createUserDTO.subPosition,
-                school: createUserDTO.school,
-                class: createUserDTO.class,
-                roleId: 3,
-                isAuth: true,
-                year: createUserDTO.year,
             };
 
-            // 이메일 중복 체크
-            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                null,
-            );
-
-            // 사용자를 생성할 때 콜백 호출
+            // 사용자가 생성되었는지 확인하기 위한 create를 목킹
             (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
 
             const callback = jest.fn();
 
             const result = await userRepository.createUser(
-                createUserDTO,
+                createUserRequest,
                 callback,
             );
 
-            // findUnique가 올바르게 호출되었는지 확인
-            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-                where: { email: createUserDTO.email },
-                include: { profiles: true }, // include 옵션 추가
-            });
             // create 메서드가 호출되었는지 확인
             expect(prismaService.user.create).toHaveBeenCalledWith({
                 data: {
-                    ...createUserDTO,
-                    roleId: 3,
+                    ...createUserRequest,
+                    roleId: 3, // 기본 roleId
                     isAuth: true,
                 },
-                include: { profiles: true },
             });
+
             // 콜백 함수가 호출되었는지 확인
             expect(callback).toHaveBeenCalledWith(newUser);
+
             // 반환값 확인
             expect(result).toEqual(newUser);
-        });
-
-        it('이메일이 중복되면 ConflictException을 던져야 한다', async () => {
-            const createUserDTO: CreateUserRequest = {
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'Test User',
-                year: 3,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Test School',
-                class: '재학',
-            };
-
-            const existingUser: UserEntity = {
-                id: 1,
-                email: createUserDTO.email,
-                name: 'Test User',
-                password: 'password123',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Test School',
-                class: '재학',
-                roleId: 3,
-                isAuth: true,
-                year: createUserDTO.year,
-            };
-
-            // 중복된 사용자로 목킹
-            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                existingUser,
-            );
-
-            await expect(
-                userRepository.createUser(createUserDTO, jest.fn()),
-            ).rejects.toThrow(ConflictException);
         });
     });
 
     describe('findUserByEmail', () => {
         it('이메일로 사용자를 찾아야 한다', async () => {
             const email = 'test@test.com';
-            const existingUser: UserEntity = {
+
+            const user: UserEntity = {
                 id: 1,
                 email,
-                name: 'Test User',
                 password: 'password123',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
+                name: 'test',
+                year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
+                blogUrl: 'https://example.com/blog',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
-                school: 'Test School',
-                class: '졸업',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isDeleted: false,
                 roleId: 1,
                 isAuth: true,
-                year: 3,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
             };
 
             (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                existingUser,
+                user,
             );
 
-            await expect(userRepository.findUserByEmail(email)).rejects.toThrow(
-                ConflictException,
-            );
+            const result = await userRepository.findOneByEmail(email);
+
+            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+                where: { email },
+            });
+            expect(result).toEqual(user);
         });
 
         it('사용자를 찾을 수 없으면 null을 반환해야 한다', async () => {
@@ -195,13 +171,191 @@ describe('UserRepository', () => {
                 null,
             );
 
-            const result = await userRepository.findUserByEmail(email);
+            const result = await userRepository.findOneByEmail(email);
 
             expect(prismaService.user.findUnique).toHaveBeenCalledWith({
                 where: { email },
-                include: { profiles: true },
             });
             expect(result).toBeNull();
+        });
+    });
+
+    describe('findById', () => {
+        it('ID로 사용자를 찾아야 한다 (삭제되지 않은 사용자)', async () => {
+            const userId = 1;
+
+            const user: UserEntity = {
+                id: userId,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+                user,
+            );
+
+            const result = await userRepository.findById(userId);
+
+            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: userId,
+                    isDeleted: false,
+                },
+            });
+            expect(result).toEqual(user);
+        });
+
+        it('삭제된 사용자는 null을 반환해야 한다', async () => {
+            const userId = 999;
+
+            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+                null,
+            );
+
+            const result = await userRepository.findById(userId);
+
+            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: userId,
+                    isDeleted: false,
+                },
+            });
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('updateUserProfile', () => {
+        it('유저 프로필을 업데이트해야 한다', async () => {
+            const userId = 1;
+            const updateUserProfileDto: UpdateUserRequest = {
+                profileImage: 'https://newprofileimage.com',
+                school: 'New Hogwarts',
+                class: '2학년',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                githubUrl: 'https://github.com/newuser',
+                blogUrl: 'https://newblog.com',
+                isLft: false,
+                isIntern: false,
+                internCompanyName: 'NewCrowdStrike',
+                internPosition: 'Backend',
+                isFullTime: true,
+                fullTimeCompanyName: 'NewPaloAlto',
+                fullTimePosition: 'Backend',
+            };
+
+            const updatedUser: UserEntity = {
+                id: userId,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: updateUserProfileDto.githubUrl,
+                blogUrl: updateUserProfileDto.blogUrl,
+                mainPosition: updateUserProfileDto.mainPosition,
+                subPosition: updateUserProfileDto.subPosition,
+                school: updateUserProfileDto.school,
+                class: updateUserProfileDto.class,
+                profileImage: updateUserProfileDto.profileImage,
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'NewCrowdStrike',
+                internPosition: 'Backend',
+                isFullTime: true,
+                fullTimeCompanyName: 'NewPaloAlto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            (prismaService.user.update as jest.Mock).mockResolvedValue(
+                updatedUser,
+            );
+
+            const result = await userRepository.updateUserProfile(
+                userId,
+                updateUserProfileDto,
+            );
+
+            expect(prismaService.user.update).toHaveBeenCalledWith({
+                where: { id: userId },
+                data: { ...updateUserProfileDto },
+            });
+            expect(result).toEqual(updatedUser);
+        });
+    });
+
+    describe('softDeleteUser', () => {
+        it('유저를 소프트 삭제해야 한다', async () => {
+            const userId = 1;
+            const softDeletedUser: UserEntity = {
+                id: userId,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isDeleted: true,
+                isAuth: true,
+                nickname: 'tester',
+                roleId: 1,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isLft: false,
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                stack: ['JavaScript', 'NestJS'],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(prismaService.user, 'update').mockResolvedValue(
+                softDeletedUser,
+            );
+
+            const result = await userRepository.softDeleteUser(userId);
+
+            expect(prismaService.user.update).toHaveBeenCalledWith({
+                where: { id: userId },
+                data: { isDeleted: true },
+            });
+            expect(result).toEqual(softDeletedUser);
         });
     });
 });

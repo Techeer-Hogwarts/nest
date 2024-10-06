@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ResumeType } from '@prisma/client';
 
-export class CreateResumeDTO {
+export class CreateResumeRequest {
     @ApiProperty({
         example: 'https://example.com/resume.pdf',
         description: '이력서 파일 URL',

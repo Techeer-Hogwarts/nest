@@ -7,10 +7,13 @@ import { UserRepository } from './repository/user.repository';
 import { ResumeRepository } from '../resumes/repository/resume.repository';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserRequest } from './dto/request/create.user.request';
-import { CreateResumeDTO } from '../resumes/dto/request/create.resume.request';
+import { CreateResumeRequest } from '../resumes/dto/request/create.resume.request';
 import { AuthService } from '../../auth/auth.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { UpdateUserRequest } from './dto/request/update.user.request';
+import { User } from '@prisma/client';
+import { GetUserResponse } from './dto/response/get.user.response';
 
 @Injectable()
 export class UserService {
@@ -23,7 +26,7 @@ export class UserService {
 
     async signUp(
         createUserRequest: CreateUserRequest,
-        resumeData?: CreateResumeDTO,
+        resumeData?: CreateResumeRequest,
     ): Promise<UserEntity> {
         // 이메일 인증 확인
         const isVerified = await this.authService.checkIfVerified(
@@ -69,12 +72,13 @@ export class UserService {
         // 사용자가 존재하지 않으면 예외 발생
         if (!user) {
             throw new NotFoundException(
-                `ID ${id}에 해당하는 사용자를 찾을 수 없습니다.`,
+                `ID가 ${id}인 사용자를 찾을 수 없습니다.`,
             );
         }
 
         return user;
     }
+
     // 이메일과 비밀번호를 기반으로 사용자 인증
     async validateUser(email: string, password: string): Promise<any> {
         // 사용자 이메일로 DB에서 사용자 정보 조회
@@ -104,7 +108,8 @@ export class UserService {
     // 로그인: 사용자 인증 후 JWT 발급
     async login(email: string, password: string): Promise<any> {
         const user = await this.validateUser(email, password);
-        if (!user) throw new UnauthorizedException('Invalid credentials');
+        if (!user)
+            throw new UnauthorizedException('유효하지 않은 자격 증명입니다.');
 
         // 액세스 토큰과 리프레시 토큰 생성
         const accessToken = this.jwtService.sign(
@@ -128,7 +133,8 @@ export class UserService {
             const decoded = this.jwtService.verify(refreshToken);
             const user = await this.findById(decoded.id);
 
-            if (!user) throw new UnauthorizedException('Invalid token');
+            if (!user)
+                throw new UnauthorizedException('유효하지 않은 토큰입니다.');
 
             // 새로운 액세스 토큰 발급
             const newAccessToken = this.jwtService.sign(
@@ -137,7 +143,56 @@ export class UserService {
             );
             return newAccessToken;
         } catch (error) {
-            throw new UnauthorizedException('Invalid refresh token');
+            throw new UnauthorizedException(
+                '유효하지 않은 리프레시 토큰입니다.',
+            );
         }
+    }
+
+    async updateUserProfile(
+        userId: number,
+        updateUserRequest: UpdateUserRequest,
+    ): Promise<User> {
+        const user = await this.userRepository.findById(userId);
+
+        if (!user) {
+            throw new NotFoundException(
+                `ID가 ${userId}인 사용자를 찾을 수 없습니다.`,
+            );
+        }
+
+        return this.userRepository.updateUserProfile(userId, updateUserRequest);
+    }
+
+    // 토큰을 검증하여 유저를 반환하는 메서드
+    async validateToken(token: string): Promise<User | null> {
+        try {
+            const decoded = this.jwtService.verify(token); // 토큰을 검증하고 디코딩
+            const user = await this.userRepository.findById(decoded.id); // 유저를 데이터베이스에서 찾음
+            return user;
+        } catch (error) {
+            throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+        }
+    }
+
+    async deleteUser(userId: number): Promise<any> {
+        const user = await this.userRepository.findById(userId);
+
+        if (!user) {
+            throw new NotFoundException(
+                `ID가 ${userId}인 사용자를 찾을 수 없습니다.`,
+            );
+        }
+
+        return this.userRepository.softDeleteUser(userId);
+    }
+
+    async getUserInfo(userId: number): Promise<GetUserResponse> {
+        const userInfo = await this.userRepository.findById(userId);
+
+        if (!userInfo) {
+            throw new NotFoundException('사용자가 존재하지 않습니다.');
+        }
+        return new GetUserResponse(userInfo);
     }
 }

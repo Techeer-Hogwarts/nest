@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { PrismaService } from './modules/prisma/prisma.service';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap(): Promise<void> {
     const logger = new Logger('Bootstrap');
@@ -18,14 +19,21 @@ async function bootstrap(): Promise<void> {
             },
         });
 
+        // cookie-parser 미들웨어 추가
+        app.use(cookieParser());
+
         app.setGlobalPrefix('api/v1');
         logger.log('Global prefix를 "api/v1"로 설정했습니다.');
 
         const options = new DocumentBuilder()
             .setTitle('Techeer Zip')
-            .setDescription('API 설명')
+            .setDescription('Techeer Zip의 API 명세입니다.')
             .setVersion('1.0')
-            .addTag('users')
+            .addCookieAuth('access_token', {
+                type: 'apiKey',
+                in: 'cookie',
+                name: 'access_token',
+            })
             .build();
 
         logger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');

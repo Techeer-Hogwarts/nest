@@ -86,4 +86,57 @@ export class CreateUserRequest {
         description: '학년',
     })
     readonly class: string;
+
+    @IsString()
+    @ApiProperty({
+        example: 'http://profileimage.com',
+        description: '슬랙 이미지 URL',
+    })
+    readonly profileImage: string;
+
+    @IsOptional()
+    @ApiProperty({
+        example: 'false',
+        description: '인턴 여부',
+    })
+    readonly isIntern?: boolean;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({
+        example: 'crowdStrike',
+        description: '인턴 회사 이름',
+    })
+    readonly internCompanyName?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({
+        example: 'Frontend',
+        description: '인턴 직무',
+    })
+    readonly internPosition?: string;
+
+    @IsOptional()
+    @ApiProperty({
+        example: 'false',
+        description: '정규직 여부',
+    })
+    readonly isFullTime?: boolean;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({
+        example: 'paloalto',
+        description: '정규직 회사 이름',
+    })
+    readonly fullTimeCompanyName?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({
+        example: 'Backend',
+        description: '정규직 직무',
+    })
+    readonly fullTimePosition?: string;
 }

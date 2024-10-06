@@ -15,6 +15,7 @@ CREATE TABLE "User" (
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "nickname" VARCHAR(200),
     "year" INTEGER NOT NULL,
     "password" TEXT NOT NULL,
     "isLft" BOOLEAN NOT NULL DEFAULT false,
@@ -24,7 +25,15 @@ CREATE TABLE "User" (
     "subPosition" VARCHAR(100),
     "school" VARCHAR(100) NOT NULL,
     "class" VARCHAR(100) NOT NULL,
+    "profileImage" VARCHAR(200) NOT NULL,
+    "stack" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "isAuth" BOOLEAN NOT NULL DEFAULT false,
+    "isIntern" BOOLEAN,
+    "internPosition" VARCHAR(100),
+    "internCompanyName" VARCHAR(200),
+    "fullTimePosition" VARCHAR(100),
+    "isFullTime" BOOLEAN DEFAULT false,
+    "fullTimeCompanyName" VARCHAR(200),
     "roleId" INTEGER NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -39,22 +48,6 @@ CREATE TABLE "Role" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Role_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Profile" (
-    "id" SERIAL NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "nickname" VARCHAR(200) NOT NULL,
-    "profileImage" VARCHAR(200) NOT NULL,
-    "experience" VARCHAR(200),
-    "company" VARCHAR(200),
-    "stack" VARCHAR(200) NOT NULL,
-    "userId" INTEGER NOT NULL,
-
-    CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -260,9 +253,6 @@ ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Role" ADD CONSTRAINT "Role_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

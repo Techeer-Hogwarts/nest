@@ -1,207 +1,465 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UserService } from '../user.service';
 import { UserRepository } from '../repository/user.repository';
-import { PrismaService } from '../../prisma/prisma.service';
+import { ResumeRepository } from '../../resumes/repository/resume.repository';
+import { AuthService } from '../../../auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
 import { CreateUserRequest } from '../dto/request/create.user.request';
+import { CreateResumeRequest } from '../../resumes/dto/request/create.resume.request';
 import { UserEntity } from '../entities/user.entity';
-import { ConflictException } from '@nestjs/common';
+import { UnauthorizedException, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 
-describe('UserRepository', () => {
+describe('UserService', () => {
+    let service: UserService;
     let userRepository: UserRepository;
-    let prismaService: PrismaService;
+    let resumeRepository: ResumeRepository;
+    let authService: AuthService;
+    let jwtService: JwtService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
-                UserRepository,
+                UserService,
                 {
-                    provide: PrismaService,
+                    provide: UserRepository,
                     useValue: {
-                        user: {
-                            findUnique: jest.fn(),
-                            create: jest.fn(),
-                        },
-                        $transaction: jest
-                            .fn()
-                            .mockImplementation((callback) =>
-                                callback(prismaService),
-                            ),
+                        findOneByEmail: jest.fn(),
+                        createUser: jest.fn(),
+                        findById: jest.fn(),
+                        updateUserProfile: jest.fn(),
+                        softDeleteUser: jest.fn(),
+                    },
+                },
+                {
+                    provide: ResumeRepository,
+                    useValue: {
+                        createResume: jest.fn(),
+                    },
+                },
+                {
+                    provide: AuthService,
+                    useValue: {
+                        checkIfVerified: jest.fn(),
+                    },
+                },
+                {
+                    provide: JwtService,
+                    useValue: {
+                        sign: jest.fn(),
+                        verify: jest.fn(),
                     },
                 },
             ],
         }).compile();
 
+        service = module.get<UserService>(UserService);
         userRepository = module.get<UserRepository>(UserRepository);
-        prismaService = module.get<PrismaService>(PrismaService);
+        resumeRepository = module.get<ResumeRepository>(ResumeRepository);
+        authService = module.get<AuthService>(AuthService);
+        jwtService = module.get<JwtService>(JwtService);
     });
 
     it('정의되어 있어야 한다', () => {
-        expect(userRepository).toBeDefined();
-        expect(prismaService).toBeDefined();
+        expect(service).toBeDefined();
     });
 
-    describe('createUser', () => {
-        it('사용자를 생성하고 콜백을 호출해야 한다', async () => {
+    describe('signUp', () => {
+        it('유저와 이력서를 생성해야 한다', async () => {
             const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
-                name: 'Test User',
-                year: 3,
+                name: 'test',
+                year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
+                blogUrl: 'https://example.com/blog',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
-                school: 'Test School',
-                class: '재학',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
             };
 
-            const newUser: UserEntity = {
+            const createResumeRequest: CreateResumeRequest = {
+                title: 'My Resume',
+                url: 'https://example.com/resume.pdf',
+                ResumeType: 'PORTFOLIO',
+            };
+
+            const userEntity: UserEntity = {
                 id: 1,
-                email: createUserRequest.email,
-                name: createUserRequest.name,
-                password: createUserRequest.password,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                isLft: false,
-                githubUrl: createUserRequest.githubUrl,
-                blogUrl: createUserRequest.blogUrl,
-                mainPosition: createUserRequest.mainPosition,
-                subPosition: createUserRequest.subPosition,
-                school: createUserRequest.school,
-                class: createUserRequest.class,
-                roleId: 3,
-                isAuth: true,
-                year: createUserRequest.year,
-            };
-
-            // 이메일 중복 체크
-            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                null,
-            );
-
-            // 사용자를 생성할 때 콜백 호출
-            (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
-
-            const callback = jest.fn();
-
-            const result = await userRepository.createUser(
-                createUserRequest,
-                callback,
-            );
-
-            // findUnique가 올바르게 호출되었는지 확인
-            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-                where: { email: createUserRequest.email },
-                include: { profiles: true }, // include 옵션 추가
-            });
-            // create 메서드가 호출되었는지 확인
-            expect(prismaService.user.create).toHaveBeenCalledWith({
-                data: {
-                    ...createUserRequest,
-                    roleId: 3,
-                    isAuth: true,
-                },
-                include: { profiles: true },
-            });
-            // 콜백 함수가 호출되었는지 확인
-            expect(callback).toHaveBeenCalledWith(newUser);
-            // 반환값 확인
-            expect(result).toEqual(newUser);
-        });
-
-        it('이메일이 중복되면 ConflictException을 던져야 한다', async () => {
-            const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
-                name: 'Test User',
-                year: 3,
+                name: 'test',
+                year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
+                blogUrl: 'https://example.com/blog',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
-                school: 'Test School',
-                class: '재학',
-            };
-
-            const existingUser: UserEntity = {
-                id: 1,
-                email: createUserRequest.email,
-                name: 'Test User',
-                password: 'password123',
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
                 isDeleted: false,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Test School',
-                class: '재학',
-                roleId: 3,
-                isAuth: true,
-                year: createUserRequest.year,
-            };
-
-            // 중복된 사용자로 목킹
-            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                existingUser,
-            );
-
-            await expect(
-                userRepository.createUser(createUserRequest, jest.fn()),
-            ).rejects.toThrow(ConflictException);
-        });
-    });
-
-    describe('findUserByEmail', () => {
-        it('이메일로 사용자를 찾아야 한다', async () => {
-            const email = 'test@test.com';
-            const existingUser: UserEntity = {
-                id: 1,
-                email,
-                name: 'Test User',
-                password: 'password123',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com/test',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Test School',
-                class: '졸업',
                 roleId: 1,
                 isAuth: true,
-                year: 3,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
             };
 
-            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                existingUser,
+            jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(true);
+            jest.spyOn(userRepository, 'createUser').mockResolvedValue(
+                userEntity,
             );
 
-            await expect(userRepository.findUserByEmail(email)).rejects.toThrow(
-                ConflictException,
+            const result = await service.signUp(
+                createUserRequest,
+                createResumeRequest,
             );
+
+            expect(userRepository.createUser).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    email: createUserRequest.email,
+                    password: expect.any(String),
+                }),
+                expect.any(Function),
+            );
+            expect(resumeRepository.createResume).toHaveBeenCalledWith(
+                createResumeRequest,
+                userEntity.id,
+            );
+            expect(result).toEqual(userEntity);
         });
 
-        it('사용자를 찾을 수 없으면 null을 반환해야 한다', async () => {
-            const email = 'nonexistent@test.com';
+        it('이메일 인증이 완료되지 않으면 UnauthorizedException을 던져야 한다', async () => {
+            const createUserRequest: CreateUserRequest = {
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+            };
 
-            (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-                null,
+            jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(false);
+
+            await expect(service.signUp(createUserRequest)).rejects.toThrow(
+                UnauthorizedException,
+            );
+        });
+    });
+
+    describe('login', () => {
+        it('성공적인 로그인 시 토큰을 반환해야 한다', async () => {
+            const email = 'test@test.com';
+            const password = 'password123';
+
+            const user: UserEntity = {
+                id: 1,
+                email,
+                password: await bcrypt.hash(password, 10),
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userRepository, 'findOneByEmail').mockResolvedValue(
+                user,
+            );
+            jest.spyOn(jwtService, 'sign').mockReturnValue('mockAccessToken');
+            jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
+
+            const result = await service.login(email, password);
+
+            expect(userRepository.findOneByEmail).toHaveBeenCalledWith(email);
+            expect(jwtService.sign).toHaveBeenCalled();
+            expect(result).toEqual({
+                accessToken: 'mockAccessToken',
+                refreshToken: 'mockAccessToken',
+            });
+        });
+
+        it('비밀번호가 틀리면 UnauthorizedException을 던져야 한다', async () => {
+            const email = 'test@test.com';
+            const password = 'wrongPassword';
+
+            const user: UserEntity = {
+                id: 1,
+                email,
+                password: await bcrypt.hash('password123', 10),
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userRepository, 'findOneByEmail').mockResolvedValue(
+                user,
+            );
+            jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
+
+            await expect(service.login(email, password)).rejects.toThrow(
+                UnauthorizedException,
+            );
+        });
+    });
+
+    describe('findById', () => {
+        it('ID로 사용자를 찾아야 한다', async () => {
+            const user: UserEntity = {
+                id: 1,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
+
+            const result = await service.findById(1);
+
+            expect(userRepository.findById).toHaveBeenCalledWith(1);
+            expect(result).toEqual(user);
+        });
+
+        it('사용자를 찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+            await expect(service.findById(1)).rejects.toThrow(
+                NotFoundException,
+            );
+        });
+    });
+
+    describe('updateUserProfile', () => {
+        it('사용자 프로필을 업데이트해야 한다', async () => {
+            const userId = 1;
+            const updateUserProfileDto = {
+                profileImage: 'https://newprofileimage.com',
+                school: 'New Hogwarts',
+                class: '2학년',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                githubUrl: 'https://github.com/newuser',
+                blogUrl: 'https://newblog.com',
+                isLft: false,
+                isIntern: false,
+                internCompanyName: 'NewCrowdStrike',
+                internPosition: 'Backend',
+                isFullTime: true,
+                fullTimeCompanyName: 'NewPaloAlto',
+                fullTimePosition: 'Backend',
+            };
+
+            const user: UserEntity = {
+                id: userId,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isLft: false,
+                githubUrl: updateUserProfileDto.githubUrl,
+                blogUrl: updateUserProfileDto.blogUrl,
+                mainPosition: updateUserProfileDto.mainPosition,
+                subPosition: updateUserProfileDto.subPosition,
+                school: updateUserProfileDto.school,
+                class: updateUserProfileDto.class,
+                profileImage: updateUserProfileDto.profileImage,
+                isDeleted: false,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'tester',
+                stack: ['JavaScript', 'NestJS'],
+                isIntern: false,
+                internCompanyName: 'NewCrowdStrike',
+                internPosition: 'Backend',
+                isFullTime: true,
+                fullTimeCompanyName: 'NewPaloAlto',
+                fullTimePosition: 'Backend',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
+            jest.spyOn(userRepository, 'updateUserProfile').mockResolvedValue(
+                user,
             );
 
-            const result = await userRepository.findUserByEmail(email);
+            const result = await service.updateUserProfile(
+                userId,
+                updateUserProfileDto,
+            );
 
-            expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-                where: { email },
-                include: { profiles: true },
-            });
-            expect(result).toBeNull();
+            expect(userRepository.findById).toHaveBeenCalledWith(userId);
+            expect(userRepository.updateUserProfile).toHaveBeenCalledWith(
+                userId,
+                updateUserProfileDto,
+            );
+            expect(result).toEqual(user);
+        });
+
+        it('사용자를 찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
+            const updateUserProfileDto = {
+                profileImage: 'https://newprofileimage.com',
+                school: 'New Hogwarts',
+                class: '2학년',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                githubUrl: 'https://github.com/newuser',
+                blogUrl: 'https://newblog.com',
+                isLft: false,
+                isIntern: false,
+                internCompanyName: 'NewCrowdStrike',
+                internPosition: 'Backend',
+                isFullTime: true,
+                fullTimeCompanyName: 'NewPaloAlto',
+                fullTimePosition: 'Backend',
+            };
+
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+            await expect(
+                service.updateUserProfile(1, updateUserProfileDto),
+            ).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('deleteUser', () => {
+        it('유저를 소프트 삭제해야 한다', async () => {
+            const user: UserEntity = {
+                id: 1,
+                email: 'test@test.com',
+                password: 'password123',
+                name: 'test',
+                year: 6,
+                isDeleted: true,
+                isAuth: true,
+                nickname: 'tester',
+                roleId: 1,
+                githubUrl: 'https://github.com/test',
+                blogUrl: 'https://example.com/blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                class: '1학년',
+                profileImage: 'http://profileimage.com',
+                isLft: false,
+                isIntern: false,
+                internCompanyName: 'crowdStrike',
+                internPosition: 'Frontend',
+                isFullTime: false,
+                fullTimeCompanyName: 'paloalto',
+                fullTimePosition: 'Backend',
+                stack: ['JavaScript', 'NestJS'],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
+            jest.spyOn(userRepository, 'softDeleteUser').mockResolvedValue(
+                user,
+            );
+
+            const result = await service.deleteUser(1);
+
+            expect(userRepository.findById).toHaveBeenCalledWith(1);
+            expect(userRepository.softDeleteUser).toHaveBeenCalledWith(1);
+            expect(result).toEqual(user);
+        });
+
+        it('사용자를 찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+            await expect(service.deleteUser(1)).rejects.toThrow(
+                NotFoundException,
+            );
         });
     });
 });
