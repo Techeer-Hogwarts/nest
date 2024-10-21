@@ -4,7 +4,7 @@ import { UserRepository } from '../repository/user.repository';
 import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { UserEntity } from '../entities/user.entity';
 import { CreateUserDTO } from '../dto/request/create.user.request';
-import { CreateResumeDTO } from '../../resumes/dto/request/create.resume.request';
+import { CreateResumeRequest } from '../../resumes/dto/request/create.resume.request';
 import { ResumeType } from '../../../global/common/enums/ResumeType';
 import { ResumeEntity } from '../../resumes/entities/resume.entity';
 
@@ -93,10 +93,10 @@ describe('UserService', () => {
                 class: '재학',
             };
 
-            const createResumeDTO: CreateResumeDTO = {
+            const createResumeDTO: CreateResumeRequest = {
                 title: 'Test Resume',
                 url: 'https://resume.com/test.pdf',
-                ResumeType: ResumeType.PORTFOLIO,
+                type: ResumeType.PORTFOLIO,
             };
 
             const newUser: UserEntity = {
@@ -123,7 +123,7 @@ describe('UserService', () => {
                 id: 1,
                 title: createResumeDTO.title,
                 url: createResumeDTO.url,
-                ResumeType: ResumeType.PORTFOLIO,
+                type: ResumeType.PORTFOLIO,
                 userId: 1,
                 createdAt: new Date(),
                 updatedAt: new Date(),

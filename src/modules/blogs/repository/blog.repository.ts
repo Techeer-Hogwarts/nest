@@ -104,7 +104,10 @@ export class BlogRepository {
 
     async deleteBlog(blogId: number): Promise<void> {
         await this.prisma.blog.update({
-            where: { id: blogId },
+            where: {
+                id: blogId,
+                isDeleted: false,
+            },
             data: { isDeleted: true },
         });
     }

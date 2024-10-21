@@ -6,12 +6,13 @@ import {
     bestBlogEntities,
     blogEntities,
     blogEntity,
-    createBlogDto,
-    getBestBlogDtoList,
-    getBlogDto,
-    getBlogsQueryDto,
+    createBlogRequest,
+    getBestBlogResponseList,
+    getBlogResponse,
+    getBlogResponseList,
+    getBlogsQueryRequest,
     paginationQueryDto,
-    updateBlogDto,
+    updateBlogRequest,
     updatedBlogEntity,
 } from './mock-data';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
@@ -55,10 +56,12 @@ describe('BlogService', (): void => {
             );
 
             const result: GetBlogResponse =
-                await service.createBlog(createBlogDto);
+                await service.createBlog(createBlogRequest);
 
-            expect(result).toEqual(getBlogDto);
-            expect(repository.createBlog).toHaveBeenCalledWith(createBlogDto);
+            expect(result).toEqual(getBlogResponse);
+            expect(repository.createBlog).toHaveBeenCalledWith(
+                createBlogRequest,
+            );
             expect(repository.createBlog).toHaveBeenCalledTimes(1);
         });
     });
@@ -72,7 +75,7 @@ describe('BlogService', (): void => {
             const result: GetBlogResponse[] =
                 await service.getBestBlogs(paginationQueryDto);
 
-            expect(result).toEqual(getBestBlogDtoList);
+            expect(result).toEqual(getBestBlogResponseList);
             // 반환된 모든 요소가 GetBlogDto의 인스턴스인지 확인
             expect(
                 result.every(
@@ -94,7 +97,7 @@ describe('BlogService', (): void => {
 
             const result: GetBlogResponse = await service.getBlog(1);
 
-            expect(result).toEqual(getBlogDto);
+            expect(result).toEqual(getBlogResponse);
             expect(result).toBeInstanceOf(GetBlogResponse);
             expect(repository.getBlog).toHaveBeenCalledTimes(1);
         });
@@ -107,13 +110,9 @@ describe('BlogService', (): void => {
             );
 
             const result: GetBlogResponse[] =
-                await service.getBlogList(getBlogsQueryDto);
+                await service.getBlogList(getBlogsQueryRequest);
 
-            expect(result).toEqual(
-                blogEntities.map(
-                    (blog: BlogEntity) => new GetBlogResponse(blog),
-                ),
-            );
+            expect(result).toEqual(getBlogResponseList);
             expect(
                 result.every(
                     (item: GetBlogResponse): boolean =>
@@ -121,7 +120,7 @@ describe('BlogService', (): void => {
                 ),
             ).toBe(true);
             expect(repository.getBlogList).toHaveBeenCalledWith(
-                getBlogsQueryDto,
+                getBlogsQueryRequest,
             );
             expect(repository.getBlogList).toHaveBeenCalledTimes(1);
         });
@@ -193,7 +192,7 @@ describe('BlogService', (): void => {
 
             const result: GetBlogResponse = await service.updateBlog(
                 1,
-                updateBlogDto,
+                updateBlogRequest,
             );
 
             expect(result).toEqual(new GetBlogResponse(updatedBlogEntity));
@@ -202,7 +201,7 @@ describe('BlogService', (): void => {
             expect(repository.getBlog).toHaveBeenCalledWith(1);
             expect(repository.updateBlog).toHaveBeenCalledWith(
                 1,
-                updateBlogDto,
+                updateBlogRequest,
             );
 
             expect(repository.getBlog).toHaveBeenCalledTimes(1);
@@ -214,9 +213,9 @@ describe('BlogService', (): void => {
                 new NotFoundException(),
             );
 
-            await expect(service.updateBlog(1, updateBlogDto)).rejects.toThrow(
-                NotFoundException,
-            );
+            await expect(
+                service.updateBlog(1, updateBlogRequest),
+            ).rejects.toThrow(NotFoundException);
 
             expect(repository.getBlog).toHaveBeenCalledWith(1);
             expect(repository.updateBlog).not.toHaveBeenCalled();

@@ -128,7 +128,7 @@ model Resume {
   isMain      Boolean      @default(false)
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
-  ResumeType  ResumeType
+  type        ResumeType
 
   user        User         @relation("UserResumes", fields: [userId], references: [id])
 }

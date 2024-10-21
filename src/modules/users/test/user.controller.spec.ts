@@ -4,7 +4,7 @@ import { UserService } from '../user.service';
 import { AuthService } from '../../../auth/auth.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { CreateUserDTO } from '../dto/request/create.user.request';
-import { CreateResumeDTO } from '../../resumes/dto/request/create.resume.request';
+import { CreateResumeRequest } from '../../resumes/dto/request/create.resume.request';
 import { UserEntity } from '../entities/user.entity';
 import { ResumeType } from '../../../global/common/enums/ResumeType';
 
@@ -57,10 +57,10 @@ describe('UserController', () => {
                 class: '휴학중',
             };
 
-            const createResumeDTO: CreateResumeDTO = {
+            const createResumeRequest: CreateResumeRequest = {
                 title: 'My Resume',
                 url: 'https://example.com/resume.pdf',
-                ResumeType: ResumeType.PORTFOLIO,
+                type: ResumeType.PORTFOLIO,
             };
 
             const userEntity: UserEntity = {
@@ -88,7 +88,7 @@ describe('UserController', () => {
 
             const result = await userController.signUp(
                 createUserDTO,
-                createResumeDTO,
+                createResumeRequest,
             );
 
             expect(authService.checkIfVerified).toHaveBeenCalledWith(
@@ -96,7 +96,7 @@ describe('UserController', () => {
             );
             expect(userService.createUser).toHaveBeenCalledWith(
                 createUserDTO,
-                createResumeDTO,
+                createResumeRequest,
             );
             expect(result).toEqual(userEntity);
         });
