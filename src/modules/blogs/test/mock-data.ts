@@ -6,7 +6,7 @@ import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 
-export const createBlogDto: CreateBlogRequest = {
+export const createBlogRequest: CreateBlogRequest = {
     userId: 1,
     title: 'Test Post',
     url: 'https://example.com/blog',
@@ -17,20 +17,20 @@ export const createBlogDto: CreateBlogRequest = {
 export const blogEntity = (overrides?: Partial<BlogEntity>): BlogEntity => {
     return {
         id: 1,
-        userId: createBlogDto.userId,
-        title: createBlogDto.title,
-        url: createBlogDto.url,
-        date: createBlogDto.date,
-        category: createBlogDto.category,
-        createdAt: createBlogDto.date,
-        updatedAt: createBlogDto.date,
+        userId: createBlogRequest.userId,
+        title: createBlogRequest.title,
+        url: createBlogRequest.url,
+        date: createBlogRequest.date,
+        category: createBlogRequest.category,
+        createdAt: createBlogRequest.date,
+        updatedAt: createBlogRequest.date,
         isDeleted: false,
         likeCount: 0,
         viewCount: 0,
         user: {
-            id: createBlogDto.userId,
-            createdAt: createBlogDto.date,
-            updatedAt: createBlogDto.date,
+            id: createBlogRequest.userId,
+            createdAt: createBlogRequest.date,
+            updatedAt: createBlogRequest.date,
             isDeleted: false,
             name: 'testName',
             email: 'test@test.com',
@@ -55,7 +55,7 @@ export const blogEntities: BlogEntity[] = [
     blogEntity({ id: 2 }),
 ];
 
-export const getBlogsQueryDto: GetBlogsQueryRequest = {
+export const getBlogsQueryRequest: GetBlogsQueryRequest = {
     keyword: 'Test',
     category: 'Backend',
     position: 'Backend',
@@ -63,20 +63,22 @@ export const getBlogsQueryDto: GetBlogsQueryRequest = {
     limit: 10,
 };
 
-export const getBlogDto: GetBlogResponse = new GetBlogResponse(blogEntity());
-
-export const getBlogDtoList: GetBlogResponse[] = blogEntities.map(
-    (blog) => new GetBlogResponse(blog),
+export const getBlogResponse: GetBlogResponse = new GetBlogResponse(
+    blogEntity(),
 );
 
-export const updateBlogDto: UpdateBlogRequest = {
+export const getBlogResponseList: GetBlogResponse[] = blogEntities.map(
+    (blog: BlogEntity) => new GetBlogResponse(blog),
+);
+
+export const updateBlogRequest: UpdateBlogRequest = {
     title: 'Updated Title',
     url: 'https://example.com/updated-blog',
-    date: createBlogDto.date,
+    date: createBlogRequest.date,
 };
 
 export const updatedBlogEntity: BlogEntity = blogEntity({
-    ...updateBlogDto,
+    ...updateBlogRequest,
 });
 
 export const paginationQueryDto: PaginationQueryDto = {
@@ -112,6 +114,6 @@ export const bestBlogEntities: BlogEntity[] = [
     }),
 ];
 
-export const getBestBlogDtoList: GetBlogResponse[] = bestBlogEntities.map(
-    (blog) => new GetBlogResponse(blog),
+export const getBestBlogResponseList: GetBlogResponse[] = bestBlogEntities.map(
+    (blog: BlogEntity) => new GetBlogResponse(blog),
 );

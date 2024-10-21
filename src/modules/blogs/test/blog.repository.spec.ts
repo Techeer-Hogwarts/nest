@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../../prisma/prisma.service';
 import { BlogRepository } from '../repository/blog.repository';
-import { NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import {
     bestBlogEntities,
     blogEntities,
     blogEntity,
-    createBlogDto,
-    getBlogsQueryDto,
+    createBlogRequest,
+    getBlogsQueryRequest,
     paginationQueryDto,
-    updateBlogDto,
+    updateBlogRequest,
     updatedBlogEntity,
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
+import { NotFoundException } from '@nestjs/common';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
@@ -52,11 +52,11 @@ describe('BlogRepository', () => {
             );
 
             const result: BlogEntity =
-                await repository.createBlog(createBlogDto);
+                await repository.createBlog(createBlogRequest);
 
             expect(result).toEqual(blogEntity());
             expect(prismaService.blog.create).toHaveBeenCalledWith({
-                data: createBlogDto,
+                data: createBlogRequest,
                 include: { user: true },
             });
             expect(prismaService.blog.create).toHaveBeenCalledTimes(1);
@@ -107,46 +107,46 @@ describe('BlogRepository', () => {
             );
 
             const result: BlogEntity[] =
-                await repository.getBlogList(getBlogsQueryDto);
+                await repository.getBlogList(getBlogsQueryRequest);
 
             expect(result).toEqual(blogEntities);
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    ...(getBlogsQueryDto.keyword && {
+                    ...(getBlogsQueryRequest.keyword && {
                         OR: [
                             {
                                 title: {
-                                    contains: getBlogsQueryDto.keyword,
+                                    contains: getBlogsQueryRequest.keyword,
                                     mode: 'insensitive',
                                 },
                             },
                             {
                                 category: {
-                                    contains: getBlogsQueryDto.keyword,
+                                    contains: getBlogsQueryRequest.keyword,
                                     mode: 'insensitive',
                                 },
                             },
                             {
                                 user: {
                                     name: {
-                                        contains: getBlogsQueryDto.keyword,
+                                        contains: getBlogsQueryRequest.keyword,
                                         mode: 'insensitive',
                                     },
                                 },
                             },
                         ],
                     }),
-                    ...(getBlogsQueryDto.category && {
-                        category: getBlogsQueryDto.category,
+                    ...(getBlogsQueryRequest.category && {
+                        category: getBlogsQueryRequest.category,
                     }),
-                    ...(getBlogsQueryDto.position && {
-                        user: { mainPosition: getBlogsQueryDto.position },
+                    ...(getBlogsQueryRequest.position && {
+                        user: { mainPosition: getBlogsQueryRequest.position },
                     }),
                 },
                 include: { user: true },
-                skip: getBlogsQueryDto.offset,
-                take: getBlogsQueryDto.limit,
+                skip: getBlogsQueryRequest.offset,
+                take: getBlogsQueryRequest.limit,
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
@@ -205,13 +205,13 @@ describe('BlogRepository', () => {
 
             const result: BlogEntity = await repository.updateBlog(
                 1,
-                updateBlogDto,
+                updateBlogRequest,
             );
 
             expect(result).toEqual(updatedBlogEntity);
             expect(prismaService.blog.update).toHaveBeenCalledWith({
                 where: { id: 1 },
-                data: updateBlogDto,
+                data: updateBlogRequest,
                 include: { user: true },
             });
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);

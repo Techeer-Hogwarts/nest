@@ -85,7 +85,7 @@ export class ResumeController {
             await this.resumeService.getResume(resumeId);
         return {
             code: 200,
-            message: '블로그 게시물을 조회했습니다.',
+            message: '이력서를 조회했습니다.',
             data: resume,
         };
     }
@@ -119,13 +119,13 @@ export class ResumeController {
         await this.resumeService.deleteResume(resumeId);
         return {
             code: 200,
-            message: '게시물이 삭제되었습니다.',
+            message: '이력서가 삭제되었습니다.',
         };
     }
 
     @Patch(':resumeId')
     @ApiOperation({
-        summary: '블로그 게시물 수정',
+        summary: '이력서 수정',
         description: '지정된 ID의 이력서 정보를 수정합니다.',
     })
     async updateResume(

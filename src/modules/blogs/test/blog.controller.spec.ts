@@ -5,13 +5,13 @@ import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { NotFoundException } from '@nestjs/common';
 import {
     blogEntities,
-    createBlogDto,
-    getBestBlogDtoList,
-    getBlogDto,
-    getBlogDtoList,
-    getBlogsQueryDto,
+    createBlogRequest,
+    getBestBlogResponseList,
+    getBlogResponse,
+    getBlogResponseList,
+    getBlogsQueryRequest,
     paginationQueryDto,
-    updateBlogDto,
+    updateBlogRequest,
     updatedBlogEntity,
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
@@ -49,16 +49,18 @@ describe('BlogController', (): void => {
 
     describe('createBlog', (): void => {
         it('should successfully create a blog', async (): Promise<void> => {
-            jest.spyOn(service, 'createBlog').mockResolvedValue(getBlogDto);
+            jest.spyOn(service, 'createBlog').mockResolvedValue(
+                getBlogResponse,
+            );
 
-            const result = await controller.createBlog(createBlogDto);
+            const result = await controller.createBlog(createBlogRequest);
 
             expect(result).toEqual({
                 code: 201,
                 message: '게시물을 생성했습니다.',
-                data: getBlogDto,
+                data: getBlogResponse,
             });
-            expect(service.createBlog).toHaveBeenCalledWith(createBlogDto);
+            expect(service.createBlog).toHaveBeenCalledWith(createBlogRequest);
             expect(service.createBlog).toHaveBeenCalledTimes(1);
         });
     });
@@ -66,7 +68,7 @@ describe('BlogController', (): void => {
     describe('getBestBlogs', (): void => {
         it('should return a list of best blogs based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestBlogs').mockResolvedValue(
-                getBestBlogDtoList,
+                getBestBlogResponseList,
             );
 
             const result = await controller.getBestBlogs(paginationQueryDto);
@@ -74,7 +76,7 @@ describe('BlogController', (): void => {
             expect(result).toEqual({
                 code: 200,
                 message: '인기 게시물을 조회했습니다.',
-                data: getBestBlogDtoList,
+                data: getBestBlogResponseList,
             });
             expect(service.getBestBlogs).toHaveBeenCalledWith(
                 paginationQueryDto,
@@ -85,14 +87,14 @@ describe('BlogController', (): void => {
 
     describe('getBlog', (): void => {
         it('should return a list of blogs based on query', async (): Promise<void> => {
-            jest.spyOn(service, 'getBlog').mockResolvedValue(getBlogDto);
+            jest.spyOn(service, 'getBlog').mockResolvedValue(getBlogResponse);
 
             const result = await controller.getBlog(1);
 
             expect(result).toEqual({
                 code: 200,
                 message: '블로그 게시물을 조회했습니다.',
-                data: getBlogDto,
+                data: getBlogResponse,
             });
             expect(service.getBlog).toHaveBeenCalledWith(1);
             expect(service.getBlog).toHaveBeenCalledTimes(1);
@@ -102,17 +104,19 @@ describe('BlogController', (): void => {
     describe('getBlogList', (): void => {
         it('should return a list of blogs based on query', async (): Promise<void> => {
             jest.spyOn(service, 'getBlogList').mockResolvedValue(
-                getBlogDtoList,
+                getBlogResponseList,
             );
 
-            const result = await controller.getBlogList(getBlogsQueryDto);
+            const result = await controller.getBlogList(getBlogsQueryRequest);
 
             expect(result).toEqual({
                 code: 200,
                 message: '블로그 게시물 목록을 조회했습니다.',
-                data: getBlogDtoList,
+                data: getBlogResponseList,
             });
-            expect(service.getBlogList).toHaveBeenCalledWith(getBlogsQueryDto);
+            expect(service.getBlogList).toHaveBeenCalledWith(
+                getBlogsQueryRequest,
+            );
             expect(service.getBlogList).toHaveBeenCalledTimes(1);
         });
     });
@@ -181,14 +185,17 @@ describe('BlogController', (): void => {
                 new GetBlogResponse(updatedBlogEntity),
             );
 
-            const result = await controller.updateBlog(1, updateBlogDto);
+            const result = await controller.updateBlog(1, updateBlogRequest);
 
             expect(result).toEqual({
                 code: 200,
                 message: '게시물이 수정되었습니다.',
                 data: new GetBlogResponse(updatedBlogEntity),
             });
-            expect(service.updateBlog).toHaveBeenCalledWith(1, updateBlogDto);
+            expect(service.updateBlog).toHaveBeenCalledWith(
+                1,
+                updateBlogRequest,
+            );
             expect(service.updateBlog).toHaveBeenCalledTimes(1);
         });
 
@@ -198,10 +205,13 @@ describe('BlogController', (): void => {
             );
 
             await expect(
-                controller.updateBlog(1, updateBlogDto),
+                controller.updateBlog(1, updateBlogRequest),
             ).rejects.toThrow(NotFoundException);
 
-            expect(service.updateBlog).toHaveBeenCalledWith(1, updateBlogDto);
+            expect(service.updateBlog).toHaveBeenCalledWith(
+                1,
+                updateBlogRequest,
+            );
             expect(service.updateBlog).toHaveBeenCalledTimes(1);
         });
     });
