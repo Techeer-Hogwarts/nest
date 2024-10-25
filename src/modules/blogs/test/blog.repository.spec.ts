@@ -13,9 +13,9 @@ import {
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
 import { NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-describe('BlogRepository', () => {
+describe('BlogRepository', (): void => {
     let repository: BlogRepository;
     let prismaService: PrismaService;
 
@@ -198,13 +198,11 @@ describe('BlogRepository', () => {
         });
 
         it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
-            const prismaError = new Prisma.PrismaClientKnownRequestError(
-                'Record not found',
-                {
+            const prismaError: PrismaClientKnownRequestError =
+                new PrismaClientKnownRequestError('Record not found', {
                     code: 'P2025',
                     clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                },
-            );
+                });
 
             jest.spyOn(prismaService.blog, 'update').mockRejectedValue(
                 prismaError,
@@ -229,7 +227,10 @@ describe('BlogRepository', () => {
 
             expect(result).toEqual(updatedBlogEntity);
             expect(prismaService.blog.update).toHaveBeenCalledWith({
-                where: { id: 1 },
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
                 data: updateBlogRequest,
                 include: { user: true },
             });
@@ -237,21 +238,28 @@ describe('BlogRepository', () => {
         });
 
         it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
-            const prismaError = new Prisma.PrismaClientKnownRequestError(
-                'Record not found',
-                {
+            const prismaError: PrismaClientKnownRequestError =
+                new PrismaClientKnownRequestError('Record not found', {
                     code: 'P2025',
                     clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                },
-            );
+                });
 
             jest.spyOn(prismaService.blog, 'update').mockRejectedValue(
                 prismaError,
             );
 
-            await expect(repository.deleteBlog(1)).rejects.toThrow(
-                NotFoundException,
-            );
+            await expect(
+                repository.updateBlog(1, updateBlogRequest),
+            ).rejects.toThrow(NotFoundException);
+            expect(prismaService.blog.update).toHaveBeenCalledWith({
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
+                data: updateBlogRequest,
+                include: { user: true },
+            });
+            expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
         });
     });
 });

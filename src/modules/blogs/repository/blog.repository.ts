@@ -129,9 +129,10 @@ export class BlogRepository {
         const { title, url, date }: UpdateBlogRequest = updateBlogRequest;
 
         try {
-            return this.prisma.blog.update({
+            return await this.prisma.blog.update({
                 where: {
-                    id: blogId,
+                    id: 1,
+                    isDeleted: false,
                 },
                 data: {
                     title,

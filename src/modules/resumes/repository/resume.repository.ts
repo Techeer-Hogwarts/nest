@@ -103,13 +103,23 @@ export class ResumeRepository {
     }
 
     async deleteResume(resumeId: number): Promise<void> {
-        await this.prisma.resume.update({
-            where: {
-                id: resumeId,
-                isDeleted: false,
-            },
-            data: { isDeleted: true },
-        });
+        try {
+            await this.prisma.resume.update({
+                where: {
+                    id: resumeId,
+                    isDeleted: false,
+                },
+                data: { isDeleted: true },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundException('이력서를 찾을 수 없습니다.');
+            }
+            throw error;
+        }
     }
 
     async updateResume(
@@ -119,20 +129,30 @@ export class ResumeRepository {
         const { title, url, isMain, type }: UpdateResumeRequest =
             updateResumeRequest;
 
-        return this.prisma.resume.update({
-            where: {
-                id: resumeId,
-                isDeleted: false,
-            },
-            data: {
-                title,
-                url,
-                isMain,
-                type,
-            },
-            include: {
-                user: true,
-            },
-        });
+        try {
+            return await this.prisma.resume.update({
+                where: {
+                    id: resumeId,
+                    isDeleted: false,
+                },
+                data: {
+                    title,
+                    url,
+                    isMain,
+                    type,
+                },
+                include: {
+                    user: true,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundException('이력서를 찾을 수 없습니다.');
+            }
+            throw error;
+        }
     }
 }

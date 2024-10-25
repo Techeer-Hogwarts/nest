@@ -13,8 +13,9 @@ import {
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
 import { NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-describe('ResumeRepository', () => {
+describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
     let prismaService: PrismaService;
 
@@ -191,6 +192,31 @@ describe('ResumeRepository', () => {
             );
 
             expect(result).toEqual(updatedResumeEntity);
+            expect(prismaService.resume.update).toHaveBeenCalledWith({
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
+                data: updateResumeRequest,
+                include: { user: true },
+            });
+            expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
+            const prismaError: PrismaClientKnownRequestError =
+                new PrismaClientKnownRequestError('Record not found', {
+                    code: 'P2025',
+                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+                });
+
+            jest.spyOn(prismaService.resume, 'update').mockRejectedValue(
+                prismaError,
+            );
+
+            await expect(
+                repository.updateResume(1, updateResumeRequest),
+            ).rejects.toThrow(NotFoundException);
             expect(prismaService.resume.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,

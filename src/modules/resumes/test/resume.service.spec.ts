@@ -164,37 +164,29 @@ describe('ResumeService', (): void => {
 
     describe('deleteResume', (): void => {
         it('should successfully delete a resume', async (): Promise<void> => {
-            jest.spyOn(repository, 'getResume').mockResolvedValue(
-                resumeEntity(),
-            );
             jest.spyOn(repository, 'deleteResume').mockResolvedValue(undefined);
 
             await service.deleteResume(1);
 
-            expect(repository.getResume).toHaveBeenCalledWith(1);
-            expect(repository.getResume).toHaveBeenCalledTimes(1);
             expect(repository.deleteResume).toHaveBeenCalledWith(1);
             expect(repository.deleteResume).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if resume does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'getResume').mockRejectedValue(
-                new NotFoundException(),
+            jest.spyOn(repository, 'deleteResume').mockRejectedValue(
+                new NotFoundException('이력서를 찾을 수 없습니다.'),
             );
 
             await expect(service.deleteResume(1)).rejects.toThrow(
                 NotFoundException,
             );
-            expect(repository.getResume).toHaveBeenCalledWith(1);
-            expect(repository.deleteResume).not.toHaveBeenCalled();
+            expect(repository.deleteResume).toHaveBeenCalledWith(1);
+            expect(repository.deleteResume).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('updateResume', (): void => {
         it('should successfully update a resume and return a GetResumeResponse', async (): Promise<void> => {
-            jest.spyOn(repository, 'getResume').mockResolvedValue(
-                resumeEntity(),
-            );
             jest.spyOn(repository, 'updateResume').mockResolvedValue(
                 updatedResumeEntity,
             );
@@ -207,27 +199,27 @@ describe('ResumeService', (): void => {
             expect(result).toEqual(new GetResumeResponse(updatedResumeEntity));
             expect(result).toBeInstanceOf(GetResumeResponse);
 
-            expect(repository.getResume).toHaveBeenCalledWith(1);
             expect(repository.updateResume).toHaveBeenCalledWith(
                 1,
                 updateResumeRequest,
             );
-
-            expect(repository.getResume).toHaveBeenCalledTimes(1);
             expect(repository.updateResume).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'getResume').mockRejectedValue(
-                new NotFoundException(),
+            jest.spyOn(repository, 'updateResume').mockRejectedValue(
+                new NotFoundException('이력서를 찾을 수 없습니다.'),
             );
 
             await expect(
                 service.updateResume(1, updateResumeRequest),
             ).rejects.toThrow(NotFoundException);
 
-            expect(repository.getResume).toHaveBeenCalledWith(1);
-            expect(repository.updateResume).not.toHaveBeenCalled();
+            expect(repository.updateResume).toHaveBeenCalledWith(
+                1,
+                updateResumeRequest,
+            );
+            expect(repository.updateResume).toHaveBeenCalledTimes(1);
         });
     });
 });

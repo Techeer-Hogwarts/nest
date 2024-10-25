@@ -64,7 +64,6 @@ export class ResumeService {
     }
 
     async deleteResume(resumeId: number): Promise<void> {
-        await this.resumeRepository.getResume(resumeId); // 이력서 존재 여부 검사
         return this.resumeRepository.deleteResume(resumeId);
     }
 
@@ -72,7 +71,6 @@ export class ResumeService {
         resumeId: number,
         updateResumeRequest: UpdateResumeRequest,
     ): Promise<GetResumeResponse> {
-        await this.resumeRepository.getResume(resumeId); // 이력서 존재 여부 검사
         const resume: ResumeEntity = await this.resumeRepository.updateResume(
             resumeId,
             updateResumeRequest,
