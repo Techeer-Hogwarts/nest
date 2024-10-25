@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UserEntity } from '../entities/user.entity';
 import { CreateUserRequest } from '../dto/request/create.user.request';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
+import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
 
 @Injectable()
 export class UserRepository {
@@ -10,47 +11,53 @@ export class UserRepository {
 
     async createUser(
         createUserRequest: CreateUserRequest,
-        callback: (user: UserEntity) => Promise<void>,
-    ): Promise<UserEntity> {
-        return this.prisma.$transaction(async (tx) => {
-            // 유저 생성
-            const newUser = await tx.user.create({
-                data: {
-                    ...createUserRequest,
-                    roleId: 3, // 기본 roleId
-                    isAuth: true, // 인증된 사용자로 표시
-                },
-            });
-
-            // 생성된 유저에 대한 추가 작업 (예: 이력서 생성 등)
-            try {
-                await callback(newUser); // 이력서 생성
-            } catch (error) {
-                throw new Error('사용자 생성 중 오류가 발생했습니다.');
-            }
-
-            return newUser;
+        profileImage: string, // 슬랙에서 받아온 프로필 이미지
+    ): Promise<any> {
+        return this.prisma.user.create({
+            data: {
+                ...createUserRequest,
+                roleId: 3,
+                profileImage: profileImage,
+                isAuth: true,
+                internStartDate: createUserRequest.internStartDate
+                    ? new Date(
+                          `${createUserRequest.internStartDate}T00:00:00.000Z`,
+                      )
+                    : null, // 인턴 시작 날짜
+                internEndDate: createUserRequest.internEndDate
+                    ? new Date(
+                          `${createUserRequest.internEndDate}T00:00:00.000Z`,
+                      )
+                    : null, // 인턴 종료 날짜
+                fullTimeStartDate: createUserRequest.fullTimeStartDate
+                    ? new Date(
+                          `${createUserRequest.fullTimeStartDate}T00:00:00.000Z`,
+                      )
+                    : null, // 정규직 시작 날짜
+                fullTimeEndDate: createUserRequest.fullTimeEndDate
+                    ? new Date(
+                          `${createUserRequest.fullTimeEndDate}T00:00:00.000Z`,
+                      )
+                    : null, // 정규직 종료 날짜
+            },
         });
     }
 
-    // 이메일로 사용자 검색
     async findOneByEmail(email: string): Promise<UserEntity | null> {
         return this.prisma.user.findUnique({
             where: { email },
         });
     }
 
-    // ID로 사용자 찾기 (삭제된 사용자 제외)
     async findById(id: number): Promise<UserEntity | null> {
         return this.prisma.user.findUnique({
             where: {
                 id,
-                isDeleted: false, // 삭제된 사용자는 조회하지 않음
+                isDeleted: false,
             },
         });
     }
 
-    // 유저 프로필 업데이트
     async updateUserProfile(
         userId: number,
         updateUserRequest: UpdateUserRequest,
@@ -58,16 +65,110 @@ export class UserRepository {
         return this.prisma.user.update({
             where: { id: userId },
             data: {
-                ...updateUserRequest, // DTO의 데이터를 Prisma로 전달
+                ...updateUserRequest,
             },
         });
     }
 
-    // 소프트 삭제
     async softDeleteUser(userId: number): Promise<UserEntity> {
         return this.prisma.user.update({
             where: { id: userId },
-            data: { isDeleted: true }, // 소프트 삭제 처리
+            data: { isDeleted: true },
+        });
+    }
+
+    async updatePassword(email: string, newPassword: string): Promise<void> {
+        await this.prisma.user.update({
+            where: { email },
+            data: { password: newPassword },
+        });
+    }
+
+    async updateUserRole(userId: number, newRoleId: number): Promise<any> {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { roleId: newRoleId },
+        });
+    }
+
+    async updatePermissionRequestStatus(
+        userId: number,
+        status: string,
+    ): Promise<any> {
+        return this.prisma.permissionRequest.updateMany({
+            where: {
+                userId,
+                status: 'PENDING',
+            },
+            data: { status },
+        });
+    }
+
+    async createPermissionRequest(
+        userId: number,
+        roleId: number,
+    ): Promise<any> {
+        return this.prisma.permissionRequest.create({
+            data: {
+                userId,
+                requestedRoleId: roleId,
+                status: 'PENDING',
+            },
+        });
+    }
+
+    async getAllPermissionRequests(): Promise<any> {
+        return this.prisma.permissionRequest.findMany({
+            where: { status: 'PENDING' },
+            include: { user: true },
+        });
+    }
+
+    async updateProfileImageByEmail(
+        email: string,
+        imageUrl: string,
+    ): Promise<any> {
+        return this.prisma.user.update({
+            where: { email },
+            data: { profileImage: imageUrl },
+        });
+    }
+
+    async updateNickname(userId: number, nickname: string): Promise<any> {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { nickname: nickname },
+        });
+    }
+
+    async findAllProfiles(query: GetUserssQueryRequest): Promise<any> {
+        const { position, year, university, grade, offset, limit } = query;
+        const filters: any = {};
+        if (position) filters.mainPosition = position;
+        if (year) filters.year = year;
+        if (university) filters.school = university;
+        if (grade) filters.class = grade;
+
+        return this.prisma.user.findMany({
+            where: {
+                isDeleted: false,
+                ...filters,
+            },
+            skip: offset || 0,
+            take: limit || 10,
+            select: {
+                id: true,
+                name: true,
+                nickname: true,
+                email: true,
+                mainPosition: true,
+                subPosition: true,
+                school: true,
+                class: true,
+                profileImage: true,
+                githubUrl: true,
+                blogUrl: true,
+            },
         });
     }
 }

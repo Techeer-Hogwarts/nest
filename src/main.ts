@@ -43,7 +43,12 @@ async function bootstrap(): Promise<void> {
 
         logger.log('Swagger 모듈 설정이 완료되었습니다.');
 
-        app.useGlobalPipes(new ValidationPipe());
+        app.useGlobalPipes(
+            new ValidationPipe({
+                transform: true, // DTO에서 정의한 타입으로 자동 변환
+                forbidNonWhitelisted: true, // DTO에 없는 값이 들어오면 예외 발생
+            }),
+        );
         logger.log('Global validation 파이프가 설정되었습니다.');
 
         const prismaService = app.get(PrismaService);

@@ -2,17 +2,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../user.controller';
 import { UserService } from '../user.service';
 import { CreateUserWithResumeRequest } from '../dto/request/create.user.with.resume.request';
-import { LoginRequest } from '../dto/request/login.user.request';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
-import { UnauthorizedException } from '@nestjs/common';
-import { Request, Response } from 'express';
-import { GetUserResponse } from '../dto/response/get.user.response';
+import { Request } from 'express';
+import { CreatePermissionRequest } from '../dto/request/create.permission.request';
+import { ApprovePermissionRequest } from '../dto/request/approve.permission.request';
+import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
 import { UserEntity } from '../entities/user.entity';
-import { TokenExpiredError } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
+import { UserRepository } from '../repository/user.repository';
 
 describe('UserController', () => {
     let userController: UserController;
     let userService: UserService;
+    let userRepository: UserRepository;
+    let jwtService: JwtService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -22,25 +25,36 @@ describe('UserController', () => {
                     provide: UserService,
                     useValue: {
                         signUp: jest.fn(),
-                        login: jest.fn(),
-                        logout: jest.fn(),
-                        refresh: jest.fn(),
                         updateUserProfile: jest.fn(),
-                        validateToken: jest.fn(),
                         deleteUser: jest.fn(),
                         getUserInfo: jest.fn(),
+                        getAllProfiles: jest.fn(),
+                        updateNickname: jest.fn(),
+                        requestPermission: jest.fn(),
+                        getPermissionRequests: jest.fn(),
+                        approvePermission: jest.fn(),
+                        updateProfileImage: jest.fn(),
                     },
                 },
+                {
+                    provide: UserRepository,
+                    useValue: {},
+                },
+                JwtService,
             ],
         }).compile();
 
         userController = module.get<UserController>(UserController);
         userService = module.get<UserService>(UserService);
+        userRepository = module.get<UserRepository>(UserRepository);
+        jwtService = module.get<JwtService>(JwtService);
     });
 
     it('정의되어 있어야 한다', () => {
         expect(userController).toBeDefined();
         expect(userService).toBeDefined();
+        expect(userRepository).toBeDefined();
+        expect(jwtService).toBeDefined();
     });
 
     describe('signUp', () => {
@@ -58,7 +72,6 @@ describe('UserController', () => {
                     subPosition: 'Frontend',
                     school: 'Hogwarts',
                     class: '1학년',
-                    profileImage: 'http://profileimage.com',
                 },
                 createResumeRequest: {
                     title: 'My Resume',
@@ -67,7 +80,7 @@ describe('UserController', () => {
                 },
             };
 
-            const userEntity = {
+            const userEntity: UserEntity = {
                 id: 1,
                 email: 'test@test.com',
                 password: 'password123',
@@ -92,6 +105,10 @@ describe('UserController', () => {
                 isFullTime: false,
                 fullTimeCompanyName: 'paloalto',
                 fullTimePosition: 'Backend',
+                internStartDate: null,
+                internEndDate: null,
+                fullTimeStartDate: null,
+                fullTimeEndDate: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -114,118 +131,80 @@ describe('UserController', () => {
         });
     });
 
-    describe('login', () => {
-        it('로그인을 성공적으로 처리해야 한다', async () => {
-            const loginRequest: LoginRequest = {
-                email: 'test@test.com',
-                password: 'password123',
+    describe('getAllProfiles', () => {
+        it('프로필 목록을 성공적으로 조회해야 한다', async () => {
+            const query: GetUserssQueryRequest = {
+                position: 'Backend',
+                year: 6,
+                university: 'Hogwarts',
+                grade: '1학년',
+                offset: 0,
+                limit: 10,
             };
-            const mockResponse = {
-                cookie: jest.fn(),
-            } as unknown as Response;
 
-            const tokens = {
-                accessToken: 'access_token',
-                refreshToken: 'refresh_token',
-            };
-            jest.spyOn(userService, 'login').mockResolvedValue(tokens);
+            const profiles = [
+                {
+                    id: 1,
+                    name: 'test',
+                    email: 'test@test.com',
+                    mainPosition: 'Backend',
+                    subPosition: 'Frontend',
+                    school: 'Hogwarts',
+                    class: '1학년',
+                    profileImage: 'http://profileimage.com',
+                    githubUrl: 'https://github.com/test',
+                    blogUrl: 'https://example.com/blog',
+                },
+            ];
 
-            const result = await userController.login(
-                loginRequest,
-                mockResponse,
+            jest.spyOn(userService, 'getAllProfiles').mockResolvedValue(
+                profiles,
             );
 
-            expect(userService.login).toHaveBeenCalledWith(
-                loginRequest.email,
-                loginRequest.password,
-            );
-            expect(mockResponse.cookie).toHaveBeenCalledWith(
-                'access_token',
-                tokens.accessToken,
-                expect.any(Object),
-            );
-            expect(mockResponse.cookie).toHaveBeenCalledWith(
-                'refresh_token',
-                tokens.refreshToken,
-                expect.any(Object),
-            );
+            const result = await userController.getAllProfiles(query);
+
+            expect(userService.getAllProfiles).toHaveBeenCalledWith(query);
             expect(result).toEqual({
                 code: 200,
-                message: '로그인이 완료되었습니다.',
-                data: tokens,
+                message: '프로필 조회에 성공했습니다.',
+                data: profiles,
             });
         });
     });
 
-    describe('logout', () => {
-        it('로그아웃을 성공적으로 처리해야 한다', async () => {
-            const mockResponse = {
-                cookie: jest.fn(),
-            } as unknown as Response;
-
-            const result = await userController.logout(mockResponse);
-
-            expect(mockResponse.cookie).toHaveBeenCalledWith(
-                'access_token',
-                '',
-                expect.any(Object),
-            );
-            expect(mockResponse.cookie).toHaveBeenCalledWith(
-                'refresh_token',
-                '',
-                expect.any(Object),
-            );
-            expect(result).toEqual({
-                code: 200,
-                message: '로그아웃이 완료되었습니다.',
-                data: null,
-            });
-        });
-    });
-
-    describe('refresh', () => {
-        it('리프레시 토큰으로 새로운 액세스 토큰을 발급해야 한다', async () => {
+    describe('updateNickname', () => {
+        it('닉네임을 성공적으로 업데이트해야 한다', async () => {
             const mockRequest = {
-                cookies: { refresh_token: 'refresh_token' },
+                user: {
+                    id: 1,
+                    roleId: 2,
+                },
             } as unknown as Request;
-            const mockResponse = {
-                cookie: jest.fn(),
-            } as unknown as Response;
 
-            const newAccessToken = 'new_access_token';
-            jest.spyOn(userService, 'refresh').mockResolvedValue(
-                newAccessToken,
+            const nickname = '새로운닉네임';
+            const updatedUser = {
+                id: 1,
+                nickname: '새로운닉네임',
+            };
+
+            jest.spyOn(userService, 'updateNickname').mockResolvedValue(
+                updatedUser,
             );
 
-            const result = await userController.refresh(
+            const result = await userController.updateNickname(
                 mockRequest,
-                mockResponse,
+                nickname,
             );
 
-            expect(userService.refresh).toHaveBeenCalledWith('refresh_token');
-            expect(mockResponse.cookie).toHaveBeenCalledWith(
-                'access_token',
-                newAccessToken,
-                expect.any(Object),
+            expect(userService.updateNickname).toHaveBeenCalledWith(
+                mockRequest.user,
+                nickname,
             );
             expect(result).toEqual({
-                code: 200,
-                message: '토큰 재발급이 완료되었습니다.',
-                data: { newAccessToken },
+                code: 201,
+                message: '닉네임 입력에 성공했습니다.',
+                data: updatedUser,
             });
-        });
-
-        it('리프레시 토큰이 없으면 UnauthorizedException을 던져야 한다', async () => {
-            const mockRequest = {
-                cookies: {},
-            } as unknown as Request;
-            const mockResponse = {
-                cookie: jest.fn(),
-            } as unknown as Response;
-
-            await expect(
-                userController.refresh(mockRequest, mockResponse),
-            ).rejects.toThrow(UnauthorizedException);
         });
     });
 
@@ -249,13 +228,12 @@ describe('UserController', () => {
                 fullTimePosition: 'Backend',
             };
 
-            // 업데이트된 유저 정보 (UserEntity 형태로 모든 필드 추가)
             const updatedUser: UserEntity = {
                 id: userId,
                 name: 'Test User',
                 email: 'test@test.com',
                 password: 'password123',
-                nickname: 'tester', // 필수 필드 추가
+                nickname: 'tester',
                 year: 3,
                 roleId: 1,
                 isDeleted: false,
@@ -267,7 +245,7 @@ describe('UserController', () => {
                 school: 'New Hogwarts',
                 class: '2학년',
                 mainPosition: 'Backend',
-                subPosition: 'Frontend', // 선택적 필드이지만 포함
+                subPosition: 'Frontend',
                 githubUrl: 'https://github.com/newuser',
                 blogUrl: 'https://newblog.com',
                 isLft: false,
@@ -277,50 +255,20 @@ describe('UserController', () => {
                 isFullTime: true,
                 fullTimeCompanyName: 'NewPaloAlto',
                 fullTimePosition: 'Backend',
+                internStartDate: null,
+                internEndDate: null,
+                fullTimeStartDate: null,
+                fullTimeEndDate: null,
             };
-
-            // validateToken 및 updateUserProfile 메서드 목킹
-            jest.spyOn(userService, 'validateToken').mockResolvedValue({
-                id: 1,
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
 
             jest.spyOn(userService, 'updateUserProfile').mockResolvedValue(
                 updatedUser,
             );
 
             const result = await userController.updateUser(updateUserRequest, {
-                cookies: { access_token: 'valid_token' },
+                user: { id: 1 },
             } as unknown as Request);
 
-            // 기대값 확인
-            expect(userService.validateToken).toHaveBeenCalledWith(
-                'valid_token',
-            );
             expect(userService.updateUserProfile).toHaveBeenCalledWith(
                 userId,
                 updateUserRequest,
@@ -336,52 +284,16 @@ describe('UserController', () => {
     describe('deleteUser', () => {
         it('회원 탈퇴를 성공적으로 처리해야 한다', async () => {
             const mockRequest = {
-                cookies: { access_token: 'access_token' },
+                user: { id: 1 },
             } as unknown as Request;
 
-            const validatedUser = {
-                id: 1,
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
             const deleteUser = { id: 1 };
 
-            jest.spyOn(userService, 'validateToken').mockResolvedValue(
-                validatedUser,
-            );
             jest.spyOn(userService, 'deleteUser').mockResolvedValue(deleteUser);
 
             const result = await userController.deleteUser(mockRequest);
 
-            expect(userService.validateToken).toHaveBeenCalledWith(
-                'access_token',
-            );
-            expect(userService.deleteUser).toHaveBeenCalledWith(
-                validatedUser.id,
-            );
+            expect(userService.deleteUser).toHaveBeenCalledWith(1);
             expect(result).toEqual({
                 code: 200,
                 message: '성공적으로 회원 탈퇴를 진행했습니다.',
@@ -390,133 +302,129 @@ describe('UserController', () => {
         });
     });
 
-    describe('getUserInfo', () => {
-        it('유저 정보를 성공적으로 조회해야 한다', async () => {
+    describe('requestPermission', () => {
+        it('권한 요청을 성공적으로 처리해야 한다', async () => {
             const mockRequest = {
-                cookies: { access_token: 'access_token' },
+                user: { id: 1 },
             } as unknown as Request;
 
-            const validatedUser = {
-                id: 1,
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
+            const permissionRequest: CreatePermissionRequest = {
+                roleId: 2,
             };
 
-            const userInfo = {
-                id: 1,
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
+            const resultData = {
+                userId: 1,
+                roleId: 2,
             };
 
-            jest.spyOn(userService, 'validateToken').mockResolvedValue(
-                validatedUser,
-            );
-            jest.spyOn(userService, 'getUserInfo').mockResolvedValue(
-                new GetUserResponse(userInfo),
+            jest.spyOn(userService, 'requestPermission').mockResolvedValue(
+                resultData,
             );
 
-            const result = await userController.getUserInfo(mockRequest);
+            const result = await userController.requestPermission(
+                mockRequest,
+                permissionRequest,
+            );
 
-            expect(userService.validateToken).toHaveBeenCalledWith(
-                'access_token',
-            );
-            expect(userService.getUserInfo).toHaveBeenCalledWith(
-                validatedUser.id,
-            );
+            expect(userService.requestPermission).toHaveBeenCalledWith(1, 2);
             expect(result).toEqual({
-                code: 200,
-                message: '성공적으로 사용자 정보를 조회했습니다.',
-                data: new GetUserResponse(userInfo),
+                code: 201,
+                message: '권한 요청이 완료되었습니다.',
+                data: resultData,
             });
         });
+    });
 
-        it('액세스 토큰이 없으면 UnauthorizedException을 발생시켜야 한다', async () => {
-            const mockRequest = {
-                cookies: {},
-            } as unknown as Request;
+    describe('getPermissionRequests', () => {
+        it('권한 요청 목록을 성공적으로 조회해야 한다', async () => {
+            const requests = [
+                {
+                    userId: 1,
+                    roleId: 2,
+                },
+            ];
 
-            await expect(
-                userController.getUserInfo(mockRequest),
-            ).rejects.toThrow(UnauthorizedException);
-            expect(userService.validateToken).not.toHaveBeenCalled();
+            jest.spyOn(userService, 'getPermissionRequests').mockResolvedValue(
+                requests,
+            );
+
+            const result = await userController.getPermissionRequests();
+
+            expect(userService.getPermissionRequests).toHaveBeenCalled();
+            expect(result).toEqual({
+                code: 200,
+                message: '권한 요청 목록을 조회했습니다.',
+                data: requests,
+            });
         });
+    });
 
-        it('유효하지 않은 액세스 토큰이면 UnauthorizedException을 발생시켜야 한다', async () => {
+    describe('approvePermission', () => {
+        it('권한 요청을 성공적으로 승인해야 한다', async () => {
             const mockRequest = {
-                cookies: { access_token: 'invalid_token' },
+                user: {
+                    id: 1,
+                    roleId: 2,
+                },
             } as unknown as Request;
 
-            jest.spyOn(userService, 'validateToken').mockResolvedValue(null);
+            const approveRequest: ApprovePermissionRequest = {
+                userId: 2,
+                newRoleId: 3,
+            };
 
-            await expect(
-                userController.getUserInfo(mockRequest),
-            ).rejects.toThrow(UnauthorizedException);
-            expect(userService.validateToken).toHaveBeenCalledWith(
-                'invalid_token',
+            const resultData = {
+                userId: 2,
+                newRoleId: 3,
+            };
+
+            jest.spyOn(userService, 'approvePermission').mockResolvedValue(
+                resultData,
             );
+
+            const result = await userController.approvePermission(
+                mockRequest,
+                approveRequest,
+            );
+
+            expect(userService.approvePermission).toHaveBeenCalledWith(2, 3, 2);
+            expect(result).toEqual({
+                code: 200,
+                message: '권한이 성공적으로 승인되었습니다.',
+                data: resultData,
+            });
         });
+    });
 
-        it('액세스 토큰이 만료되면 UnauthorizedException을 발생시켜야 한다', async () => {
+    describe('getProfileImage', () => {
+        it('프로필 이미지를 성공적으로 동기화해야 한다', async () => {
             const mockRequest = {
-                cookies: { access_token: 'expired_token' },
+                user: {
+                    id: 1,
+                    email: 'test@test.com',
+                },
             } as unknown as Request;
 
-            jest.spyOn(userService, 'validateToken').mockRejectedValue(
-                new TokenExpiredError('토큰이 만료되었습니다.', new Date()),
+            const updatedImageResponse = {
+                image: 'https://newprofileimage.com',
+                isTecheer: true,
+            };
+
+            jest.spyOn(userService, 'updateProfileImage').mockResolvedValue(
+                updatedImageResponse,
             );
 
-            await expect(
-                userController.getUserInfo(mockRequest),
-            ).rejects.toThrow(UnauthorizedException);
-            expect(userService.validateToken).toHaveBeenCalledWith(
-                'expired_token',
+            const result = await userController.getProfileImage(mockRequest);
+
+            expect(userService.updateProfileImage).toHaveBeenCalledWith(
+                mockRequest,
             );
+
+            expect(result).toEqual({
+                code: 201,
+                message: '프로필 이미지가 성공적으로 동기화되었습니다.',
+                data: updatedImageResponse,
+            });
         });
     });
 });

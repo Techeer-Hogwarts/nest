@@ -5,17 +5,21 @@ import {
     Get,
     Delete,
     Body,
-    Res,
     Req,
-    UnauthorizedException,
+    UseGuards,
+    Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { LoginRequest } from './dto/request/login.user.request';
-import { Response, Request } from 'express';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { CreateUserWithResumeRequest } from './dto/request/create.user.with.resume.request';
 import { UpdateUserRequest } from './dto/request/update.user.request';
-import { TokenExpiredError } from '@nestjs/jwt';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { CreatePermissionRequest } from './dto/request/create.permission.request';
+import { ApprovePermissionRequest } from './dto/request/approve.permission.request';
+import { UpdateProfileImageRequest } from './dto/request/update.profile.image.request';
+import { GetUserssQueryRequest } from './dto/request/get.user.query.request';
+import { GetUserResponse } from './dto/response/get.user.response';
 
 @ApiTags('users')
 @Controller('/users')
@@ -32,8 +36,7 @@ export class UserController {
         type: CreateUserWithResumeRequest,
     })
     async signUp(
-        @Body()
-        createUserWithResumeRequest: CreateUserWithResumeRequest,
+        @Body() createUserWithResumeRequest: CreateUserWithResumeRequest,
     ): Promise<any> {
         const { createUserRequest, createResumeRequest } =
             createUserWithResumeRequest;
@@ -48,107 +51,7 @@ export class UserController {
         };
     }
 
-    // JWT 로그인
-    @Post('/login')
-    @ApiBody({
-        description: '로그인에 필요한 정보',
-        type: LoginRequest,
-    })
-    @ApiOperation({
-        summary: '로그인',
-        description: '로그인을 진행합니다.',
-    })
-    async login(
-        @Body('') loginRequest: LoginRequest,
-        @Res({ passthrough: true }) response: Response,
-    ): Promise<any> {
-        const { accessToken, refreshToken } = await this.userService.login(
-            loginRequest.email,
-            loginRequest.password,
-        );
-        // JWT를 HTTP-Only 쿠키로 저장
-        response.cookie('access_token', accessToken, {
-            httpOnly: true,
-            path: '/',
-            maxAge: 15 * 60 * 1000,
-            secure: false, // HTTP에서 허용 (HTTPS에서는 true로 설정 필요)
-        }); // 15분
-        response.cookie('refresh_token', refreshToken, {
-            httpOnly: true,
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            secure: false, // HTTP에서 허용 (HTTPS에서는 true로 설정 필요)
-        }); // 7일
-        return {
-            code: 200,
-            message: '로그인이 완료되었습니다.',
-            data: {
-                accessToken,
-                refreshToken,
-            },
-        };
-    }
-
-    // 로그아웃
-    @Post('/logout')
-    @ApiOperation({
-        summary: '로그아웃',
-        description: '로그아웃을 진행합니다.',
-    })
-    async logout(@Res({ passthrough: true }) response: Response): Promise<any> {
-        // 쿠키에서 JWT 삭제
-        response.cookie('access_token', '', {
-            httpOnly: true,
-            path: '/',
-            maxAge: 0,
-            secure: false, // HTTP에서 허용 (HTTPS에서는 true로 설정 필요)
-        });
-        response.cookie('refresh_token', '', {
-            httpOnly: true,
-            path: '/',
-            maxAge: 0,
-            secure: false, // HTTP에서 허용 (HTTPS에서는 true로 설정 필요)
-        });
-
-        return {
-            code: 200,
-            message: '로그아웃이 완료되었습니다.',
-            data: null,
-        };
-    }
-
-    // 리프레시 토큰을 사용해 새로운 액세스 토큰 발급
-    @Post('/refresh')
-    @ApiOperation({
-        summary: '액세스 토큰 재발급',
-        description: '리프레시 토큰을 사용해 새로운 액세스 토큰 발급.',
-    })
-    async refresh(
-        @Req() request: Request,
-        @Res({ passthrough: true }) response: Response,
-    ): Promise<any> {
-        const refreshToken = request.cookies['refresh_token'];
-        if (!refreshToken) {
-            throw new UnauthorizedException('토큰이 없습니다.');
-        }
-
-        const newAccessToken = await this.userService.refresh(refreshToken);
-
-        // 새로운 액세스 토큰을 쿠키에 저장
-        response.cookie('access_token', newAccessToken, {
-            httpOnly: true,
-            path: '/',
-            maxAge: 15 * 60 * 1000,
-            secure: false, // HTTP에서 허용 (HTTPS에서는 true로 설정 필요)
-        });
-
-        return {
-            code: 200,
-            message: '토큰 재발급이 완료되었습니다.',
-            data: { newAccessToken },
-        };
-    }
-
+    @UseGuards(JwtAuthGuard)
     @Patch('/update')
     @ApiOperation({
         summary: '프로필 업데이트',
@@ -160,16 +63,9 @@ export class UserController {
     })
     async updateUser(
         @Body() updateUserRequest: UpdateUserRequest,
-        @Req() request: Request, // 요청에서 쿠키에 접근하기 위해 request 사용
+        @Req() request: Request,
     ): Promise<any> {
-        // 쿠키에서 access_token 꺼내기
-        const accessToken = request.cookies['access_token'];
-        if (!accessToken) {
-            throw new UnauthorizedException('토큰이 없습니다.');
-        }
-        const user = await this.userService.validateToken(accessToken);
-
-        // 인증된 유저의 프로필 업데이트
+        const user = request.user as any;
         const updatedUser = await this.userService.updateUserProfile(
             user.id,
             updateUserRequest,
@@ -181,20 +77,15 @@ export class UserController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete()
     @ApiOperation({
         summary: '회원 탈퇴',
         description: '회원을 삭제합니다.',
     })
     async deleteUser(@Req() request: Request): Promise<any> {
-        // 쿠키에서 access_token 꺼내기
-        const accessToken = request.cookies['access_token'];
-        if (!accessToken) {
-            throw new UnauthorizedException('토큰이 없습니다.');
-        }
-        const user = await this.userService.validateToken(accessToken);
+        const user = request.user as any;
         const deleteUser = await this.userService.deleteUser(user.id);
-
         return {
             code: 200,
             message: '성공적으로 회원 탈퇴를 진행했습니다.',
@@ -202,36 +93,156 @@ export class UserController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get()
     @ApiOperation({
         summary: '유저 조회',
         description: '토큰으로 유저 정보를 조회합니다.',
     })
     async getUserInfo(@Req() request: Request): Promise<any> {
-        const accessToken = request.cookies['access_token'];
-        if (!accessToken) {
-            throw new UnauthorizedException('토큰이 없습니다.');
-        }
+        const user = request.user as any;
+        const userInfo: GetUserResponse = await this.userService.getUserInfo(
+            user.id,
+        );
+        return {
+            code: 200,
+            message: '성공적으로 사용자 정보를 조회했습니다.',
+            data: userInfo,
+        };
+    }
 
-        try {
-            const user = await this.userService.validateToken(accessToken);
-            if (!user) {
-                throw new UnauthorizedException('존재하지 않는 회원입니다.');
-            }
+    @UseGuards(JwtAuthGuard)
+    @Post('/permission/request')
+    @ApiOperation({
+        summary: '권한 요청',
+        description: '유저가 권한 요청을 보냅니다.',
+    })
+    @ApiBody({
+        description: '권한 요청에 필요한 정보',
+        type: CreatePermissionRequest,
+    })
+    async requestPermission(
+        @Req() request: Request,
+        @Body() body: CreatePermissionRequest,
+    ): Promise<any> {
+        const user = request.user as any;
+        const result = await this.userService.requestPermission(
+            user.id,
+            body.roleId,
+        );
+        return {
+            code: 201,
+            message: '권한 요청이 완료되었습니다.',
+            data: result,
+        };
+    }
 
-            const UserInfo = await this.userService.getUserInfo(user.id);
-            return {
-                code: 200,
-                message: '성공적으로 사용자 정보를 조회했습니다.',
-                data: UserInfo,
-            };
-        } catch (error) {
-            if (error instanceof TokenExpiredError) {
-                throw new UnauthorizedException(
-                    '액세스 토큰이 만료되었습니다. 리프레시 토큰을 사용해 토큰을 재발급받으세요.',
-                );
-            }
-            throw new UnauthorizedException('토큰 검증에 실패했습니다.');
-        }
+    @UseGuards(JwtAuthGuard)
+    @Get('/permission/request')
+    @ApiOperation({
+        summary: '권한 요청 목록 조회',
+        description: '관리자가 권한 요청 목록을 조회합니다.',
+    })
+    async getPermissionRequests(): Promise<any> {
+        const result = await this.userService.getPermissionRequests();
+        return {
+            code: 200,
+            message: '권한 요청 목록을 조회했습니다.',
+            data: result,
+        };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch('/permission/approve')
+    @ApiOperation({
+        summary: '권한 승인',
+        description: '관리자가 권한 요청을 승인합니다.',
+    })
+    @ApiBody({
+        description: '권한 승인에 필요한 정보',
+        type: ApprovePermissionRequest,
+    })
+    async approvePermission(
+        @Req() request: Request,
+        @Body() body: ApprovePermissionRequest,
+    ): Promise<any> {
+        const user = request.user as any; // 현재 로그인된 유저 (관리자)
+        const result = await this.userService.approvePermission(
+            body.userId,
+            body.newRoleId,
+            user.roleId,
+        );
+        return {
+            code: 200,
+            message: '권한이 성공적으로 승인되었습니다.',
+            data: result,
+        };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch('/profileImage')
+    @ApiOperation({
+        summary: '프로필 사진 동기화',
+        description: '슬랙 프로필 이미지를 프로필 사진으로 동기화합니다.',
+    })
+    @ApiBody({
+        description: '프로필 사진 업데이트에 필요한 정보',
+        type: UpdateProfileImageRequest,
+    })
+    async getProfileImage(@Req() request: Request): Promise<any> {
+        const result = await this.userService.updateProfileImage(request);
+
+        return {
+            code: 201,
+            message: '프로필 이미지가 성공적으로 동기화되었습니다.',
+            data: result,
+        };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch('/nickname')
+    @ApiOperation({
+        summary: '닉네임 업데이트',
+        description:
+            '멘토 이상의 권한을 가진 사람만 닉네임 업데이트를 진행한다.',
+    })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                nickname: {
+                    type: 'string',
+                    description: '새로운 닉네임',
+                    example: '테커123',
+                },
+            },
+        },
+    })
+    async updateNickname(
+        @Req() request: Request,
+        @Body('nickname') nickname: string,
+    ): Promise<any> {
+        const user = request.user;
+        const result = await this.userService.updateNickname(user, nickname);
+
+        return {
+            code: 201,
+            message: '닉네임 입력에 성공했습니다.',
+            data: result,
+        };
+    }
+
+    @Get('/profiles')
+    @ApiOperation({
+        summary: '모든 프로필 조회',
+        description: '조건에 맞는 프로필을 조회합니다.',
+    })
+    async getAllProfiles(@Query() query: GetUserssQueryRequest): Promise<any> {
+        const profiles = await this.userService.getAllProfiles(query);
+        return {
+            code: 200,
+            message: '프로필 조회에 성공했습니다.',
+            data: profiles,
+        };
     }
 }

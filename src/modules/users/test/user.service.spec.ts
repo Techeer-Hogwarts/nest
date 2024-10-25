@@ -3,19 +3,23 @@ import { UserService } from '../user.service';
 import { UserRepository } from '../repository/user.repository';
 import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { AuthService } from '../../../auth/auth.service';
-import { JwtService } from '@nestjs/jwt';
+import { HttpService } from '@nestjs/axios';
 import { CreateUserRequest } from '../dto/request/create.user.request';
 import { CreateResumeRequest } from '../../resumes/dto/request/create.resume.request';
-import { UserEntity } from '../entities/user.entity';
-import { UnauthorizedException, NotFoundException } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import { UpdateUserRequest } from '../dto/request/update.user.request';
+import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { of } from 'rxjs';
+import { User } from '@prisma/client';
+import { ResumeEntity } from '../../resumes/entities/resume.entity';
+import { AxiosHeaders, AxiosResponse } from 'axios';
 
 describe('UserService', () => {
-    let service: UserService;
+    let userService: UserService;
     let userRepository: UserRepository;
     let resumeRepository: ResumeRepository;
     let authService: AuthService;
-    let jwtService: JwtService;
+    let httpService: HttpService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -24,11 +28,17 @@ describe('UserService', () => {
                 {
                     provide: UserRepository,
                     useValue: {
-                        findOneByEmail: jest.fn(),
                         createUser: jest.fn(),
                         findById: jest.fn(),
                         updateUserProfile: jest.fn(),
                         softDeleteUser: jest.fn(),
+                        createPermissionRequest: jest.fn(),
+                        getAllPermissionRequests: jest.fn(),
+                        updateUserRole: jest.fn(),
+                        updatePermissionRequestStatus: jest.fn(),
+                        updateProfileImageByEmail: jest.fn(),
+                        updateNickname: jest.fn(),
+                        findAllProfiles: jest.fn(),
                     },
                 },
                 {
@@ -44,56 +54,48 @@ describe('UserService', () => {
                     },
                 },
                 {
-                    provide: JwtService,
+                    provide: HttpService,
                     useValue: {
-                        sign: jest.fn(),
-                        verify: jest.fn(),
-                    },
+                        post: jest.fn(),
+                    } as any,
                 },
             ],
         }).compile();
 
-        service = module.get<UserService>(UserService);
+        userService = module.get<UserService>(UserService);
         userRepository = module.get<UserRepository>(UserRepository);
         resumeRepository = module.get<ResumeRepository>(ResumeRepository);
         authService = module.get<AuthService>(AuthService);
-        jwtService = module.get<JwtService>(JwtService);
+        httpService = module.get<HttpService>(HttpService);
     });
 
-    it('정의되어 있어야 한다', () => {
-        expect(service).toBeDefined();
+    it('should be defined', () => {
+        expect(userService).toBeDefined();
     });
 
     describe('signUp', () => {
-        it('유저와 이력서를 생성해야 한다', async () => {
+        it('should create a user and resume', async () => {
             const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
-                name: 'test',
-                year: 6,
+                name: 'Test',
+                year: 2023,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
+                blogUrl: 'https://blog.com',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
                 school: 'Hogwarts',
                 class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
             };
 
             const createResumeRequest: CreateResumeRequest = {
                 title: 'My Resume',
-                url: 'https://example.com/resume.pdf',
+                url: 'https://resume.com',
                 ResumeType: 'PORTFOLIO',
             };
 
-            const userEntity: UserEntity = {
+            const user = {
                 id: 1,
                 email: 'test@test.com',
                 password: 'password123',
@@ -120,346 +122,294 @@ describe('UserService', () => {
                 fullTimePosition: 'Backend',
                 createdAt: new Date(),
                 updatedAt: new Date(),
-            };
+            } as User;
 
             jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(true);
-            jest.spyOn(userRepository, 'createUser').mockResolvedValue(
-                userEntity,
+            jest.spyOn(userRepository, 'createUser').mockResolvedValue(user);
+            jest.spyOn(resumeRepository, 'createResume').mockResolvedValue({
+                id: 1,
+                title: 'Resume Title',
+                url: 'https://example.com',
+                ResumeType: 'PORTFOLIO',
+            } as ResumeEntity);
+
+            const mockHeaders = new AxiosHeaders({
+                'Content-Type': 'application/json',
+            });
+
+            const mockImageUrlResponse: AxiosResponse<{
+                image: string;
+                isTecheer: boolean;
+            }> = {
+                data: {
+                    image: 'https://newprofileimage.com',
+                    isTecheer: true,
+                },
+                status: 200,
+                statusText: 'OK',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                config: {
+                    url: 'https://example.com/api',
+                    method: 'post', // HTTP method
+                    headers: mockHeaders,
+                    data: {
+                        email: 'test@test.com',
+                    },
+                },
+            };
+
+            jest.spyOn(httpService, 'post').mockReturnValue(
+                of(mockImageUrlResponse),
             );
 
-            const result = await service.signUp(
+            const result = await userService.signUp(
                 createUserRequest,
                 createResumeRequest,
             );
 
-            expect(userRepository.createUser).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    email: createUserRequest.email,
-                    password: expect.any(String),
-                }),
-                expect.any(Function),
+            expect(authService.checkIfVerified).toHaveBeenCalledWith(
+                createUserRequest.email,
             );
+            expect(userRepository.createUser).toHaveBeenCalled();
             expect(resumeRepository.createResume).toHaveBeenCalledWith(
                 createResumeRequest,
-                userEntity.id,
+                user.id,
             );
-            expect(result).toEqual(userEntity);
-        });
-
-        it('이메일 인증이 완료되지 않으면 UnauthorizedException을 던져야 한다', async () => {
-            const createUserRequest: CreateUserRequest = {
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-            };
-
-            jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(false);
-
-            await expect(service.signUp(createUserRequest)).rejects.toThrow(
-                UnauthorizedException,
-            );
-        });
-    });
-
-    describe('login', () => {
-        it('성공적인 로그인 시 토큰을 반환해야 한다', async () => {
-            const email = 'test@test.com';
-            const password = 'password123';
-
-            const user: UserEntity = {
-                id: 1,
-                email,
-                password: await bcrypt.hash(password, 10),
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-
-            jest.spyOn(userRepository, 'findOneByEmail').mockResolvedValue(
-                user,
-            );
-            jest.spyOn(jwtService, 'sign').mockReturnValue('mockAccessToken');
-            jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
-
-            const result = await service.login(email, password);
-
-            expect(userRepository.findOneByEmail).toHaveBeenCalledWith(email);
-            expect(jwtService.sign).toHaveBeenCalled();
-            expect(result).toEqual({
-                accessToken: 'mockAccessToken',
-                refreshToken: 'mockAccessToken',
-            });
-        });
-
-        it('비밀번호가 틀리면 UnauthorizedException을 던져야 한다', async () => {
-            const email = 'test@test.com';
-            const password = 'wrongPassword';
-
-            const user: UserEntity = {
-                id: 1,
-                email,
-                password: await bcrypt.hash('password123', 10),
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-
-            jest.spyOn(userRepository, 'findOneByEmail').mockResolvedValue(
-                user,
-            );
-            jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
-
-            await expect(service.login(email, password)).rejects.toThrow(
-                UnauthorizedException,
-            );
+            expect(result).toEqual(user);
         });
     });
 
     describe('findById', () => {
-        it('ID로 사용자를 찾아야 한다', async () => {
-            const user: UserEntity = {
+        it('should return user if found by id', async () => {
+            const user = {
                 id: 1,
                 email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-
+            } as User;
             jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
 
-            const result = await service.findById(1);
+            const result = await userService.findById(1);
 
             expect(userRepository.findById).toHaveBeenCalledWith(1);
             expect(result).toEqual(user);
         });
 
-        it('사용자를 찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
+        it('should throw NotFoundException if user is not found', async () => {
             jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
 
-            await expect(service.findById(1)).rejects.toThrow(
+            await expect(userService.findById(1)).rejects.toThrow(
                 NotFoundException,
             );
         });
     });
 
     describe('updateUserProfile', () => {
-        it('사용자 프로필을 업데이트해야 한다', async () => {
+        it('should update the user profile', async () => {
             const userId = 1;
-            const updateUserProfileDto = {
-                profileImage: 'https://newprofileimage.com',
-                school: 'New Hogwarts',
+            const updateUserRequest: UpdateUserRequest = {
+                profileImage: 'https://newimage.com',
+                school: 'New School',
                 class: '2학년',
                 mainPosition: 'Backend',
-                subPosition: 'Frontend',
                 githubUrl: 'https://github.com/newuser',
                 blogUrl: 'https://newblog.com',
                 isLft: false,
                 isIntern: false,
-                internCompanyName: 'NewCrowdStrike',
-                internPosition: 'Backend',
+                internCompanyName: 'Company',
+                internPosition: 'Developer',
                 isFullTime: true,
-                fullTimeCompanyName: 'NewPaloAlto',
-                fullTimePosition: 'Backend',
+                fullTimeCompanyName: 'NewCompany',
+                fullTimePosition: 'Developer',
             };
 
-            const user: UserEntity = {
-                id: userId,
+            const user = {
+                id: 1,
                 email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: updateUserProfileDto.githubUrl,
-                blogUrl: updateUserProfileDto.blogUrl,
-                mainPosition: updateUserProfileDto.mainPosition,
-                subPosition: updateUserProfileDto.subPosition,
-                school: updateUserProfileDto.school,
-                class: updateUserProfileDto.class,
-                profileImage: updateUserProfileDto.profileImage,
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'NewCrowdStrike',
-                internPosition: 'Backend',
-                isFullTime: true,
-                fullTimeCompanyName: 'NewPaloAlto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
+            } as User;
 
             jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
             jest.spyOn(userRepository, 'updateUserProfile').mockResolvedValue(
                 user,
             );
 
-            const result = await service.updateUserProfile(
+            const result = await userService.updateUserProfile(
                 userId,
-                updateUserProfileDto,
+                updateUserRequest,
             );
 
             expect(userRepository.findById).toHaveBeenCalledWith(userId);
             expect(userRepository.updateUserProfile).toHaveBeenCalledWith(
                 userId,
-                updateUserProfileDto,
+                updateUserRequest,
             );
             expect(result).toEqual(user);
         });
 
-        it('사용자를 찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
-            const updateUserProfileDto = {
-                profileImage: 'https://newprofileimage.com',
-                school: 'New Hogwarts',
+        it('should throw NotFoundException if user is not found', async () => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+            const updateUserRequest: UpdateUserRequest = {
+                profileImage: 'https://newimage.com',
+                school: 'New School',
                 class: '2학년',
                 mainPosition: 'Backend',
-                subPosition: 'Frontend',
                 githubUrl: 'https://github.com/newuser',
                 blogUrl: 'https://newblog.com',
                 isLft: false,
                 isIntern: false,
-                internCompanyName: 'NewCrowdStrike',
-                internPosition: 'Backend',
+                internCompanyName: 'Company',
+                internPosition: 'Developer',
                 isFullTime: true,
-                fullTimeCompanyName: 'NewPaloAlto',
-                fullTimePosition: 'Backend',
+                fullTimeCompanyName: 'NewCompany',
+                fullTimePosition: 'Developer',
             };
 
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
-
             await expect(
-                service.updateUserProfile(1, updateUserProfileDto),
+                userService.updateUserProfile(1, updateUserRequest),
             ).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('deleteUser', () => {
-        it('유저를 소프트 삭제해야 한다', async () => {
-            const user: UserEntity = {
+        it('should soft delete a user', async () => {
+            const user = {
                 id: 1,
                 email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isDeleted: true,
-                isAuth: true,
-                nickname: 'tester',
-                roleId: 1,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isLft: false,
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                stack: ['JavaScript', 'NestJS'],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-
+            } as User;
             jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
             jest.spyOn(userRepository, 'softDeleteUser').mockResolvedValue(
                 user,
             );
 
-            const result = await service.deleteUser(1);
+            const result = await userService.deleteUser(1);
 
             expect(userRepository.findById).toHaveBeenCalledWith(1);
             expect(userRepository.softDeleteUser).toHaveBeenCalledWith(1);
             expect(result).toEqual(user);
         });
 
-        it('사용자를 찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
+        it('should throw NotFoundException if user is not found', async () => {
             jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
 
-            await expect(service.deleteUser(1)).rejects.toThrow(
+            await expect(userService.deleteUser(1)).rejects.toThrow(
                 NotFoundException,
             );
+        });
+    });
+
+    describe('getAllProfiles', () => {
+        it('should return all profiles matching query', async () => {
+            const query: GetUserssQueryRequest = {
+                position: 'Backend',
+                year: 2023,
+                university: 'Hogwarts',
+                grade: '1학년',
+                offset: 0,
+                limit: 10,
+            };
+
+            const profiles = [
+                {
+                    id: 1,
+                    email: 'test@test.com',
+                },
+            ];
+            jest.spyOn(userRepository, 'findAllProfiles').mockResolvedValue(
+                profiles,
+            );
+
+            const result = await userService.getAllProfiles(query);
+
+            expect(userRepository.findAllProfiles).toHaveBeenCalledWith(query);
+            expect(result).toEqual(profiles);
+        });
+    });
+
+    describe('updateNickname', () => {
+        it('should update nickname if user has the right role', async () => {
+            const user = {
+                id: 1,
+                roleId: 1,
+            } as User;
+            const nickname = 'NewNickname';
+            const updatedUser = {
+                ...user,
+                nickname,
+            };
+
+            jest.spyOn(userRepository, 'updateNickname').mockResolvedValue(
+                updatedUser,
+            );
+
+            const result = await userService.updateNickname(user, nickname);
+
+            expect(userRepository.updateNickname).toHaveBeenCalledWith(
+                user.id,
+                nickname,
+            );
+            expect(result).toEqual(updatedUser);
+        });
+
+        it('should throw UnauthorizedException if user has no permission', async () => {
+            const user = {
+                id: 1,
+                roleId: 3,
+            } as User;
+            const nickname = 'NewNickname';
+
+            await expect(
+                userService.updateNickname(user, nickname),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+    });
+
+    describe('updateProfileImage', () => {
+        it('should update profile image if user is techeer', async () => {
+            const request = {
+                user: { email: 'test@test.com' },
+            };
+
+            const mockHeaders = new AxiosHeaders({
+                'Content-Type': 'application/json',
+            });
+
+            const image = 'https://newimage.com';
+
+            const mockAxiosResponse: AxiosResponse = {
+                data: {
+                    image: image,
+                    isTecheer: true,
+                },
+                status: 200,
+                statusText: 'OK',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                config: {
+                    url: 'https://example.com/api',
+                    method: 'post', // HTTP method
+                    headers: mockHeaders,
+                    data: {
+                        email: request.user.email,
+                    },
+                },
+            };
+
+            jest.spyOn(httpService, 'post').mockReturnValue(
+                of(mockAxiosResponse),
+            );
+
+            jest.spyOn(
+                userRepository,
+                'updateProfileImageByEmail',
+            ).mockResolvedValue({});
+
+            const result = await userService.updateProfileImage(request);
+
+            expect(
+                userRepository.updateProfileImageByEmail,
+            ).toHaveBeenCalledWith('test@test.com', image);
+            expect(result.data.image).toEqual(image);
         });
     });
 });

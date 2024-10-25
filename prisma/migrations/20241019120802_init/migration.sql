@@ -31,9 +31,13 @@ CREATE TABLE "User" (
     "isIntern" BOOLEAN,
     "internPosition" VARCHAR(100),
     "internCompanyName" VARCHAR(200),
+    "internStartDate" TIMESTAMP(3),
+    "internEndDate" TIMESTAMP(3),
     "fullTimePosition" VARCHAR(100),
     "isFullTime" BOOLEAN DEFAULT false,
     "fullTimeCompanyName" VARCHAR(200),
+    "fullTimeStartDate" TIMESTAMP(3),
+    "fullTimeEndDate" TIMESTAMP(3),
     "roleId" INTEGER NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -48,6 +52,18 @@ CREATE TABLE "Role" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Role_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PermissionRequest" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "requestedRoleId" INTEGER NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PermissionRequest_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -253,6 +269,9 @@ ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Role" ADD CONSTRAINT "Role_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PermissionRequest" ADD CONSTRAINT "PermissionRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

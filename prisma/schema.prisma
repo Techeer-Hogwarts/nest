@@ -8,40 +8,45 @@ datasource db {
 }
 
 model User {
-  id                  Int      @id @default(autoincrement())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  isDeleted           Boolean  @default(false)
+  id                  Int       @id @default(autoincrement())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  isDeleted           Boolean   @default(false)
   name                String
-  email               String   @unique
-  nickname            String?  @db.VarChar(200)
+  email               String    @unique
+  nickname            String?   @db.VarChar(200)
   year                Int
   password            String
-  isLft               Boolean  @default(false)
-  githubUrl           String   @db.VarChar(200)
-  blogUrl             String   @db.VarChar(200)
-  mainPosition        String   @db.VarChar(100)
-  subPosition         String?  @db.VarChar(100)
-  school              String   @db.VarChar(100)
-  class               String   @db.VarChar(100)
-  profileImage        String   @db.VarChar(200)
-  stack               String[] @default([]) // 배열의 기본값을 빈 배열로 설정
-  isAuth              Boolean  @default(false)
+  isLft               Boolean   @default(false)
+  githubUrl           String    @db.VarChar(200)
+  blogUrl             String    @db.VarChar(200)
+  mainPosition        String    @db.VarChar(100)
+  subPosition         String?   @db.VarChar(100)
+  school              String    @db.VarChar(100)
+  class               String    @db.VarChar(100)
+  profileImage        String    @db.VarChar(200)
+  stack               String[]  @default([]) // 배열의 기본값을 빈 배열로 설정
+  isAuth              Boolean   @default(false)
   isIntern            Boolean?
-  internPosition      String?  @db.VarChar(100)
-  internCompanyName   String?  @db.VarChar(200)
-  fullTimePosition    String?  @db.VarChar(100)
-  isFullTime          Boolean? @default(false)
-  fullTimeCompanyName String?  @db.VarChar(200)
+  internPosition      String?   @db.VarChar(100)
+  internCompanyName   String?   @db.VarChar(200)
+  internStartDate     DateTime? // 인턴 시작 날짜
+  internEndDate       DateTime? // 인턴 종료 날짜
+  fullTimePosition    String?   @db.VarChar(100)
+  isFullTime          Boolean?  @default(false)
+  fullTimeCompanyName String?   @db.VarChar(200)
+  fullTimeStartDate   DateTime? // 정규직 시작 날짜
+  fullTimeEndDate     DateTime? // 정규직 종료 날짜
   roleId              Int
 
-  role        Role?        @relation("UserRoles", fields: [roleId], references: [id])
-  blogs       Blog[]       @relation("UserBlogs")
-  resumes     Resume[]     @relation("UserResumes")
-  bookmarks   Bookmark[]   @relation("UserBookmarks")
-  likes       Like[]       @relation("UserLikes")
-  teamMembers TeamMember[]
-  sessions    Session[]
+  role              Role?               @relation("UserRoles", fields: [roleId], references: [id])
+  blogs             Blog[]              @relation("UserBlogs")
+  resumes           Resume[]            @relation("UserResumes")
+  bookmarks         Bookmark[]          @relation("UserBookmarks")
+  likes             Like[]              @relation("UserLikes")
+  teamMembers       TeamMember[]
+  sessions          Session[]
+  permissionRequest PermissionRequest[]
 }
 
 model Role {
@@ -53,6 +58,17 @@ model Role {
   children  Role[]   @relation("RoleParent")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PermissionRequest {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  requestedRoleId Int
+  status          String   @default("PENDING") // 상태는 'PENDING', 'APPROVED' 등으로 관리
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model TeamMember {

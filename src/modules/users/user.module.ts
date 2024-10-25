@@ -1,11 +1,12 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './repository/user.repository';
 import { ResumeModule } from '../resumes/resume.module';
-import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from 'src/auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
     imports: [
@@ -14,7 +15,8 @@ import { AuthModule } from 'src/auth/auth.module';
             signOptions: { expiresIn: '24h' },
         }),
         ResumeModule,
-        AuthModule,
+        forwardRef(() => AuthModule),
+        HttpModule,
     ],
     controllers: [UserController],
     providers: [UserService, UserRepository, PrismaService],

@@ -5,6 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { InternalServerErrorException } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UserRepository } from '../../modules/users/repository/user.repository';
 
 describe('AuthService', () => {
     let authService: AuthService;
@@ -41,6 +43,18 @@ describe('AuthService', () => {
                 {
                     provide: ConfigService,
                     useValue: mockConfigService,
+                },
+                {
+                    provide: JwtService,
+                    useValue: {
+                        // Mock methods as needed
+                    },
+                },
+                {
+                    provide: UserRepository,
+                    useValue: {
+                        // Mock methods as needed
+                    },
                 },
             ],
         }).compile();

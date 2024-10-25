@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
 import { BadRequestException } from '@nestjs/common';
+import { UserRepository } from '../../modules/users/repository/user.repository';
 
 describe('AuthController', () => {
     let authController: AuthController;
@@ -16,6 +17,14 @@ describe('AuthController', () => {
                     useValue: {
                         sendVerificationEmail: jest.fn(),
                         verifyCode: jest.fn(),
+                    },
+                },
+                {
+                    provide: UserRepository,
+                    useValue: {
+                        findById: jest.fn(),
+                        createPermissionRequest: jest.fn(),
+                        // other methods as needed
                     },
                 },
             ],

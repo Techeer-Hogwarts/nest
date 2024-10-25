@@ -1,6 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from './jwt.guard';
+import { Response } from 'express';
+import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
 
 @ApiTags('auth')
 @Controller('/auth')
@@ -71,6 +74,93 @@ export class AuthController {
             code: 200,
             message: '이메일 인증이 완료되었습니다.',
             data: null,
+        };
+    }
+
+    @Post('/login')
+    @ApiBody({
+        description: '로그인에 필요한 정보',
+        schema: {
+            type: 'object',
+            properties: {
+                email: {
+                    type: 'string',
+                    example: 'user@example.com',
+                },
+                password: {
+                    type: 'string',
+                    example: 'password',
+                },
+            },
+        },
+    })
+    @ApiOperation({
+        summary: '로그인',
+        description: '로그인을 진행합니다.',
+    })
+    async login(
+        @Body() loginRequest: any,
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<any> {
+        const { accessToken, refreshToken } = await this.authService.login(
+            loginRequest.email,
+            loginRequest.password,
+        );
+        response.cookie('access_token', accessToken, {
+            httpOnly: true,
+            path: '/',
+            maxAge: 15 * 60 * 1000, // 15분
+            secure: false,
+        });
+        response.cookie('refresh_token', refreshToken, {
+            httpOnly: true,
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+            secure: false,
+        });
+        return {
+            code: 200,
+            message: '로그인이 완료되었습니다.',
+            data: {
+                accessToken,
+                refreshToken,
+            },
+        };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('/logout')
+    @ApiOperation({
+        summary: '로그아웃',
+        description: '로그아웃을 진행합니다.',
+    })
+    async logout(@Res({ passthrough: true }) response: Response): Promise<any> {
+        response.cookie('access_token', '', { maxAge: 0 });
+        response.cookie('refresh_token', '', { maxAge: 0 });
+        return {
+            code: 200,
+            message: '로그아웃이 완료되었습니다.',
+        };
+    }
+
+    @Patch('/findPwd')
+    @ApiOperation({
+        summary: '비밀번호 재설정',
+        description: '이메일 인증 후 비밀번호를 재설정합니다.',
+    })
+    @ApiBody({
+        description: '이메일, 인증코드, 새로운 비밀번호',
+        type: UpdateUserPswRequest,
+    })
+    async resetPassword(
+        @Body() updateUserPswRequest: UpdateUserPswRequest,
+    ): Promise<any> {
+        const newPassword =
+            await this.authService.resetPassword(updateUserPswRequest);
+        return {
+            code: 200,
+            message: '성공적으로 비밀번호를 업데이트했습니다.',
+            data: newPassword,
         };
     }
 }
