@@ -2,7 +2,7 @@ import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthService } from '../../auth/auth.service';
 import { CreateUserDTO } from './dto/request/create.user.request';
-import { CreateResumeDTO } from '../resumes/dto/request/create.resume.request';
+import { CreateResumeRequest } from '../resumes/dto/request/create.resume.request';
 import { UserEntity } from './entities/user.entity';
 
 @Controller('/users')
@@ -15,9 +15,9 @@ export class UserController {
     @Post('/signup')
     async signUp(
         @Body('createUserDTO') createUserDTO: CreateUserDTO,
-        @Body('createResumeDTO') createResumeDTO?: CreateResumeDTO,
+        @Body('createResumeRequest') createResumeRequest?: CreateResumeRequest,
     ): Promise<UserEntity> {
-        const isVerified = await this.authService.checkIfVerified(
+        const isVerified: boolean = await this.authService.checkIfVerified(
             createUserDTO.email,
         );
 
@@ -27,6 +27,6 @@ export class UserController {
             );
         }
 
-        return this.userService.createUser(createUserDTO, createResumeDTO);
+        return this.userService.createUser(createUserDTO, createResumeRequest);
     }
 }

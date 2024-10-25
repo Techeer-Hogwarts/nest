@@ -44,7 +44,6 @@ export class BlogService {
     }
 
     async deleteBlog(blogId: number): Promise<void> {
-        await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
         return this.blogRepository.deleteBlog(blogId);
     }
 
@@ -52,7 +51,6 @@ export class BlogService {
         blogId: number,
         updateBlogRequest: UpdateBlogRequest,
     ): Promise<GetBlogResponse> {
-        await this.blogRepository.getBlog(blogId); // 게시물 존재 여부 검사
         const blog: BlogEntity = await this.blogRepository.updateBlog(
             blogId,
             updateBlogRequest,

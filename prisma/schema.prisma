@@ -20,19 +20,19 @@ model User {
   githubUrl     String       @db.VarChar(200)
   blogUrl       String       @db.VarChar(200)
   mainPosition  String       @db.VarChar(100)
-  subPosition   String?      @db.VarChar(100) 
+  subPosition   String?      @db.VarChar(100)
   school        String       @db.VarChar(100)
   class         String       @db.VarChar(100)
   isAuth        Boolean      @default(false)
   roleId        Int
 
-  role          Role?          @relation("UserRoles", fields: [roleId], references: [id])          
+  role          Role?          @relation("UserRoles", fields: [roleId], references: [id])
   blogs         Blog[]         @relation("UserBlogs")
   resumes       Resume[]       @relation("UserResumes")
   profiles      Profile[]      @relation("UserProfiles")
   bookmarks     Bookmark[]     @relation("UserBookmarks")
   likes         Like[]         @relation("UserLikes")
-  teamMembers   TeamMember[] 
+  teamMembers   TeamMember[]
   sessions      Session[]      @relation("UserSessions")
 }
 
@@ -41,7 +41,7 @@ model Role {
   name      String   @unique
   users     User[]   @relation("UserRoles")
   parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
-  parentId  Int?     
+  parentId  Int?
   children  Role[]   @relation("RoleParent")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -54,18 +54,18 @@ model Profile {
   isDeleted     Boolean      @default(false)
   nickname      String       @db.VarChar(200)
   profileImage  String       @db.VarChar(200)
-  experience    String?      @db.VarChar(200) 
+  experience    String?      @db.VarChar(200)
   company       String?      @db.VarChar(200)
   stack         String       @db.VarChar(200)
   userId        Int
 
-  user          User         @relation("UserProfiles", fields: [userId], references: [id]) 
+  user          User         @relation("UserProfiles", fields: [userId], references: [id])
 }
 
 model TeamMember {
   id          Int       @id @default(autoincrement())
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   isDeleted   Boolean   @default(false)
   isLeader    Boolean
   teamRole    String    @db.VarChar(100)
@@ -78,20 +78,20 @@ model TeamMember {
 model Team {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   isRecruited Boolean      @default(true)
   isFinished  Boolean      @default(true)
   name        String       @db.VarChar(100)
   category    String       @db.VarChar(100)
-  teamStacks  TeamStack[]  
-  teamMembers TeamMember[] 
+  teamStacks  TeamStack[]
+  teamMembers TeamMember[]
 }
 
 model Stack {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   stack       String       @db.VarChar(200)
   category    stackCategory
@@ -109,7 +109,7 @@ enum stackCategory {
 model TeamStack {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   stackId     Int
   teamId      Int
@@ -128,7 +128,7 @@ model Resume {
   isMain      Boolean      @default(false)
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
-  ResumeType  ResumeType
+  type        ResumeType
 
   user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
@@ -153,9 +153,9 @@ model Bookmark{
   id           Int          @id @default(autoincrement())
   userId       Int
   createdAt    DateTime     @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime     @updatedAt
   isDeleted    Boolean      @default(false)
-  contentId   Int          
+  contentId   Int
   Bookmarktype Type
 
   user        User         @relation("UserBookmarks", fields: [userId], references: [id])
@@ -165,9 +165,9 @@ model Like{
   id          Int          @id @default(autoincrement())
   userId      Int
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
-  contentId  Int          
+  contentId  Int
   Liketype    Type
 
   user        User         @relation("UserLikes", fields: [userId], references: [id])
@@ -189,7 +189,7 @@ enum  ResumeType {
 model Calendar {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   events      Event[]      @relation("CalendarEvents")
   jobInfo     JobInfo[]    @relation("CalendarJobInfo")
@@ -199,7 +199,7 @@ model Calendar {
 model Event {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   calendarId  Int
   isOnline    Boolean      @default(false)
@@ -216,7 +216,7 @@ model Event {
 model JobInfo {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   calendarId  Int
   company     String       @db.VarChar(100)
@@ -232,7 +232,7 @@ model JobInfo {
 model Conference {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   calendarId  Int
   title       String       @db.VarChar(100)
@@ -248,7 +248,7 @@ model Conference {
 
 model Session {
   id          Int          @id @default(autoincrement())
-  userId      Int 
+  userId      Int
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
