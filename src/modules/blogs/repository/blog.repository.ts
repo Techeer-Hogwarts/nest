@@ -103,13 +103,23 @@ export class BlogRepository {
     }
 
     async deleteBlog(blogId: number): Promise<void> {
-        await this.prisma.blog.update({
-            where: {
-                id: blogId,
-                isDeleted: false,
-            },
-            data: { isDeleted: true },
-        });
+        try {
+            await this.prisma.blog.update({
+                where: {
+                    id: blogId,
+                    isDeleted: false,
+                },
+                data: { isDeleted: true },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundException('게시물을 찾을 수 없습니다.');
+            }
+            throw error;
+        }
     }
 
     async updateBlog(
@@ -118,19 +128,29 @@ export class BlogRepository {
     ): Promise<BlogEntity> {
         const { title, url, date }: UpdateBlogRequest = updateBlogRequest;
 
-        return this.prisma.blog.update({
-            where: {
-                id: blogId,
-            },
-            data: {
-                title,
-                url,
-                date,
-            },
-            include: {
-                user: true,
-            },
-        });
+        try {
+            return this.prisma.blog.update({
+                where: {
+                    id: blogId,
+                },
+                data: {
+                    title,
+                    url,
+                    date,
+                },
+                include: {
+                    user: true,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundException('게시물을 찾을 수 없습니다.');
+            }
+            throw error;
+        }
     }
 
     async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {

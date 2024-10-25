@@ -13,6 +13,7 @@ import {
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
 import { NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 describe('BlogRepository', () => {
     let repository: BlogRepository;
@@ -195,6 +196,24 @@ describe('BlogRepository', () => {
             });
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
         });
+
+        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
+            const prismaError = new Prisma.PrismaClientKnownRequestError(
+                'Record not found',
+                {
+                    code: 'P2025',
+                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+                },
+            );
+
+            jest.spyOn(prismaService.blog, 'update').mockRejectedValue(
+                prismaError,
+            );
+
+            await expect(repository.deleteBlog(1)).rejects.toThrow(
+                NotFoundException,
+            );
+        });
     });
 
     describe('updateBlog', (): void => {
@@ -215,6 +234,24 @@ describe('BlogRepository', () => {
                 include: { user: true },
             });
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
+            const prismaError = new Prisma.PrismaClientKnownRequestError(
+                'Record not found',
+                {
+                    code: 'P2025',
+                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+                },
+            );
+
+            jest.spyOn(prismaService.blog, 'update').mockRejectedValue(
+                prismaError,
+            );
+
+            await expect(repository.deleteBlog(1)).rejects.toThrow(
+                NotFoundException,
+            );
         });
     });
 });
