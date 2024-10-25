@@ -387,7 +387,7 @@ describe('UserService', () => {
                 },
                 config: {
                     url: 'https://example.com/api',
-                    method: 'post', // HTTP method
+                    method: 'post',
                     headers: mockHeaders,
                     data: {
                         email: request.user.email,

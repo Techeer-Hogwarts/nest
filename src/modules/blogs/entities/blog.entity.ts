@@ -1,6 +1,6 @@
-import { Resume, ResumeType, User } from '@prisma/client';
+import { Blog, User } from '@prisma/client';
 
-export class ResumeEntity implements Resume {
+export class BlogEntity implements Blog {
     id: number;
     createdAt: Date;
     updatedAt: Date;
@@ -8,10 +8,10 @@ export class ResumeEntity implements Resume {
     userId: number;
     title: string;
     url: string;
-    isMain: boolean;
+    date: Date;
+    category: string;
     likeCount: number;
     viewCount: number;
-    type: ResumeType;
 
     user: User;
 }
