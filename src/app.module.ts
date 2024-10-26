@@ -8,6 +8,7 @@ import { UserModule } from './modules/users/user.module';
 import { ResumeModule } from './modules/resumes/resume.module';
 import { RedisModule } from './auth/auth.redis.module';
 import { SessionModule } from './modules/sessions/session.module';
+import { EventModule } from './modules/events/event.module';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { SessionModule } from './modules/sessions/session.module';
         UserModule,
         ResumeModule,
         SessionModule,
+        EventModule,
     ],
 })
 export class AppModule {}
