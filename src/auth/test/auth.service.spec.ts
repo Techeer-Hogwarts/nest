@@ -4,6 +4,9 @@ import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UserRepository } from '../../modules/users/repository/user.repository';
 
 describe('AuthService', () => {
     let authService: AuthService;
@@ -40,6 +43,18 @@ describe('AuthService', () => {
                 {
                     provide: ConfigService,
                     useValue: mockConfigService,
+                },
+                {
+                    provide: JwtService,
+                    useValue: {
+                        // Mock methods as needed
+                    },
+                },
+                {
+                    provide: UserRepository,
+                    useValue: {
+                        // Mock methods as needed
+                    },
                 },
             ],
         }).compile();
@@ -110,25 +125,26 @@ describe('AuthService', () => {
 
             const result = await authService.verifyCode(email, code);
 
-            expect(result).toBe(true);
+            expect(result).toBe(true); // 성공 시 true 반환
             expect(redisClient.get).toHaveBeenCalledWith(email);
             expect(redisClient.del).toHaveBeenCalledWith(email);
         });
 
-        it('잘못된 인증 코드가 제공되면 인증에 실패해야 한다', async () => {
+        it('잘못된 인증 코드가 제공되면 BadRequestException이 발생해야 한다', async () => {
             const email = 'test@test.com';
             const code = 'wrongCode';
 
             jest.spyOn(redisClient, 'get').mockResolvedValue('123456');
 
-            const result = await authService.verifyCode(email, code);
+            await expect(authService.verifyCode(email, code)).rejects.toThrow(
+                new BadRequestException('인증 코드가 일치하지 않습니다.'),
+            );
 
-            expect(result).toBe(false);
             expect(redisClient.get).toHaveBeenCalledWith(email);
             expect(redisClient.del).not.toHaveBeenCalled();
         });
 
-        it('Redis에서 인증 코드 확인 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
+        it('Redis에서 인증 코드 확인 중 오류가 발생하면 예외가 발생해야 한다', async () => {
             const email = 'test@test.com';
             const code = '123456';
 
@@ -137,73 +153,79 @@ describe('AuthService', () => {
             );
 
             await expect(authService.verifyCode(email, code)).rejects.toThrow(
-                InternalServerErrorException,
-            );
-        });
-    });
-
-    describe('markAsVerified', () => {
-        it('이메일이 인증된 것으로 Redis에 저장해야 한다', async () => {
-            const email = 'test@test.com';
-
-            jest.spyOn(redisClient, 'set').mockResolvedValue('OK');
-
-            await authService.markAsVerified(email);
-
-            expect(redisClient.set).toHaveBeenCalledWith(
-                `verified_${email}`,
-                'true',
-                'EX',
-                6000,
+                new InternalServerErrorException(
+                    '인증 코드 확인 중 오류가 발생했습니다.',
+                ),
             );
         });
 
-        it('Redis 저장 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
-            const email = 'test@test.com';
+        describe('markAsVerified', () => {
+            it('이메일이 인증된 것으로 Redis에 저장해야 한다', async () => {
+                const email = 'test@test.com';
 
-            jest.spyOn(redisClient, 'set').mockRejectedValue(
-                new Error('Redis error'),
-            );
+                jest.spyOn(redisClient, 'set').mockResolvedValue('OK');
 
-            await expect(authService.markAsVerified(email)).rejects.toThrow(
-                InternalServerErrorException,
-            );
-        });
-    });
+                await authService.markAsVerified(email);
 
-    describe('checkIfVerified', () => {
-        it('이메일이 인증되었는지 확인해야 한다', async () => {
-            const email = 'test@test.com';
+                expect(redisClient.set).toHaveBeenCalledWith(
+                    `verified_${email}`,
+                    'true',
+                    'EX',
+                    6000,
+                );
+            });
 
-            jest.spyOn(redisClient, 'get').mockResolvedValue('true');
+            it('Redis 저장 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
+                const email = 'test@test.com';
 
-            const result = await authService.checkIfVerified(email);
+                jest.spyOn(redisClient, 'set').mockRejectedValue(
+                    new Error('Redis error'),
+                );
 
-            expect(result).toBe(true);
-            expect(redisClient.get).toHaveBeenCalledWith(`verified_${email}`);
-        });
-
-        it('이메일이 인증되지 않았다면 false를 반환해야 한다', async () => {
-            const email = 'test@test.com';
-
-            jest.spyOn(redisClient, 'get').mockResolvedValue(null);
-
-            const result = await authService.checkIfVerified(email);
-
-            expect(result).toBe(false);
-            expect(redisClient.get).toHaveBeenCalledWith(`verified_${email}`);
+                await expect(authService.markAsVerified(email)).rejects.toThrow(
+                    InternalServerErrorException,
+                );
+            });
         });
 
-        it('Redis에서 인증 상태 확인 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
-            const email = 'test@test.com';
+        describe('checkIfVerified', () => {
+            it('이메일이 인증되었는지 확인해야 한다', async () => {
+                const email = 'test@test.com';
 
-            jest.spyOn(redisClient, 'get').mockRejectedValue(
-                new Error('Redis error'),
-            );
+                jest.spyOn(redisClient, 'get').mockResolvedValue('true');
 
-            await expect(authService.checkIfVerified(email)).rejects.toThrow(
-                InternalServerErrorException,
-            );
+                const result = await authService.checkIfVerified(email);
+
+                expect(result).toBe(true);
+                expect(redisClient.get).toHaveBeenCalledWith(
+                    `verified_${email}`,
+                );
+            });
+
+            it('이메일이 인증되지 않았다면 false를 반환해야 한다', async () => {
+                const email = 'test@test.com';
+
+                jest.spyOn(redisClient, 'get').mockResolvedValue(null);
+
+                const result = await authService.checkIfVerified(email);
+
+                expect(result).toBe(false);
+                expect(redisClient.get).toHaveBeenCalledWith(
+                    `verified_${email}`,
+                );
+            });
+
+            it('Redis에서 인증 상태 확인 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
+                const email = 'test@test.com';
+
+                jest.spyOn(redisClient, 'get').mockRejectedValue(
+                    new Error('Redis error'),
+                );
+
+                await expect(
+                    authService.checkIfVerified(email),
+                ).rejects.toThrow(InternalServerErrorException);
+            });
         });
     });
 });
