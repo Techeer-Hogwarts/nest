@@ -155,10 +155,10 @@ model Bookmark{
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   isDeleted    Boolean      @default(false)
-  contentId   Int
-  Bookmarktype Type
+  contentId    Int
+  type         ContentType
 
-  user        User         @relation("UserBookmarks", fields: [userId], references: [id])
+  user         User         @relation("UserBookmarks", fields: [userId], references: [id])
 }
 
 model Like{
@@ -167,13 +167,15 @@ model Like{
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
-  contentId  Int
-  Liketype    Type
+  contentId   Int
+  type        ContentType
 
   user        User         @relation("UserLikes", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, type]) // 복합 고유 키 설정
 }
 
-enum Type {
+enum ContentType {
   RESUME
   SESSION
   BLOG
