@@ -194,8 +194,8 @@ model Event {
   category    String       @db.VarChar(50)
   title       String       @db.VarChar(200)
   startDate   DateTime
-  endDate     DateTime
-  url         String       @db.VarChar(200)
+  endDate     DateTime?
+  url         String?       @db.VarChar(200)
 }
 
 model Session {

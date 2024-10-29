@@ -178,8 +178,8 @@ CREATE TABLE "Event" (
     "category" VARCHAR(50) NOT NULL,
     "title" VARCHAR(200) NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
+    "endDate" TIMESTAMP(3),
+    "url" VARCHAR(200),
 
     CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
