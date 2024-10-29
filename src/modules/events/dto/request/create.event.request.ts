@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsString } from 'class-validator';
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class CreateEventRequest {
     @IsString()
@@ -23,17 +23,19 @@ export class CreateEventRequest {
     })
     readonly startDate: Date;
 
+    @IsOptional()
     @IsDateString()
     @ApiProperty({
         example: '2024-09-13T08:00:00Z',
         description: '종료 날짜',
     })
-    readonly endDate: Date;
+    readonly endDate?: Date;
 
+    @IsOptional()
     @IsString()
     @ApiProperty({
         example: 'https://example.com',
         description: '링크',
     })
-    readonly url: string;
+    readonly url?: string;
 }

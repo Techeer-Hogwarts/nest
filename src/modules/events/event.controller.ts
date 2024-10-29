@@ -14,7 +14,6 @@ import { EventService } from './event.service';
 import { CreateEventRequest } from './dto/request/create.event.request';
 import { GetEventResponse } from './dto/response/get.event.response';
 import { GetEventListQueryRequest } from './dto/request/get.event.query.request';
-import { UpdateEventRequest } from './dto/request/update.event.request';
 
 @ApiTags('events')
 @Controller('/events')
@@ -77,7 +76,7 @@ export class EventController {
     })
     async updateEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
-        @Body() updateEventRequest: UpdateEventRequest,
+        @Body() updateEventRequest: CreateEventRequest,
     ): Promise<any> {
         const event: GetEventResponse = await this.eventService.updateEvent(
             eventId,

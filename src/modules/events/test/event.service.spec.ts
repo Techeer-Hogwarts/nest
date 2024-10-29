@@ -102,7 +102,6 @@ describe('EventService', (): void => {
 
     describe('updateEvent', (): void => {
         it('should successfully update a event and return a GetEventResponse', async (): Promise<void> => {
-            jest.spyOn(repository, 'getEvent').mockResolvedValue(eventEntity());
             jest.spyOn(repository, 'updateEvent').mockResolvedValue(
                 updatedEventEntity,
             );
@@ -115,53 +114,51 @@ describe('EventService', (): void => {
             expect(result).toEqual(new GetEventResponse(updatedEventEntity));
             expect(result).toBeInstanceOf(GetEventResponse);
 
-            expect(repository.getEvent).toHaveBeenCalledWith(1);
             expect(repository.updateEvent).toHaveBeenCalledWith(
                 1,
                 updateEventRequest,
             );
 
-            expect(repository.getEvent).toHaveBeenCalledTimes(1);
             expect(repository.updateEvent).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'getEvent').mockRejectedValue(
-                new NotFoundException(),
+            jest.spyOn(repository, 'updateEvent').mockRejectedValue(
+                new NotFoundException('이벤트를 찾을 수 없습니다.'),
             );
 
             await expect(
                 service.updateEvent(1, updateEventRequest),
             ).rejects.toThrow(NotFoundException);
 
-            expect(repository.getEvent).toHaveBeenCalledWith(1);
-            expect(repository.updateEvent).not.toHaveBeenCalled();
+            expect(repository.updateEvent).toHaveBeenCalledWith(
+                1,
+                updateEventRequest,
+            );
+            expect(repository.updateEvent).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('deleteEvent', (): void => {
         it('should successfully delete a event', async (): Promise<void> => {
-            jest.spyOn(repository, 'getEvent').mockResolvedValue(eventEntity());
             jest.spyOn(repository, 'deleteEvent').mockResolvedValue(undefined);
 
             await service.deleteEvent(1);
 
-            expect(repository.getEvent).toHaveBeenCalledWith(1);
-            expect(repository.getEvent).toHaveBeenCalledTimes(1);
             expect(repository.deleteEvent).toHaveBeenCalledWith(1);
             expect(repository.deleteEvent).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if event does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'getEvent').mockRejectedValue(
-                new NotFoundException(),
+            jest.spyOn(repository, 'deleteEvent').mockRejectedValue(
+                new NotFoundException('이벤트를 찾을 수 없습니다.'),
             );
 
             await expect(service.deleteEvent(1)).rejects.toThrow(
                 NotFoundException,
             );
-            expect(repository.getEvent).toHaveBeenCalledWith(1);
-            expect(repository.deleteEvent).not.toHaveBeenCalled();
+            expect(repository.deleteEvent).toHaveBeenCalledWith(1);
+            expect(repository.deleteEvent).toHaveBeenCalledTimes(1);
         });
     });
 });

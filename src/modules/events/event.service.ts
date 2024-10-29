@@ -4,7 +4,6 @@ import { CreateEventRequest } from './dto/request/create.event.request';
 import { GetEventResponse } from './dto/response/get.event.response';
 import { EventEntity } from './entities/event.entity';
 import { GetEventListQueryRequest } from './dto/request/get.event.query.request';
-import { UpdateEventRequest } from './dto/request/update.event.request';
 
 @Injectable()
 export class EventService {
@@ -34,9 +33,8 @@ export class EventService {
 
     async updateEvent(
         eventId: number,
-        updateEventRequest: UpdateEventRequest,
+        updateEventRequest: CreateEventRequest,
     ): Promise<GetEventResponse> {
-        await this.eventRepository.getEvent(eventId);
         const event: EventEntity = await this.eventRepository.updateEvent(
             eventId,
             updateEventRequest,
@@ -45,7 +43,6 @@ export class EventService {
     }
 
     async deleteEvent(eventId: number): Promise<void> {
-        await this.eventRepository.getEvent(eventId);
         return this.eventRepository.deleteEvent(eventId);
     }
 }

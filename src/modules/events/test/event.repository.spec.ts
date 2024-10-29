@@ -11,6 +11,7 @@ import {
 } from './mock-data';
 import { EventEntity } from '../entities/event.entity';
 import { NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 describe('EventRepository', (): void => {
     let repository: EventRepository;
@@ -133,7 +134,34 @@ describe('EventRepository', (): void => {
 
             expect(result).toEqual(updatedEventEntity);
             expect(prismaService.event.update).toHaveBeenCalledWith({
-                where: { id: 1 },
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
+                data: updateEventRequest,
+            });
+            expect(prismaService.event.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
+            const prismaError: PrismaClientKnownRequestError =
+                new PrismaClientKnownRequestError('Record not found', {
+                    code: 'P2025',
+                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+                });
+
+            jest.spyOn(prismaService.event, 'update').mockRejectedValue(
+                prismaError,
+            );
+
+            await expect(
+                repository.updateEvent(1, updateEventRequest),
+            ).rejects.toThrow(NotFoundException);
+            expect(prismaService.event.update).toHaveBeenCalledWith({
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
                 data: updateEventRequest,
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
@@ -150,10 +178,29 @@ describe('EventRepository', (): void => {
             await repository.deleteEvent(1);
 
             expect(prismaService.event.update).toHaveBeenCalledWith({
-                where: { id: 1 },
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
                 data: { isDeleted: true },
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
+            const prismaError: PrismaClientKnownRequestError =
+                new PrismaClientKnownRequestError('Record not found', {
+                    code: 'P2025',
+                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+                });
+
+            jest.spyOn(prismaService.event, 'update').mockRejectedValue(
+                prismaError,
+            );
+
+            await expect(repository.deleteEvent(1)).rejects.toThrow(
+                NotFoundException,
+            );
         });
     });
 });

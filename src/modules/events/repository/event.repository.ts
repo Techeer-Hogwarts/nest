@@ -3,7 +3,7 @@ import { PrismaService } from '../../../modules/prisma/prisma.service';
 import { CreateEventRequest } from '../dto/request/create.event.request';
 import { EventEntity } from '../entities/event.entity';
 import { GetEventListQueryRequest } from '../dto/request/get.event.query.request';
-import { UpdateEventRequest } from '../dto/request/update.event.request';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventRepository {
@@ -68,29 +68,53 @@ export class EventRepository {
 
     async updateEvent(
         eventId: number,
-        updateEventRequest: UpdateEventRequest,
+        updateEventRequest: CreateEventRequest,
     ): Promise<EventEntity> {
-        const { category, title, startDate, endDate, url }: UpdateEventRequest =
+        const { category, title, startDate, endDate, url }: CreateEventRequest =
             updateEventRequest;
 
-        return this.prisma.event.update({
-            where: {
-                id: eventId,
-            },
-            data: {
-                category,
-                title,
-                startDate,
-                endDate,
-                url,
-            },
-        });
+        try {
+            return await this.prisma.event.update({
+                where: {
+                    id: eventId,
+                    isDeleted: false,
+                },
+                data: {
+                    category,
+                    title,
+                    startDate,
+                    endDate,
+                    url,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+            }
+            throw error;
+        }
     }
 
     async deleteEvent(eventId: number): Promise<void> {
-        await this.prisma.event.update({
-            where: { id: eventId },
-            data: { isDeleted: true },
-        });
+        try {
+            await this.prisma.event.update({
+                where: {
+                    id: eventId,
+                    isDeleted: false,
+                },
+                data: { isDeleted: true },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+            }
+            throw error;
+        }
     }
 }

@@ -1,6 +1,5 @@
 import { CreateEventRequest } from '../dto/request/create.event.request';
 import { GetEventListQueryRequest } from '../dto/request/get.event.query.request';
-import { UpdateEventRequest } from '../dto/request/update.event.request';
 import { GetEventResponse } from '../dto/response/get.event.response';
 import { EventEntity } from '../entities/event.entity';
 
@@ -49,7 +48,7 @@ export const getEventListQueryRequest: GetEventListQueryRequest = {
     limit: 10,
 };
 
-export const updateEventRequest: UpdateEventRequest = {
+export const updateEventRequest: CreateEventRequest = {
     category: '채용 공고',
     title: 'Test Post',
     startDate: createEventRequest.startDate,
