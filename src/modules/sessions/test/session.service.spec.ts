@@ -160,39 +160,31 @@ describe('SessionService', (): void => {
 
     describe('deleteSession', (): void => {
         it('should successfully delete a session', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSession').mockResolvedValue(
-                sessionEntity(),
-            );
             jest.spyOn(repository, 'deleteSession').mockResolvedValue(
                 undefined,
             );
 
             await service.deleteSession(1);
 
-            expect(repository.getSession).toHaveBeenCalledWith(1);
-            expect(repository.getSession).toHaveBeenCalledTimes(1);
             expect(repository.deleteSession).toHaveBeenCalledWith(1);
             expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if session does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSession').mockRejectedValue(
-                new NotFoundException(),
+            jest.spyOn(repository, 'deleteSession').mockRejectedValue(
+                new NotFoundException('세션 게시물을 찾을 수 없습니다.'),
             );
 
             await expect(service.deleteSession(1)).rejects.toThrow(
                 NotFoundException,
             );
-            expect(repository.getSession).toHaveBeenCalledWith(1);
-            expect(repository.deleteSession).not.toHaveBeenCalled();
+            expect(repository.deleteSession).toHaveBeenCalledWith(1);
+            expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('updateSession', (): void => {
         it('should successfully update a session and return a GetSessionDto', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSession').mockResolvedValue(
-                sessionEntity(),
-            );
             jest.spyOn(repository, 'updateSession').mockResolvedValue(
                 updatedSessionEntity,
             );
@@ -207,27 +199,28 @@ describe('SessionService', (): void => {
             );
             expect(result).toBeInstanceOf(GetSessionResponse);
 
-            expect(repository.getSession).toHaveBeenCalledWith(1);
             expect(repository.updateSession).toHaveBeenCalledWith(
                 1,
                 updateSessionRequest,
             );
 
-            expect(repository.getSession).toHaveBeenCalledTimes(1);
             expect(repository.updateSession).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSession').mockRejectedValue(
-                new NotFoundException(),
+            jest.spyOn(repository, 'updateSession').mockRejectedValue(
+                new NotFoundException('세션 게시물을 찾을 수 없습니다.'),
             );
 
             await expect(
                 service.updateSession(1, updateSessionRequest),
             ).rejects.toThrow(NotFoundException);
 
-            expect(repository.getSession).toHaveBeenCalledWith(1);
-            expect(repository.updateSession).not.toHaveBeenCalled();
+            expect(repository.updateSession).toHaveBeenCalledWith(
+                1,
+                updateSessionRequest,
+            );
+            expect(repository.updateSession).toHaveBeenCalledTimes(1);
         });
     });
 });
