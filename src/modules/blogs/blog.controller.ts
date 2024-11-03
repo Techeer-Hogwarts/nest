@@ -47,6 +47,11 @@ export class BlogController {
     async getBestBlogs(@Query() query: PaginationQueryDto): Promise<any> {
         const blogs: GetBlogResponse[] =
             await this.blogService.getBestBlogs(query);
+        return {
+            code: 200,
+            message: '인기 게시물을 조회했습니다.',
+            data: blogs,
+        };
     }
 
     @Get(':blogId')

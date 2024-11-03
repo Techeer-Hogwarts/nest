@@ -1,4 +1,4 @@
-import { ContentType, Like } from '@prisma/client';
+import { ContentCategory, Like } from '@prisma/client';
 
 export class LikeEntity implements Like {
     id: number;
@@ -7,5 +7,5 @@ export class LikeEntity implements Like {
     isDeleted: boolean;
     userId: number;
     contentId: number;
-    type: ContentType;
+    category: ContentCategory;
 }

@@ -1,5 +1,4 @@
-import { Bookmark, User, ContentType } from '@prisma/client';
-import { Type } from '@nestjs/common';
+import { Bookmark, User, ContentCategory } from '@prisma/client';
 
 export class BookmarkEntity implements Bookmark {
     id: number;
@@ -8,7 +7,7 @@ export class BookmarkEntity implements Bookmark {
     isDeleted: boolean;
     userId: number;
     contentId: number;
-    type: ContentType;
+    category: ContentCategory;
 
     user: User;
 }

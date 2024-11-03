@@ -11,10 +11,10 @@ export class LikeService {
     async createLike(
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
-        const { contentId, type }: CreateLikeRequest = createLikeRequest;
+        const { contentId, category }: CreateLikeRequest = createLikeRequest;
         // 각 콘텐츠 유형별로 존재 여부를 검증하는 로직 추가
         const isContentExist: boolean =
-            await this.likeRepository.isContentExist(contentId, type);
+            await this.likeRepository.isContentExist(contentId, category);
         if (!isContentExist) {
             throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
         }

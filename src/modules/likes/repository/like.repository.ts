@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ContentType } from '@prisma/client';
+import { ContentCategory } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
 import { LikeEntity } from '../entities/like.entity';
 
@@ -10,11 +10,11 @@ export class LikeRepository {
 
     async isContentExist(
         contentId: number,
-        type: ContentType,
+        category: ContentCategory,
     ): Promise<boolean> {
         // 타입에 따라 다른 테이블에서 콘텐츠 존재 여부를 확인하는 로직
-        switch (type) {
-            case ContentType.SESSION:
+        switch (category) {
+            case ContentCategory.SESSION:
                 return (
                     (await this.prisma.session.findUnique({
                         where: {
@@ -23,7 +23,7 @@ export class LikeRepository {
                         },
                     })) !== null
                 );
-            case ContentType.BLOG:
+            case ContentCategory.BLOG:
                 return (
                     (await this.prisma.blog.findUnique({
                         where: {
@@ -32,7 +32,7 @@ export class LikeRepository {
                         },
                     })) !== null
                 );
-            case ContentType.RESUME:
+            case ContentCategory.RESUME:
                 return (
                     (await this.prisma.resume.findUnique({
                         where: {
@@ -49,16 +49,16 @@ export class LikeRepository {
     async createLike(
         createLikeRequest: CreateLikeRequest,
     ): Promise<LikeEntity> {
-        const { userId, contentId, type }: CreateLikeRequest =
+        const { userId, contentId, category }: CreateLikeRequest =
             createLikeRequest;
 
         // 현재 좋아요가 존재하는지 확인
         const existingLike: LikeEntity = await this.prisma.like.findUnique({
             where: {
-                userId_contentId_type: {
+                userId_contentId_category: {
                     userId,
                     contentId,
-                    type,
+                    category,
                 },
             },
         });
@@ -66,10 +66,10 @@ export class LikeRepository {
         // 존재하는 경우 isDeleted 값을 토글하여 업데이트, 존재하지 않는 경우 새로 생성
         return this.prisma.like.upsert({
             where: {
-                userId_contentId_type: {
+                userId_contentId_category: {
                     userId,
                     contentId,
-                    type,
+                    category,
                 },
             },
             update: {
@@ -78,7 +78,7 @@ export class LikeRepository {
             create: {
                 userId,
                 contentId,
-                type,
+                category,
             },
         });
     }

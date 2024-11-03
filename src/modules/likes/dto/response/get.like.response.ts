@@ -1,14 +1,14 @@
-import { ContentType } from '@prisma/client';
+import { ContentCategory } from '@prisma/client';
 import { LikeEntity } from '../../entities/like.entity';
 
 export class GetLikeResponse {
     readonly contentId: number;
-    readonly type: ContentType;
+    readonly category: ContentCategory;
     readonly isDeleted: boolean;
 
     constructor(likeEntity: LikeEntity) {
         this.contentId = likeEntity.contentId;
-        this.type = likeEntity.type;
+        this.category = likeEntity.category;
         this.isDeleted = likeEntity.isDeleted;
     }
 }
