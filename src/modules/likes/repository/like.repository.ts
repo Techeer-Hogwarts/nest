@@ -46,7 +46,7 @@ export class LikeRepository {
         }
     }
 
-    async createLike(
+    async toggleLike(
         createLikeRequest: CreateLikeRequest,
     ): Promise<LikeEntity> {
         const { userId, contentId, category }: CreateLikeRequest =

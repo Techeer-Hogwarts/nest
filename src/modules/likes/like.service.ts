@@ -8,7 +8,7 @@ import { LikeEntity } from './entities/like.entity';
 export class LikeService {
     constructor(private readonly likeRepository: LikeRepository) {}
 
-    async createLike(
+    async toggleLike(
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
         const { contentId, category }: CreateLikeRequest = createLikeRequest;
@@ -20,7 +20,7 @@ export class LikeService {
         }
 
         const content: LikeEntity =
-            await this.likeRepository.createLike(createLikeRequest);
+            await this.likeRepository.toggleLike(createLikeRequest);
         return new GetLikeResponse(content);
     }
 }
