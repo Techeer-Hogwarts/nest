@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ContentCategory } from '@prisma/client';
+import { ContentCategory, Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
 import { LikeEntity } from '../entities/like.entity';
+import { GetLikeListRequest } from '../dto/request/get.like-list.request';
 
 @Injectable()
 export class LikeRepository {
@@ -81,5 +82,38 @@ export class LikeRepository {
                 category,
             },
         });
+    }
+
+    async getLike(
+        userId: number,
+        getLikeListRequest: GetLikeListRequest,
+    ): Promise<any> {
+        const { category, offset, limit }: GetLikeListRequest =
+            getLikeListRequest;
+
+        const tableMap = {
+            [ContentCategory.RESUME]: 'Resume',
+            [ContentCategory.BLOG]: 'Blog',
+            [ContentCategory.SESSION]: 'Session',
+        };
+
+        const tableName: string = tableMap[category];
+
+        if (!tableName) {
+            throw new Error('Invalid category type');
+        }
+
+        return this.prisma.$queryRaw(
+            Prisma.sql`
+            SELECT l.*, c.*
+            FROM "Like" l
+            LEFT JOIN ${Prisma.raw(`"${tableName}"`)} c ON l."contentId" = c."id"
+            WHERE l."userId" = ${userId}
+              AND l."category" = CAST(${category} AS "ContentCategory")
+              AND l."isDeleted" = false
+            ORDER BY l."createdAt" DESC
+            LIMIT ${limit} OFFSET ${offset}
+        `,
+        );
     }
 }

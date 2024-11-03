@@ -3,6 +3,13 @@ import { LikeRepository } from './repository/like.repository';
 import { CreateLikeRequest } from './dto/request/create.like.request';
 import { GetLikeResponse } from './dto/response/get.like.response';
 import { LikeEntity } from './entities/like.entity';
+import { GetLikeListRequest } from './dto/request/get.like-list.request';
+import { GetSessionResponse } from '../sessions/dto/response/get.session.response';
+import { SessionEntity } from '../sessions/entities/session.entity';
+import { BlogEntity } from '../blogs/entities/blog.entity';
+import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
+import { ResumeEntity } from '../resumes/entities/resume.entity';
+import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
 
 @Injectable()
 export class LikeService {
@@ -22,5 +29,29 @@ export class LikeService {
         const content: LikeEntity =
             await this.likeRepository.toggleLike(createLikeRequest);
         return new GetLikeResponse(content);
+    }
+
+    async getLike(
+        userId: number,
+        getLikeListRequest: GetLikeListRequest,
+    ): Promise<any> {
+        const contents = await this.likeRepository.getLike(
+            userId,
+            getLikeListRequest,
+        );
+        switch (getLikeListRequest.category) {
+            case 'SESSION':
+                return contents.map(
+                    (content: SessionEntity) => new GetSessionResponse(content),
+                );
+            case 'BLOG':
+                return contents.map(
+                    (content: BlogEntity) => new GetBlogResponse(content),
+                );
+            case 'RESUME':
+                return contents.map(
+                    (content: ResumeEntity) => new GetResumeResponse(content),
+                );
+        }
     }
 }

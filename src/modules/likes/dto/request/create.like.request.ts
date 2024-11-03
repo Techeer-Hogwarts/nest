@@ -22,7 +22,7 @@ export class CreateLikeRequest {
 
     @IsEnum(ContentCategory)
     @ApiProperty({
-        example: 'SESSION',
+        example: 'RESUME',
         description: '좋아요를 누른 콘텐츠 타입',
     })
     readonly category: ContentCategory;
