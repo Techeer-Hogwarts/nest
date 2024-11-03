@@ -1,7 +1,5 @@
 import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '../modules/prisma/prisma.service';
 
@@ -13,16 +11,14 @@ import { PrismaService } from '../modules/prisma/prisma.service';
             provide: 'REDIS_CLIENT',
             useFactory: (): Redis => {
                 return new Redis({
-                    host: process.env.REDIS_HOST,
+                    host: String(process.env.REDIS_HOST),
                     port: Number(process.env.REDIS_PORT),
                     password: process.env.REDIS_PASSWORD,
                 });
             },
         },
-        AuthService,
         PrismaService,
     ],
     exports: ['REDIS_CLIENT'],
-    controllers: [AuthController],
 })
 export class RedisModule {}

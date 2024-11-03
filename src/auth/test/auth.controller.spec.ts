@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
 import { BadRequestException } from '@nestjs/common';
+import { UserRepository } from '../../modules/users/repository/user.repository';
 
 describe('AuthController', () => {
     let authController: AuthController;
@@ -16,7 +17,14 @@ describe('AuthController', () => {
                     useValue: {
                         sendVerificationEmail: jest.fn(),
                         verifyCode: jest.fn(),
-                        markAsVerified: jest.fn(),
+                    },
+                },
+                {
+                    provide: UserRepository,
+                    useValue: {
+                        findById: jest.fn(),
+                        createPermissionRequest: jest.fn(),
+                        // other methods as needed
                     },
                 },
             ],
@@ -56,17 +64,15 @@ describe('AuthController', () => {
             // verifyCode가 성공하는 경우를 목킹
             (authService.verifyCode as jest.Mock).mockResolvedValue(true);
 
-            // markAsVerified가 성공하는 경우를 목킹
-            (authService.markAsVerified as jest.Mock).mockResolvedValue(
-                undefined,
-            );
-
             const result = await authController.verifyCode(email, code);
 
-            // verifyCode와 markAsVerified 메서드가 호출되었는지 확인
+            // verifyCode 메서드가 호출되었는지 확인
             expect(authService.verifyCode).toHaveBeenCalledWith(email, code);
-            expect(authService.markAsVerified).toHaveBeenCalledWith(email);
-            expect(result).toEqual({ success: true });
+            expect(result).toEqual({
+                code: 200,
+                message: '이메일 인증이 완료되었습니다.',
+                data: null,
+            });
         });
 
         it('인증 코드가 일치하지 않으면 BadRequestException이 발생해야 한다', async () => {
@@ -74,7 +80,9 @@ describe('AuthController', () => {
             const code = 'wrongCode';
 
             // verifyCode가 실패하는 경우를 목킹
-            (authService.verifyCode as jest.Mock).mockResolvedValue(false);
+            (authService.verifyCode as jest.Mock).mockImplementation(() => {
+                throw new BadRequestException('인증 코드가 일치하지 않습니다.');
+            });
 
             await expect(
                 authController.verifyCode(email, code),
@@ -84,8 +92,6 @@ describe('AuthController', () => {
 
             // verifyCode 메서드가 호출되었는지 확인
             expect(authService.verifyCode).toHaveBeenCalledWith(email, code);
-            // markAsVerified는 호출되지 않아야 한다
-            expect(authService.markAsVerified).not.toHaveBeenCalled();
         });
     });
 });
