@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main # 메인 브렌치에 브랜치 머지 시 자동으로 실행
+  pull_request:
+    branches:
+      - '**' # 모든 브랜치에 PR 올릴 때 실행
+  
+jobs:
+  sonarCloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  build:
+    needs: sonarCloud
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - run: npm ci
+    - run: npm test
+    - name: Show build number
+      run: |
+        echo "Build Number: ${{ github.run_number }}"
+    - name: Show pull request number
+      if: ${{ github.event_name == 'pull_request' }}
+      run: |
+        echo "PR Number: ${{ github.event.pull_request.number }}"
+    - name: Get PR Number for Main Branch Merge
+      id: get_pr_number
+      if: github.ref == 'refs/heads/main'
+      run: |
+        PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --state closed --json number,mergeCommit --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number")
+        echo "PR_NUMBER=${PR_NUMBER}"
+        echo "PR_NUMBER"="${PR_NUMBER}" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set Docker Image Tag
+      id: set_docker_image_tag
+      env:
+        PR_NUMBER: ${{ steps.get_pr_number.outputs.PR_NUMBER }}
+      run: |
+        if [ "${{ github.ref_name }}" == "main" ]; then
+          DOCKER_IMAGE_TAG="1.1.$PR_NUMBER"
+        else
+          DOCKER_IMAGE_TAG="0.${{ github.event.pull_request.number }}.${{ github.run_number }}"
+        fi
+        echo "Docker Image Tag: $DOCKER_IMAGE_TAG"
+        echo "DOCKER_IMAGE_TAG"="${DOCKER_IMAGE_TAG}" >> $GITHUB_OUTPUT
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+    - name: Build and push Docker image
+      env:
+        DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+      run: |
+        docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-parser:$DOCKER_IMAGE_TAG .
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-parser:$DOCKER_IMAGE_TAG
+    - name: Send Image and Version to Slack
+      if: github.ref == 'refs/heads/main' # main 브랜치에 머지 시에만 실행
+      env:
+        IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-parser
+        DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+        SLACK_SECRET: ${{ secrets.SLACK_DEPLOY_SECRET }}
+      run: |
+        commit_link="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/commit/${{ github.sha }}"
+        curl -X POST https://techeer-029051b54345.herokuapp.com/api/v1/deploy/image \
+        -H "Content-Type: application/json" \
+        -d '{
+              "imageName": "'"$IMAGE_NAME"'",
+              "imageTag": "'"$DOCKER_IMAGE_TAG"'",
+              "commitLink": "'"$commit_link"'",
+              "secret": "'"$SLACK_SECRET"'"
+            }'
