@@ -40,11 +40,11 @@ export class LikeController {
         summary: '유저 별 좋아요 목록 조회',
         description: '유저 별 좋아요한 콘텐츠 목록을 조회합니다.',
     })
-    async getLike(
+    async getLikeList(
         @Param('userId', ParseIntPipe) userId: number,
         @Query() getLikeListRequest: GetLikeListRequest,
     ): Promise<any> {
-        const contents = await this.likeService.getLike(
+        const contents = await this.likeService.getLikeList(
             userId,
             getLikeListRequest,
         );

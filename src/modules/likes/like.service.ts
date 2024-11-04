@@ -19,7 +19,7 @@ export class LikeService {
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
         const { contentId, category }: CreateLikeRequest = createLikeRequest;
-        // 각 콘텐츠 유형별로 존재 여부를 검증하는 로직 추가
+        // 각 콘텐츠 유형 별 존재 여부 검증
         const isContentExist: boolean =
             await this.likeRepository.isContentExist(contentId, category);
         if (!isContentExist) {
@@ -31,11 +31,11 @@ export class LikeService {
         return new GetLikeResponse(content);
     }
 
-    async getLike(
+    async getLikeList(
         userId: number,
         getLikeListRequest: GetLikeListRequest,
     ): Promise<any> {
-        const contents = await this.likeRepository.getLike(
+        const contents = await this.likeRepository.getLikeList(
             userId,
             getLikeListRequest,
         );
