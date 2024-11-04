@@ -69,12 +69,12 @@ jobs:
               env:
                   DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
               run: |
-                  docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-parser:$DOCKER_IMAGE_TAG .
-                  docker push ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-parser:$DOCKER_IMAGE_TAG
+                  docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG .
+                  docker push ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG
             - name: Send Image and Version to Slack
               if: github.ref == 'refs/heads/main' # main 브랜치에 머지 시에만 실행
               env:
-                  IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-parser
+                  IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest
                   DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
                   SLACK_SECRET: ${{ secrets.SLACK_DEPLOY_SECRET }}
               run: |
