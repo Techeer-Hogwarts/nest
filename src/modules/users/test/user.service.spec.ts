@@ -92,7 +92,7 @@ describe('UserService', () => {
             const createResumeRequest: CreateResumeRequest = {
                 title: 'My Resume',
                 url: 'https://resume.com',
-                type: 'PORTFOLIO',
+                category: 'PORTFOLIO',
             };
 
             const user = {
@@ -130,7 +130,7 @@ describe('UserService', () => {
                 id: 1,
                 title: 'Resume Title',
                 url: 'https://example.com',
-                type: 'PORTFOLIO',
+                category: 'PORTFOLIO',
             } as ResumeEntity);
 
             const mockHeaders = new AxiosHeaders({

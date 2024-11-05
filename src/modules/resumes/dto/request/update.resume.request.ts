@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsString, IsUrl } from 'class-validator';
-import { ResumeType } from '@prisma/client';
+import { ResumeCategory } from '@prisma/client';
 
 export class UpdateResumeRequest {
     @IsString()
@@ -24,11 +24,11 @@ export class UpdateResumeRequest {
     })
     readonly isMain: boolean;
 
-    @IsEnum(ResumeType)
+    @IsEnum(ResumeCategory)
     @ApiProperty({
         example: 'PORTFOLIO',
         description: '이력서 타입',
-        enum: ResumeType,
+        enum: ResumeCategory,
     })
-    readonly type: ResumeType;
+    readonly category: ResumeCategory;
 }

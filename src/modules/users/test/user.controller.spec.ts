@@ -76,7 +76,7 @@ describe('UserController', () => {
                 createResumeRequest: {
                     title: 'My Resume',
                     url: 'https://example.com/resume.pdf',
-                    type: 'PORTFOLIO',
+                    category: 'PORTFOLIO',
                 },
             };
 

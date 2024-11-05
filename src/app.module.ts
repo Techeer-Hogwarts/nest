@@ -10,6 +10,7 @@ import { RedisModule } from './auth/auth.redis.module';
 import { AuthModule } from './auth/auth.module';
 import { SessionModule } from './modules/sessions/session.module';
 import { EventModule } from './modules/events/event.module';
+import { LikeModule } from './modules/likes/like.module';
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { EventModule } from './modules/events/event.module';
         AuthModule,
         SessionModule,
         EventModule,
+        LikeModule,
     ],
 })
 export class AppModule {}

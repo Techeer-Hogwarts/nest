@@ -39,14 +39,25 @@ model User {
   fullTimeEndDate     DateTime? // 정규직 종료 날짜
   roleId              Int
 
-  role              Role?               @relation("UserRoles", fields: [roleId], references: [id])
+  role              Role?               @relation("UserRole", fields: [roleId], references: [id])
   blogs             Blog[]              @relation("UserBlogs")
   resumes           Resume[]            @relation("UserResumes")
   bookmarks         Bookmark[]          @relation("UserBookmarks")
   likes             Like[]              @relation("UserLikes")
-  teamMembers       TeamMember[]
+  teamMembers       TeamMember[]        @relation("UserTeamMembers")
   sessions          Session[]           @relation("UserSessions")
-  permissionRequest PermissionRequest[]
+  permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  users     User[]   @relation("UserRole")
+  parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
+  parentId  Int?
+  children  Role[]   @relation("RoleParent")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PermissionRequest {
@@ -57,33 +68,20 @@ model PermissionRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user            User     @relation("UserPermissionRequests", fields: [userId], references: [id])
 }
-
-
-model Role {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  users     User[]   @relation("UserRoles")
-  parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
-  parentId  Int?
-  children  Role[]   @relation("RoleParent")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 
 model TeamMember {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isDeleted   Boolean   @default(false)
-  isLeader    Boolean
-  teamRole    String    @db.VarChar(100)
-  team        Team      @relation(fields: [teamId], references: [id])
-  teamId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  userId      Int
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  isDeleted Boolean  @default(false)
+  isLeader  Boolean
+  teamRole  String   @db.VarChar(100)
+  team      Team     @relation("TeamTeamMembers", fields: [teamId], references: [id])
+  teamId    Int
+  user      User     @relation("UserTeamMembers", fields: [userId], references: [id])
+  userId    Int
 }
 
 model Team {
@@ -95,8 +93,8 @@ model Team {
   isFinished  Boolean      @default(true)
   name        String       @db.VarChar(100)
   category    String       @db.VarChar(100)
-  teamStacks  TeamStack[]
-  teamMembers TeamMember[]
+  teamStacks  TeamStack[]  @relation("TeamTeamStacks")
+  teamMembers TeamMember[] @relation("TeamTeamMembers")
 }
 
 model Stack {
@@ -107,7 +105,7 @@ model Stack {
   stack       String       @db.VarChar(200)
   category    stackCategory
 
-  teamStacks  TeamStack[]
+  teamStacks  TeamStack[]  @relation("StackTeamStacks")
 }
 
 enum stackCategory {
@@ -124,8 +122,22 @@ model TeamStack {
   isDeleted   Boolean      @default(false)
   stackId     Int
   teamId      Int
-  stack       Stack        @relation(fields: [stackId], references: [id])
-  team        Team         @relation(fields: [teamId], references: [id])
+  stack       Stack        @relation("StackTeamStacks", fields: [stackId], references: [id])
+  team        Team         @relation("TeamTeamStacks", fields: [teamId], references: [id])
+}
+
+model Like {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  contentId   Int
+  category    ContentCategory
+
+  user        User         @relation("UserLikes", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
 model Resume {
@@ -139,7 +151,7 @@ model Resume {
   isMain      Boolean      @default(false)
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
-  type        ResumeType
+  category    ResumeCategory
 
   user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
@@ -160,37 +172,25 @@ model Blog {
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
-model Bookmark{
-  id           Int          @id @default(autoincrement())
+model Bookmark {
+  id           Int      @id @default(autoincrement())
   userId       Int
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   isDeleted    Boolean      @default(false)
-  contentId   Int
-  Bookmarktype Type
+  contentId    Int
+  category     ContentCategory
 
-  user        User         @relation("UserBookmarks", fields: [userId], references: [id])
+  user         User         @relation("UserBookmarks", fields: [userId], references: [id])
 }
 
-model Like{
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  contentId  Int
-  Liketype    Type
-
-  user        User         @relation("UserLikes", fields: [userId], references: [id])
-}
-
-enum Type {
+enum ContentCategory {
   RESUME
   SESSION
   BLOG
 }
 
-enum  ResumeType {
+enum ResumeCategory {
   PORTFOLIO
   ICT
   SOMA

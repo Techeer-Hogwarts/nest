@@ -2,10 +2,22 @@
 CREATE TYPE "stackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA');
 
 -- CreateEnum
-CREATE TYPE "Type" AS ENUM ('RESUME', 'SESSION', 'BLOG');
+CREATE TYPE "ContentCategory" AS ENUM ('RESUME', 'SESSION', 'BLOG');
 
 -- CreateEnum
-CREATE TYPE "ResumeType" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
+CREATE TYPE "ResumeCategory" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "EventCategory" AS ENUM ('TECHEER', 'CONFERENCE', 'JOBINFO');
+
+-- CreateEnum
+CREATE TYPE "SessionDate" AS ENUM ('FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'SUMMER_2022', 'WINTER_2022', 'SUMMER_2023', 'WINTER_2023', 'SUMMER_2024');
+
+-- CreateEnum
+CREATE TYPE "SessionCategory" AS ENUM ('BOOTCAMP', 'PARTNERS');
+
+-- CreateEnum
+CREATE TYPE "SessionPosition" AS ENUM ('FRONTEND', 'BACKEND', 'DEVOPS', 'OTHERS');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -119,6 +131,19 @@ CREATE TABLE "TeamStack" (
 );
 
 -- CreateTable
+CREATE TABLE "Like" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "contentId" INTEGER NOT NULL,
+    "category" "ContentCategory" NOT NULL,
+
+    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Resume" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -130,7 +155,7 @@ CREATE TABLE "Resume" (
     "isMain" BOOLEAN NOT NULL DEFAULT false,
     "likeCount" INTEGER NOT NULL DEFAULT 0,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
-    "ResumeType" "ResumeType" NOT NULL,
+    "category" "ResumeCategory" NOT NULL,
 
     CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
 );
@@ -144,8 +169,10 @@ CREATE TABLE "Blog" (
     "userId" INTEGER NOT NULL,
     "title" VARCHAR(100) NOT NULL,
     "url" VARCHAR(100) NOT NULL,
-    "likeCount" INTEGER NOT NULL,
-    "viewCount" INTEGER NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "category" VARCHAR(200) NOT NULL,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Blog_pkey" PRIMARY KEY ("id")
 );
@@ -158,32 +185,9 @@ CREATE TABLE "Bookmark" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "contentId" INTEGER NOT NULL,
-    "Bookmarktype" "Type" NOT NULL,
+    "category" "ContentCategory" NOT NULL,
 
     CONSTRAINT "Bookmark_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Like" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "contentId" INTEGER NOT NULL,
-    "Liketype" "Type" NOT NULL,
-
-    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Calendar" (
-    "id" SERIAL NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "Calendar_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -192,68 +196,32 @@ CREATE TABLE "Event" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "calendarId" INTEGER NOT NULL,
-    "isOnline" BOOLEAN NOT NULL DEFAULT false,
+    "category" "EventCategory" NOT NULL,
     "title" VARCHAR(200) NOT NULL,
-    "place" VARCHAR(200) NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "description" VARCHAR(200) NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3),
+    "url" VARCHAR(200),
 
     CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "JobInfo" (
-    "id" SERIAL NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "calendarId" INTEGER NOT NULL,
-    "company" VARCHAR(100) NOT NULL,
-    "description" VARCHAR(200) NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
-    "position" VARCHAR(200) NOT NULL,
-    "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "JobInfo_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Conference" (
-    "id" SERIAL NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "calendarId" INTEGER NOT NULL,
-    "title" VARCHAR(100) NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
-    "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
-    "deadline" TIMESTAMP(3) NOT NULL,
-    "price" INTEGER NOT NULL,
-    "isOnline" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "Conference_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Session" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "isPublic" BOOLEAN NOT NULL,
     "title" VARCHAR(200) NOT NULL,
-    "description" VARCHAR(200) NOT NULL,
-    "likeCount" INTEGER NOT NULL,
-    "viewCount" INTEGER NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "category" VARCHAR(200) NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "thumbnail" VARCHAR(200) NOT NULL,
+    "videoUrl" VARCHAR(200) NOT NULL,
+    "fileUrl" VARCHAR(200) NOT NULL,
+    "presenter" VARCHAR(50) NOT NULL,
+    "date" "SessionDate" NOT NULL,
+    "category" "SessionCategory" NOT NULL,
+    "position" "SessionPosition" NOT NULL,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
@@ -263,6 +231,9 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Like_userId_contentId_category_key" ON "Like"("userId", "contentId", "category");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -286,6 +257,9 @@ ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_stackId_fkey" FOREIGN KEY ("st
 ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Resume" ADD CONSTRAINT "Resume_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -293,18 +267,6 @@ ALTER TABLE "Blog" ADD CONSTRAINT "Blog_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Bookmark" ADD CONSTRAINT "Bookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Event" ADD CONSTRAINT "Event_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "JobInfo" ADD CONSTRAINT "JobInfo_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Conference" ADD CONSTRAINT "Conference_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

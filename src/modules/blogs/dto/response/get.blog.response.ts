@@ -3,7 +3,6 @@ import { BlogEntity } from '../../entities/blog.entity';
 
 export class GetBlogResponse {
     readonly id: number;
-    readonly userId: number;
     readonly title: string;
     readonly url: string;
     readonly date: Date;
@@ -15,7 +14,6 @@ export class GetBlogResponse {
 
     constructor(blogEntity: BlogEntity) {
         this.id = blogEntity.id;
-        this.userId = blogEntity.userId;
         this.title = blogEntity.title;
         this.url = blogEntity.url;
         this.date = blogEntity.date;
