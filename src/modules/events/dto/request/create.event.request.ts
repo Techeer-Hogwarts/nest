@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { EventCategory } from '@prisma/client';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateEventRequest {
-    @IsString()
+    @IsEnum(EventCategory)
     @ApiProperty({
         example: 'TECHEER',
         description: '카테고리',
