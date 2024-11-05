@@ -126,7 +126,7 @@ export class ResumeRepository {
         resumeId: number,
         updateResumeRequest: UpdateResumeRequest,
     ): Promise<ResumeEntity> {
-        const { title, url, isMain, type }: UpdateResumeRequest =
+        const { title, url, isMain, category }: UpdateResumeRequest =
             updateResumeRequest;
 
         try {
@@ -139,7 +139,7 @@ export class ResumeRepository {
                     title,
                     url,
                     isMain,
-                    type,
+                    category,
                 },
                 include: {
                     user: true,

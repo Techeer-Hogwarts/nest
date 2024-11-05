@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResumeType } from '@prisma/client';
+import { ResumeCategory } from '@prisma/client';
 import { IsString, IsUrl } from 'class-validator';
 
 export class CreateResumeRequest {
-
     @IsUrl()
     @ApiProperty({
         example: 'https://example.com/resume.pdf',
@@ -23,5 +22,5 @@ export class CreateResumeRequest {
         example: 'PORTFOLIO',
         description: '이력서 타입',
     })
-    readonly type: ResumeType;
+    readonly category: ResumeCategory;
 }

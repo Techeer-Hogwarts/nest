@@ -39,20 +39,22 @@ model User {
   fullTimeEndDate     DateTime? // 정규직 종료 날짜
   roleId              Int
 
-  role              Role?               @relation("UserRoles", fields: [roleId], references: [id])
+  role              Role?               @relation("UserRole", fields: [roleId], references: [id])
   blogs             Blog[]              @relation("UserBlogs")
   resumes           Resume[]            @relation("UserResumes")
   bookmarks         Bookmark[]          @relation("UserBookmarks")
   likes             Like[]              @relation("UserLikes")
-  teamMembers       TeamMember[]
-  sessions          Session[]
-  permissionRequest PermissionRequest[]
+  teamMembers       TeamMember[]        @relation("UserTeamMembers")
+  sessions          Session[]           @relation("UserSessions")
+  permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
+  jobInfos          JobInfo[]           @relation("UserJobInfos")
 }
+
 
 model Role {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  users     User[]   @relation("UserRoles")
+  users     User[]   @relation("UserRole")
   parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
   parentId  Int?
   children  Role[]   @relation("RoleParent")
@@ -68,7 +70,7 @@ model PermissionRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user            User     @relation("UserPermissionRequests", fields: [userId], references: [id])
 }
 
 model TeamMember {
@@ -78,22 +80,10 @@ model TeamMember {
   isDeleted Boolean  @default(false)
   isLeader  Boolean
   teamRole  String   @db.VarChar(100)
-  team      Team     @relation(fields: [teamId], references: [id])
+  team      Team     @relation("TeamTeamMembers", fields: [teamId], references: [id])
   teamId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation("UserTeamMembers", fields: [userId], references: [id])
   userId    Int
-
-model TeamMember {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isDeleted   Boolean   @default(false)
-  isLeader    Boolean
-  teamRole    String    @db.VarChar(100)
-  team        Team      @relation(fields: [teamId], references: [id])
-  teamId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  userId      Int
 }
 
 model Team {
@@ -105,8 +95,8 @@ model Team {
   isFinished  Boolean      @default(true)
   name        String       @db.VarChar(100)
   category    String       @db.VarChar(100)
-  teamStacks  TeamStack[]
-  teamMembers TeamMember[]
+  teamStacks  TeamStack[]  @relation("TeamTeamStacks")
+  teamMembers TeamMember[] @relation("TeamTeamMembers")
 }
 
 model Stack {
@@ -117,7 +107,7 @@ model Stack {
   stack       String       @db.VarChar(200)
   category    stackCategory
 
-  teamStacks TeamStack[]
+  teamStacks  TeamStack[]  @relation("StackTeamStacks")
 }
 
 enum stackCategory {
@@ -128,28 +118,28 @@ enum stackCategory {
 }
 
 model TeamStack {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  isDeleted Boolean  @default(false)
-  stackId   Int
-  teamId    Int
-  stack     Stack    @relation(fields: [stackId], references: [id])
-  team      Team     @relation(fields: [teamId], references: [id])
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  stackId     Int
+  teamId      Int
+  stack       Stack        @relation("StackTeamStacks", fields: [stackId], references: [id])
+  team        Team         @relation("TeamTeamStacks", fields: [teamId], references: [id])
 }
 
-model Resume {
-  id         Int        @id @default(autoincrement())
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  isDeleted  Boolean    @default(false)
-  userId     Int
-  title      String     @db.VarChar(100)
-  url        String     @db.VarChar(100)
-  isMain     Boolean    @default(false)
-  likeCount  Int        @default(0)
-  viewCount  Int        @default(0)
-  ResumeType ResumeType
+model Like {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  contentId   Int
+  category    ContentCategory
+
+  user        User         @relation("UserLikes", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
 model Resume {
@@ -163,9 +153,9 @@ model Resume {
   isMain      Boolean      @default(false)
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
-  type        ResumeType
+  category    ResumeCategory
 
-  user User @relation("UserResumes", fields: [userId], references: [id])
+  user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
 
 model Blog {
@@ -181,7 +171,7 @@ model Blog {
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
 
-  user User @relation("UserBlogs", fields: [userId], references: [id])
+  user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
 model Bookmark {
@@ -190,31 +180,19 @@ model Bookmark {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   isDeleted    Boolean      @default(false)
-  contentId   Int
-  Bookmarktype Type
+  contentId    Int
+  category     ContentCategory
 
-  user User @relation("UserBookmarks", fields: [userId], references: [id])
+  user         User         @relation("UserBookmarks", fields: [userId], references: [id])
 }
 
-model Like{
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  contentId  Int
-  Liketype    Type
-
-  user User @relation("UserLikes", fields: [userId], references: [id])
-}
-
-enum Type {
+enum ContentCategory {
   RESUME
   SESSION
   BLOG
 }
 
-enum ResumeType {
+enum ResumeCategory {
   PORTFOLIO
   ICT
   SOMA
@@ -227,7 +205,7 @@ model Calendar {
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   events      Event[]      @relation("CalendarEvents")
-  jobInfo     JobInfo[]    @relation("CalendarJobInfo")
+  jobInfos    JobInfo[]    @relation("CalendarJobInfos")
   conferences Conference[] @relation("CalendarConferences")
 }
 
@@ -237,31 +215,33 @@ model Event {
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   calendarId  Int
-  isOnline    Boolean  @default(false)
-  title       String   @db.VarChar(200)
-  place       String   @db.VarChar(200)
+  isOnline    Boolean      @default(false)
+  title       String       @db.VarChar(200)
+  place       String       @db.VarChar(200)
   date        DateTime
-  description String   @db.VarChar(200)
+  description String       @db.VarChar(200)
   startDate   DateTime
   endDate     DateTime
 
-  calendar Calendar @relation("CalendarEvents", fields: [calendarId], references: [id])
+  calendar    Calendar    @relation("CalendarEvents", fields: [calendarId], references: [id])
 }
 
 model JobInfo {
   id          Int          @id @default(autoincrement())
+  userId      Int
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   calendarId  Int
-  company     String   @db.VarChar(100)
-  description String   @db.VarChar(200)
-  url         String   @db.VarChar(200)
-  position    String   @db.VarChar(200)
+  company     String       @db.VarChar(100)
+  description String       @db.VarChar(200)
+  url         String       @db.VarChar(200)
+  position    String       @db.VarChar(200)
   startDate   DateTime
   endDate     DateTime
 
-  calendar Calendar @relation("CalendarJobInfo", fields: [calendarId], references: [id])
+  user        User         @relation("UserJobInfos", fields: [userId], references: [id])
+  calendar    Calendar     @relation("CalendarJobInfos", fields: [calendarId], references: [id])
 }
 
 model Conference {
@@ -278,7 +258,7 @@ model Conference {
   price       Int
   isOnline    Boolean      @default(false)
 
-  calendar Calendar @relation("CalendarConferences", fields: [calendarId], references: [id])
+  calendar    Calendar     @relation("CalendarConferences", fields: [calendarId], references: [id])
 }
 
 model Session {

@@ -2,10 +2,10 @@
 CREATE TYPE "stackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA');
 
 -- CreateEnum
-CREATE TYPE "Type" AS ENUM ('RESUME', 'SESSION', 'BLOG');
+CREATE TYPE "ContentCategory" AS ENUM ('RESUME', 'SESSION', 'BLOG');
 
 -- CreateEnum
-CREATE TYPE "ResumeType" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
+CREATE TYPE "ResumeCategory" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -130,7 +130,7 @@ CREATE TABLE "Resume" (
     "isMain" BOOLEAN NOT NULL DEFAULT false,
     "likeCount" INTEGER NOT NULL DEFAULT 0,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
-    "ResumeType" "ResumeType" NOT NULL,
+    "category" "ResumeCategory" NOT NULL,
 
     CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
 );
@@ -144,8 +144,10 @@ CREATE TABLE "Blog" (
     "userId" INTEGER NOT NULL,
     "title" VARCHAR(100) NOT NULL,
     "url" VARCHAR(100) NOT NULL,
-    "likeCount" INTEGER NOT NULL,
-    "viewCount" INTEGER NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "category" VARCHAR(200) NOT NULL,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Blog_pkey" PRIMARY KEY ("id")
 );
@@ -158,7 +160,7 @@ CREATE TABLE "Bookmark" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "contentId" INTEGER NOT NULL,
-    "Bookmarktype" "Type" NOT NULL,
+    "category" "ContentCategory" NOT NULL,
 
     CONSTRAINT "Bookmark_pkey" PRIMARY KEY ("id")
 );
@@ -171,7 +173,7 @@ CREATE TABLE "Like" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "contentId" INTEGER NOT NULL,
-    "Liketype" "Type" NOT NULL,
+    "category" "ContentCategory" NOT NULL,
 
     CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
 );
@@ -207,6 +209,7 @@ CREATE TABLE "Event" (
 -- CreateTable
 CREATE TABLE "JobInfo" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
@@ -242,18 +245,20 @@ CREATE TABLE "Conference" (
 -- CreateTable
 CREATE TABLE "Session" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "isPublic" BOOLEAN NOT NULL,
     "title" VARCHAR(200) NOT NULL,
-    "description" VARCHAR(200) NOT NULL,
-    "likeCount" INTEGER NOT NULL,
-    "viewCount" INTEGER NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "category" VARCHAR(200) NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "thumbnail" VARCHAR(200) NOT NULL,
+    "videoUrl" VARCHAR(200) NOT NULL,
+    "fileUrl" VARCHAR(200) NOT NULL,
+    "presenter" VARCHAR(50) NOT NULL,
+    "date" VARCHAR(50) NOT NULL,
+    "category" VARCHAR(50) NOT NULL,
+    "position" VARCHAR(50) NOT NULL,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
@@ -263,6 +268,9 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Like_userId_contentId_category_key" ON "Like"("userId", "contentId", "category");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -299,6 +307,9 @@ ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Event" ADD CONSTRAINT "Event_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "JobInfo" ADD CONSTRAINT "JobInfo_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "JobInfo" ADD CONSTRAINT "JobInfo_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
