@@ -1,13 +1,15 @@
-import { Team } from '../../teams/entities/team.entity';
-import { Stack } from './stack.entity';
+import { TeamEntity } from '../../teams/entities/team.entity';
+import { StackEntity } from '../../stacks/entities/stack.entity';
 
 export class TeamStackEntity {
     id: number;
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
-    stackId: number;
+    isMain: boolean; // 대표 기술 스택 여부
+
     teamId: number;
-    stack: Stack;
-    team: Team;
+    stackId: number;
+    team: TeamEntity;
+    stack: StackEntity;
 }

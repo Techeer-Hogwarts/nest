@@ -1,4 +1,4 @@
-import { TeamMember } from '@prisma/client';
+import { TeamMember, User } from '@prisma/client';
 
 export class TeamMemberEntity implements TeamMember {
     id: number;
@@ -9,5 +9,9 @@ export class TeamMemberEntity implements TeamMember {
     teamRole: string;
     teamId: number;
     userId: number;
-    role: string;
+    user: User;
+
+    constructor(partial: Partial<TeamMemberEntity>) {
+        Object.assign(this, partial);
+    }
 }
