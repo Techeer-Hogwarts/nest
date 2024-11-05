@@ -1,4 +1,4 @@
-import { Resume, ResumeType, User } from '@prisma/client';
+import { Resume, ResumeCategory, User } from '@prisma/client';
 
 export class ResumeEntity implements Resume {
     id: number;
@@ -11,7 +11,7 @@ export class ResumeEntity implements Resume {
     isMain: boolean;
     likeCount: number;
     viewCount: number;
-    type: ResumeType;
+    category: ResumeCategory;
 
     user: User;
 }
