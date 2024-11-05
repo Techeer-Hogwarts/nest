@@ -12,9 +12,9 @@ export const createSessionRequest: CreateSessionRequest = {
     thumbnail: 'https://example.com',
     title: 'Test Post',
     presenter: '발표자',
-    date: '2024년 여름',
-    position: 'Backend',
-    category: '부트캠프',
+    date: 'SUMMER_2024',
+    position: 'BACKEND',
+    category: 'BOOTCAMP',
     videoUrl: 'https://example.com',
     fileUrl: 'https://example.com',
 };
@@ -123,9 +123,9 @@ export const getBestSessionsResponse: GetSessionResponse[] =
 
 export const getSessionsQueryRequest: GetSessionsQueryRequest = {
     keyword: 'Test',
-    category: '부트캠프',
-    date: '2024 여름',
-    position: 'Backend',
+    category: 'BOOTCAMP',
+    date: 'SUMMER_2024',
+    position: 'BACKEND',
     offset: 0,
     limit: 10,
 };
@@ -138,9 +138,9 @@ export const updateSessionRequest: UpdateSessionRequest = {
     thumbnail: 'https://example.com/update',
     title: 'Test Post',
     presenter: '발표자',
-    date: '2024년 여름',
-    position: 'Backend',
-    category: '부트캠프',
+    date: 'SUMMER_2024',
+    position: 'BACKEND',
+    category: 'BOOTCAMP',
     videoUrl: 'https://example.com/update',
     fileUrl: 'https://example.com/update',
 };

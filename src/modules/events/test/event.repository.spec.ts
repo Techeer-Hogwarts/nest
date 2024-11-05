@@ -77,12 +77,6 @@ describe('EventRepository', (): void => {
                     ...(getEventListQueryRequest.keyword && {
                         OR: [
                             {
-                                category: {
-                                    contains: getEventListQueryRequest.keyword,
-                                    mode: 'insensitive',
-                                },
-                            },
-                            {
                                 title: {
                                     contains: getEventListQueryRequest.keyword,
                                     mode: 'insensitive',

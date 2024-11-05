@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { EventCategory } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
@@ -11,7 +12,7 @@ export class GetEventListQueryRequest {
     @ApiPropertyOptional({ description: '카테고리' })
     @IsOptional()
     @IsString()
-    readonly category?: string;
+    readonly category?: EventCategory;
 
     @ApiPropertyOptional({
         description: '오프셋',

@@ -1,8 +1,9 @@
+import { EventCategory } from '@prisma/client';
 import { EventEntity } from '../../entities/event.entity';
 
 export class GetEventResponse {
     readonly id: number;
-    readonly category: string;
+    readonly category: EventCategory;
     readonly title: string;
     readonly startDate: Date;
     readonly endDate: Date;

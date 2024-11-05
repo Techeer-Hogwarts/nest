@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { SessionCategory, SessionDate, SessionPosition } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
@@ -11,17 +12,17 @@ export class GetSessionsQueryRequest {
     @ApiPropertyOptional({ description: '카테고리' })
     @IsOptional()
     @IsString()
-    readonly category?: string;
+    readonly category?: SessionCategory;
 
     @ApiPropertyOptional({ description: '기간' })
     @IsOptional()
     @IsString()
-    readonly date?: string;
+    readonly date?: SessionDate;
 
     @ApiPropertyOptional({ description: '포지션' })
     @IsOptional()
     @IsString()
-    readonly position?: string;
+    readonly position?: SessionPosition;
 
     @ApiPropertyOptional({
         description: '오프셋',

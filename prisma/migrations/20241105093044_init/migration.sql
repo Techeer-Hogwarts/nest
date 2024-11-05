@@ -7,6 +7,18 @@ CREATE TYPE "Type" AS ENUM ('RESUME', 'SESSION', 'BLOG');
 -- CreateEnum
 CREATE TYPE "ResumeType" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
 
+-- CreateEnum
+CREATE TYPE "EventCategory" AS ENUM ('TECHEER', 'CONFERENCE', 'JOBINFO');
+
+-- CreateEnum
+CREATE TYPE "SessionDate" AS ENUM ('FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'SUMMER_2022', 'WINTER_2022', 'SUMMER_2023', 'WINTER_2023', 'SUMMER_2024');
+
+-- CreateEnum
+CREATE TYPE "SessionCategory" AS ENUM ('BOOTCAMP', 'PARTNERS');
+
+-- CreateEnum
+CREATE TYPE "SessionPosition" AS ENUM ('FRONTEND', 'BACKEND', 'DEVOPS', 'OTHERS');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -184,7 +196,7 @@ CREATE TABLE "Event" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "category" VARCHAR(50) NOT NULL,
+    "category" "EventCategory" NOT NULL,
     "title" VARCHAR(200) NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3),
@@ -207,9 +219,9 @@ CREATE TABLE "Session" (
     "videoUrl" VARCHAR(200) NOT NULL,
     "fileUrl" VARCHAR(200) NOT NULL,
     "presenter" VARCHAR(50) NOT NULL,
-    "date" VARCHAR(50) NOT NULL,
-    "category" VARCHAR(50) NOT NULL,
-    "position" VARCHAR(50) NOT NULL,
+    "date" "SessionDate" NOT NULL,
+    "category" "SessionCategory" NOT NULL,
+    "position" "SessionPosition" NOT NULL,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );

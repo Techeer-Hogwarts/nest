@@ -197,16 +197,50 @@ enum  ResumeType {
   OTHER
 }
 
+enum EventCategory {
+  TECHEER
+  CONFERENCE
+  JOBINFO
+}
+
 model Event {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
-  category    String       @db.VarChar(50)
+  category    EventCategory
   title       String       @db.VarChar(200)
   startDate   DateTime
   endDate     DateTime?
   url         String?      @db.VarChar(200)
+}
+
+enum SessionDate {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  FIFTH
+  SIXTH
+  SEVENTH
+  EIGHTH
+  SUMMER_2022
+  WINTER_2022
+  SUMMER_2023
+  WINTER_2023
+  SUMMER_2024
+}
+
+enum SessionCategory {
+  BOOTCAMP
+  PARTNERS
+}
+
+enum SessionPosition {
+  FRONTEND
+  BACKEND
+  DEVOPS
+  OTHERS
 }
 
 model Session {
@@ -222,9 +256,9 @@ model Session {
   videoUrl    String       @db.VarChar(200)
   fileUrl     String       @db.VarChar(200)
   presenter   String       @db.VarChar(50)
-  date        String       @db.VarChar(50)
-  category    String       @db.VarChar(50)
-  position    String       @db.VarChar(50)
+  date        SessionDate
+  category    SessionCategory
+  position    SessionPosition
 
   user        User         @relation("UserSessions", fields: [userId], references: [id])
 }

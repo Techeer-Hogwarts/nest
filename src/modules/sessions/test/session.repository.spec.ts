@@ -123,12 +123,6 @@ describe('SessionRepository', (): void => {
                                     mode: 'insensitive',
                                 },
                             },
-                            {
-                                category: {
-                                    contains: getSessionsQueryRequest.keyword,
-                                    mode: 'insensitive',
-                                },
-                            },
                         ],
                     }),
                     ...(getSessionsQueryRequest.category && {

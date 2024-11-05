@@ -6,7 +6,7 @@ import { EventEntity } from '../entities/event.entity';
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
 export const createEventRequest: CreateEventRequest = {
-    category: 'event',
+    category: 'TECHEER',
     title: 'Test Post',
     startDate: new Date('2024-10-10T10:00:00Z'),
     endDate: new Date('2024-10-11T10:00:00Z'),
@@ -43,13 +43,13 @@ export const getEventListResponse: GetEventResponse[] = eventEntities.map(
 
 export const getEventListQueryRequest: GetEventListQueryRequest = {
     keyword: 'Test',
-    category: 'event',
+    category: 'TECHEER',
     offset: 0,
     limit: 10,
 };
 
 export const updateEventRequest: CreateEventRequest = {
-    category: '채용 공고',
+    category: 'JOBINFO',
     title: 'Test Post',
     startDate: createEventRequest.startDate,
     endDate: createEventRequest.endDate,

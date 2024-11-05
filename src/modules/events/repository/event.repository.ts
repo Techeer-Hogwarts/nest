@@ -32,12 +32,6 @@ export class EventRepository {
                 ...(keyword && {
                     OR: [
                         {
-                            category: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
-                        },
-                        {
                             title: {
                                 contains: keyword,
                                 mode: 'insensitive',

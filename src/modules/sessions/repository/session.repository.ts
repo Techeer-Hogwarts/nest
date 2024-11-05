@@ -74,12 +74,6 @@ export class SessionRepository {
                                 mode: 'insensitive',
                             },
                         },
-                        {
-                            category: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
-                        },
                     ],
                 }),
                 ...(category && { category }),
