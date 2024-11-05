@@ -57,7 +57,6 @@ export class SessionService {
     }
 
     async deleteSession(sessionId: number): Promise<void> {
-        await this.sessionRepository.getSession(sessionId);
         return this.sessionRepository.deleteSession(sessionId);
     }
 
@@ -65,7 +64,6 @@ export class SessionService {
         sessionId: number,
         updateSessionRequest: UpdateSessionRequest,
     ): Promise<GetSessionResponse> {
-        await this.sessionRepository.getSession(sessionId);
         const session: SessionEntity =
             await this.sessionRepository.updateSession(
                 sessionId,

@@ -1,4 +1,9 @@
-import { User } from '@prisma/client';
+import {
+    SessionCategory,
+    SessionDate,
+    SessionPosition,
+    User,
+} from '@prisma/client';
 import { SessionEntity } from '../../entities/session.entity';
 
 export class GetSessionResponse {
@@ -7,9 +12,9 @@ export class GetSessionResponse {
     readonly thumbnail: string;
     readonly title: string;
     readonly presenter: string;
-    readonly date: string;
-    readonly position: string;
-    readonly category: string;
+    readonly date: SessionDate;
+    readonly position: SessionPosition;
+    readonly category: SessionCategory;
     readonly videoUrl: string;
     readonly fileUrl: string;
     readonly likeCount: number;

@@ -47,9 +47,7 @@ model User {
   teamMembers       TeamMember[]        @relation("UserTeamMembers")
   sessions          Session[]           @relation("UserSessions")
   permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
-  jobInfos          JobInfo[]           @relation("UserJobInfos")
 }
-
 
 model Role {
   id        Int      @id @default(autoincrement())
@@ -199,14 +197,10 @@ enum ResumeCategory {
   OTHER
 }
 
-model Calendar {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  events      Event[]      @relation("CalendarEvents")
-  jobInfos    JobInfo[]    @relation("CalendarJobInfos")
-  conferences Conference[] @relation("CalendarConferences")
+enum EventCategory {
+  TECHEER
+  CONFERENCE
+  JOBINFO
 }
 
 model Event {
@@ -214,51 +208,39 @@ model Event {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
-  calendarId  Int
-  isOnline    Boolean      @default(false)
+  category    EventCategory
   title       String       @db.VarChar(200)
-  place       String       @db.VarChar(200)
-  date        DateTime
-  description String       @db.VarChar(200)
   startDate   DateTime
-  endDate     DateTime
-
-  calendar    Calendar    @relation("CalendarEvents", fields: [calendarId], references: [id])
+  endDate     DateTime?
+  url         String?      @db.VarChar(200)
 }
 
-model JobInfo {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  calendarId  Int
-  company     String       @db.VarChar(100)
-  description String       @db.VarChar(200)
-  url         String       @db.VarChar(200)
-  position    String       @db.VarChar(200)
-  startDate   DateTime
-  endDate     DateTime
-
-  user        User         @relation("UserJobInfos", fields: [userId], references: [id])
-  calendar    Calendar     @relation("CalendarJobInfos", fields: [calendarId], references: [id])
+enum SessionDate {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  FIFTH
+  SIXTH
+  SEVENTH
+  EIGHTH
+  SUMMER_2022
+  WINTER_2022
+  SUMMER_2023
+  WINTER_2023
+  SUMMER_2024
 }
 
-model Conference {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  calendarId  Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(200)
-  startDate   DateTime
-  endDate     DateTime
-  deadline    DateTime
-  price       Int
-  isOnline    Boolean      @default(false)
+enum SessionCategory {
+  BOOTCAMP
+  PARTNERS
+}
 
-  calendar    Calendar     @relation("CalendarConferences", fields: [calendarId], references: [id])
+enum SessionPosition {
+  FRONTEND
+  BACKEND
+  DEVOPS
+  OTHERS
 }
 
 model Session {
@@ -274,9 +256,9 @@ model Session {
   videoUrl    String       @db.VarChar(200)
   fileUrl     String       @db.VarChar(200)
   presenter   String       @db.VarChar(50)
-  date        String       @db.VarChar(50)
-  category    String       @db.VarChar(50)
-  position    String       @db.VarChar(50)
+  date        SessionDate
+  category    SessionCategory
+  position    SessionPosition
 
   user        User         @relation("UserSessions", fields: [userId], references: [id])
 }

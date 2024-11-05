@@ -1,4 +1,10 @@
-import { Session, User } from '@prisma/client';
+import {
+    Session,
+    SessionCategory,
+    SessionDate,
+    SessionPosition,
+    User,
+} from '@prisma/client';
 
 export class SessionEntity implements Session {
     id: number;
@@ -9,9 +15,9 @@ export class SessionEntity implements Session {
     thumbnail: string;
     title: string;
     presenter: string;
-    position: string;
-    category: string;
-    date: string;
+    position: SessionPosition;
+    category: SessionCategory;
+    date: SessionDate;
     videoUrl: string;
     fileUrl: string;
     likeCount: number;
