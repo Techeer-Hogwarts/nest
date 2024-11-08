@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateSessionRequest } from '../dto/request/create.session.request';
 import { SessionEntity } from '../entities/session.entity';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -6,6 +6,7 @@ import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { Prisma } from '@prisma/client';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class SessionRepository {
@@ -32,7 +33,7 @@ export class SessionRepository {
         });
 
         if (!session) {
-            throw new NotFoundException('게시물을 찾을 수 없습니다.');
+            throw new NotFoundSessionException();
         }
         return session;
     }
@@ -120,7 +121,7 @@ export class SessionRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('세션 게시물을 찾을 수 없습니다.');
+                throw new NotFoundSessionException();
             }
             throw error;
         }
@@ -166,7 +167,7 @@ export class SessionRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('세션 게시물을 찾을 수 없습니다.');
+                throw new NotFoundSessionException();
             }
             throw error;
         }

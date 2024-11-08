@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../modules/prisma/prisma.service';
 import { CreateEventRequest } from '../dto/request/create.event.request';
 import { EventEntity } from '../entities/event.entity';
 import { GetEventListQueryRequest } from '../dto/request/get.event.query.request';
 import { Prisma } from '@prisma/client';
+import { NotFoundEventException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class EventRepository {
@@ -55,7 +56,7 @@ export class EventRepository {
         });
 
         if (!event) {
-            throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+            throw new NotFoundEventException();
         }
         return event;
     }
@@ -86,7 +87,7 @@ export class EventRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+                throw new NotFoundEventException();
             }
             throw error;
         }
@@ -106,7 +107,7 @@ export class EventRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+                throw new NotFoundEventException();
             }
             throw error;
         }

@@ -10,7 +10,7 @@ import {
     updateEventRequest,
 } from './mock-data';
 import { GetEventResponse } from '../dto/response/get.event.response';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundEventException } from '../../../global/exception/custom.exception';
 
 describe('EventController', () => {
     let controller: EventController;
@@ -121,12 +121,12 @@ describe('EventController', () => {
 
         it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'updateEvent').mockRejectedValue(
-                new NotFoundException('게시물을 찾을 수 없습니다.'),
+                new NotFoundEventException(),
             );
 
             await expect(
                 controller.updateEvent(1, updateEventRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundEventException);
 
             expect(service.updateEvent).toHaveBeenCalledWith(
                 1,
@@ -153,11 +153,11 @@ describe('EventController', () => {
 
         it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'deleteEvent').mockRejectedValue(
-                new NotFoundException('게시물을 찾을 수 없습니다.'),
+                new NotFoundEventException(),
             );
 
             await expect(controller.deleteEvent(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundEventException,
             );
 
             expect(service.deleteEvent).toHaveBeenCalledWith(1);
