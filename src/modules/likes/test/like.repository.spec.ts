@@ -8,13 +8,13 @@ import {
     createLikeRequest,
     getLikeListRequest,
     likeEntities,
-    likeEntity,
 } from './mock-data';
-import { LikeEntity } from '../entities/like.entity';
+import Redis from 'ioredis';
 
 describe('LikeRepository', (): void => {
     let repository: LikeRepository;
     let prismaService: PrismaService;
+    let redisClient: Redis;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -35,8 +35,18 @@ describe('LikeRepository', (): void => {
                         like: {
                             findUnique: jest.fn(),
                             upsert: jest.fn(),
+                            count: jest.fn(),
                         },
                         $queryRaw: jest.fn(),
+                    },
+                },
+                {
+                    provide: 'REDIS_CLIENT',
+                    useValue: {
+                        get: jest.fn(),
+                        set: jest.fn(),
+                        incr: jest.fn(),
+                        decr: jest.fn(),
                     },
                 },
             ],
@@ -44,6 +54,7 @@ describe('LikeRepository', (): void => {
 
         repository = module.get<LikeRepository>(LikeRepository);
         prismaService = module.get<PrismaService>(PrismaService);
+        redisClient = module.get<Redis>('REDIS_CLIENT');
     });
 
     it('should be defined', (): void => {
@@ -93,49 +104,48 @@ describe('LikeRepository', (): void => {
     });
 
     describe('toggleLike', (): void => {
-        it('이미 존재하는 좋아요의 isDeleted 값을 토글함', async (): Promise<void> => {
-            jest.spyOn(prismaService.like, 'findUnique').mockResolvedValue(
-                likeEntity(),
-            );
-
-            jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
-                likeEntity({ isDeleted: !likeEntity().isDeleted }),
-            );
-
+        it('좋아요 적용 시 Redis에 상태 업데이트 및 개수 증가', async (): Promise<void> => {
             const request: CreateLikeRequest = createLikeRequest();
-            const result: LikeEntity = await repository.toggleLike(request);
 
-            expect(result).toEqual(
-                likeEntity({ isDeleted: !likeEntity().isDeleted }),
+            jest.spyOn(redisClient, 'get').mockResolvedValue('false');
+            jest.spyOn(redisClient, 'set').mockResolvedValue('true');
+            jest.spyOn(redisClient, 'incr').mockResolvedValue(1);
+
+            await repository.toggleLike(request);
+
+            expect(redisClient.get).toHaveBeenCalledWith(
+                `like:${request.category}:${request.contentId}:${request.userId}`,
             );
-            expect(prismaService.like.findUnique).toHaveBeenCalledWith({
-                where: {
-                    userId_contentId_category: {
-                        userId: request.userId,
-                        contentId: request.contentId,
-                        category: request.category,
-                    },
-                },
+            expect(redisClient.set).toHaveBeenCalledWith(
+                `like:${request.category}:${request.contentId}:${request.userId}`,
+                request.likeStatus.toString(),
+            );
+            expect(redisClient.incr).toHaveBeenCalledWith(
+                `likeCount:${request.category}:${request.contentId}`,
+            );
+        });
+
+        it('좋아요 취소 시 Redis에 상태 업데이트 및 개수 감소', async (): Promise<void> => {
+            const request: CreateLikeRequest = createLikeRequest({
+                likeStatus: false,
             });
-            expect(prismaService.like.findUnique).toHaveBeenCalledTimes(1);
-            expect(prismaService.like.upsert).toHaveBeenCalledWith({
-                where: {
-                    userId_contentId_category: {
-                        userId: request.userId,
-                        contentId: request.contentId,
-                        category: request.category,
-                    },
-                },
-                update: {
-                    isDeleted: !likeEntity().isDeleted,
-                },
-                create: {
-                    userId: request.userId,
-                    contentId: request.contentId,
-                    category: request.category,
-                },
-            });
-            expect(prismaService.like.upsert).toHaveBeenCalledTimes(1);
+
+            jest.spyOn(redisClient, 'get').mockResolvedValue('true');
+            jest.spyOn(redisClient, 'set').mockResolvedValue('false');
+            jest.spyOn(redisClient, 'decr').mockResolvedValue(0);
+
+            await repository.toggleLike(request);
+
+            expect(redisClient.get).toHaveBeenCalledWith(
+                `like:${request.category}:${request.contentId}:${request.userId}`,
+            );
+            expect(redisClient.set).toHaveBeenCalledWith(
+                `like:${request.category}:${request.contentId}:${request.userId}`,
+                request.likeStatus.toString(),
+            );
+            expect(redisClient.decr).toHaveBeenCalledWith(
+                `likeCount:${request.category}:${request.contentId}`,
+            );
         });
     });
 
@@ -164,6 +174,35 @@ describe('LikeRepository', (): void => {
         `,
             );
             expect(prismaService.$queryRaw).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getLikeCount', (): void => {
+        it('Redis에서 좋아요 개수를 가져오고 캐시 미스 시 DB에서 조회하여 Redis에 저장함', async (): Promise<void> => {
+            const contentId: number = 1;
+            const category: ContentCategory = ContentCategory.SESSION;
+
+            // 캐시 미스 설정
+            jest.spyOn(redisClient, 'get').mockResolvedValue(null);
+            jest.spyOn(repository, 'countLikes').mockResolvedValue(10);
+
+            const result: number = await repository.getLikeCount(
+                contentId,
+                category,
+            );
+
+            expect(result).toEqual(10);
+            expect(redisClient.get).toHaveBeenCalledWith(
+                `likeCount:${category}:${contentId}`,
+            );
+            expect(repository.countLikes).toHaveBeenCalledWith(
+                contentId,
+                category,
+            );
+            expect(redisClient.set).toHaveBeenCalledWith(
+                `likeCount:${category}:${contentId}`,
+                '10',
+            );
         });
     });
 });
