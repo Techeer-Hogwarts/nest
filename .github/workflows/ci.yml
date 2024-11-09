@@ -40,15 +40,12 @@ jobs:
               run: |
                   npm run test:cov
 
-            - name: Upload coverage to Codecov
+            - name: Codecov
               uses: codecov/codecov-action@v3
               with:
-                  token: ${{ secrets.CODECOV_TOKEN }}
-                  files: ./coverage/lcov.info
-                  flags: unittests
-                  name: codecov-coverage
-                  slug: Techeer-Hogwarts/nest
-                  fail_ci_if_error: true
+                token: ${{ secrets.CODECOV_TOKEN }}
+                flags: unittests
+                name: codecov-coverage
 
             - name: Show build number
               run: |
