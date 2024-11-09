@@ -31,7 +31,18 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '18'
-            # - run: npm test
+
+            - name: Run Tests and Generate Coverage
+              run: |
+                npm test -- --coverage
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v3
+              with:
+                files: ./coverage/lcov.info
+                flags: unittests
+                name: codecov-coverage
+                fail_ci_if_error: true
+
             - name: Show build number
               run: |
                   echo "Build Number: ${{ github.run_number }}"
