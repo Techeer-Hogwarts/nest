@@ -10,6 +10,7 @@ import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.p
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
+    // CI 테스트
     @Post('/email')
     @ApiOperation({
         summary: '인증 코드 전송',

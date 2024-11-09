@@ -1,7 +1,7 @@
 comment:
-  layout: "header, diff, files"  # 주석에 포함될 섹션들, 원하는 레이아웃을 선택할 수 있습니다.
-  behavior: default  # 업데이트 방식 (기본값: 기존 주석이 있으면 업데이트, 없으면 새로 추가)
-  require_changes: false  # 커버리지 변화 여부와 상관없이 주석 추가
-  require_base: true  # 기본 브랜치 커버리지 비교 활성화
-  require_head: true  # PR 브랜치 커버리지 비교 활성화
-  hide_project_coverage: false  # 전체 프로젝트 커버리지를 표시하려면 false로 설정
+    layout: 'header, diff, files' # 주석에 포함될 섹션들, 원하는 레이아웃을 선택할 수 있습니다.
+    behavior: default # 업데이트 방식 (기본값: 기존 주석이 있으면 업데이트, 없으면 새로 추가)
+    require_changes: false # 커버리지 변화 여부와 상관없이 주석 추가
+    require_base: true # 기본 브랜치 커버리지 비교 활성화
+    require_head: true # PR 브랜치 커버리지 비교 활성화
+    hide_project_coverage: false # 전체 프로젝트 커버리지를 표시하려면 false로 설정
