@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SessionService } from '../session.service';
 import { SessionRepository } from '../repository/session.repository';
 import { GetSessionResponse } from '../dto/response/get.session.response';
-import { NotFoundException } from '@nestjs/common';
 import {
     sessionEntity,
     createSessionRequest,
@@ -16,6 +15,7 @@ import {
     getSessionsQueryRequest,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
+import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 describe('SessionService', (): void => {
     let service: SessionService;
@@ -172,11 +172,11 @@ describe('SessionService', (): void => {
 
         it('should throw NotFoundException if session does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'deleteSession').mockRejectedValue(
-                new NotFoundException('세션 게시물을 찾을 수 없습니다.'),
+                new NotFoundSessionException(),
             );
 
             await expect(service.deleteSession(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundSessionException,
             );
             expect(repository.deleteSession).toHaveBeenCalledWith(1);
             expect(repository.deleteSession).toHaveBeenCalledTimes(1);
@@ -209,12 +209,12 @@ describe('SessionService', (): void => {
 
         it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'updateSession').mockRejectedValue(
-                new NotFoundException('세션 게시물을 찾을 수 없습니다.'),
+                new NotFoundSessionException(),
             );
 
             await expect(
                 service.updateSession(1, updateSessionRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundSessionException);
 
             expect(repository.updateSession).toHaveBeenCalledWith(
                 1,

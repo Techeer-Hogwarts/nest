@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { PrismaService } from './modules/prisma/prisma.service';
 import * as cookieParser from 'cookie-parser';
+import { GlobalExceptionsFilter } from './global/exception/global-exception.filter';
 
 async function bootstrap(): Promise<void> {
     const logger = new Logger('Bootstrap');
@@ -75,6 +76,8 @@ async function bootstrap(): Promise<void> {
                 await new Promise((res) => setTimeout(res, retryDelay));
             }
         }
+
+        app.useGlobalFilters(new GlobalExceptionsFilter());
 
         await app.listen(8000);
         logger.log('애플리케이션이 포트 8000에서 작동 중입니다.');

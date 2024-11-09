@@ -10,8 +10,8 @@ import {
     updateEventRequest,
 } from './mock-data';
 import { EventEntity } from '../entities/event.entity';
-import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { NotFoundEventException } from '../../../global/exception/custom.exception';
 
 describe('EventRepository', (): void => {
     let repository: EventRepository;
@@ -110,7 +110,7 @@ describe('EventRepository', (): void => {
             );
 
             await expect(repository.getEvent(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundEventException,
             );
         });
     });
@@ -150,7 +150,7 @@ describe('EventRepository', (): void => {
 
             await expect(
                 repository.updateEvent(1, updateEventRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundEventException);
             expect(prismaService.event.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,
@@ -193,7 +193,7 @@ describe('EventRepository', (): void => {
             );
 
             await expect(repository.deleteEvent(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundEventException,
             );
         });
     });

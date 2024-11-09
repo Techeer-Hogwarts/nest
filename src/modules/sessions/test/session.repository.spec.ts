@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionRepository } from '../repository/session.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
 import {
     sessionEntity,
     createSessionRequest,
@@ -14,6 +13,7 @@ import {
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 describe('SessionRepository', (): void => {
     let repository: SessionRepository;
@@ -79,7 +79,7 @@ describe('SessionRepository', (): void => {
             );
 
             await expect(repository.getSession(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundSessionException,
             );
         });
     });
@@ -200,7 +200,7 @@ describe('SessionRepository', (): void => {
         );
 
         await expect(repository.deleteSession(1)).rejects.toThrow(
-            NotFoundException,
+            NotFoundSessionException,
         );
     });
 
@@ -240,7 +240,7 @@ describe('SessionRepository', (): void => {
 
             await expect(
                 repository.updateSession(1, updateSessionRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundSessionException);
             expect(prismaService.session.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,
