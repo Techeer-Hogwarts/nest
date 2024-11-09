@@ -48,6 +48,7 @@ export class LikeController {
             userId,
             getLikeListRequest,
         );
+
         return {
             code: 200,
             message: '좋아요 목록을 조회했습니다.',

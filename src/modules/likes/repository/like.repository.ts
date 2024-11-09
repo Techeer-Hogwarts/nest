@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentCategory, Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
-import { LikeEntity } from '../entities/like.entity';
 import { GetLikeListRequest } from '../dto/request/get.like-list.request';
 import { GetLikeResponse } from '../dto/response/get.like.response';
 import Redis from 'ioredis';
@@ -65,18 +64,37 @@ export class LikeRepository {
 
         // 중복 증가 방지를 위해 현재 상태와 요청된 상태 비교
         if (currentStatus !== likeStatus.toString()) {
-            // 사용자가 전달한 status 값을 사용하여 Redis에 좋아요 상태 설정
-            await this.redisClient.set(likeKey, likeStatus.toString());
-
-            // 사용자별 좋아요 상태에 따라 캐시에 좋아요 개수 업데이트
+            // Redis에 좋아요 상태 설정 (24시간 만료 시간 추가)
+            await this.redisClient.set(
+                likeKey,
+                likeStatus.toString(),
+                'EX',
+                86400,
+            );
+            // 캐시에 좋아요 개수 업데이트
             if (likeStatus) {
-                // 좋아요 추가 시 Redis에서 개수를 1 증가
                 await this.redisClient.incr(likeCountKey);
             } else {
-                // 좋아요 취소 시 Redis에서 개수를 1 감소
                 await this.redisClient.decr(likeCountKey);
             }
         }
+        // DB 동기화
+        await this.prisma.like.upsert({
+            where: {
+                userId_contentId_category: {
+                    userId,
+                    contentId,
+                    category,
+                },
+            },
+            update: { isDeleted: !likeStatus },
+            create: {
+                userId,
+                contentId,
+                category,
+                isDeleted: !likeStatus,
+            },
+        });
 
         return new GetLikeResponse(createLikeRequest, likeStatus);
     }
