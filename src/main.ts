@@ -29,7 +29,7 @@ async function bootstrap(): Promise<void> {
 
         // Basic Auth 미들웨어 추가
         app.use(
-            ['api/v1/docs'], // Swagger 경로에 대한 Basic Auth 적용
+            ['/api/v1/docs'], // Swagger 경로에 대한 Basic Auth 적용
             basicAuth({
                 users: {
                     [process.env.SWAGGER_USER]: process.env.SWAGGER_PASSWORD,
