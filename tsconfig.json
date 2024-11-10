@@ -21,6 +21,5 @@
         "paths": {
             "@nestjs/*": ["node_modules/@nestjs/*"]
         }
-    },
-    "include": ["src/**/*.ts"]
+    }
 }
