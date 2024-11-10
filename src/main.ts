@@ -5,6 +5,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { PrismaService } from './modules/prisma/prisma.service';
 import * as cookieParser from 'cookie-parser';
 import { GlobalExceptionsFilter } from './global/exception/global-exception.filter';
+import * as basicAuth from 'express-basic-auth';
 
 async function bootstrap(): Promise<void> {
     const logger = new Logger('Bootstrap');
@@ -25,6 +26,18 @@ async function bootstrap(): Promise<void> {
 
         app.setGlobalPrefix('api/v1');
         logger.log('Global prefix를 "api/v1"로 설정했습니다.');
+
+        // Basic Auth 미들웨어 추가
+        app.use(
+            ['/docs'], // Swagger 경로에 대한 Basic Auth 적용
+            basicAuth({
+                users: {
+                    [process.env.SWAGGER_USER]: process.env.SWAGGER_PASSWORD,
+                },
+
+                challenge: true,
+            }),
+        );
 
         const options = new DocumentBuilder()
             .setTitle('Techeer Zip')
