@@ -19,7 +19,7 @@
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "jest --config ./test/jest-e2e.json",
-        "seed": "ts-node prisma/seed.ts"
+        "seed": "node dist/prisma/seed.js"
     },
     "dependencies": {
         "@nestjs/axios": "^3.1.0",
@@ -41,6 +41,7 @@
         "class-validator": "^0.14.1",
         "codecov": "^3.8.3",
         "cookie-parser": "^1.4.6",
+        "express-basic-auth": "^1.2.1",
         "ioredis": "^5.4.1",
         "nodemailer": "^6.9.15",
         "passport": "^0.7.0",
