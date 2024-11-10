@@ -53,7 +53,7 @@ async function bootstrap(): Promise<void> {
         logger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');
 
         const document = SwaggerModule.createDocument(app, options);
-        SwaggerModule.setup('docs', app, document);
+        SwaggerModule.setup('api/v1/docs', app, document);
 
         logger.log('Swagger 모듈 설정이 완료되었습니다.');
 
