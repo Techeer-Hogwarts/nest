@@ -50,7 +50,6 @@ model User {
   jobInfos          JobInfo[]           @relation("UserJobInfos")
 }
 
-
 model Role {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -70,7 +69,7 @@ model PermissionRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user            User     @relation("UserPermissionRequests", fields: [userId], references: [id])
+  user User @relation("UserPermissionRequests", fields: [userId], references: [id])
 }
 
 model TeamMember {
@@ -100,14 +99,14 @@ model Team {
 }
 
 model Stack {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  stack       String       @db.VarChar(200)
-  category    stackCategory
+  id        Int           @id @default(autoincrement())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  isDeleted Boolean       @default(false)
+  stack     String        @db.VarChar(200)
+  category  stackCategory
 
-  teamStacks  TeamStack[]  @relation("StackTeamStacks")
+  teamStacks TeamStack[] @relation("StackTeamStacks")
 }
 
 enum stackCategory {
@@ -118,73 +117,74 @@ enum stackCategory {
 }
 
 model TeamStack {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  stackId     Int
-  teamId      Int
-  stack       Stack        @relation("StackTeamStacks", fields: [stackId], references: [id])
-  team        Team         @relation("TeamTeamStacks", fields: [teamId], references: [id])
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  stackId   Int
+  teamId    Int
+  stack     Stack    @relation("StackTeamStacks", fields: [stackId], references: [id])
+  team      Team     @relation("TeamTeamStacks", fields: [teamId], references: [id])
 }
 
 model Like {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  contentId   Int
-  category    ContentCategory
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
+  contentId Int
+  category  ContentCategory
 
-  user        User         @relation("UserLikes", fields: [userId], references: [id])
+  user User @relation("UserLikes", fields: [userId], references: [id])
 
   @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
 model Resume {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  userId      Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(100)
-  isMain      Boolean      @default(false)
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
-  category    ResumeCategory
+  id        Int            @id @default(autoincrement())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  isDeleted Boolean        @default(false)
+  userId    Int
+  title     String         @db.VarChar(100)
+  url       String         @db.VarChar(100)
+  isMain    Boolean        @default(false)
+  likeCount Int            @default(0)
+  viewCount Int            @default(0)
+  category  ResumeCategory
 
-  user        User         @relation("UserResumes", fields: [userId], references: [id])
+  user User @relation("UserResumes", fields: [userId], references: [id])
 }
 
 model Blog {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  userId      Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(100)
-  date        DateTime
-  category    String       @db.VarChar(200)
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  userId    Int
+  title     String   @db.VarChar(100)
+  url       String   @db.VarChar(100)
+  date      DateTime
+  category  String   @db.VarChar(200)
+  likeCount Int      @default(0)
+  viewCount Int      @default(0)
 
-  user        User         @relation("UserBlogs", fields: [userId], references: [id])
+  user User @relation("UserBlogs", fields: [userId], references: [id])
 }
 
 model Bookmark {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  isDeleted    Boolean      @default(false)
-  contentId    Int
-  category     ContentCategory
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
+  contentId Int
+  category  ContentCategory
 
-  user         User         @relation("UserBookmarks", fields: [userId], references: [id])
-}
+  user User @relation("UserBookmarks", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설
 
 enum ContentCategory {
   RESUME
@@ -210,73 +210,73 @@ model Calendar {
 }
 
 model Event {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
   calendarId  Int
-  isOnline    Boolean      @default(false)
-  title       String       @db.VarChar(200)
-  place       String       @db.VarChar(200)
+  isOnline    Boolean  @default(false)
+  title       String   @db.VarChar(200)
+  place       String   @db.VarChar(200)
   date        DateTime
-  description String       @db.VarChar(200)
+  description String   @db.VarChar(200)
   startDate   DateTime
   endDate     DateTime
 
-  calendar    Calendar    @relation("CalendarEvents", fields: [calendarId], references: [id])
+  calendar Calendar @relation("CalendarEvents", fields: [calendarId], references: [id])
 }
 
 model JobInfo {
-  id          Int          @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
   calendarId  Int
-  company     String       @db.VarChar(100)
-  description String       @db.VarChar(200)
-  url         String       @db.VarChar(200)
-  position    String       @db.VarChar(200)
+  company     String   @db.VarChar(100)
+  description String   @db.VarChar(200)
+  url         String   @db.VarChar(200)
+  position    String   @db.VarChar(200)
   startDate   DateTime
   endDate     DateTime
 
-  user        User         @relation("UserJobInfos", fields: [userId], references: [id])
-  calendar    Calendar     @relation("CalendarJobInfos", fields: [calendarId], references: [id])
+  user     User     @relation("UserJobInfos", fields: [userId], references: [id])
+  calendar Calendar @relation("CalendarJobInfos", fields: [calendarId], references: [id])
 }
 
 model Conference {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  calendarId  Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(200)
-  startDate   DateTime
-  endDate     DateTime
-  deadline    DateTime
-  price       Int
-  isOnline    Boolean      @default(false)
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isDeleted  Boolean  @default(false)
+  calendarId Int
+  title      String   @db.VarChar(100)
+  url        String   @db.VarChar(200)
+  startDate  DateTime
+  endDate    DateTime
+  deadline   DateTime
+  price      Int
+  isOnline   Boolean  @default(false)
 
-  calendar    Calendar     @relation("CalendarConferences", fields: [calendarId], references: [id])
+  calendar Calendar @relation("CalendarConferences", fields: [calendarId], references: [id])
 }
 
 model Session {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  title       String       @db.VarChar(200)
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
-  thumbnail   String       @db.VarChar(200)
-  videoUrl    String       @db.VarChar(200)
-  fileUrl     String       @db.VarChar(200)
-  presenter   String       @db.VarChar(50)
-  date        String       @db.VarChar(50)
-  category    String       @db.VarChar(50)
-  position    String       @db.VarChar(50)
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  title     String   @db.VarChar(200)
+  likeCount Int      @default(0)
+  viewCount Int      @default(0)
+  thumbnail String   @db.VarChar(200)
+  videoUrl  String   @db.VarChar(200)
+  fileUrl   String   @db.VarChar(200)
+  presenter String   @db.VarChar(50)
+  date      String   @db.VarChar(50)
+  category  String   @db.VarChar(50)
+  position  String   @db.VarChar(50)
 
-  user        User         @relation("UserSessions", fields: [userId], references: [id])
+  user User @relation("UserSessions", fields: [userId], references: [id])
 }

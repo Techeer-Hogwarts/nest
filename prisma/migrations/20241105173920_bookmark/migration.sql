@@ -119,6 +119,19 @@ CREATE TABLE "TeamStack" (
 );
 
 -- CreateTable
+CREATE TABLE "Like" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "contentId" INTEGER NOT NULL,
+    "category" "ContentCategory" NOT NULL,
+
+    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Resume" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -163,19 +176,6 @@ CREATE TABLE "Bookmark" (
     "category" "ContentCategory" NOT NULL,
 
     CONSTRAINT "Bookmark_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Like" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "contentId" INTEGER NOT NULL,
-    "category" "ContentCategory" NOT NULL,
-
-    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -272,6 +272,9 @@ CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
 -- CreateIndex
 CREATE UNIQUE INDEX "Like_userId_contentId_category_key" ON "Like"("userId", "contentId", "category");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Bookmark_userId_contentId_category_key" ON "Bookmark"("userId", "contentId", "category");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -294,6 +297,9 @@ ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_stackId_fkey" FOREIGN KEY ("st
 ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Resume" ADD CONSTRAINT "Resume_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -301,9 +307,6 @@ ALTER TABLE "Blog" ADD CONSTRAINT "Blog_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Bookmark" ADD CONSTRAINT "Bookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Event" ADD CONSTRAINT "Event_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
