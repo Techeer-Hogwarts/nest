@@ -78,7 +78,20 @@ describe('TeamService', () => {
 
             expect(
                 await service.findAnnouncementById(announcementId),
-            ).toMatchObject(mockTeamEntity());
+            ).toMatchObject(
+                expect.objectContaining({
+                    id: 1,
+                    category: 'Test Category',
+                    isDeleted: false,
+                    isFinished: false,
+                    isRecruited: true,
+                    name: 'Test Team',
+                    stacks: [],
+                    teamMembers: [],
+                    teamStacks: [],
+                }),
+            );
+
             expect(repository.findAnnouncementById).toHaveBeenCalledWith(
                 announcementId,
             );
