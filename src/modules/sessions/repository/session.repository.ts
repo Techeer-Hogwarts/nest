@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateSessionRequest } from '../dto/request/create.session.request';
 import { SessionEntity } from '../entities/session.entity';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -6,6 +6,7 @@ import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { Prisma } from '@prisma/client';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class SessionRepository {
@@ -32,7 +33,7 @@ export class SessionRepository {
         });
 
         if (!session) {
-            throw new NotFoundException('게시물을 찾을 수 없습니다.');
+            throw new NotFoundSessionException();
         }
         return session;
     }
@@ -107,10 +108,23 @@ export class SessionRepository {
     }
 
     async deleteSession(sessionId: number): Promise<void> {
-        await this.prisma.session.update({
-            where: { id: sessionId },
-            data: { isDeleted: true },
-        });
+        try {
+            await this.prisma.session.update({
+                where: {
+                    id: sessionId,
+                    isDeleted: false,
+                },
+                data: { isDeleted: true },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundSessionException();
+            }
+            throw error;
+        }
     }
 
     async updateSession(
@@ -128,23 +142,34 @@ export class SessionRepository {
             fileUrl,
         }: UpdateSessionRequest = updateSessionRequest;
 
-        return this.prisma.session.update({
-            where: {
-                id: sessionId,
-            },
-            data: {
-                thumbnail,
-                title,
-                presenter,
-                date,
-                position,
-                category,
-                videoUrl,
-                fileUrl,
-            },
-            include: {
-                user: true,
-            },
-        });
+        try {
+            return await this.prisma.session.update({
+                where: {
+                    id: sessionId,
+                    isDeleted: false,
+                },
+                data: {
+                    thumbnail,
+                    title,
+                    presenter,
+                    date,
+                    position,
+                    category,
+                    videoUrl,
+                    fileUrl,
+                },
+                include: {
+                    user: true,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundSessionException();
+            }
+            throw error;
+        }
     }
 }

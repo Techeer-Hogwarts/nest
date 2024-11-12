@@ -124,7 +124,7 @@ export class SessionController {
     @Patch(':sessionId')
     @ApiOperation({
         summary: '세션 게시물 수정',
-        description: '지정된 ID의 세션 게시물 제목과 URL을 수정합니다.',
+        description: '지정된 ID의 세션 게시물을 수정합니다.',
     })
     async updateSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,

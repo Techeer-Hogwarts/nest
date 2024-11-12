@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionRepository } from '../repository/session.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
 import {
     sessionEntity,
     createSessionRequest,
@@ -13,6 +12,8 @@ import {
     getSessionsQueryRequest,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 describe('SessionRepository', (): void => {
     let repository: SessionRepository;
@@ -78,7 +79,7 @@ describe('SessionRepository', (): void => {
             );
 
             await expect(repository.getSession(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundSessionException,
             );
         });
     });
@@ -177,11 +178,30 @@ describe('SessionRepository', (): void => {
             await repository.deleteSession(1);
 
             expect(prismaService.session.update).toHaveBeenCalledWith({
-                where: { id: 1 },
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
                 data: { isDeleted: true },
             });
             expect(prismaService.session.update).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
+        const prismaError: PrismaClientKnownRequestError =
+            new PrismaClientKnownRequestError('Record not found', {
+                code: 'P2025',
+                clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+            });
+
+        jest.spyOn(prismaService.session, 'update').mockRejectedValue(
+            prismaError,
+        );
+
+        await expect(repository.deleteSession(1)).rejects.toThrow(
+            NotFoundSessionException,
+        );
     });
 
     describe('updateSession', (): void => {
@@ -197,7 +217,35 @@ describe('SessionRepository', (): void => {
 
             expect(result).toEqual(updatedSessionEntity);
             expect(prismaService.session.update).toHaveBeenCalledWith({
-                where: { id: 1 },
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
+                data: updateSessionRequest,
+                include: { user: true },
+            });
+            expect(prismaService.session.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
+            const prismaError: PrismaClientKnownRequestError =
+                new PrismaClientKnownRequestError('Record not found', {
+                    code: 'P2025',
+                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
+                });
+
+            jest.spyOn(prismaService.session, 'update').mockRejectedValue(
+                prismaError,
+            );
+
+            await expect(
+                repository.updateSession(1, updateSessionRequest),
+            ).rejects.toThrow(NotFoundSessionException);
+            expect(prismaService.session.update).toHaveBeenCalledWith({
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
                 data: updateSessionRequest,
                 include: { user: true },
             });

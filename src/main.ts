@@ -4,6 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { PrismaService } from './modules/prisma/prisma.service';
 import * as cookieParser from 'cookie-parser';
+import { GlobalExceptionsFilter } from './global/exception/global-exception.filter';
+import * as basicAuth from 'express-basic-auth';
 
 async function bootstrap(): Promise<void> {
     const logger = new Logger('Bootstrap');
@@ -25,6 +27,18 @@ async function bootstrap(): Promise<void> {
         app.setGlobalPrefix('api/v1');
         logger.log('Global prefix를 "api/v1"로 설정했습니다.');
 
+        // Basic Auth 미들웨어 추가
+        app.use(
+            ['/api/v1/docs'], // Swagger 경로에 대한 Basic Auth 적용
+            basicAuth({
+                users: {
+                    [process.env.SWAGGER_USER]: process.env.SWAGGER_PASSWORD,
+                },
+
+                challenge: true,
+            }),
+        );
+
         const options = new DocumentBuilder()
             .setTitle('Techeer Zip')
             .setDescription('Techeer Zip의 API 명세입니다.')
@@ -39,7 +53,7 @@ async function bootstrap(): Promise<void> {
         logger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');
 
         const document = SwaggerModule.createDocument(app, options);
-        SwaggerModule.setup('docs', app, document);
+        SwaggerModule.setup('api/v1/docs', app, document);
 
         logger.log('Swagger 모듈 설정이 완료되었습니다.');
 
@@ -75,6 +89,8 @@ async function bootstrap(): Promise<void> {
                 await new Promise((res) => setTimeout(res, retryDelay));
             }
         }
+
+        app.useGlobalFilters(new GlobalExceptionsFilter());
 
         await app.listen(8000);
         logger.log('애플리케이션이 포트 8000에서 작동 중입니다.');

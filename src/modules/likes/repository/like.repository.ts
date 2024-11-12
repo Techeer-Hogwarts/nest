@@ -53,7 +53,7 @@ export class LikeRepository {
         const { userId, contentId, category }: CreateLikeRequest =
             createLikeRequest;
 
-        // 현재 좋아요가 존재하는지 확인
+        // 현재 좋아요가 존재하는지 확인 - 반전을 위해 조회
         const existingLike: LikeEntity = await this.prisma.like.findUnique({
             where: {
                 userId_contentId_category: {
@@ -84,7 +84,7 @@ export class LikeRepository {
         });
     }
 
-    async getLike(
+    async getLikeList(
         userId: number,
         getLikeListRequest: GetLikeListRequest,
     ): Promise<any> {
@@ -98,10 +98,6 @@ export class LikeRepository {
         };
 
         const tableName: string = tableMap[category];
-
-        if (!tableName) {
-            throw new Error('Invalid category type');
-        }
 
         return this.prisma.$queryRaw(
             Prisma.sql`

@@ -9,6 +9,7 @@ import { ResumeModule } from './modules/resumes/resume.module';
 import { RedisModule } from './auth/auth.redis.module';
 import { AuthModule } from './auth/auth.module';
 import { SessionModule } from './modules/sessions/session.module';
+import { EventModule } from './modules/events/event.module';
 import { LikeModule } from './modules/likes/like.module';
 
 @Module({
@@ -23,6 +24,7 @@ import { LikeModule } from './modules/likes/like.module';
         ResumeModule,
         AuthModule,
         SessionModule,
+        EventModule,
         LikeModule,
     ],
 })
