@@ -19,7 +19,7 @@ describe('TeamController', () => {
                 {
                     provide: TeamService,
                     useValue: {
-                        createAnnouncement: jest
+                        createTeam: jest
                             .fn()
                             .mockResolvedValue(mockGetTeamResponseList[0]),
                         findAnnouncementById: jest
@@ -53,9 +53,9 @@ describe('TeamController', () => {
         expect(teamController).toBeDefined();
     });
 
-    describe('createAnnouncement', () => {
+    describe('createTeam', () => {
         it('should create a new team announcement', async () => {
-            const result = await teamController.createAnnouncement(
+            const result = await teamController.createTeam(
                 mockCreateAnnouncementRequest,
             );
             expect(result).toEqual({
@@ -63,7 +63,7 @@ describe('TeamController', () => {
                 message: '팀 공고가 생성되었습니다.',
                 data: mockGetTeamResponseList[0],
             });
-            expect(teamService.createAnnouncement).toHaveBeenCalledWith(
+            expect(teamService.createTeam).toHaveBeenCalledWith(
                 mockCreateAnnouncementRequest,
             );
         });

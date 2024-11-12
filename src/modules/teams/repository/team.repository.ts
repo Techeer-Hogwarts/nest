@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateAnnouncementRequest } from '../dto/request/create.team.request';
+import { CreateTeamRequest } from '../dto/request/create.team.request';
 import { Team, TeamStack, Stack, TeamMember, User } from '@prisma/client';
 
 @Injectable()
 export class TeamRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async createAnnouncement(data: CreateAnnouncementRequest): Promise<any> {
+    async createTeam(data: CreateTeamRequest): Promise<any> {
         const { stacks, ...announcementData } = data;
 
         const newAnnouncement = await this.prisma.team.create({
@@ -45,7 +45,7 @@ export class TeamRepository {
 
     async updateAnnouncement(
         announcementId: number,
-        updateData: Partial<CreateAnnouncementRequest>,
+        updateData: Partial<CreateTeamRequest>,
     ): Promise<any> {
         return this.prisma.team.update({
             where: { id: announcementId },

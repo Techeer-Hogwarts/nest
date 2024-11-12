@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TeamRepository } from './repository/team.repository';
-import { CreateAnnouncementRequest } from './dto/request/create.team.request';
+import { CreateTeamRequest } from './dto/request/create.team.request';
 import { GetTeamResponse } from './dto/response/get.team.response';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 import { Team } from '@prisma/client';
@@ -11,8 +11,8 @@ import { StackEntity } from '../stacks/entities/stack.entity';
 export class TeamService {
     constructor(private readonly teamRepository: TeamRepository) {}
 
-    async createAnnouncement(data: CreateAnnouncementRequest): Promise<any> {
-        return this.teamRepository.createAnnouncement(data);
+    async createTeam(data: CreateTeamRequest): Promise<any> {
+        return this.teamRepository.createTeam(data);
     }
 
     async findAnnouncementById(announcementId: number): Promise<any> {
@@ -21,7 +21,7 @@ export class TeamService {
 
     async updateAnnouncement(
         announcementId: number,
-        updateData: Partial<CreateAnnouncementRequest>,
+        updateData: Partial<CreateTeamRequest>,
     ): Promise<any> {
         return this.teamRepository.updateAnnouncement(
             announcementId,

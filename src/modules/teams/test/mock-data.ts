@@ -1,12 +1,12 @@
 import { TeamEntity } from '../entities/team.entity';
-import { CreateAnnouncementRequest } from '../dto/request/create.team.request';
+import { CreateTeamRequest } from '../dto/request/create.team.request';
 import { GetTeamResponse } from '../dto/response/get.team.response';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { StackEntity } from '../../stacks/entities/stack.entity';
 import { TeamStackEntity } from '../../teamStacks/entities/teamStack.entity';
-// import { TeamMemberEntity } from '../../teamMembers/domain/teamMember.entity';
+// import { TeamMemberEntity } from '../../teamMembers/entities/teamMember.entity';
 
-export const mockCreateAnnouncementRequest: CreateAnnouncementRequest = {
+export const mockCreateAnnouncementRequest: CreateTeamRequest = {
     name: 'Test Team',
     category: 'Test Category',
     isRecruited: true,
@@ -46,38 +46,6 @@ export const mockTeamEntity = (overrides?: Partial<TeamEntity>): TeamEntity => {
     teamStack.teamId = 1;
     teamStack.isMain = true;
     teamStack.stack = stack;
-
-    // const teamMember = new TeamMemberEntity({
-    //     id: 1,
-    //     createdAt: new Date(),
-    //     updatedAt: new Date(),
-    //     isDeleted: false,
-    //     isLeader: true,
-    //     teamRole: 'Backend Developer',
-    //     teamId: 1,
-    //     userId: 1,
-    //     user: {
-    //         id: 1,
-    //         name: 'User A',
-    //         email: 'user@example.com',
-    //         createdAt: new Date(),
-    //         updatedAt: new Date(),
-    //         year: 3,
-    //         password: 'password',
-    //         isLft: false,
-    //         githubUrl: 'https://github.com/user',
-    //         blogUrl: 'https://blog.com/user',
-    //         mainPosition: 'Backend Developer',
-    //         roleId: 1,
-    //         isDeleted: false,
-    //         subPosition: '',
-    //         school: '한국공학대학교',
-    //         class: '3',
-    //         isAuth: false,
-    //     },
-    // });
-
-    team.teamStacks = [teamStack as TeamStackEntity];
 
     team.teamMembers = [];
 

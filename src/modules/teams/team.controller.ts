@@ -9,7 +9,7 @@ import {
     Query,
     ParseIntPipe,
 } from '@nestjs/common';
-import { CreateAnnouncementRequest } from './dto/request/create.team.request';
+import { CreateTeamRequest } from './dto/request/create.team.request';
 import { TeamService } from './team.service';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -24,10 +24,10 @@ export class TeamController {
         summary: '팀 공고 생성',
         description: '새로운 팀 공고를 생성합니다.',
     })
-    async createAnnouncement(
-        @Body() createAnnouncementDto: CreateAnnouncementRequest,
+    async createTeam(
+        @Body() createAnnouncementDto: CreateTeamRequest,
     ): Promise<any> {
-        const announcement = await this.teamService.createAnnouncement(
+        const announcement = await this.teamService.createTeam(
             createAnnouncementDto,
         );
         return {
@@ -61,7 +61,7 @@ export class TeamController {
     })
     async updateAnnouncement(
         @Param('id', ParseIntPipe) announcementId: number,
-        @Body() updateData: Partial<CreateAnnouncementRequest>,
+        @Body() updateData: Partial<CreateTeamRequest>,
     ): Promise<any> {
         const updatedAnnouncement = await this.teamService.updateAnnouncement(
             announcementId,

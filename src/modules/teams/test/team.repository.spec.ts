@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeamRepository } from '../repository/team.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateAnnouncementRequest } from '../dto/request/create.team.request';
+import { CreateTeamRequest } from '../dto/request/create.team.request';
 import { Team } from '@prisma/client';
 
 describe('TeamRepository', () => {
@@ -40,7 +40,7 @@ describe('TeamRepository', () => {
 
     describe('createAnnouncement', () => {
         it('should create an announcement and associate stacks', async () => {
-            const dto: CreateAnnouncementRequest = {
+            const dto: CreateTeamRequest = {
                 name: 'Test Team',
                 category: 'Test Category',
                 isRecruited: true,
@@ -62,7 +62,7 @@ describe('TeamRepository', () => {
                 undefined,
             );
 
-            const result = await repository.createAnnouncement(dto);
+            const result = await repository.createTeam(dto);
 
             expect(result).toEqual(newAnnouncement);
             expect(prismaService.team.create).toHaveBeenCalledWith({

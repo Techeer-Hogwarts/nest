@@ -10,8 +10,4 @@ export class TeamMemberEntity implements TeamMember {
     teamId: number;
     userId: number;
     user: User;
-
-    constructor(partial: Partial<TeamMemberEntity>) {
-        Object.assign(this, partial);
-    }
 }

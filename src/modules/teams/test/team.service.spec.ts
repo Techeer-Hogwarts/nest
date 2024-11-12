@@ -21,7 +21,7 @@ describe('TeamService', () => {
                 {
                     provide: TeamRepository,
                     useValue: {
-                        createAnnouncement: jest.fn(),
+                        createTeam: jest.fn(),
                         findAnnouncementById: jest.fn(),
                         updateAnnouncement: jest.fn(),
                         deleteAnnouncement: jest.fn(),
@@ -41,16 +41,29 @@ describe('TeamService', () => {
         expect(service).toBeDefined();
     });
 
-    describe('createAnnouncement', () => {
+    describe('createTeam', () => {
         it('should create an announcement', async () => {
-            jest.spyOn(repository, 'createAnnouncement').mockResolvedValue(
+            jest.spyOn(repository, 'createTeam').mockResolvedValue(
                 mockTeamEntity(),
             );
 
             expect(
-                await service.createAnnouncement(mockCreateAnnouncementRequest),
-            ).toEqual(mockTeamEntity());
-            expect(repository.createAnnouncement).toHaveBeenCalledWith(
+                await service.createTeam(mockCreateAnnouncementRequest),
+            ).toEqual(
+                expect.objectContaining({
+                    id: 1,
+                    category: 'Test Category',
+                    isDeleted: false,
+                    isFinished: false,
+                    isRecruited: true,
+                    name: 'Test Team',
+                    stacks: [],
+                    teamMembers: [],
+                    teamStacks: [],
+                }),
+            );
+
+            expect(repository.createTeam).toHaveBeenCalledWith(
                 mockCreateAnnouncementRequest,
             );
         });

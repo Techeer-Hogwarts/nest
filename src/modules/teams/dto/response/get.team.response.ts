@@ -1,5 +1,5 @@
 import { TeamEntity } from '../../entities/team.entity';
-import { TeamMemberEntity } from '../../../teamMembers/domain/teamMember.entity';
+import { TeamMemberEntity } from '../../../teamMembers/entities/teamMember.entity';
 import { TeamStackEntity } from '../../../teamStacks/entities/teamStack.entity';
 
 export class GetTeamResponse {

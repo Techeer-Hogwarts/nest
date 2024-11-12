@@ -8,4 +8,3 @@ export class StackEntity implements Stack {
     stack: string;
     category: stackCategory;
 }
-export { Stack };

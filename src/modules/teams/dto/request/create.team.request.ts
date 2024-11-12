@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateAnnouncementRequest {
+export class CreateTeamRequest {
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
