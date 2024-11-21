@@ -182,6 +182,8 @@ model Bookmark {
   category  ContentCategory
 
   user User @relation("UserBookmarks", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
 enum ContentCategory {
