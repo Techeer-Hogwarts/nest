@@ -94,7 +94,6 @@ model Stack {
   teamStacks TeamStack[]
 }
 
-
 enum stackCategory {
   BACKEND
   FRONTEND
@@ -175,15 +174,17 @@ model Blog {
 }
 
 model Bookmark {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  isDeleted    Boolean      @default(false)
-  contentId    Int
-  category     ContentCategory
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
+  contentId Int
+  category  ContentCategory
 
-  user         User         @relation("UserBookmarks", fields: [userId], references: [id])
+  user User @relation("UserBookmarks", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
 enum ContentCategory {

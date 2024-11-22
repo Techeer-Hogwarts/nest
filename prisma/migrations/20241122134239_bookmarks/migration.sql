@@ -1,11 +1,23 @@
 -- CreateEnum
-CREATE TYPE "stackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA');
+CREATE TYPE "stackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA', 'ETC');
 
 -- CreateEnum
-CREATE TYPE "Type" AS ENUM ('RESUME', 'SESSION', 'BLOG');
+CREATE TYPE "ContentCategory" AS ENUM ('RESUME', 'SESSION', 'BLOG');
 
 -- CreateEnum
-CREATE TYPE "ResumeType" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
+CREATE TYPE "ResumeCategory" AS ENUM ('PORTFOLIO', 'ICT', 'SOMA', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "EventCategory" AS ENUM ('TECHEER', 'CONFERENCE', 'JOBINFO');
+
+-- CreateEnum
+CREATE TYPE "SessionDate" AS ENUM ('FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'SUMMER_2022', 'WINTER_2022', 'SUMMER_2023', 'WINTER_2023', 'SUMMER_2024');
+
+-- CreateEnum
+CREATE TYPE "SessionCategory" AS ENUM ('BOOTCAMP', 'PARTNERS');
+
+-- CreateEnum
+CREATE TYPE "SessionPosition" AS ENUM ('FRONTEND', 'BACKEND', 'DEVOPS', 'OTHERS');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -15,6 +27,7 @@ CREATE TABLE "User" (
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "nickname" VARCHAR(200),
     "year" INTEGER NOT NULL,
     "password" TEXT NOT NULL,
     "isLft" BOOLEAN NOT NULL DEFAULT false,
@@ -24,7 +37,19 @@ CREATE TABLE "User" (
     "subPosition" VARCHAR(100),
     "school" VARCHAR(100) NOT NULL,
     "class" VARCHAR(100) NOT NULL,
+    "profileImage" VARCHAR(200) NOT NULL,
+    "stack" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "isAuth" BOOLEAN NOT NULL DEFAULT false,
+    "isIntern" BOOLEAN,
+    "internPosition" VARCHAR(100),
+    "internCompanyName" VARCHAR(200),
+    "internStartDate" TIMESTAMP(3),
+    "internEndDate" TIMESTAMP(3),
+    "fullTimePosition" VARCHAR(100),
+    "isFullTime" BOOLEAN DEFAULT false,
+    "fullTimeCompanyName" VARCHAR(200),
+    "fullTimeStartDate" TIMESTAMP(3),
+    "fullTimeEndDate" TIMESTAMP(3),
     "roleId" INTEGER NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -42,19 +67,15 @@ CREATE TABLE "Role" (
 );
 
 -- CreateTable
-CREATE TABLE "Profile" (
+CREATE TABLE "PermissionRequest" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "requestedRoleId" INTEGER NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "nickname" VARCHAR(200) NOT NULL,
-    "profileImage" VARCHAR(200) NOT NULL,
-    "experience" VARCHAR(200),
-    "company" VARCHAR(200),
-    "stack" VARCHAR(200) NOT NULL,
-    "userId" INTEGER NOT NULL,
 
-    CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "PermissionRequest_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -111,6 +132,19 @@ CREATE TABLE "Team" (
 );
 
 -- CreateTable
+CREATE TABLE "Like" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "contentId" INTEGER NOT NULL,
+    "category" "ContentCategory" NOT NULL,
+
+    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Resume" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,7 +156,7 @@ CREATE TABLE "Resume" (
     "isMain" BOOLEAN NOT NULL DEFAULT false,
     "likeCount" INTEGER NOT NULL DEFAULT 0,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
-    "type" "ResumeType" NOT NULL,
+    "category" "ResumeCategory" NOT NULL,
 
     CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
 );
@@ -152,22 +186,9 @@ CREATE TABLE "Bookmark" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "contentId" INTEGER NOT NULL,
-    "Bookmarktype" "Type" NOT NULL,
+    "category" "ContentCategory" NOT NULL,
 
     CONSTRAINT "Bookmark_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Like" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "contentId" INTEGER NOT NULL,
-    "Liketype" "Type" NOT NULL,
-
-    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -176,11 +197,11 @@ CREATE TABLE "Event" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "category" VARCHAR(50) NOT NULL,
+    "category" "EventCategory" NOT NULL,
     "title" VARCHAR(200) NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
-    "url" VARCHAR(200) NOT NULL,
+    "endDate" TIMESTAMP(3),
+    "url" VARCHAR(200),
 
     CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
@@ -199,9 +220,9 @@ CREATE TABLE "Session" (
     "videoUrl" VARCHAR(200) NOT NULL,
     "fileUrl" VARCHAR(200) NOT NULL,
     "presenter" VARCHAR(50) NOT NULL,
-    "date" VARCHAR(50) NOT NULL,
-    "category" VARCHAR(50) NOT NULL,
-    "position" VARCHAR(50) NOT NULL,
+    "date" "SessionDate" NOT NULL,
+    "category" "SessionCategory" NOT NULL,
+    "position" "SessionPosition" NOT NULL,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
@@ -212,6 +233,12 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Like_userId_contentId_category_key" ON "Like"("userId", "contentId", "category");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Bookmark_userId_contentId_category_key" ON "Bookmark"("userId", "contentId", "category");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -219,7 +246,7 @@ ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFE
 ALTER TABLE "Role" ADD CONSTRAINT "Role_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PermissionRequest" ADD CONSTRAINT "PermissionRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -234,6 +261,9 @@ ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_stackId_fkey" FOREIGN KEY ("st
 ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Resume" ADD CONSTRAINT "Resume_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -241,9 +271,6 @@ ALTER TABLE "Blog" ADD CONSTRAINT "Blog_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Bookmark" ADD CONSTRAINT "Bookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
