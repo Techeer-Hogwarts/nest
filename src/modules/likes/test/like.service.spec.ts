@@ -5,7 +5,6 @@ import {
     createLikeRequest,
     getLikeListRequest,
     getLikeResponse,
-    likeEntity,
 } from './mock-data';
 import { NotFoundException } from '@nestjs/common';
 import { GetLikeResponse } from '../dto/response/get.like.response';
@@ -51,7 +50,7 @@ describe('LikeService', (): void => {
         it('좋아요 설정을 성공적으로 토글함', async (): Promise<void> => {
             jest.spyOn(repository, 'isContentExist').mockResolvedValue(true);
             jest.spyOn(repository, 'toggleLike').mockResolvedValue(
-                likeEntity(),
+                getLikeResponse,
             );
 
             const request: CreateLikeRequest = createLikeRequest();
@@ -59,8 +58,8 @@ describe('LikeService', (): void => {
 
             expect(result).toEqual(getLikeResponse);
             expect(repository.isContentExist).toHaveBeenCalledWith(
-                likeEntity().contentId,
-                likeEntity().category,
+                getLikeResponse.contentId,
+                getLikeResponse.category,
             );
             expect(repository.isContentExist).toHaveBeenCalledTimes(1);
             expect(repository.toggleLike).toHaveBeenCalledWith(
