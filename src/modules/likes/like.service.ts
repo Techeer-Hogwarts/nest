@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { LikeRepository } from './repository/like.repository';
 import { CreateLikeRequest } from './dto/request/create.like.request';
 import { GetLikeResponse } from './dto/response/get.like.response';
-import { LikeEntity } from './entities/like.entity';
 import { GetLikeListRequest } from './dto/request/get.like-list.request';
 import { GetSessionResponse } from '../sessions/dto/response/get.session.response';
 import { SessionEntity } from '../sessions/entities/session.entity';
@@ -26,9 +25,7 @@ export class LikeService {
             throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
         }
 
-        const content: LikeEntity =
-            await this.likeRepository.toggleLike(createLikeRequest);
-        return new GetLikeResponse(content);
+        return await this.likeRepository.toggleLike(createLikeRequest);
     }
 
     async getLikeList(
