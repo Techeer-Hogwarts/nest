@@ -131,7 +131,7 @@ export class BlogRepository {
         try {
             return await this.prisma.blog.update({
                 where: {
-                    id: 1,
+                    id: blogId,
                     isDeleted: false,
                 },
                 data: {
