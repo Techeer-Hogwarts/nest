@@ -1,10 +1,10 @@
-// filters/all-exceptions.filter.ts
 import {
     ExceptionFilter,
     Catch,
     ArgumentsHost,
     HttpException,
     HttpStatus,
+    Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -36,5 +36,9 @@ export class GlobalExceptionsFilter implements ExceptionFilter {
             path: request.url,
             message,
         });
+
+        // 서버 로그 출력
+        const logger: Logger = new Logger('GlobalExceptionsFilter');
+        logger.error(exception);
     }
 }

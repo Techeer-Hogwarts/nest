@@ -84,22 +84,22 @@ model TeamMember {
   userId      Int
 }
 
-model Stack {
-  id        Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  name      String
-  category  stackCategory
-  teamStacks TeamStack[]
-}
-
-enum stackCategory {
+enum StackCategory {
   BACKEND
   FRONTEND
   MONITORING
   INFRA
   ETC
+}
+
+model Stack {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  name        String
+  category    StackCategory
+  teamStacks  TeamStack[]
 }
 
 model TeamStack {
@@ -127,36 +127,6 @@ model Team {
   teamMembers TeamMember[]
 }
 
-model Like {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  contentId   Int
-  category    ContentCategory
-
-  user        User         @relation("UserLikes", fields: [userId], references: [id])
-
-  @@unique([userId, contentId, category]) // 복합 고유 키 설정
-}
-
-model Resume {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  userId      Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(100)
-  isMain      Boolean      @default(false)
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
-  category    ResumeCategory
-
-  user        User         @relation("UserResumes", fields: [userId], references: [id])
-}
-
 model Blog {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
@@ -173,6 +143,26 @@ model Blog {
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
+enum ContentCategory {
+  RESUME
+  SESSION
+  BLOG
+}
+
+model Like {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  contentId   Int
+  category    ContentCategory
+
+  user        User         @relation("UserLikes", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
+}
+
 model Bookmark {
   id        Int             @id @default(autoincrement())
   userId    Int
@@ -187,17 +177,27 @@ model Bookmark {
   @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
-enum ContentCategory {
-  RESUME
-  SESSION
-  BLOG
-}
-
 enum ResumeCategory {
   PORTFOLIO
   ICT
   SOMA
   OTHER
+}
+
+model Resume {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  userId      Int
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(100)
+  isMain      Boolean      @default(false)
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
+  category    ResumeCategory
+
+  user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
 
 enum EventCategory {
