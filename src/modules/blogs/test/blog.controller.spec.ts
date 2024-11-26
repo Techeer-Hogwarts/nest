@@ -5,7 +5,6 @@ import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { NotFoundException } from '@nestjs/common';
 import {
     blogEntities,
-    createBlogRequest,
     getBestBlogResponseList,
     getBlogResponse,
     getBlogResponseList,
@@ -27,7 +26,6 @@ describe('BlogController', (): void => {
                 {
                     provide: BlogService,
                     useValue: {
-                        createBlog: jest.fn(),
                         getBestBlogs: jest.fn(),
                         getBlog: jest.fn(),
                         getBlogList: jest.fn(),
@@ -45,24 +43,6 @@ describe('BlogController', (): void => {
 
     it('should be defined', (): void => {
         expect(controller).toBeDefined();
-    });
-
-    describe('createBlog', (): void => {
-        it('should successfully create a blog', async (): Promise<void> => {
-            jest.spyOn(service, 'createBlog').mockResolvedValue(
-                getBlogResponse,
-            );
-
-            const result = await controller.createBlog(createBlogRequest);
-
-            expect(result).toEqual({
-                code: 201,
-                message: '게시물을 생성했습니다.',
-                data: getBlogResponse,
-            });
-            expect(service.createBlog).toHaveBeenCalledWith(createBlogRequest);
-            expect(service.createBlog).toHaveBeenCalledTimes(1);
-        });
     });
 
     describe('getBestBlogs', (): void => {

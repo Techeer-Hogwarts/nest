@@ -1,6 +1,7 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { BlogCategory } from '@prisma/client';
 
 export class GetBlogsQueryRequest {
     @ApiPropertyOptional({ description: '검색할 키워드' })
@@ -10,8 +11,8 @@ export class GetBlogsQueryRequest {
 
     @ApiPropertyOptional({ description: '검색할 카테고리' })
     @IsOptional()
-    @IsString()
-    readonly category?: string;
+    @IsEnum(BlogCategory)
+    readonly category: BlogCategory;
 
     @ApiPropertyOptional({ description: '검색할 직책' })
     @IsOptional()
@@ -23,7 +24,7 @@ export class GetBlogsQueryRequest {
         example: 0,
     })
     @IsOptional()
-    @Type(() => Number) // 쿼리 문자열을 숫자로 변환
+    @Type(() => Number)
     @IsNumber()
     readonly offset?: number;
 

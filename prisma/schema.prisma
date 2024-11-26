@@ -127,6 +127,11 @@ model Team {
   teamMembers TeamMember[]
 }
 
+enum BlogCategory {
+  TECHEER
+  SHARED
+}
+
 model Blog {
   id          Int          @id @default(autoincrement())
   createdAt   DateTime     @default(now())
@@ -134,9 +139,13 @@ model Blog {
   isDeleted   Boolean      @default(false)
   userId      Int
   title       String       @db.VarChar(100)
-  url         String       @db.VarChar(100)
+  url         String       @db.VarChar(200)
+  thumbnail   String?      @db.VarChar(200)
+  author      String?      @db.VarChar(100)
+  authorImage String?      @db.VarChar(200)
   date        DateTime
-  category    String       @db.VarChar(200)
+  category    BlogCategory
+  tag         String[]     @default([])
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
 

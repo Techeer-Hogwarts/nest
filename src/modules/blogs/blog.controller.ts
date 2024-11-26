@@ -7,11 +7,9 @@ import {
     Param,
     ParseIntPipe,
     Patch,
-    Post,
     Query,
 } from '@nestjs/common';
 import { BlogService } from './blog.service';
-import { CreateBlogRequest } from './dto/request/create.blog.request';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
@@ -21,23 +19,6 @@ import { UpdateBlogRequest } from './dto/request/update.blog.request';
 @Controller('/blogs')
 export class BlogController {
     constructor(private readonly blogService: BlogService) {}
-
-    @Post('')
-    @ApiOperation({
-        summary: '블로그 게시물 생성',
-        description: '새로운 블로그 게시물을 생성합니다.',
-    })
-    async createBlog(
-        @Body() createBlogRequest: CreateBlogRequest,
-    ): Promise<any> {
-        const blog: GetBlogResponse =
-            await this.blogService.createBlog(createBlogRequest);
-        return {
-            code: 201,
-            message: '게시물을 생성했습니다.',
-            data: blog,
-        };
-    }
 
     @Get('/best')
     @ApiOperation({

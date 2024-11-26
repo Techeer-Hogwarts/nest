@@ -5,7 +5,6 @@ import {
     bestBlogEntities,
     blogEntities,
     blogEntity,
-    createBlogRequest,
     getBlogsQueryRequest,
     paginationQueryDto,
     updateBlogRequest,
@@ -14,6 +13,7 @@ import {
 import { BlogEntity } from '../entities/blog.entity';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { BlogCategory } from '@prisma/client';
 
 describe('BlogRepository', (): void => {
     let repository: BlogRepository;
@@ -28,7 +28,6 @@ describe('BlogRepository', (): void => {
                     useValue: {
                         $queryRaw: jest.fn(),
                         blog: {
-                            create: jest.fn(),
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
                             update: jest.fn(),
@@ -44,24 +43,6 @@ describe('BlogRepository', (): void => {
 
     it('should be defined', (): void => {
         expect(repository).toBeDefined();
-    });
-
-    describe('createBlog', (): void => {
-        it('should successfully create a blog', async (): Promise<void> => {
-            jest.spyOn(prismaService.blog, 'create').mockResolvedValue(
-                blogEntity(),
-            );
-
-            const result: BlogEntity =
-                await repository.createBlog(createBlogRequest);
-
-            expect(result).toEqual(blogEntity());
-            expect(prismaService.blog.create).toHaveBeenCalledWith({
-                data: createBlogRequest,
-                include: { user: true },
-            });
-            expect(prismaService.blog.create).toHaveBeenCalledTimes(1);
-        });
     });
 
     describe('getBestBlogs', (): void => {
@@ -123,10 +104,7 @@ describe('BlogRepository', (): void => {
                                 },
                             },
                             {
-                                category: {
-                                    contains: getBlogsQueryRequest.keyword,
-                                    mode: 'insensitive',
-                                },
+                                category: BlogCategory.TECHEER,
                             },
                             {
                                 user: {

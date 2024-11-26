@@ -6,7 +6,6 @@ import {
     bestBlogEntities,
     blogEntities,
     blogEntity,
-    createBlogRequest,
     getBestBlogResponseList,
     getBlogResponse,
     getBlogResponseList,
@@ -29,7 +28,6 @@ describe('BlogService', (): void => {
                 {
                     provide: BlogRepository,
                     useValue: {
-                        createBlog: jest.fn(),
                         getBestBlogs: jest.fn(),
                         getBlog: jest.fn(),
                         getBlogList: jest.fn(),
@@ -47,23 +45,6 @@ describe('BlogService', (): void => {
 
     it('should be defined', (): void => {
         expect(service).toBeDefined();
-    });
-
-    describe('createBlog', (): void => {
-        it('should successfully create a blog', async (): Promise<void> => {
-            jest.spyOn(repository, 'createBlog').mockResolvedValue(
-                blogEntity(),
-            );
-
-            const result: GetBlogResponse =
-                await service.createBlog(createBlogRequest);
-
-            expect(result).toEqual(getBlogResponse);
-            expect(repository.createBlog).toHaveBeenCalledWith(
-                createBlogRequest,
-            );
-            expect(repository.createBlog).toHaveBeenCalledTimes(1);
-        });
     });
 
     describe('getBestBlogs', (): void => {

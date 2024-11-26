@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { BlogRepository } from './repository/blog.repository';
-import { CreateBlogRequest } from './dto/request/create.blog.request';
 import { BlogEntity } from './entities/blog.entity';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
@@ -10,14 +9,6 @@ import { UpdateBlogRequest } from './dto/request/update.blog.request';
 @Injectable()
 export class BlogService {
     constructor(private readonly blogRepository: BlogRepository) {}
-
-    async createBlog(
-        createBlogRequest: CreateBlogRequest,
-    ): Promise<GetBlogResponse> {
-        const blogEntity: BlogEntity =
-            await this.blogRepository.createBlog(createBlogRequest);
-        return new GetBlogResponse(blogEntity);
-    }
 
     async getBlog(blogId: number): Promise<GetBlogResponse> {
         const blogEntity: BlogEntity =

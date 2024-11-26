@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateBlogRequest } from '../dto/request/create.blog.request';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
@@ -10,13 +9,6 @@ import { Prisma } from '@prisma/client';
 @Injectable()
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
-
-    async createBlog(createBlogDomain: CreateBlogRequest): Promise<BlogEntity> {
-        return this.prisma.blog.create({
-            data: { ...createBlogDomain },
-            include: { user: true },
-        });
-    }
 
     async getBlog(blogId: number): Promise<BlogEntity> {
         const blog: BlogEntity = await this.prisma.blog.findUnique({
@@ -56,10 +48,7 @@ export class BlogRepository {
                             },
                         },
                         {
-                            category: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
+                            category: category,
                         },
                         {
                             user: {
