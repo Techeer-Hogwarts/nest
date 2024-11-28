@@ -68,7 +68,6 @@ export const getBlogsQueryRequest: GetBlogsQueryRequest = {
     category: BlogCategory.TECHEER,
     offset: 0,
     limit: 10,
-    sort: 'ASC',
 };
 
 export const getBlogResponse: GetBlogResponse = new GetBlogResponse(

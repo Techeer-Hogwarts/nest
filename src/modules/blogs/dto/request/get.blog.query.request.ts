@@ -38,13 +38,4 @@ export class GetBlogsQueryRequest {
     @Type(() => Number)
     @IsNumber()
     readonly limit?: number;
-
-    @ApiPropertyOptional({
-        description:
-            '정렬 기준 (ASC: 오름차순(등록순), DESC: 내림차순(최신순))',
-        example: 'DESC',
-    })
-    @IsOptional()
-    @IsString()
-    readonly sort?: string;
 }

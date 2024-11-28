@@ -124,8 +124,7 @@ describe('BlogRepository', (): void => {
                 skip: getBlogsQueryRequest.offset,
                 take: getBlogsQueryRequest.limit,
                 orderBy: {
-                    createdAt:
-                        getBlogsQueryRequest.sort.toLowerCase() as Prisma.SortOrder,
+                    createdAt: Prisma.SortOrder.desc,
                 },
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);

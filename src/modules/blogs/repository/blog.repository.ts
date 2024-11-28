@@ -31,7 +31,6 @@ export class BlogRepository {
         const {
             keyword,
             category,
-            sort,
             offset = 0,
             limit = 10,
         }: GetBlogsQueryRequest = query;
@@ -68,7 +67,7 @@ export class BlogRepository {
             skip: offset,
             take: limit,
             orderBy: {
-                createdAt: sort.toLowerCase() as Prisma.SortOrder,
+                createdAt: Prisma.SortOrder.desc,
             },
         });
     }
@@ -88,6 +87,9 @@ export class BlogRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
     }
 
