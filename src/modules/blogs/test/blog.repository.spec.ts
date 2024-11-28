@@ -151,6 +151,9 @@ describe('BlogRepository', (): void => {
                 include: { user: true },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
