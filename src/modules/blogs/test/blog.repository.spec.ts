@@ -13,7 +13,7 @@ import {
 import { BlogEntity } from '../entities/blog.entity';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { BlogCategory } from '@prisma/client';
+import { BlogCategory, Prisma } from '@prisma/client';
 
 describe('BlogRepository', (): void => {
     let repository: BlogRepository;
@@ -119,13 +119,14 @@ describe('BlogRepository', (): void => {
                     ...(getBlogsQueryRequest.category && {
                         category: getBlogsQueryRequest.category,
                     }),
-                    ...(getBlogsQueryRequest.position && {
-                        user: { mainPosition: getBlogsQueryRequest.position },
-                    }),
                 },
                 include: { user: true },
                 skip: getBlogsQueryRequest.offset,
                 take: getBlogsQueryRequest.limit,
+                orderBy: {
+                    createdAt:
+                        getBlogsQueryRequest.sort.toLowerCase() as Prisma.SortOrder,
+                },
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
