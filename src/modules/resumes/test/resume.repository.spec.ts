@@ -14,6 +14,7 @@ import {
 import { ResumeEntity } from '../entities/resume.entity';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -130,6 +131,9 @@ describe('ResumeRepository', (): void => {
                 include: { user: true },
                 skip: getResumesQueryRequest.offset,
                 take: getResumesQueryRequest.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.resume.findMany).toHaveBeenCalledTimes(1);
         });
@@ -155,6 +159,9 @@ describe('ResumeRepository', (): void => {
                 include: { user: true },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.resume.findMany).toHaveBeenCalledTimes(1);
         });

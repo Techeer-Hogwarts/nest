@@ -81,6 +81,9 @@ export class ResumeRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
     }
 
@@ -99,6 +102,9 @@ export class ResumeRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
     }
 
