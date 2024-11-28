@@ -8,6 +8,8 @@ import {
     Patch,
     Post,
     Query,
+    Req,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateResumeRequest } from './dto/request/create.resume.request';
@@ -16,6 +18,8 @@ import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 import { UpdateResumeRequest } from './dto/request/update.resume.request';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
 
 @ApiTags('resumes')
 @Controller('resumes')
@@ -53,18 +57,20 @@ export class ResumeController {
         };
     }
 
-    @Post(':userId')
+    @UseGuards(JwtAuthGuard)
+    @Post()
     @ApiOperation({
         summary: '이력서 생성',
         description: '새로운 이력서를 생성합니다.',
     })
     async createResume(
-        @Param('userId') userId: number,
+        @Req() request: Request,
         @Body() createResumeRequest: CreateResumeRequest,
     ): Promise<any> {
+        const user = request.user as any;
         const resume: GetResumeResponse = await this.resumeService.createResume(
             createResumeRequest,
-            userId,
+            user,
         );
         return {
             code: 201,
@@ -108,31 +114,38 @@ export class ResumeController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete(':resumeId')
     @ApiOperation({
         summary: '이력서 삭제',
         description: '지정된 ID의 이력서를 삭제합니다.',
     })
     async deleteResume(
+        @Req() request: Request,
         @Param('resumeId', ParseIntPipe) resumeId: number,
     ): Promise<any> {
-        await this.resumeService.deleteResume(resumeId);
+        const user = request.user as any;
+        await this.resumeService.deleteResume(user, resumeId);
         return {
             code: 200,
             message: '이력서가 삭제되었습니다.',
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':resumeId')
     @ApiOperation({
         summary: '이력서 수정',
         description: '지정된 ID의 이력서 정보를 수정합니다.',
     })
     async updateResume(
+        @Req() request: Request,
         @Param('resumeId', ParseIntPipe) resumeId: number,
         @Body() updateResumeRequest: UpdateResumeRequest,
     ): Promise<any> {
+        const user = request.user as any;
         const resume: GetResumeResponse = await this.resumeService.updateResume(
+            user,
             resumeId,
             updateResumeRequest,
         );

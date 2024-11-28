@@ -18,7 +18,8 @@ export class ResumeRepository {
         return this.prisma.resume.create({
             data: {
                 ...createResumeRequest,
-                user: { connect: { id: userId } }, // user와 연결
+                title: createResumeRequest.title,
+                user: { connect: { id: userId } },
             },
             include: { user: true },
         });

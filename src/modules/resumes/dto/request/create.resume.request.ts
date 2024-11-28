@@ -12,15 +12,15 @@ export class CreateResumeRequest {
 
     @IsString()
     @ApiProperty({
-        example: '홍길동 20240910',
-        description: '이력서 제목',
-    })
-    readonly title: string;
-
-    @IsString()
-    @ApiProperty({
         example: 'PORTFOLIO',
         description: '이력서 타입',
     })
     readonly category: ResumeCategory;
+
+    @IsString()
+    @ApiProperty({
+        example: '스타트업',
+        description: '이력서 제목에 추가할 부가 설명',
+    })
+    readonly title?: string;
 }
