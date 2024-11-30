@@ -11,3 +11,9 @@ export class NotFoundEventException extends HttpException {
         super('이벤트를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
     }
 }
+
+export class NotFoundUserException extends HttpException {
+    constructor() {
+        super('사용자가 존재하지 않습니다.', HttpStatus.NOT_FOUND);
+    }
+}
