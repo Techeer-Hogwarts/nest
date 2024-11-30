@@ -11,6 +11,7 @@ import {
 } from './mock-data';
 import { GetEventResponse } from '../dto/response/get.event.response';
 import { NotFoundEventException } from '../../../global/exception/custom.exception';
+import { JwtAuthGuard } from '../../../auth/jwt.guard';
 
 describe('EventController', () => {
     let controller: EventController;
@@ -31,7 +32,12 @@ describe('EventController', () => {
                     },
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue({
+                canActivate: jest.fn().mockReturnValue(true),
+            })
+            .compile();
 
         controller = module.get<EventController>(EventController);
         service = module.get<EventService>(EventService);
