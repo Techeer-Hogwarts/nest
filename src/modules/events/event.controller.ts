@@ -8,18 +8,21 @@ import {
     Patch,
     Post,
     Query,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EventService } from './event.service';
 import { CreateEventRequest } from './dto/request/create.event.request';
 import { GetEventResponse } from './dto/response/get.event.response';
 import { GetEventListQueryRequest } from './dto/request/get.event.query.request';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
 
 @ApiTags('events')
 @Controller('/events')
 export class EventController {
     constructor(private readonly eventService: EventService) {}
 
+    @UseGuards(JwtAuthGuard)
     @Post()
     @ApiOperation({
         summary: '이벤트 생성',
@@ -69,6 +72,7 @@ export class EventController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':eventId')
     @ApiOperation({
         summary: '이벤트 수정',
@@ -89,6 +93,7 @@ export class EventController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete(':eventId')
     @ApiOperation({
         summary: '이벤트 삭제',

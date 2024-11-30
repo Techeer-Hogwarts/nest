@@ -14,6 +14,8 @@ import {
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
 import { NotFoundSessionException } from '../../../global/exception/custom.exception';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../../../auth/jwt.guard';
 
 describe('SessionController', () => {
     let controller: SessionController;
@@ -36,7 +38,12 @@ describe('SessionController', () => {
                     },
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue({
+                canActivate: jest.fn().mockReturnValue(true),
+            })
+            .compile();
 
         controller = module.get<SessionController>(SessionController);
         service = module.get<SessionService>(SessionService);
@@ -159,14 +166,15 @@ describe('SessionController', () => {
         it('should successfully delete a session', async (): Promise<void> => {
             jest.spyOn(service, 'deleteSession').mockResolvedValue();
 
-            const result = await controller.deleteSession(1);
+            const request = { user: { id: 1 } } as unknown as Request;
+            const result = await controller.deleteSession(1, request);
 
             expect(result).toEqual({
                 code: 200,
                 message: '세션 게시물이 삭제되었습니다.',
             });
 
-            expect(service.deleteSession).toHaveBeenCalledWith(1);
+            expect(service.deleteSession).toHaveBeenCalledWith(1, 1);
             expect(service.deleteSession).toHaveBeenCalledTimes(1);
         });
 
@@ -175,11 +183,13 @@ describe('SessionController', () => {
                 new NotFoundSessionException(),
             );
 
-            await expect(controller.deleteSession(1)).rejects.toThrow(
+            const request = { user: { id: 1 } } as unknown as Request;
+
+            await expect(controller.deleteSession(1, request)).rejects.toThrow(
                 NotFoundSessionException,
             );
 
-            expect(service.deleteSession).toHaveBeenCalledWith(1);
+            expect(service.deleteSession).toHaveBeenCalledWith(1, 1);
             expect(service.deleteSession).toHaveBeenCalledTimes(1);
         });
     });
@@ -190,9 +200,12 @@ describe('SessionController', () => {
                 new GetSessionResponse(updatedSessionEntity),
             );
 
+            const request = { user: { id: 1 } } as unknown as Request;
+
             const result = await controller.updateSession(
                 1,
                 updateSessionRequest,
+                request,
             );
 
             expect(result).toEqual({
@@ -201,6 +214,7 @@ describe('SessionController', () => {
                 data: new GetSessionResponse(updatedSessionEntity),
             });
             expect(service.updateSession).toHaveBeenCalledWith(
+                1,
                 1,
                 updateSessionRequest,
             );
@@ -212,11 +226,14 @@ describe('SessionController', () => {
                 new NotFoundSessionException(),
             );
 
+            const request = { user: { id: 1 } } as unknown as Request;
+
             await expect(
-                controller.updateSession(1, updateSessionRequest),
+                controller.updateSession(1, updateSessionRequest, request),
             ).rejects.toThrow(NotFoundSessionException);
 
             expect(service.updateSession).toHaveBeenCalledWith(
+                1,
                 1,
                 updateSessionRequest,
             );
