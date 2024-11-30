@@ -6,10 +6,15 @@ import { GetSessionResponse } from './dto/response/get.session.response';
 import { UpdateSessionRequest } from './dto/request/update.session.request';
 import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
+import { UserRepository } from '../users/repository/user.repository';
+import { NotFoundUserException } from '../../global/exception/custom.exception';
 
 @Injectable()
 export class SessionService {
-    constructor(private readonly sessionRepository: SessionRepository) {}
+    constructor(
+        private readonly sessionRepository: SessionRepository,
+        private readonly userRepository: UserRepository,
+    ) {}
 
     async createSession(
         createSessionRequest: CreateSessionRequest,
@@ -56,14 +61,27 @@ export class SessionService {
         );
     }
 
-    async deleteSession(sessionId: number): Promise<void> {
+    async deleteSession(userId: number, sessionId: number): Promise<void> {
+        const user = await this.userRepository.findById(userId);
+
+        if (!user) {
+            throw new NotFoundUserException();
+        }
+
         return this.sessionRepository.deleteSession(sessionId);
     }
 
     async updateSession(
+        userId: number,
         sessionId: number,
         updateSessionRequest: UpdateSessionRequest,
     ): Promise<GetSessionResponse> {
+        const user = await this.userRepository.findById(userId);
+
+        if (!user) {
+            throw new NotFoundUserException();
+        }
+
         const session: SessionEntity =
             await this.sessionRepository.updateSession(
                 sessionId,
