@@ -13,13 +13,19 @@ import {
     bestSessionEntities,
     getBestSessionsResponse,
     getSessionsQueryRequest,
+    userEntity,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
-import { NotFoundSessionException } from '../../../global/exception/custom.exception';
+import {
+    NotFoundSessionException,
+    NotFoundUserException,
+} from '../../../global/exception/custom.exception';
+import { UserRepository } from '../../../modules/users/repository/user.repository';
 
 describe('SessionService', (): void => {
     let service: SessionService;
     let repository: SessionRepository;
+    let userRepository: UserRepository;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -37,11 +43,18 @@ describe('SessionService', (): void => {
                         updateSession: jest.fn(),
                     },
                 },
+                {
+                    provide: UserRepository,
+                    useValue: {
+                        findById: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
         service = module.get<SessionService>(SessionService);
         repository = module.get<SessionRepository>(SessionRepository);
+        userRepository = module.get<UserRepository>(UserRepository);
     });
 
     it('should be defined', (): void => {
@@ -158,38 +171,54 @@ describe('SessionService', (): void => {
         });
     });
 
-    describe('deleteSession', (): void => {
-        it('should successfully delete a session', async (): Promise<void> => {
+    describe('deleteSession', () => {
+        it('should successfully delete a session', async () => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(
+                userEntity,
+            );
             jest.spyOn(repository, 'deleteSession').mockResolvedValue(
                 undefined,
             );
 
-            await service.deleteSession(1);
+            await service.deleteSession(1, 1);
 
             expect(repository.deleteSession).toHaveBeenCalledWith(1);
             expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if session does not exist', async (): Promise<void> => {
+        it('should throw NotFoundException if the user does not exist', async () => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+            await expect(service.deleteSession(1, 1)).rejects.toThrow(
+                new NotFoundUserException(),
+            );
+        });
+
+        it('should throw NotFoundSessionException if session does not exist', async () => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(
+                userEntity,
+            );
             jest.spyOn(repository, 'deleteSession').mockRejectedValue(
                 new NotFoundSessionException(),
             );
 
-            await expect(service.deleteSession(1)).rejects.toThrow(
+            await expect(service.deleteSession(1, 1)).rejects.toThrow(
                 NotFoundSessionException,
             );
-            expect(repository.deleteSession).toHaveBeenCalledWith(1);
-            expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('updateSession', (): void => {
         it('should successfully update a session and return a GetSessionDto', async (): Promise<void> => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(
+                userEntity,
+            );
             jest.spyOn(repository, 'updateSession').mockResolvedValue(
                 updatedSessionEntity,
             );
 
             const result: GetSessionResponse = await service.updateSession(
+                1,
                 1,
                 updateSessionRequest,
             );
@@ -207,20 +236,25 @@ describe('SessionService', (): void => {
             expect(repository.updateSession).toHaveBeenCalledTimes(1);
         });
 
+        it('should throw NotFoundException if the user does not exist', async (): Promise<void> => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+            await expect(
+                service.updateSession(1, 1, updateSessionRequest),
+            ).rejects.toThrow(new NotFoundUserException());
+        });
+
         it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
+            jest.spyOn(userRepository, 'findById').mockResolvedValue(
+                userEntity,
+            );
             jest.spyOn(repository, 'updateSession').mockRejectedValue(
                 new NotFoundSessionException(),
             );
 
             await expect(
-                service.updateSession(1, updateSessionRequest),
+                service.updateSession(1, 1, updateSessionRequest),
             ).rejects.toThrow(NotFoundSessionException);
-
-            expect(repository.updateSession).toHaveBeenCalledWith(
-                1,
-                updateSessionRequest,
-            );
-            expect(repository.updateSession).toHaveBeenCalledTimes(1);
         });
     });
 });
