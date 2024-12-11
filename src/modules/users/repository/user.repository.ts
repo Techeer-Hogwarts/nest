@@ -49,13 +49,61 @@ export class UserRepository {
         });
     }
 
-    async findById(id: number): Promise<UserEntity | null> {
-        return this.prisma.user.findUnique({
-            where: {
-                id,
-                isDeleted: false,
-            },
-        });
+    async findById(id: number): Promise<any> {
+        return this.prisma.user
+            .findUnique({
+                where: {
+                    id,
+                    isDeleted: false,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    nickname: true,
+                    email: true,
+                    mainPosition: true,
+                    subPosition: true,
+                    school: true,
+                    class: true,
+                    profileImage: true,
+                    githubUrl: true,
+                    blogUrl: true,
+                    teamMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            team: {
+                                select: {
+                                    name: true,
+                                    category: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            })
+            .then((user) => {
+                if (!user) return null;
+
+                return {
+                    id: user.id,
+                    name: user.name,
+                    nickname: user.nickname,
+                    email: user.email,
+                    mainPosition: user.mainPosition,
+                    subPosition: user.subPosition,
+                    school: user.school,
+                    class: user.class,
+                    profileImage: user.profileImage,
+                    githubUrl: user.githubUrl,
+                    blogUrl: user.blogUrl,
+                    teams: (user.teamMembers || []).map((teamMember) => ({
+                        name: teamMember.team.name,
+                        category: teamMember.team.category,
+                    })),
+                };
+            });
     }
 
     async updateUserProfile(
@@ -149,26 +197,46 @@ export class UserRepository {
         if (university) filters.school = university;
         if (grade) filters.class = grade;
 
-        return this.prisma.user.findMany({
-            where: {
-                isDeleted: false,
-                ...filters,
-            },
-            skip: offset || 0,
-            take: limit || 10,
-            select: {
-                id: true,
-                name: true,
-                nickname: true,
-                email: true,
-                mainPosition: true,
-                subPosition: true,
-                school: true,
-                class: true,
-                profileImage: true,
-                githubUrl: true,
-                blogUrl: true,
-            },
-        });
+        return this.prisma.user
+            .findMany({
+                where: {
+                    isDeleted: false,
+                    ...filters,
+                },
+                skip: offset || 0,
+                take: limit || 10,
+                select: {
+                    id: true,
+                    name: true,
+                    nickname: true,
+                    email: true,
+                    mainPosition: true,
+                    subPosition: true,
+                    school: true,
+                    class: true,
+                    profileImage: true,
+                    teamMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            team: {
+                                select: {
+                                    name: true,
+                                    category: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            })
+            .then((users) =>
+                users.map((user) => ({
+                    ...user,
+                    teams: (user.teamMembers || []).map(
+                        (teamMember) => teamMember.team,
+                    ),
+                })),
+            );
     }
 }

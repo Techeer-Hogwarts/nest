@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "stackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA');
+CREATE TYPE "StackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA');
 
 -- CreateEnum
 CREATE TYPE "ContentCategory" AS ENUM ('RESUME', 'SESSION', 'BLOG');
@@ -113,7 +113,7 @@ CREATE TABLE "Stack" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "stack" VARCHAR(200) NOT NULL,
-    "category" "stackCategory" NOT NULL,
+    "category" "StackCategory" NOT NULL,
 
     CONSTRAINT "Stack_pkey" PRIMARY KEY ("id")
 );

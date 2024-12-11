@@ -2,6 +2,7 @@ import {
     Injectable,
     UnauthorizedException,
     NotFoundException,
+    BadRequestException,
 } from '@nestjs/common';
 import { UserRepository } from './repository/user.repository';
 import { ResumeRepository } from '../resumes/repository/resume.repository';
@@ -25,14 +26,42 @@ export class UserService {
         private readonly httpService: HttpService,
     ) {}
 
+    async validateCreateUserRequest(dto: CreateUserRequest): Promise<any> {
+        if (
+            !dto.isIntern &&
+            (dto.internCompanyName ||
+                dto.internPosition ||
+                dto.internStartDate ||
+                dto.internEndDate)
+        ) {
+            throw new BadRequestException(
+                'isIntern이 false일 때 인턴 관련 필드를 입력할 수 없습니다.',
+            );
+        }
+
+        if (
+            !dto.isFullTime &&
+            (dto.fullTimeCompanyName ||
+                dto.fullTimePosition ||
+                dto.fullTimeStartDate ||
+                dto.fullTimeEndDate)
+        ) {
+            throw new BadRequestException(
+                'isFullTime이 false일 때 정규직 관련 필드를 입력할 수 없습니다.',
+            );
+        }
+    }
+
     async signUp(
         createUserRequest: CreateUserRequest,
         resumeData?: CreateResumeRequest,
     ): Promise<any> {
+        // 추가 검증 로직 호출
+        await this.validateCreateUserRequest(createUserRequest);
+
         const isVerified = await this.authService.checkIfVerified(
             createUserRequest.email,
         );
-
         if (!isVerified) {
             throw new UnauthorizedException(
                 '이메일 인증이 완료되지 않았습니다.',
@@ -42,42 +71,33 @@ export class UserService {
         const { image, isTecheer } = await this.getProfileImageUrl(
             createUserRequest.email,
         );
-
         if (!isTecheer) {
             throw new UnauthorizedException(
                 '회원가입이 불가능한 사용자입니다. 테커 소속만 가입이 가능합니다.',
             );
         }
 
+        // 비밀번호 해싱
         const hashedPassword = await bcrypt.hash(
             createUserRequest.password,
             10,
         );
 
+        // 메서드를 제외한 데이터만 포함한 DTO 생성
         const newUserDTO = {
             ...createUserRequest,
             password: hashedPassword,
         };
 
+        // 저장 로직
         const newUser = await this.userRepository.createUser(newUserDTO, image);
 
+        // 이력서 데이터 저장
         if (resumeData) {
             await this.resumeRepository.createResume(resumeData, newUser.id);
         }
 
         return newUser;
-    }
-
-    async findById(id: number): Promise<any> {
-        const user = await this.userRepository.findById(id);
-
-        if (!user) {
-            throw new NotFoundException(
-                `ID가 ${id}인 사용자를 찾을 수 없습니다.`,
-            );
-        }
-
-        return user;
     }
 
     async updateUserProfile(
@@ -201,5 +221,9 @@ export class UserService {
 
     async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {
         return await this.userRepository.findAllProfiles(query);
+    }
+
+    async getProfile(userId: number): Promise<any> {
+        return await this.userRepository.findById(userId);
     }
 }

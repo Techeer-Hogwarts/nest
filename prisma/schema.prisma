@@ -44,7 +44,7 @@ model User {
   resumes           Resume[]            @relation("UserResumes")
   bookmarks         Bookmark[]          @relation("UserBookmarks")
   likes             Like[]              @relation("UserLikes")
-  teamMembers       TeamMember[]        @relation("UserTeamMembers")
+  teamMembers       TeamMember[]
   sessions          Session[]           @relation("UserSessions")
   permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
 }
@@ -72,16 +72,46 @@ model PermissionRequest {
 }
 
 model TeamMember {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  isDeleted Boolean  @default(false)
-  isLeader  Boolean
-  teamRole  String   @db.VarChar(100)
-  team      Team     @relation("TeamTeamMembers", fields: [teamId], references: [id])
-  teamId    Int
-  user      User     @relation("UserTeamMembers", fields: [userId], references: [id])
-  userId    Int
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isDeleted   Boolean   @default(false)
+  isLeader    Boolean
+  teamRole    String    @db.VarChar(100)
+  team        Team      @relation(fields: [teamId], references: [id])
+  teamId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+}
+
+enum StackCategory {
+  BACKEND
+  FRONTEND
+  MONITORING
+  INFRA
+  ETC
+}
+
+model Stack {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  name        String
+  category    StackCategory
+  teamStacks  TeamStack[]
+}
+
+model TeamStack {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  isMain      Boolean      @default(false)
+  stackId     Int
+  teamId      Int
+  stack       Stack        @relation(fields: [stackId], references: [id])
+  team        Team         @relation(fields: [teamId], references: [id])
 }
 
 model Team {
@@ -93,67 +123,8 @@ model Team {
   isFinished  Boolean      @default(true)
   name        String       @db.VarChar(100)
   category    String       @db.VarChar(100)
-  teamStacks  TeamStack[]  @relation("TeamTeamStacks")
-  teamMembers TeamMember[] @relation("TeamTeamMembers")
-}
-
-model Stack {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  stack       String       @db.VarChar(200)
-  category    stackCategory
-
-  teamStacks  TeamStack[]  @relation("StackTeamStacks")
-}
-
-enum stackCategory {
-  BACKEND
-  FRONTEND
-  MONITORING
-  INFRA
-}
-
-model TeamStack {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  stackId     Int
-  teamId      Int
-  stack       Stack        @relation("StackTeamStacks", fields: [stackId], references: [id])
-  team        Team         @relation("TeamTeamStacks", fields: [teamId], references: [id])
-}
-
-model Like {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  contentId   Int
-  category    ContentCategory
-
-  user        User         @relation("UserLikes", fields: [userId], references: [id])
-
-  @@unique([userId, contentId, category]) // 복합 고유 키 설정
-}
-
-model Resume {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  userId      Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(100)
-  isMain      Boolean      @default(false)
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
-  category    ResumeCategory
-
-  user        User         @relation("UserResumes", fields: [userId], references: [id])
+  teamStacks  TeamStack[]
+  teamMembers TeamMember[]
 }
 
 model Blog {
@@ -172,22 +143,38 @@ model Blog {
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
-model Bookmark {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  isDeleted    Boolean      @default(false)
-  contentId    Int
-  category     ContentCategory
-
-  user         User         @relation("UserBookmarks", fields: [userId], references: [id])
-}
-
 enum ContentCategory {
   RESUME
   SESSION
   BLOG
+}
+
+model Like {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  contentId   Int
+  category    ContentCategory
+
+  user        User         @relation("UserLikes", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
+}
+
+model Bookmark {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
+  contentId Int
+  category  ContentCategory
+
+  user User @relation("UserBookmarks", fields: [userId], references: [id])
+
+  @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }
 
 enum ResumeCategory {
@@ -195,6 +182,22 @@ enum ResumeCategory {
   ICT
   SOMA
   OTHER
+}
+
+model Resume {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  userId      Int
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(100)
+  isMain      Boolean      @default(false)
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
+  category    ResumeCategory
+
+  user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
 
 enum EventCategory {

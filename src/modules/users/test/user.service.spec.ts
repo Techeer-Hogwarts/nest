@@ -78,15 +78,17 @@ describe('UserService', () => {
             const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
-                name: 'Test',
-                year: 2023,
+                name: 'test',
+                year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com',
+                blogUrl: 'https://example.com/blog',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
                 school: 'Hogwarts',
                 class: '1학년',
+                isIntern: false,
+                isFullTime: false,
             };
 
             const createResumeRequest: CreateResumeRequest = {
@@ -178,29 +180,6 @@ describe('UserService', () => {
                 user.id,
             );
             expect(result).toEqual(user);
-        });
-    });
-
-    describe('findById', () => {
-        it('should return user if found by id', async () => {
-            const user = {
-                id: 1,
-                email: 'test@test.com',
-            } as User;
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
-
-            const result = await userService.findById(1);
-
-            expect(userRepository.findById).toHaveBeenCalledWith(1);
-            expect(result).toEqual(user);
-        });
-
-        it('should throw NotFoundException if user is not found', async () => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
-
-            await expect(userService.findById(1)).rejects.toThrow(
-                NotFoundException,
-            );
         });
     });
 

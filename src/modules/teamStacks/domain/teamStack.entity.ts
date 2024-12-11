@@ -7,4 +7,5 @@ export class TeamStackEntity implements TeamStack {
     isDeleted: boolean;
     teamId: number;
     stackId: number;
+    isMain: boolean;
 }
