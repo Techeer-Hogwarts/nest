@@ -19,7 +19,7 @@ export const blogEntity = (overrides?: Partial<BlogEntity>): BlogEntity => {
         authorImage: 'https://example.com/author',
         date: new Date('2024-09-24T08:51:54.000Z'),
         category: BlogCategory.TECHEER,
-        tag: ['sql'],
+        tags: ['sql'],
         likeCount: 0,
         viewCount: 0,
         user: {

@@ -11,6 +11,8 @@ import { SessionModule } from './modules/sessions/session.module';
 import { EventModule } from './modules/events/event.module';
 import { LikeModule } from './modules/likes/like.module';
 import { RedisModule } from './global/redis/redis.module';
+import { RabbitMQModule } from './global/rabbitmq/rabbitmq.module';
+import { TaskModule } from './global/task/task.module';
 
 @Module({
     imports: [
@@ -26,6 +28,8 @@ import { RedisModule } from './global/redis/redis.module';
         SessionModule,
         EventModule,
         LikeModule,
+        RabbitMQModule,
+        TaskModule,
     ],
 })
 export class AppModule {}

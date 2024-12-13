@@ -1,14 +1,55 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { UpdateBlogRequest } from '../dto/request/update.blog.request';
-import { Prisma } from '@prisma/client';
+import { BlogCategory, Prisma } from '@prisma/client';
+import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 
 @Injectable()
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
+
+    async getAllUserBlogUrl(): Promise<any> {
+        return this.prisma.user.findMany({
+            where: {
+                isDeleted: false,
+            },
+            select: {
+                id: true,
+                blogUrl: true,
+            },
+        });
+    }
+
+    async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
+        const { userId, posts } = crawlingBlogDto;
+        Logger.log(JSON.stringify(crawlingBlogDto), 'CreateBlog...');
+        const blogPromises = posts.map(async (post) => {
+            try {
+                await this.prisma.blog.create({
+                    data: {
+                        userId,
+                        ...post,
+                        date: new Date(post.date),
+                        category: post.category.toUpperCase() as BlogCategory,
+                    },
+                });
+                Logger.log(`블로그 데이터 저장 완료: ${post.title}`);
+            } catch (error) {
+                Logger.error(
+                    `블로그 데이터 저장 실패: ${post.title}, Error: ${error.message}`,
+                    error.stack,
+                );
+            }
+        });
+
+        // 모든 작업이 완료되길 기다림
+        await Promise.all(blogPromises);
+
+        Logger.log(`크롤링한 블로그 데이터를 모두 저장했습니다.`);
+    }
 
     async getBlog(blogId: number): Promise<BlogEntity> {
         const blog: BlogEntity = await this.prisma.blog.findUnique({

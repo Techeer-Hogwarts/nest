@@ -8,5 +8,6 @@ import { BlogRepository } from './repository/blog.repository';
     imports: [PrismaModule],
     controllers: [BlogController],
     providers: [BlogService, BlogRepository],
+    exports: [BlogRepository],
 })
 export class BlogModule {}

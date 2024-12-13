@@ -145,7 +145,7 @@ model Blog {
   authorImage String?      @db.VarChar(200)
   date        DateTime
   category    BlogCategory
-  tag         String[]     @default([])
+  tags         String[]    @default([])
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
 

@@ -13,7 +13,7 @@ export class BlogEntity implements Blog {
     authorImage: string | null;
     date: Date;
     category: BlogCategory;
-    tag: string[];
+    tags: string[];
     likeCount: number;
     viewCount: number;
 
