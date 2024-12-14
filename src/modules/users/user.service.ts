@@ -1,8 +1,4 @@
-import {
-    Injectable,
-    UnauthorizedException,
-    NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserRepository } from './repository/user.repository';
 import { ResumeRepository } from '../resumes/repository/resume.repository';
 import { CreateUserRequest } from './dto/request/create.user.request';
@@ -15,6 +11,14 @@ import { GetUserResponse } from './dto/response/get.user.response';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { GetUserssQueryRequest } from './dto/request/get.user.query.request';
+import {
+    NotVerifiedEmailException,
+    NotFoundProfileImageException,
+    UnauthorizedAdminException,
+    NotFoundTecheerException,
+    NotFoundUserException,
+    BadRequestException,
+} from '../../global/exception/custom.exception';
 
 @Injectable()
 export class UserService {
@@ -25,59 +29,70 @@ export class UserService {
         private readonly httpService: HttpService,
     ) {}
 
+    async validateCreateUserRequest(dto: CreateUserRequest): Promise<any> {
+        if (
+            !dto.isIntern &&
+            (dto.internCompanyName ||
+                dto.internPosition ||
+                dto.internStartDate ||
+                dto.internEndDate)
+        ) {
+            throw new BadRequestException();
+        }
+
+        if (
+            !dto.isFullTime &&
+            (dto.fullTimeCompanyName ||
+                dto.fullTimePosition ||
+                dto.fullTimeStartDate ||
+                dto.fullTimeEndDate)
+        ) {
+            throw new BadRequestException();
+        }
+    }
+
     async signUp(
         createUserRequest: CreateUserRequest,
         resumeData?: CreateResumeRequest,
     ): Promise<any> {
+        // 추가 검증 로직 호출
+        await this.validateCreateUserRequest(createUserRequest);
+
         const isVerified = await this.authService.checkIfVerified(
             createUserRequest.email,
         );
-
         if (!isVerified) {
-            throw new UnauthorizedException(
-                '이메일 인증이 완료되지 않았습니다.',
-            );
+            throw new NotVerifiedEmailException();
         }
 
         const { image, isTecheer } = await this.getProfileImageUrl(
             createUserRequest.email,
         );
-
         if (!isTecheer) {
-            throw new UnauthorizedException(
-                '회원가입이 불가능한 사용자입니다. 테커 소속만 가입이 가능합니다.',
-            );
+            throw new NotFoundTecheerException();
         }
 
+        // 비밀번호 해싱
         const hashedPassword = await bcrypt.hash(
             createUserRequest.password,
             10,
         );
 
+        // 메서드를 제외한 데이터만 포함한 DTO 생성
         const newUserDTO = {
             ...createUserRequest,
             password: hashedPassword,
         };
 
+        // 저장 로직
         const newUser = await this.userRepository.createUser(newUserDTO, image);
 
+        // 이력서 데이터 저장
         if (resumeData) {
             await this.resumeRepository.createResume(resumeData, newUser.id);
         }
 
         return newUser;
-    }
-
-    async findById(id: number): Promise<any> {
-        const user = await this.userRepository.findById(id);
-
-        if (!user) {
-            throw new NotFoundException(
-                `ID가 ${id}인 사용자를 찾을 수 없습니다.`,
-            );
-        }
-
-        return user;
     }
 
     async updateUserProfile(
@@ -87,9 +102,7 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
 
         if (!user) {
-            throw new NotFoundException(
-                `ID가 ${userId}인 사용자를 찾을 수 없습니다.`,
-            );
+            throw new NotFoundUserException();
         }
 
         return this.userRepository.updateUserProfile(userId, updateUserRequest);
@@ -99,9 +112,7 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
 
         if (!user) {
-            throw new NotFoundException(
-                `ID가 ${userId}인 사용자를 찾을 수 없습니다.`,
-            );
+            throw new NotFoundUserException();
         }
 
         return this.userRepository.softDeleteUser(userId);
@@ -111,7 +122,7 @@ export class UserService {
         const userInfo = await this.userRepository.findById(userId);
 
         if (!userInfo) {
-            throw new NotFoundException('사용자가 존재하지 않습니다.');
+            throw new NotFoundUserException();
         }
         return new GetUserResponse(userInfo);
     }
@@ -130,9 +141,7 @@ export class UserService {
         currentUserRoleId: number,
     ): Promise<any> {
         if (currentUserRoleId !== 1) {
-            throw new UnauthorizedException(
-                '권한이 없습니다. 관리자만 승인할 수 있습니다.',
-            );
+            throw new UnauthorizedAdminException();
         }
 
         await this.userRepository.updateUserRole(userId, newRoleId);
@@ -164,7 +173,7 @@ export class UserService {
             };
         }
 
-        throw new Error('프로필 이미지 URL을 가져오는 데 실패했습니다.');
+        throw new NotFoundProfileImageException();
     }
 
     async updateProfileImage(request: any): Promise<any> {
@@ -188,7 +197,7 @@ export class UserService {
     async updateNickname(user: any, nickname: string): Promise<any> {
         // 권한 확인 (1번, 2번 권한만 가능)
         if (user.roleId !== 1 && user.roleId !== 2) {
-            throw new UnauthorizedException('닉네임 업데이트 권한이 없습니다.');
+            throw new UnauthorizedAdminException();
         }
 
         // 닉네임 업데이트 로직 호출
@@ -201,5 +210,9 @@ export class UserService {
 
     async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {
         return await this.userRepository.findAllProfiles(query);
+    }
+
+    async getProfile(userId: number): Promise<any> {
+        return await this.userRepository.findById(userId);
     }
 }

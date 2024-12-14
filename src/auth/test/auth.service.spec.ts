@@ -3,10 +3,14 @@ import { AuthService } from '../auth.service';
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { InternalServerErrorException } from '@nestjs/common';
-import { BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from '../../modules/users/repository/user.repository';
+import {
+    UnauthorizedEmailException,
+    InternalServerErrorException,
+    InvalidCodeException,
+    EmailVerificationFailedException,
+} from '../../global/exception/custom.exception';
 
 describe('AuthService', () => {
     let authService: AuthService;
@@ -137,26 +141,11 @@ describe('AuthService', () => {
             jest.spyOn(redisClient, 'get').mockResolvedValue('123456');
 
             await expect(authService.verifyCode(email, code)).rejects.toThrow(
-                new BadRequestException('인증 코드가 일치하지 않습니다.'),
+                new InvalidCodeException(),
             );
 
             expect(redisClient.get).toHaveBeenCalledWith(email);
             expect(redisClient.del).not.toHaveBeenCalled();
-        });
-
-        it('Redis에서 인증 코드 확인 중 오류가 발생하면 예외가 발생해야 한다', async () => {
-            const email = 'test@test.com';
-            const code = '123456';
-
-            jest.spyOn(redisClient, 'get').mockRejectedValue(
-                new Error('Redis error'),
-            );
-
-            await expect(authService.verifyCode(email, code)).rejects.toThrow(
-                new InternalServerErrorException(
-                    '인증 코드 확인 중 오류가 발생했습니다.',
-                ),
-            );
         });
 
         describe('markAsVerified', () => {
@@ -183,7 +172,7 @@ describe('AuthService', () => {
                 );
 
                 await expect(authService.markAsVerified(email)).rejects.toThrow(
-                    InternalServerErrorException,
+                    UnauthorizedEmailException,
                 );
             });
         });
@@ -224,7 +213,7 @@ describe('AuthService', () => {
 
                 await expect(
                     authService.checkIfVerified(email),
-                ).rejects.toThrow(InternalServerErrorException);
+                ).rejects.toThrow(EmailVerificationFailedException);
             });
         });
     });

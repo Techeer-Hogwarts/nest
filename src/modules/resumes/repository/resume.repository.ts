@@ -24,14 +24,24 @@ export class ResumeRepository {
         });
     }
 
-    async getResume(resumeId: number): Promise<ResumeEntity> {
-        const resume: ResumeEntity = await this.prisma.resume.findUnique({
+    async getResume(resumeId: number): Promise<any> {
+        const resume: any = await this.prisma.resume.findUnique({
             where: {
                 id: resumeId,
                 isDeleted: false,
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        class: true,
+                        year: true,
+                        school: true,
+                        mainPosition: true,
+                        subPosition: true,
+                    },
+                },
             },
         });
 
@@ -87,7 +97,7 @@ export class ResumeRepository {
     async getResumesByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<ResumeEntity[]> {
+    ): Promise<any> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         return this.prisma.resume.findMany({
             where: {
@@ -95,7 +105,17 @@ export class ResumeRepository {
                 userId: userId,
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        class: true,
+                        year: true,
+                        school: true,
+                        mainPosition: true,
+                        subPosition: true,
+                    },
+                },
             },
             skip: offset,
             take: limit,

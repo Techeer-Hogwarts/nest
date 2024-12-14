@@ -8,6 +8,7 @@ import {
     Req,
     UseGuards,
     Query,
+    Param,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 
@@ -244,6 +245,20 @@ export class UserController {
             code: 200,
             message: '프로필 조회에 성공했습니다.',
             data: profiles,
+        };
+    }
+
+    @Get('/:userId')
+    @ApiOperation({
+        summary: '특정 프로필 조회',
+        description: 'User ID로 특정 프로필을 조회합니다.',
+    })
+    async getProfile(@Param('userId') userId: number): Promise<any> {
+        const profile = await this.userService.getProfile(userId);
+        return {
+            code: 200,
+            message: '프로필 조회에 성공했습니다.',
+            data: profile,
         };
     }
 }

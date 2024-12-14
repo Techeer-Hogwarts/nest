@@ -87,7 +87,7 @@ export class BlogRepository {
     async getBlogsByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<BlogEntity[]> {
+    ): Promise<any> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         return this.prisma.blog.findMany({
             where: {
@@ -95,7 +95,17 @@ export class BlogRepository {
                 userId: userId,
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        class: true,
+                        year: true,
+                        school: true,
+                        mainPosition: true,
+                        subPosition: true,
+                    },
+                },
             },
             skip: offset,
             take: limit,

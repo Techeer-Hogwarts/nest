@@ -10,10 +10,14 @@ import * as basicAuth from 'express-basic-auth';
 async function bootstrap(): Promise<void> {
     const logger = new Logger('Bootstrap');
 
+    const originAddress = [
+        'https://www.techeerzip.cloud/',
+        'http://localhost:5173',
+    ];
     try {
         const app = await NestFactory.create(AppModule, {
             cors: {
-                origin: true,
+                origin: originAddress,
                 methods: 'GET, HEAD, PUT, PATCH, POST, DELETE',
                 preflightContinue: false,
                 optionsSuccessStatus: 204,
