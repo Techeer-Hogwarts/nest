@@ -1,4 +1,4 @@
-import { Bookmark, User, ContentCategory } from '@prisma/client';
+import { Bookmark, ContentCategory } from '@prisma/client';
 
 export class BookmarkEntity implements Bookmark {
     id: number;
@@ -8,6 +8,4 @@ export class BookmarkEntity implements Bookmark {
     userId: number;
     contentId: number;
     category: ContentCategory;
-
-    user: User;
 }

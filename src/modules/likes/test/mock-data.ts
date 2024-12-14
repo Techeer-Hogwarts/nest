@@ -34,6 +34,7 @@ export const createLikeRequest = (
         userId: 1,
         contentId: 1,
         category: 'RESUME',
+        likeStatus: true,
         ...overrides,
     };
 };
@@ -51,4 +52,5 @@ export const getLikeListRequest = (
 
 export const getLikeResponse: GetLikeResponse = new GetLikeResponse(
     likeEntity(),
+    true,
 );
