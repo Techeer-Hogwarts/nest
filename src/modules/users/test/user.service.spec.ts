@@ -8,11 +8,14 @@ import { CreateUserRequest } from '../dto/request/create.user.request';
 import { CreateResumeRequest } from '../../resumes/dto/request/create.resume.request';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
 import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { of } from 'rxjs';
 import { User } from '@prisma/client';
 import { ResumeEntity } from '../../resumes/entities/resume.entity';
 import { AxiosHeaders, AxiosResponse } from 'axios';
+import {
+    UnauthorizedAdminException,
+    NotFoundUserException,
+} from '../../../global/exception/custom.exception';
 
 describe('UserService', () => {
     let userService: UserService;
@@ -245,7 +248,7 @@ describe('UserService', () => {
 
             await expect(
                 userService.updateUserProfile(1, updateUserRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundUserException);
         });
     });
 
@@ -271,7 +274,7 @@ describe('UserService', () => {
             jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
 
             await expect(userService.deleteUser(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundUserException,
             );
         });
     });
@@ -338,7 +341,7 @@ describe('UserService', () => {
 
             await expect(
                 userService.updateNickname(user, nickname),
-            ).rejects.toThrow(UnauthorizedException);
+            ).rejects.toThrow(UnauthorizedAdminException);
         });
     });
 

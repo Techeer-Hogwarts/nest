@@ -1,9 +1,4 @@
-import {
-    Injectable,
-    UnauthorizedException,
-    NotFoundException,
-    BadRequestException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserRepository } from './repository/user.repository';
 import { ResumeRepository } from '../resumes/repository/resume.repository';
 import { CreateUserRequest } from './dto/request/create.user.request';
@@ -16,6 +11,14 @@ import { GetUserResponse } from './dto/response/get.user.response';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { GetUserssQueryRequest } from './dto/request/get.user.query.request';
+import {
+    NotVerifiedEmailException,
+    NotFoundProfileImageException,
+    UnauthorizedAdminException,
+    NotFoundTecheerException,
+    NotFoundUserException,
+    BadRequestException,
+} from '../../global/exception/custom.exception';
 
 @Injectable()
 export class UserService {
@@ -34,9 +37,7 @@ export class UserService {
                 dto.internStartDate ||
                 dto.internEndDate)
         ) {
-            throw new BadRequestException(
-                'isIntern이 false일 때 인턴 관련 필드를 입력할 수 없습니다.',
-            );
+            throw new BadRequestException();
         }
 
         if (
@@ -46,9 +47,7 @@ export class UserService {
                 dto.fullTimeStartDate ||
                 dto.fullTimeEndDate)
         ) {
-            throw new BadRequestException(
-                'isFullTime이 false일 때 정규직 관련 필드를 입력할 수 없습니다.',
-            );
+            throw new BadRequestException();
         }
     }
 
@@ -63,18 +62,14 @@ export class UserService {
             createUserRequest.email,
         );
         if (!isVerified) {
-            throw new UnauthorizedException(
-                '이메일 인증이 완료되지 않았습니다.',
-            );
+            throw new NotVerifiedEmailException();
         }
 
         const { image, isTecheer } = await this.getProfileImageUrl(
             createUserRequest.email,
         );
         if (!isTecheer) {
-            throw new UnauthorizedException(
-                '회원가입이 불가능한 사용자입니다. 테커 소속만 가입이 가능합니다.',
-            );
+            throw new NotFoundTecheerException();
         }
 
         // 비밀번호 해싱
@@ -107,9 +102,7 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
 
         if (!user) {
-            throw new NotFoundException(
-                `ID가 ${userId}인 사용자를 찾을 수 없습니다.`,
-            );
+            throw new NotFoundUserException();
         }
 
         return this.userRepository.updateUserProfile(userId, updateUserRequest);
@@ -119,9 +112,7 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
 
         if (!user) {
-            throw new NotFoundException(
-                `ID가 ${userId}인 사용자를 찾을 수 없습니다.`,
-            );
+            throw new NotFoundUserException();
         }
 
         return this.userRepository.softDeleteUser(userId);
@@ -131,7 +122,7 @@ export class UserService {
         const userInfo = await this.userRepository.findById(userId);
 
         if (!userInfo) {
-            throw new NotFoundException('사용자가 존재하지 않습니다.');
+            throw new NotFoundUserException();
         }
         return new GetUserResponse(userInfo);
     }
@@ -150,9 +141,7 @@ export class UserService {
         currentUserRoleId: number,
     ): Promise<any> {
         if (currentUserRoleId !== 1) {
-            throw new UnauthorizedException(
-                '권한이 없습니다. 관리자만 승인할 수 있습니다.',
-            );
+            throw new UnauthorizedAdminException();
         }
 
         await this.userRepository.updateUserRole(userId, newRoleId);
@@ -184,7 +173,7 @@ export class UserService {
             };
         }
 
-        throw new Error('프로필 이미지 URL을 가져오는 데 실패했습니다.');
+        throw new NotFoundProfileImageException();
     }
 
     async updateProfileImage(request: any): Promise<any> {
@@ -208,7 +197,7 @@ export class UserService {
     async updateNickname(user: any, nickname: string): Promise<any> {
         // 권한 확인 (1번, 2번 권한만 가능)
         if (user.roleId !== 1 && user.roleId !== 2) {
-            throw new UnauthorizedException('닉네임 업데이트 권한이 없습니다.');
+            throw new UnauthorizedAdminException();
         }
 
         // 닉네임 업데이트 로직 호출
