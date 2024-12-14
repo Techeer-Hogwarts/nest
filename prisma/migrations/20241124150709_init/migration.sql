@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "StackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA');
+CREATE TYPE "StackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA', 'ETC');
 
 -- CreateEnum
 CREATE TYPE "ContentCategory" AS ENUM ('RESUME', 'SESSION', 'BLOG');
@@ -93,26 +93,12 @@ CREATE TABLE "TeamMember" (
 );
 
 -- CreateTable
-CREATE TABLE "Team" (
-    "id" SERIAL NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "isRecruited" BOOLEAN NOT NULL DEFAULT true,
-    "isFinished" BOOLEAN NOT NULL DEFAULT true,
-    "name" VARCHAR(100) NOT NULL,
-    "category" VARCHAR(100) NOT NULL,
-
-    CONSTRAINT "Team_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Stack" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "stack" VARCHAR(200) NOT NULL,
+    "name" TEXT NOT NULL,
     "category" "StackCategory" NOT NULL,
 
     CONSTRAINT "Stack_pkey" PRIMARY KEY ("id")
@@ -124,6 +110,7 @@ CREATE TABLE "TeamStack" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "isMain" BOOLEAN NOT NULL DEFAULT false,
     "stackId" INTEGER NOT NULL,
     "teamId" INTEGER NOT NULL,
 
@@ -131,33 +118,17 @@ CREATE TABLE "TeamStack" (
 );
 
 -- CreateTable
-CREATE TABLE "Like" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "contentId" INTEGER NOT NULL,
-    "category" "ContentCategory" NOT NULL,
-
-    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Resume" (
+CREATE TABLE "Team" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-    "userId" INTEGER NOT NULL,
-    "title" VARCHAR(100) NOT NULL,
-    "url" VARCHAR(100) NOT NULL,
-    "isMain" BOOLEAN NOT NULL DEFAULT false,
-    "likeCount" INTEGER NOT NULL DEFAULT 0,
-    "viewCount" INTEGER NOT NULL DEFAULT 0,
-    "category" "ResumeCategory" NOT NULL,
+    "isRecruited" BOOLEAN NOT NULL DEFAULT true,
+    "isFinished" BOOLEAN NOT NULL DEFAULT true,
+    "name" VARCHAR(100) NOT NULL,
+    "category" VARCHAR(100) NOT NULL,
 
-    CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Team_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -178,6 +149,19 @@ CREATE TABLE "Blog" (
 );
 
 -- CreateTable
+CREATE TABLE "Like" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "contentId" INTEGER NOT NULL,
+    "category" "ContentCategory" NOT NULL,
+
+    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Bookmark" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
@@ -188,6 +172,23 @@ CREATE TABLE "Bookmark" (
     "category" "ContentCategory" NOT NULL,
 
     CONSTRAINT "Bookmark_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Resume" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "userId" INTEGER NOT NULL,
+    "title" VARCHAR(100) NOT NULL,
+    "url" VARCHAR(100) NOT NULL,
+    "isMain" BOOLEAN NOT NULL DEFAULT false,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "category" "ResumeCategory" NOT NULL,
+
+    CONSTRAINT "Resume_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -235,6 +236,9 @@ CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
 -- CreateIndex
 CREATE UNIQUE INDEX "Like_userId_contentId_category_key" ON "Like"("userId", "contentId", "category");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Bookmark_userId_contentId_category_key" ON "Bookmark"("userId", "contentId", "category");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -257,16 +261,16 @@ ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_stackId_fkey" FOREIGN KEY ("st
 ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Resume" ADD CONSTRAINT "Resume_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Blog" ADD CONSTRAINT "Blog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Bookmark" ADD CONSTRAINT "Bookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Resume" ADD CONSTRAINT "Resume_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

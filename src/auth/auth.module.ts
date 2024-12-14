@@ -3,7 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { RedisModule } from './auth.redis.module';
+import { RedisModule } from '../global/redis/redis.module';
 import { UserModule } from '../modules/users/user.module'; // UserModule과의 순환참조 방지
 
 @Module({
