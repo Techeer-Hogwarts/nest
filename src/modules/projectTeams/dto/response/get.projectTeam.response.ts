@@ -40,7 +40,7 @@ export class GetProjectTeamResponse {
         this.backendNum = teamEntity.backendNum;
         this.devopsNum = teamEntity.devopsNum;
         this.uiuxNum = teamEntity.uiuxNum;
-        this.dataEngineerNum = teamEntity.dataenginnerNum;
+        this.dataEngineerNum = teamEntity.dataEngineerNum;
         this.recruitExplain = teamEntity.recruitExplain;
         this.isRecruited = teamEntity.isRecruited;
         this.isFinished = teamEntity.isFinished;

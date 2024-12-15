@@ -17,7 +17,7 @@ export class ProjectTeamEntity implements ProjectTeam {
     backendNum: number;
     devopsNum: number;
     uiuxNum: number;
-    dataenginnerNum: number;
+    dataEngineerNum: number;
     recruitExplain: string;
 
     teamStacks: TeamStackEntity[];

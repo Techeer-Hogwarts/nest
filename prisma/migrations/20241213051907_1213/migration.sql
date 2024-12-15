@@ -26,6 +26,8 @@ DROP TABLE "Team";
 -- DropTable
 DROP TABLE "TeamMember";
 
+CREATE TYPE "StatusCategory" AS ENUM ('APPROVED', 'REJECT', 'PENDING');
+
 -- CreateTable
 CREATE TABLE "ProjectMember" (
     "id" SERIAL NOT NULL,
@@ -36,6 +38,8 @@ CREATE TABLE "ProjectMember" (
     "teamRole" VARCHAR(100) NOT NULL,
     "projectTeamId" INTEGER NOT NULL,
     "userId" INTEGER NOT NULL,
+    "summary" VARCHAR(100) NOT NULL,
+    "status" "StatusCategory" NOT NULL,
 
     CONSTRAINT "ProjectMember_pkey" PRIMARY KEY ("id")
 );
@@ -49,6 +53,8 @@ CREATE TABLE "StudyMember" (
     "isLeader" BOOLEAN NOT NULL,
     "studyTeamId" INTEGER NOT NULL,
     "userId" INTEGER NOT NULL,
+    "summary" VARCHAR(100) NOT NULL,
+    "status" "StatusCategory" NOT NULL,
 
     CONSTRAINT "StudyMember_pkey" PRIMARY KEY ("id")
 );
@@ -69,7 +75,7 @@ CREATE TABLE "ProjectTeam" (
     "backendNum" INTEGER NOT NULL,
     "devopsNum" INTEGER NOT NULL,
     "uiuxNum" INTEGER NOT NULL,
-    "dataenginnerNum" INTEGER NOT NULL,
+    "dataEngineerNum" INTEGER NOT NULL,
     "recruitExplain" VARCHAR(200) NOT NULL,
 
     CONSTRAINT "ProjectTeam_pkey" PRIMARY KEY ("id")
@@ -94,6 +100,31 @@ CREATE TABLE "StudyTeam" (
 
     CONSTRAINT "StudyTeam_pkey" PRIMARY KEY ("id")
 );
+
+CREATE TABLE "ProjectResultImage" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "imageUrl" VARCHAR(300) NOT NULL,
+    "projectTeamId" INTEGER NOT NULL,
+    
+    CONSTRAINT "ProjectResultImage_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ProjectResultImage_projectTeamId_fkey" FOREIGN KEY ("projectTeamId") REFERENCES "ProjectTeam" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "StudyResultImage" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "imageUrl" VARCHAR(300) NOT NULL,
+    "studyTeamId" INTEGER NOT NULL,
+    
+    CONSTRAINT "StudyResultImage_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "StudyResultImage_studyTeamId_fkey" FOREIGN KEY ("studyTeamId") REFERENCES "StudyTeam" ("id") ON DELETE CASCADE
+);
+
 
 -- AddForeignKey
 ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_projectTeamId_fkey" FOREIGN KEY ("projectTeamId") REFERENCES "ProjectTeam"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

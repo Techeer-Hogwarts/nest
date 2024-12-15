@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { StatusCategory, User } from '@prisma/client';
 import { ProjectMember } from '@prisma/client';
 
 export class ProjectMemberEntity implements ProjectMember {
@@ -10,5 +10,7 @@ export class ProjectMemberEntity implements ProjectMember {
     teamRole: string;
     projectTeamId: number;
     userId: number;
+    summary: string;
+    status: StatusCategory;
     user: User;
 }
