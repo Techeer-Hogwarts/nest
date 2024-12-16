@@ -11,3 +11,9 @@ export class NotFoundEventException extends HttpException {
         super('이벤트를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
     }
 }
+
+export class NotFoundBlogException extends HttpException {
+    constructor() {
+        super('블로그를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
+    }
+}

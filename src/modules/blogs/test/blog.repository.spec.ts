@@ -5,15 +5,15 @@ import {
     bestBlogEntities,
     blogEntities,
     blogEntity,
-    createBlogRequest,
     getBlogsQueryRequest,
     paginationQueryDto,
     updateBlogRequest,
     updatedBlogEntity,
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
-import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { BlogCategory, Prisma } from '@prisma/client';
+import { NotFoundBlogException } from '../../../global/exception/custom.exception';
 
 describe('BlogRepository', (): void => {
     let repository: BlogRepository;
@@ -28,7 +28,6 @@ describe('BlogRepository', (): void => {
                     useValue: {
                         $queryRaw: jest.fn(),
                         blog: {
-                            create: jest.fn(),
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
                             update: jest.fn(),
@@ -44,24 +43,6 @@ describe('BlogRepository', (): void => {
 
     it('should be defined', (): void => {
         expect(repository).toBeDefined();
-    });
-
-    describe('createBlog', (): void => {
-        it('should successfully create a blog', async (): Promise<void> => {
-            jest.spyOn(prismaService.blog, 'create').mockResolvedValue(
-                blogEntity(),
-            );
-
-            const result: BlogEntity =
-                await repository.createBlog(createBlogRequest);
-
-            expect(result).toEqual(blogEntity());
-            expect(prismaService.blog.create).toHaveBeenCalledWith({
-                data: createBlogRequest,
-                include: { user: true },
-            });
-            expect(prismaService.blog.create).toHaveBeenCalledTimes(1);
-        });
     });
 
     describe('getBestBlogs', (): void => {
@@ -90,13 +71,13 @@ describe('BlogRepository', (): void => {
             expect(await repository.getBlog(1)).toEqual(blogEntity());
         });
 
-        it('should throw a NotFoundException if no blog is found', async (): Promise<void> => {
+        it('should throw a NotFoundBlogException if no blog is found', async (): Promise<void> => {
             jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
                 null,
             );
 
             await expect(repository.getBlog(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundBlogException,
             );
         });
     });
@@ -123,10 +104,7 @@ describe('BlogRepository', (): void => {
                                 },
                             },
                             {
-                                category: {
-                                    contains: getBlogsQueryRequest.keyword,
-                                    mode: 'insensitive',
-                                },
+                                category: BlogCategory.TECHEER,
                             },
                             {
                                 user: {
@@ -141,13 +119,13 @@ describe('BlogRepository', (): void => {
                     ...(getBlogsQueryRequest.category && {
                         category: getBlogsQueryRequest.category,
                     }),
-                    ...(getBlogsQueryRequest.position && {
-                        user: { mainPosition: getBlogsQueryRequest.position },
-                    }),
                 },
                 include: { user: true },
                 skip: getBlogsQueryRequest.offset,
                 take: getBlogsQueryRequest.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
@@ -173,6 +151,9 @@ describe('BlogRepository', (): void => {
                 include: { user: true },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });
@@ -197,7 +178,7 @@ describe('BlogRepository', (): void => {
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
+        it('should throw NotFoundBlogException if the blog does not exist', async (): Promise<void> => {
             const prismaError: PrismaClientKnownRequestError =
                 new PrismaClientKnownRequestError('Record not found', {
                     code: 'P2025',
@@ -209,7 +190,7 @@ describe('BlogRepository', (): void => {
             );
 
             await expect(repository.deleteBlog(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundBlogException,
             );
         });
     });
@@ -237,7 +218,7 @@ describe('BlogRepository', (): void => {
             expect(prismaService.blog.update).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
+        it('should throw NotFoundBlogException if the blog does not exist', async (): Promise<void> => {
             const prismaError: PrismaClientKnownRequestError =
                 new PrismaClientKnownRequestError('Record not found', {
                     code: 'P2025',
@@ -250,7 +231,7 @@ describe('BlogRepository', (): void => {
 
             await expect(
                 repository.updateBlog(1, updateBlogRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundBlogException);
             expect(prismaService.blog.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,
