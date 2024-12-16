@@ -50,7 +50,7 @@ export class TaskService implements OnModuleInit {
     }
 
     // 블로그 크롤링
-    @Cron('0 0 * * *') // 매일 자정(00:00)에 실행
+    @Cron('0 3 * * *') // 매일 새벽 3시에 실행
     async handleRequest(): Promise<void> {
         const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
         await Promise.all(

@@ -58,19 +58,22 @@ export class BlogService {
     async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
         const { userId, posts } = crawlingBlogDto;
 
-        // 어제 날짜 계산
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(0, 0, 0, 0); // 어제 날짜의 시작
-        const endOfYesterday = new Date(yesterday);
-        endOfYesterday.setHours(23, 59, 59, 999); // 어제 날짜의 끝
-        Logger.debug(yesterday);
+        // 새벽 3시 기준 "어제 날짜" 계산
+        const now = new Date();
+        const startOfYesterday = new Date();
+        startOfYesterday.setDate(now.getDate() - 1);
+        startOfYesterday.setHours(3, 0, 0, 0); // 어제 새벽 3시
+        const endOfYesterday = new Date(startOfYesterday);
+        endOfYesterday.setDate(startOfYesterday.getDate() + 1);
+        endOfYesterday.setHours(2, 59, 59, 999); // 오늘 새벽 2시 59분 59초
+
+        Logger.debug(startOfYesterday);
         Logger.debug(endOfYesterday);
 
         // 어제 날짜에 해당하는 글만 필터링
         const filteredPosts = posts.filter((post) => {
             const postDate = new Date(post.date);
-            return postDate >= yesterday && postDate <= endOfYesterday;
+            return postDate >= startOfYesterday && postDate <= endOfYesterday;
         });
 
         Logger.debug(
