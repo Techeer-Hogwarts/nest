@@ -35,6 +35,6 @@ export class RedisService {
 
     async deleteTask(taskId: string): Promise<void> {
         await this.client.del(taskId);
-        Logger.log(`Successfully deleted task: ${taskId}`);
+        Logger.debug(`Successfully deleted task: ${taskId}`);
     }
 }

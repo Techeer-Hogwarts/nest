@@ -2,7 +2,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Post } from '@nestjs/common';
 import { TaskService } from './task.service';
 
-@ApiTags('task')
+@ApiTags('task (dev)')
 @Controller('/task')
 export class TaskController {
     constructor(private readonly taskService: TaskService) {}
@@ -19,7 +19,7 @@ export class TaskController {
 
     @Post('tasks/auto')
     @ApiOperation({
-        summary: '블로그 크롤링 자동화 api',
+        summary: '블로그 크롤링 자동화 테스트 api',
         description:
             '요청을 보내면 데이터베이스에서 모든 테커인의 블로그를 크롤링해 데이터베이스에 저장합니다.',
     })

@@ -11,7 +11,7 @@ import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async getAllUserBlogUrl(): Promise<any> {
+    async getAllUserBlogUrl(): Promise<{ id: number; blogUrl: string }[]> {
         return this.prisma.user.findMany({
             where: {
                 isDeleted: false,
@@ -25,7 +25,6 @@ export class BlogRepository {
 
     async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
         const { userId, posts } = crawlingBlogDto;
-        Logger.log(JSON.stringify(crawlingBlogDto), 'CreateBlog...');
         const blogPromises = posts.map(async (post) => {
             try {
                 await this.prisma.blog.create({
@@ -36,7 +35,6 @@ export class BlogRepository {
                         category: post.category.toUpperCase() as BlogCategory,
                     },
                 });
-                Logger.log(`블로그 데이터 저장 완료: ${post.title}`);
             } catch (error) {
                 Logger.error(
                     `블로그 데이터 저장 실패: ${post.title}, Error: ${error.message}`,
@@ -44,11 +42,7 @@ export class BlogRepository {
                 );
             }
         });
-
-        // 모든 작업이 완료되길 기다림
         await Promise.all(blogPromises);
-
-        Logger.log(`크롤링한 블로그 데이터를 모두 저장했습니다.`);
     }
 
     async getBlog(blogId: number): Promise<BlogEntity> {

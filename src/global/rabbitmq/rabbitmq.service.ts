@@ -22,7 +22,6 @@ export class RabbitMQService {
             messageId: taskId,
             contentType: 'text/plain',
         });
-        Logger.log(`Sent task: ${task}`);
-        Logger.log(taskId);
+        Logger.debug(`Sent task: ${task}`, taskId);
     }
 }
