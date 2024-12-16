@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogService } from '../blog.service';
 import { BlogRepository } from '../repository/blog.repository';
-import { NotFoundException } from '@nestjs/common';
 import {
     bestBlogEntities,
     blogEntities,
@@ -16,6 +15,7 @@ import {
 } from './mock-data';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { BlogEntity } from '../entities/blog.entity';
+import { NotFoundBlogException } from '../../../global/exception/custom.exception';
 
 describe('BlogService', (): void => {
     let service: BlogService;
@@ -148,13 +148,13 @@ describe('BlogService', (): void => {
             expect(repository.deleteBlog).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if blog does not exist', async (): Promise<void> => {
+        it('should throw NotFoundBlogException if blog does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'deleteBlog').mockRejectedValue(
-                new NotFoundException('게시물을 찾을 수 없습니다.'),
+                new NotFoundBlogException(),
             );
 
             await expect(service.deleteBlog(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundBlogException,
             );
             expect(repository.deleteBlog).toHaveBeenCalledWith(1);
             expect(repository.deleteBlog).toHaveBeenCalledTimes(1);
@@ -182,14 +182,14 @@ describe('BlogService', (): void => {
             expect(repository.updateBlog).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
+        it('should throw NotFoundBlogException if the blog does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'updateBlog').mockRejectedValue(
-                new NotFoundException('게시물을 찾을 수 없습니다.'),
+                new NotFoundBlogException(),
             );
 
             await expect(
                 service.updateBlog(1, updateBlogRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundBlogException);
 
             expect(repository.updateBlog).toHaveBeenCalledWith(
                 1,

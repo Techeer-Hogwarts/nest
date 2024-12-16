@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
@@ -6,6 +6,7 @@ import { PaginationQueryDto } from '../../../global/common/pagination.query.dto'
 import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { BlogCategory, Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
+import { NotFoundBlogException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class BlogRepository {
@@ -57,7 +58,7 @@ export class BlogRepository {
         });
 
         if (!blog) {
-            throw new NotFoundException('게시물을 찾을 수 없습니다.');
+            throw new NotFoundBlogException();
         }
         return blog;
     }
@@ -142,7 +143,7 @@ export class BlogRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('게시물을 찾을 수 없습니다.');
+                throw new NotFoundBlogException();
             }
             throw error;
         }
@@ -174,7 +175,7 @@ export class BlogRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('게시물을 찾을 수 없습니다.');
+                throw new NotFoundBlogException();
             }
             throw error;
         }

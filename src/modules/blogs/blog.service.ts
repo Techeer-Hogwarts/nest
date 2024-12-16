@@ -27,7 +27,6 @@ export class BlogService {
         userId: number,
         query: PaginationQueryDto,
     ): Promise<GetBlogResponse[]> {
-        // todo: 유저가 존재하는지 검사
         const blogs: BlogEntity[] = await this.blogRepository.getBlogsByUser(
             userId,
             query,
