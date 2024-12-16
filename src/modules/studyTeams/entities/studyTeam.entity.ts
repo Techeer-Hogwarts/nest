@@ -1,4 +1,4 @@
-import { StudyTeam, StudyMember } from '@prisma/client';
+import { StudyTeam, StudyMember, StudyResultImage } from '@prisma/client';
 
 export class StudyTeamEntity implements StudyTeam {
     id: number;
@@ -17,4 +17,5 @@ export class StudyTeamEntity implements StudyTeam {
     recruitExplain: string;
 
     studyMeber: StudyMember[];
+    resultImages: StudyResultImage[];
 }

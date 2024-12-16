@@ -6,7 +6,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 
 @ApiTags('projectTeams')
-@Controller('projects')
+@Controller('/projects')
 export class ProjectTeamController {
     constructor(private readonly teamService: ProjectTeamService) {}
 
