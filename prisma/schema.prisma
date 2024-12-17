@@ -73,7 +73,7 @@ model PermissionRequest {
 }
 
 enum StatusCategory {
-  APPROVE
+  APPROVED
   REJECT
   PENDING
 }

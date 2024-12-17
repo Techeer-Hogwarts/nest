@@ -6,7 +6,8 @@ import {
     IsInt,
     IsArray,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class CreateStudyTeamRequest {
     @IsNotEmpty()
@@ -90,17 +91,27 @@ export class CreateStudyTeamRequest {
 
     @IsOptional()
     @IsArray()
+    @Transform(({ value }) => {
+      try {
+        return typeof value === 'string' ? JSON.parse(value) : value;
+      } catch (e) {
+        throw new Error('studyMember는 유효한 JSON 배열이어야 합니다.');
+      }
+    })
     @ApiProperty({
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                userId: { type: 'number', description: '사용자 ID', example: 1 },
+                isLeader: { type: 'boolean', description: '리더 여부', example: true }
+            }
+        },
         example: [{ userId: 1, isLeader: true }, { userId: 2, isLeader: false }],
-        description: '스터디에 이미 참여중인 인원의 목록 (userId와 isLeader 정보를 포함)',
     })
     studyMember: { userId: number; isLeader: boolean }[];
-
-    @IsOptional()
-    @IsArray()
-    @ApiProperty({
-        example: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
-        description: '스터디 결과물 이미지 URL 목록',
-    })
-    resultImages: string[];
+    
+    @ApiHideProperty() // Swagger에 표시되지 않도록 설정
+    resultImages?: string[]; // 사용자가 입력하지 않음, 서버에서 자동 추가
+    
 }

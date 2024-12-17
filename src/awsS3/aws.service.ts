@@ -31,7 +31,6 @@ export class AwsService {
             Bucket: this.configService.get('AWS_S3_BUCKET_NAME'), // S3 버킷 이름
             Key: keyPath, // 업로드될 파일의 경로 (폴더/파일명)
             Body: file.buffer, // 업로드할 파일의 데이터 (파일 버퍼)
-            ACL: 'public-read', // 파일 접근 권한 (퍼블릭으로 설정)
             ContentType: `image/${ext}`, // 파일의 MIME 타입 (image/jpeg, image/png 등)
         });
 

@@ -1,43 +1,65 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudyTeamRequest } from '../dto/request/create.studyTeam.request';
-import { StudyTeam, StudyMember, StudyResultImage } from "@prisma/client";
+import { StudyTeam, StudyMember, StudyResultImage, StatusCategory } from "@prisma/client";
 
 @Injectable()
 export class StudyTeamRepository {
+    private readonly logger = new Logger(StudyTeamRepository.name);
+
     constructor(private readonly prisma: PrismaService) {}
 
-    async createStudyTeam(createStudyTeamRequest: CreateStudyTeamRequest): Promise<StudyTeam> {
-        const { studyMember, resultImages, ...teamData } = createStudyTeamRequest;
+    async createStudyTeam(createStudyTeamRequest: CreateStudyTeamRequest): Promise<any> {
+        try {
+            this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
 
-        const studyTeam = await this.prisma.studyTeam.create({
-            data: {
-                ...teamData,
-                studyMember: {
-                    create: studyMember.map(member => ({
-                        user: {
-                            connect: { id: member.userId } 
-                        },
-                        isLeader: member.isLeader,
-                        summary: '초기 참여 인원이니다', 
-                        status: 'APPROVE', 
-                    }))
+            const { studyMember, resultImages, ...teamData } = createStudyTeamRequest;
+
+            const studyTeam = await this.prisma.studyTeam.create({
+                data: {
+                    ...teamData,
+                    studyMember: {
+                        create: studyMember.map(member => ({
+                            user: { connect: { id: member.userId } },
+                            isLeader: member.isLeader,
+                            summary: '초기 참여 인원입니다', 
+                            status: 'APPROVED',
+                        }))
+                    },
+                    resultImages: {
+                        create: resultImages.map(imageUrl => ({ imageUrl }))
+                    }
                 },
-                resultImages: {
-                    create: resultImages.map(imageUrl => ({
-                        imageUrl
-                    }))
+                include: {
+                    studyMember: true,
+                    resultImages: true
                 }
-            },
-            include: {
-                studyMember: true,
-                resultImages: true
-            }
-        });
+            });
 
-        return studyTeam;
+            this.logger.debug('✅ [SUCCESS] Prisma 데이터 저장 성공');
+            return studyTeam;
+        } catch (error) {
+            this.logger.error('❌ [ERROR] createStudyTeam 에서 예외 발생: ', error);
+            throw error;
+        }
     }
 
+
+    async checkExistUsers(userIds: number[]): Promise<number[]> {
+        try {
+            const users = await this.prisma.user.findMany({
+                where: { id: { in: userIds } }
+            });
+    
+            // 🔥 존재하는 유저의 ID 목록만 반환
+            return users.map(user => user.id);
+        } catch (error) {
+            this.logger.error('❌ [ERROR] checkExistUsers 에서 예외 발생: ', error);
+            throw new Error('데이터베이스 에러가 발생했습니다.');
+        }
+    }
+
+    
     async findStudyTeamById(id: number): Promise<StudyTeam | null> {
         return this.prisma.studyTeam.findUnique({
             where: { id },
