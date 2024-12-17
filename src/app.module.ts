@@ -12,6 +12,7 @@ import { EventModule } from './modules/events/event.module';
 import { LikeModule } from './modules/likes/like.module';
 import { RedisModule } from './global/redis/redis.module';
 import { StudyTeamModule } from './modules/studyTeams/studyTeam.module';
+import { StudyMemberModule } from './modules/studyMembers/studyMember.module';
 
 @Module({
     imports: [
@@ -28,6 +29,7 @@ import { StudyTeamModule } from './modules/studyTeams/studyTeam.module';
         EventModule,
         LikeModule,
         StudyTeamModule,
+        StudyMemberModule,
     ],
 })
 export class AppModule {}

@@ -11,6 +11,6 @@ import { AwsService } from "src/awsS3/aws.service";
     imports: [AuthModule],
     controllers: [StudyTeamController],
     providers: [StudyTeamService, StudyTeamRepository, UserRepository, AwsService, PrismaService],
-    exports: [StudyTeamRepository, UserRepository],
+    exports: [StudyTeamService, StudyTeamRepository, UserRepository],
 })
 export class StudyTeamModule {}
