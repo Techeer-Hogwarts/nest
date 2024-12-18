@@ -55,7 +55,7 @@ export class StudyTeamController {
     })
     @UseInterceptors(FilesInterceptor('files', 10)) // 파일 최대 업로드 10개
     async uploadStudyTeam(
-        @Body('updateStudyTeamRequest') updateStudyTeamRequest: string,
+        @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
         @Req() request: any
     ): Promise<any> {
@@ -65,7 +65,7 @@ export class StudyTeamController {
       try {
         if (!files) throw new BadRequestException('파일이 필요합니다.');
 
-        const parsedBody = JSON.parse(updateStudyTeamRequest);
+        const parsedBody = JSON.parse(createStudyTeamRequest);
         const createStudyTeamDto = plainToInstance(CreateStudyTeamRequest, parsedBody);
 
         const studyData = await this.studyTeamService.createStudyTeam(createStudyTeamDto, files);

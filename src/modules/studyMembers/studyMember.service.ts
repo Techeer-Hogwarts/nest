@@ -13,13 +13,30 @@ export class StudyMemberService {
     ) {}
 
     // 스터디 지원 : 이미 스터디에 속한 사람은 지원 불가 
-    async applyToStudyTeam(createStudyMemberRequest: CreateStudyMemberRequest): Promise<any> {
+    async applyToStudyTeam(
+        createStudyMemberRequest: CreateStudyMemberRequest, 
+        userId: number
+    ): Promise<any> {
         this.logger.debug('🔥 [START] applyToStudyTeam 요청 시작');
-        const data = await this.studyMemberRepository.applyToStudyTeam(createStudyMemberRequest);
+    
+        // 중복 체크 (이미 스터디에 가입되어 있는지 확인)
+        const isAlreadyMember = await this.studyMemberRepository.checkExistingMember(
+            createStudyMemberRequest.studyTeamId,
+            userId 
+        );
+    
+        if (isAlreadyMember) {
+            throw new Error('이미 스터디에 속해 있습니다.');
+        }
+    
+        const newApplication = await this.studyMemberRepository.applyToStudyTeam(
+            createStudyMemberRequest,
+            userId
+        );
+    
         this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
-        return data;
+        return newApplication;
     }
-
     // 스터디 지원 취소 
     async cancelApplication(studyMemberId: number, userId: number): Promise<any> {
         this.logger.debug('🔥 [START] cancelApplication 요청 시작');

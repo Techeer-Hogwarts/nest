@@ -3,6 +3,7 @@ import { StudyMemberService } from "./studyMember.service";
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateStudyMemberRequest } from './dto/create.studyMember.request';
+import { Request } from "express";
 
 @ApiTags('studyMembers')
 @Controller('/studyMembers')
@@ -17,16 +18,21 @@ export class StudyMemberController {
     @ApiOperation({ summary: '스터디 지원', description: '스터디에 지원합니다.' })
     async applyToStudyTeam(
         @Body() createStudyMemberRequest: CreateStudyMemberRequest, 
-        @Req() request: any
+        @Req() request: Request
     ): Promise<any> {
-        const userId = request.user.id;
-        createStudyMemberRequest.userId = userId; 
-        const applyData = await this.studyMemberService.applyToStudyTeam(createStudyMemberRequest);
+        const user = request.user as any;
+        const userId = user.id;
+
+        const applyData = await this.studyMemberService.applyToStudyTeam(
+            createStudyMemberRequest, // 첫 번째 파라미터: 클라이언트가 요청한 데이터
+            userId // 두 번째 파라미터: 서버에서 추가된 사용자 ID
+        );
+        
         return {
             code: 201,
             message: '스터디 지원에 성공했습니다.',
             data: applyData,
-        }
+        };
     }
 
     // 스터디 지원 취소 : isDeleted = true(지원한 사람만 가능)
@@ -35,9 +41,11 @@ export class StudyMemberController {
     @ApiOperation({ summary: '스터디 지원 취소', description: '스터디 지원을 취소합니다.' })
     async cancelApplication(
         @Param('studyMemberId') studyMemberId: number, 
-        @Req() request: any
+        @Req() request: Request
     ): Promise<any> {
-        const userId = request.user.id;
+        const user = request.user as any;
+        const userId = user.id;
+
         const cancelData =  await this.studyMemberService.cancelApplication(studyMemberId, userId);
         return {
             code: 200,

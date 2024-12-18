@@ -3,7 +3,7 @@ import {
     IsNotEmpty,
     IsInt,
 } from 'class-validator';
-import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class CreateStudyMemberRequest {
@@ -16,9 +16,6 @@ export class CreateStudyMemberRequest {
     })
     studyTeamId: number;
 
-    @IsInt()
-    @ApiHideProperty()
-    userId?: number;
 
     @IsNotEmpty()
     @IsString()

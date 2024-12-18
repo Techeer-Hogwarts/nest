@@ -9,13 +9,27 @@ export class StudyMemberRepository {
 
     constructor(private readonly prisma: PrismaService) {}
 
+
+    async checkExistingMember(studyTeamId: number, userId: number): Promise<boolean> {
+        const existingMember = await this.prisma.studyMember.findFirst({
+            where: {
+                studyTeamId,
+                userId,
+            },
+        });
+        return !!existingMember; // 사용자가 이미 스터디에 속해 있으면 true 반환
+    }
+
     // 스터디 지원
-    async applyToStudyTeam(createStudyMemberRequest: CreateStudyMemberRequest): Promise<any> {
+    async applyToStudyTeam(
+        createStudyMemberRequest: CreateStudyMemberRequest, 
+        userId: number
+    ): Promise<any> {
         try {
             const newApplication = await this.prisma.studyMember.create({
                 data: {
                     studyTeamId: createStudyMemberRequest.studyTeamId,
-                    userId: createStudyMemberRequest.userId,
+                    userId: userId, // userId는 별도의 매개변수로 전달
                     status: 'PENDING',
                     summary: createStudyMemberRequest.summary,
                     isLeader: false
