@@ -1,4 +1,4 @@
-import { TeamEntity } from '../../teams/entities/team.entity';
+import { ProjectTeamEntity } from '../../projectTeams/entities/projectTeam.entity';
 import { StackEntity } from '../../stacks/entities/stack.entity';
 
 export class TeamStackEntity {
@@ -8,8 +8,8 @@ export class TeamStackEntity {
     isDeleted: boolean;
     isMain: boolean; // 대표 기술 스택 여부
 
-    teamId: number;
+    projectTeamId: number;
     stackId: number;
-    team: TeamEntity;
+    team: ProjectTeamEntity;
     stack: StackEntity;
 }

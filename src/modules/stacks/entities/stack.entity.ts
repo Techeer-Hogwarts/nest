@@ -5,6 +5,5 @@ export class StackEntity implements Stack {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
-    stack: string;
     category: StackCategory;
 }

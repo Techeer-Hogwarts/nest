@@ -19,6 +19,7 @@ async function bootstrap(): Promise<void> {
                 optionsSuccessStatus: 204,
                 credentials: true,
             },
+            logger: ['log', 'error', 'warn', 'debug', 'verbose'], 
         });
 
         // cookie-parser 미들웨어 추가
@@ -91,6 +92,10 @@ async function bootstrap(): Promise<void> {
         }
 
         app.useGlobalFilters(new GlobalExceptionsFilter());
+
+        app.useLogger(['log', 'error', 'warn', 'debug']);
+        
+
 
         await app.listen(8000);
         logger.log('애플리케이션이 포트 8000에서 작동 중입니다.');
