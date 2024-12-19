@@ -20,13 +20,19 @@ export class NotFoundUserException extends HttpException {
 
 export class UploadStudyTeamException extends HttpException {
     constructor() {
-        super('스터디 공고 업로드에 실패했습니다.', HttpStatus.INTERNAL_SERVER_ERROR);
+        super(
+            '스터디 공고 업로드에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
     }
-}  
+}
 
 export class UpdateStudyTeamException extends HttpException {
     constructor() {
-        super('스터디 공고 업데이트에 실패했습니다.', HttpStatus.INTERNAL_SERVER_ERROR);
+        super(
+            '스터디 공고 업데이트에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
     }
 }
 
@@ -39,5 +45,32 @@ export class NotFoundStudyTeamException extends HttpException {
 export class NotStudyMemberException extends HttpException {
     constructor() {
         super('해당 스터디의 멤버가 아닙니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class AlreadyApprovedException extends HttpException {
+    constructor() {
+        super('이미 승인된 지원자는 변경할 수 없습니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class NotApprovedFileExtension extends HttpException {
+    constructor() {
+        super('허용되지 않은 파일 형식입니다. ', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class UploadImageException extends HttpException {
+    constructor() {
+        super(
+            '이미지 업로드에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+    }
+}
+
+export class DuplicateStudyTeamNameException extends HttpException {
+    constructor() {
+        super('이미 존재하는 스터디 이름입니다. ', HttpStatus.FORBIDDEN);
     }
 }

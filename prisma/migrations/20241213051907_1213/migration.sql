@@ -56,7 +56,8 @@ CREATE TABLE "StudyMember" (
     "summary" VARCHAR(100) NOT NULL,
     "status" "StatusCategory" NOT NULL,
 
-    CONSTRAINT "StudyMember_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "StudyMember_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "StudyMember_studyTeamId_userId_unique" UNIQUE ("studyTeamId", "userId")
 );
 
 -- CreateTable
@@ -67,7 +68,7 @@ CREATE TABLE "ProjectTeam" (
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "isRecruited" BOOLEAN NOT NULL DEFAULT true,
     "isFinished" BOOLEAN NOT NULL DEFAULT true,
-    "name" VARCHAR(100) NOT NULL,
+    "name" VARCHAR(100) UNIQUE NOT NULL,
     "githubLink" VARCHAR(200) NOT NULL,
     "notionLink" VARCHAR(200) NOT NULL,
     "projectExplain" VARCHAR(200) NOT NULL,
@@ -89,7 +90,7 @@ CREATE TABLE "StudyTeam" (
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "isRecruited" BOOLEAN NOT NULL DEFAULT true,
     "isFinished" BOOLEAN NOT NULL DEFAULT true,
-    "name" VARCHAR(100) NOT NULL,
+    "name" VARCHAR(100) UNIQUE NOT NULL,
     "githubLink" VARCHAR(200) NOT NULL,
     "notionLink" VARCHAR(200) NOT NULL,
     "studyExplain" VARCHAR(200) NOT NULL,
@@ -133,10 +134,12 @@ ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_projectTeamId_fkey" FO
 ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StudyMember" ADD CONSTRAINT "StudyMember_studyTeamId_fkey" FOREIGN KEY ("studyTeamId") REFERENCES "StudyTeam"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StudyMember" ADD CONSTRAINT "StudyMember_userId_fkey" 
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StudyMember" ADD CONSTRAINT "StudyMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StudyMember" ADD CONSTRAINT "StudyMember_studyTeamId_fkey" 
+    FOREIGN KEY ("studyTeamId") REFERENCES "StudyTeam"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TeamStack" ADD CONSTRAINT "TeamStack_projectTeamId_fkey" FOREIGN KEY ("projectTeamId") REFERENCES "ProjectTeam"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

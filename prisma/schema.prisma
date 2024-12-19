@@ -105,6 +105,8 @@ model StudyMember {
   status      StatusCategory
   user        User           @relation(fields: [userId], references: [id])
   userId      Int
+
+  @@unique([studyTeamId, userId])
 }
 
 enum StackCategory {
@@ -144,7 +146,7 @@ model ProjectTeam {
   isDeleted       Boolean         @default(false)
   isRecruited     Boolean         @default(true)
   isFinished      Boolean         @default(true)
-  name            String          @db.VarChar(100)
+  name            String          @unique @db.VarChar(100)
   githubLink      String          @db.VarChar(200)
   notionLink      String          @db.VarChar(200)
   projectExplain  String          @db.VarChar(200)
@@ -166,7 +168,7 @@ model StudyTeam {
   isDeleted      Boolean       @default(false)
   isRecruited    Boolean       @default(true)
   isFinished     Boolean       @default(true)
-  name           String        @db.VarChar(100)
+  name           String        @unique @db.VarChar(100)
   githubLink     String        @db.VarChar(200)
   notionLink     String        @db.VarChar(200)
   studyExplain   String        @db.VarChar(200)

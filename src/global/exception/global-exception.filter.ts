@@ -10,32 +10,35 @@ import { Request, Response } from 'express';
 
 @Catch()
 export class GlobalExceptionsFilter implements ExceptionFilter {
-    private readonly logger = new Logger(GlobalExceptionsFilter.name); 
-
     catch(exception: unknown, host: ArgumentsHost): void {
+        // 반환 타입을 void로 명시
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
 
-        const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-        const message = status === HttpStatus.INTERNAL_SERVER_ERROR ? '서버에서 오류가 발생했습니다.' : (exception as HttpException).message;
+        // 기본 상태코드가 없는 경우, Internal Server Error로 처리
+        const status =
+            exception instanceof HttpException
+                ? exception.getStatus()
+                : HttpStatus.INTERNAL_SERVER_ERROR;
 
-        this.logger.error('🔥 [ERROR] 예외 발생');
-        this.logger.error(`❌ [STATUS] ${status} - ${request.method} ${request.url}`);
-        this.logger.error(`📘 [REQUEST BODY] ${JSON.stringify(request.body)}`);
-        this.logger.error(`📘 [REQUEST PARAMS] ${JSON.stringify(request.params)}`);
-        this.logger.error(`📘 [REQUEST QUERY] ${JSON.stringify(request.query)}`);
+        // 기본 메시지를 커스텀 메시지로 설정
+        const message =
+            status === HttpStatus.INTERNAL_SERVER_ERROR
+                ? '서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+                : (exception as HttpException).message ||
+                  '알 수 없는 오류가 발생했습니다.';
 
-        if (exception instanceof Error) {
-            this.logger.error(`❌ [ERROR MESSAGE] ${exception.message}`);
-            this.logger.error(`📚 [STACK TRACE] ${exception.stack}`);
-        }
-
+        // 응답 형식 설정
         response.status(status).json({
             statusCode: status,
-            message,
             timestamp: new Date().toISOString(),
             path: request.url,
+            message,
         });
+
+        // 서버 로그 출력
+        const logger: Logger = new Logger('GlobalExceptionsFilter');
+        logger.error(exception);
     }
 }

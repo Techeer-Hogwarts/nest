@@ -1,8 +1,4 @@
-import {
-    IsString,
-    IsNotEmpty,
-    IsInt,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -15,7 +11,6 @@ export class CreateStudyMemberRequest {
         description: '스터디팀 아이디',
     })
     studyTeamId: number;
-
 
     @IsNotEmpty()
     @IsString()

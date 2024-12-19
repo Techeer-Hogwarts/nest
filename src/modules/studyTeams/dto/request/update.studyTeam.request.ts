@@ -1,6 +1,5 @@
 import {
     IsString,
-    IsNotEmpty,
     IsOptional,
     IsBoolean,
     IsInt,
@@ -90,28 +89,47 @@ export class UpdateStudyTeamRequest {
     })
     recruitExplain: string;
 
-
     @IsOptional()
     @IsArray()
     @Transform(({ value }) => {
-      try {
-        return typeof value === 'string' ? JSON.parse(value) : value;
-      } catch (e) {
-        throw new Error('studyMember는 유효한 JSON 배열이어야 합니다.');
-      }
+        try {
+            return typeof value === 'string' ? JSON.parse(value) : value;
+        } catch (e) {
+            throw new Error('studyMember는 유효한 JSON 배열이어야 합니다.');
+        }
     })
     @ApiProperty({
         type: 'array',
         items: {
             type: 'object',
             properties: {
-                userId: { type: 'number', description: '사용자 ID', example: 1 },
-                isLeader: { type: 'boolean', description: '리더 여부', example: true }
-            }
+                userId: {
+                    type: 'number',
+                    description: '사용자 ID',
+                    example: 1,
+                },
+                isLeader: {
+                    type: 'boolean',
+                    description: '리더 여부',
+                    example: true,
+                },
+            },
         },
-        example: [{ userId: 1, isLeader: true }, { userId: 2, isLeader: false }],
+        example: [
+            {
+                userId: 1,
+                isLeader: true,
+            },
+            {
+                userId: 2,
+                isLeader: false,
+            },
+        ],
     })
-    studyMember: { userId: number; isLeader: boolean }[];
+    studyMember: {
+        userId: number;
+        isLeader: boolean;
+    }[];
 
     @IsOptional()
     @IsArray()
@@ -128,8 +146,7 @@ export class UpdateStudyTeamRequest {
         description: '삭제할 멤버 ID 배열',
     })
     deleteMembers: number[];
-    
+
     @ApiHideProperty() // Swagger에 표시되지 않도록 설정
     resultImages?: string[]; // 사용자가 입력하지 않음, 서버에서 자동 추가
-    
 }
