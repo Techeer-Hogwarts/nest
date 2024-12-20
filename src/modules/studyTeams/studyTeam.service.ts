@@ -1,18 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { StudyTeamRepository } from './repository/studyTeam.repository';
 import { CreateStudyTeamRequest } from './dto/request/create.studyTeam.request';
-import { AwsService } from 'src/awsS3/aws.service';
+import { AwsService } from '../../awsS3/aws.service';
 import {
     NotFoundUserException,
-    UploadStudyTeamException,
-    UpdateStudyTeamException,
     NotFoundStudyTeamException,
     NotStudyMemberException,
     AlreadyApprovedException,
     NotApprovedFileExtension,
-    UploadImageException,
     DuplicateStudyTeamNameException,
-} from 'src/global/exception/custom.exception';
+} from '../../global/exception/custom.exception';
 import { UpdateStudyTeamRequest } from './dto/request/update.studyTeam.request';
 import { CreateStudyMemberRequest } from '../studyMembers/dto/request/create.studyMember.request';
 import { StudyMemberRepository } from '../studyMembers/repository/studyMember.repository';
@@ -50,7 +47,7 @@ export class StudyTeamService {
                 `❌ [ERROR] 유저 확인 실패 (ID: ${studyTeamId}), User (ID: ${userId})`,
                 error,
             );
-            throw new Error('스터디 멤버 여부 확인 중 오류가 발생했습니다.');
+            throw error;
         }
     }
 
@@ -98,7 +95,7 @@ export class StudyTeamService {
                 '❌ [ERROR] S3 이미지 업로드 중 예외 발생: ',
                 error,
             );
-            throw new UploadImageException();
+            throw error;
         }
     }
 
@@ -164,7 +161,7 @@ export class StudyTeamService {
                 '❌ [ERROR] createStudyTeam 에서 예외 발생: ',
                 error,
             );
-            throw new UploadStudyTeamException();
+            throw error;
         }
     }
 
@@ -225,7 +222,7 @@ export class StudyTeamService {
                 '❌ [ERROR] updateStudyTeam 에서 예외 발생: ',
                 error,
             );
-            throw new UpdateStudyTeamException();
+            throw error;
         }
     }
 
@@ -364,7 +361,7 @@ export class StudyTeamService {
                 '❌ [ERROR] cancelApplication 요청 중 오류 발생: ',
                 error,
             );
-            throw new Error('스터디 지원 취소 중 오류가 발생했습니다.');
+            throw error;
         }
         try {
             const data = await this.studyMemberRepository.cancelApplication(
@@ -381,7 +378,7 @@ export class StudyTeamService {
                 '❌ [ERROR] cancelApplication 요청 중 오류 발생: ',
                 error,
             );
-            throw new Error('스터디 지원 취소 중 오류가 발생했습니다.');
+            throw error;
         }
     }
 

@@ -3,7 +3,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudyTeamRequest } from '../dto/request/create.studyTeam.request';
 import { StatusCategory } from '@prisma/client';
 import { UpdateStudyTeamRequest } from '../dto/request/update.studyTeam.request';
-import { CreateStudyMemberRequest } from '../../studyMembers/dto/request/create.studyMember.request';
 
 @Injectable()
 export class StudyTeamRepository {
@@ -124,8 +123,8 @@ export class StudyTeamRepository {
                     ? studyMembers.map((member) => member.userId)
                     : [];
 
-            const existingStudyMembers = await this.prisma.studyMember.findMany(
-                {
+            const existingStudyMembers =
+                (await this.prisma.studyMember.findMany({
                     where: {
                         studyTeamId: id,
                         userId: { in: userIds },
@@ -134,16 +133,14 @@ export class StudyTeamRepository {
                         id: true,
                         userId: true,
                     },
-                },
-            );
+                })) || [];
 
-            const studyMemberIdMap = existingStudyMembers.reduce(
-                (acc, member) => {
-                    acc[member.userId] = member.id;
-                    return acc;
-                },
-                {},
-            );
+            const studyMemberIdMap = Array.isArray(existingStudyMembers)
+                ? existingStudyMembers.reduce((acc, member) => {
+                      acc[member.userId] = member.id;
+                      return acc;
+                  }, {})
+                : {};
 
             const upsertMembers =
                 Array.isArray(studyMembers) && studyMembers.length > 0
@@ -256,48 +253,41 @@ export class StudyTeamRepository {
 
     async getUserStudyTeams(userId: number): Promise<any> {
         try {
-            const userStudyTeams = await this.prisma.studyTeam.findMany({
-                where: {
-                    isDeleted: false, // 삭제되지 않은 스터디만 조회
-                    studyMember: {
-                        some: {
-                            userId: userId,
-                            isDeleted: false, // 삭제되지 않은 멤버만 조회
-                        },
-                    },
-                },
-                include: {
-                    resultImages: {
-                        where: { isDeleted: false }, // 삭제되지 않은 이미지만 반환
-                        select: {
-                            imageUrl: true,
-                        },
-                    },
-                    studyMember: {
-                        where: {
-                            isDeleted: false,
-                            status: 'APPROVED',
-                        }, // 삭제되지 않고 APPROVED 된 멤버만
-                        select: {
-                            user: {
-                                select: { name: true }, // 유저의 이름만 가져오기
+            const userStudyTeams =
+                (await this.prisma.studyTeam.findMany({
+                    where: {
+                        isDeleted: false,
+                        studyMember: {
+                            some: {
+                                userId: userId,
+                                isDeleted: false,
                             },
                         },
                     },
-                },
-            });
+                    include: {
+                        resultImages: {
+                            where: { isDeleted: false },
+                            select: { imageUrl: true },
+                        },
+                        studyMember: {
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
+                            select: { user: { select: { name: true } } },
+                        },
+                    },
+                })) || [];
 
             // 🔥 데이터 변환 작업
             const formattedStudyTeams = userStudyTeams.map((study) => ({
                 ...study,
-                resultImages:
-                    study.resultImages.length > 0
-                        ? study.resultImages.map((image) => image.imageUrl)
-                        : [], // 빈 배열일 경우 그대로 빈 배열
-                studyMember:
-                    study.studyMember.length > 0
-                        ? study.studyMember.map((member) => member.user.name)
-                        : [], // 빈 배열로 변환
+                resultImages: Array.isArray(study?.resultImages)
+                    ? study.resultImages.map((image) => image.imageUrl)
+                    : [],
+                studyMember: Array.isArray(study?.studyMember)
+                    ? study.studyMember.map((member) => member.user.name)
+                    : [],
             }));
 
             this.logger.debug('✅ [SUCCESS] 유저 참여 스터디 목록 조회 성공');
@@ -317,45 +307,50 @@ export class StudyTeamRepository {
             const studyTeam = await this.prisma.studyTeam.findUnique({
                 where: {
                     id: id,
-                    isDeleted: false, // 삭제되지 않은 스터디만 조회
+                    isDeleted: false,
                 },
-                include: {
+                select: {
+                    id: true,
+                    name: true,
+                    notionLink: true,
+                    recruitExplain: true,
+                    recruitNum: true,
+                    rule: true,
+                    goal: true,
+                    studyExplain: true,
+                    isRecruited: true,
+                    isFinished: true,
                     resultImages: {
-                        where: { isDeleted: false }, // 삭제되지 않은 이미지만 반환
-                        select: {
-                            imageUrl: true,
-                        },
+                        where: { isDeleted: false },
+                        select: { imageUrl: true },
                     },
                     studyMember: {
                         where: {
                             isDeleted: false,
                             status: 'APPROVED',
-                        }, // 삭제되지 않고 APPROVED 된 멤버만
-                        select: {
-                            user: {
-                                select: { name: true }, // 유저의 이름만 가져오기
-                            },
                         },
+                        select: { user: { select: { name: true } } },
                     },
                 },
             });
 
             if (!studyTeam) {
-                return null;
+                this.logger.warn(`Study Team with ID ${id} not found.`);
+                throw new Error('해당 ID의 스터디 팀을 찾을 수 없습니다.');
             }
 
             const formattedStudyTeam = {
                 ...studyTeam,
-                resultImages:
-                    studyTeam.resultImages.length > 0
-                        ? studyTeam.resultImages.map((image) => image.imageUrl)
-                        : [], // 빈 배열일 경우 그대로 빈 배열
-                studyMember:
-                    studyTeam.studyMember.length > 0
-                        ? studyTeam.studyMember.map(
-                              (member) => member.user.name,
-                          )
-                        : [], // 빈 배열로 변환
+                resultImages: Array.isArray(studyTeam?.resultImages)
+                    ? studyTeam.resultImages.map(
+                          (image) => image?.imageUrl ?? 'Unknown',
+                      )
+                    : [],
+                studyMember: Array.isArray(studyTeam?.studyMember)
+                    ? studyTeam.studyMember.map(
+                          (member) => member?.user?.name ?? 'Unknown',
+                      )
+                    : [],
             };
 
             this.logger.debug('✅ [SUCCESS] 스터디 상세 조회 성공');
@@ -438,30 +433,6 @@ export class StudyTeamRepository {
                 error,
             );
             throw error;
-        }
-    }
-    async applyToStudyTeam(
-        createStudyMemberRequest: CreateStudyMemberRequest,
-        userId: number,
-    ): Promise<any> {
-        try {
-            const newApplication = await this.prisma.studyMember.create({
-                data: {
-                    studyTeamId: createStudyMemberRequest.studyTeamId,
-                    userId: userId, // userId는 별도의 매개변수로 전달
-                    status: 'PENDING',
-                    summary: createStudyMemberRequest.summary,
-                    isLeader: false,
-                },
-            });
-            this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
-            return newApplication;
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] applyToStudyTeam 에서 예외 발생: ',
-                error,
-            );
-            throw new Error('스터디 지원 중 오류가 발생했습니다.');
         }
     }
 }
