@@ -18,6 +18,8 @@ async function bootstrap(): Promise<void> {
                         /^https:\/\/.*-techeerzip\.vercel\.app$/,
                         /^https:\/\/www\.techeerzip\.cloud$/,
                         /^http:\/\/localhost:5173$/,
+                        /^http:\/\/localhost:8000$/,
+                        /^null$/, // Allow requests without Origin (like curl, Postman)
                     ];
 
                     if (
