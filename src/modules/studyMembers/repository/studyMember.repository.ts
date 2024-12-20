@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StatusCategory } from '@prisma/client';
 import { CreateStudyMemberRequest } from '../dto/request/create.studyMember.request';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class StudyMemberRepository {
@@ -83,31 +84,31 @@ export class StudyMemberRepository {
     // 스터디 지원 취소
     async cancelApplication(studyTeamId: number, userId: number): Promise<any> {
         try {
-            const existingData = await this.prisma.studyMember.findMany({
+            const existingData = await this.prisma.studyMember.findFirst({
                 where: {
                     studyTeamId: studyTeamId,
                     userId: userId,
                 },
             });
 
-            if (existingData.length === 0) {
+            if (!existingData) {
                 throw new Error('존재하지 않는 스터디 신청입니다.');
             }
 
-            const updatedData = await this.prisma.studyMember.updateMany({
+            const updatedData = await this.prisma.studyMember.update({
                 where: {
-                    studyTeamId: studyTeamId,
-                    userId: userId,
+                    id: existingData.id,
                 },
-                data: { isDeleted: true },
+                data: {
+                    isDeleted: true,
+                },
             });
 
-            this.logger.debug('✅ [INFO] updateMany 실행 결과:', updatedData);
+            this.logger.debug('✅ [INFO] update 실행 결과:', updatedData);
 
-            const checkData = await this.prisma.studyMember.findMany({
+            const checkData = await this.prisma.studyMember.findFirst({
                 where: {
-                    studyTeamId: studyTeamId,
-                    userId: userId,
+                    id: existingData.id,
                 },
             });
 
@@ -119,7 +120,11 @@ export class StudyMemberRepository {
                 '❌ [ERROR] cancelApplication 에서 예외 발생: ',
                 error,
             );
-            throw new Error('스터디 지원 취소 중 오류가 발생했습니다.');
+
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                throw error;
+            }
+            throw error;
         }
     }
 

@@ -9,7 +9,6 @@ import {
     mockStudyTeamWithMembers,
 } from './mock-data';
 
-
 describe('StudyTeamRepository', () => {
     let studyTeamRepository: StudyTeamRepository;
     let prismaService: PrismaService;
@@ -171,11 +170,11 @@ describe('StudyTeamRepository', () => {
                     name: 'Test Study',
                 },
             );
-    
+
             const result = await studyTeamRepository.updateStudyTeam(1, {
                 name: 'Test Study',
             });
-    
+
             // 방법 1: 모든 속성을 명시적으로 검증
             expect(result).toEqual({
                 id: 1,
@@ -193,13 +192,13 @@ describe('StudyTeamRepository', () => {
                 recruitNum: 5,
                 recruitExplain: 'Looking for dedicated learners',
             });
-    
+
             // 방법 2: 부분적 속성만 검증
             expect(result).toMatchObject({
                 id: 1,
                 name: 'Test Study',
             });
-    
+
             // Prisma의 update 호출을 검증
             expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
                 where: { id: 1 },
@@ -266,7 +265,7 @@ describe('StudyTeamRepository', () => {
                     ...mockStudyTeam1,
                     resultImages: [],
                     studyMember: [],
-                }
+                },
             ]);
             expect(prismaService.studyTeam.findMany).toHaveBeenCalledWith({
                 where: {
