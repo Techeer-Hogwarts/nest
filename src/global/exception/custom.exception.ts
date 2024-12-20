@@ -18,24 +18,6 @@ export class NotFoundUserException extends HttpException {
     }
 }
 
-export class UploadStudyTeamException extends HttpException {
-    constructor() {
-        super(
-            '스터디 공고 업로드에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
-export class UpdateStudyTeamException extends HttpException {
-    constructor() {
-        super(
-            '스터디 공고 업데이트에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
 export class NotFoundStudyTeamException extends HttpException {
     constructor() {
         super('스터디 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
@@ -57,15 +39,6 @@ export class AlreadyApprovedException extends HttpException {
 export class NotApprovedFileExtension extends HttpException {
     constructor() {
         super('허용되지 않은 파일 형식입니다. ', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class UploadImageException extends HttpException {
-    constructor() {
-        super(
-            '이미지 업로드에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
     }
 }
 
