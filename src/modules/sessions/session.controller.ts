@@ -34,9 +34,14 @@ export class SessionController {
     })
     async createSession(
         @Body() createSessionRequest: CreateSessionRequest,
+        @Req() request: Request,
     ): Promise<any> {
+        const user = request.user as any;
         const session: GetSessionResponse =
-            await this.sessionService.createSession(createSessionRequest);
+            await this.sessionService.createSession(
+                user.id,
+                createSessionRequest,
+            );
         return {
             code: 201,
             message: '세션 게시물을 생성했습니다.',

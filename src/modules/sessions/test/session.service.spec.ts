@@ -13,19 +13,13 @@ import {
     bestSessionEntities,
     getBestSessionsResponse,
     getSessionsQueryRequest,
-    userEntity,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
-import {
-    NotFoundSessionException,
-    NotFoundUserException,
-} from '../../../global/exception/custom.exception';
-import { UserRepository } from '../../../modules/users/repository/user.repository';
+import { ForbiddenAccessException } from '../../../global/exception/custom.exception';
 
 describe('SessionService', (): void => {
     let service: SessionService;
     let repository: SessionRepository;
-    let userRepository: UserRepository;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -34,6 +28,7 @@ describe('SessionService', (): void => {
                 {
                     provide: SessionRepository,
                     useValue: {
+                        findById: jest.fn(),
                         createSession: jest.fn(),
                         getSession: jest.fn(),
                         getBestSessions: jest.fn(),
@@ -43,18 +38,11 @@ describe('SessionService', (): void => {
                         updateSession: jest.fn(),
                     },
                 },
-                {
-                    provide: UserRepository,
-                    useValue: {
-                        findById: jest.fn(),
-                    },
-                },
             ],
         }).compile();
 
         service = module.get<SessionService>(SessionService);
         repository = module.get<SessionRepository>(SessionRepository);
-        userRepository = module.get<UserRepository>(UserRepository);
     });
 
     it('should be defined', (): void => {
@@ -67,11 +55,14 @@ describe('SessionService', (): void => {
                 sessionEntity(),
             );
 
-            const result: GetSessionResponse =
-                await service.createSession(createSessionRequest);
+            const result: GetSessionResponse = await service.createSession(
+                1,
+                createSessionRequest,
+            );
 
             expect(result).toEqual(getSessionResponse);
             expect(repository.createSession).toHaveBeenCalledWith(
+                1,
                 createSessionRequest,
             );
             expect(repository.createSession).toHaveBeenCalledTimes(1);
@@ -173,53 +164,49 @@ describe('SessionService', (): void => {
 
     describe('deleteSession', () => {
         it('should successfully delete a session', async () => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(
-                userEntity,
-            );
+            const session = sessionEntity({ id: 100 });
+
+            jest.spyOn(repository, 'findById').mockResolvedValue(session);
             jest.spyOn(repository, 'deleteSession').mockResolvedValue(
                 undefined,
             );
 
-            await service.deleteSession(1, 1);
+            await service.deleteSession(1, 100);
 
-            expect(repository.deleteSession).toHaveBeenCalledWith(1);
+            expect(repository.findById).toHaveBeenCalledWith(100);
+            expect(repository.findById).toHaveBeenCalledTimes(1);
+
+            expect(repository.deleteSession).toHaveBeenCalledWith(100);
             expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the user does not exist', async () => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+        it('should throw ForbiddenAccessException if the user does not own the session', async () => {
+            const session = sessionEntity({
+                id: 100,
+                userId: 2,
+            });
 
-            await expect(service.deleteSession(1, 1)).rejects.toThrow(
-                new NotFoundUserException(),
-            );
-        });
+            jest.spyOn(repository, 'findById').mockResolvedValue(session);
 
-        it('should throw NotFoundSessionException if session does not exist', async () => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(
-                userEntity,
+            await expect(service.deleteSession(1, 100)).rejects.toThrow(
+                ForbiddenAccessException,
             );
-            jest.spyOn(repository, 'deleteSession').mockRejectedValue(
-                new NotFoundSessionException(),
-            );
-
-            await expect(service.deleteSession(1, 1)).rejects.toThrow(
-                NotFoundSessionException,
-            );
+            expect(repository.findById).toHaveBeenCalledWith(100); // sessionId 확인
         });
     });
 
     describe('updateSession', (): void => {
         it('should successfully update a session and return a GetSessionDto', async (): Promise<void> => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(
-                userEntity,
-            );
+            const session = sessionEntity({ id: 100 });
+
+            jest.spyOn(repository, 'findById').mockResolvedValue(session);
             jest.spyOn(repository, 'updateSession').mockResolvedValue(
                 updatedSessionEntity,
             );
 
             const result: GetSessionResponse = await service.updateSession(
                 1,
-                1,
+                100,
                 updateSessionRequest,
             );
 
@@ -229,32 +216,24 @@ describe('SessionService', (): void => {
             expect(result).toBeInstanceOf(GetSessionResponse);
 
             expect(repository.updateSession).toHaveBeenCalledWith(
-                1,
+                100,
                 updateSessionRequest,
             );
-
             expect(repository.updateSession).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the user does not exist', async (): Promise<void> => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+        it('should throw ForbiddenAccessException if the user does not own the session', async (): Promise<void> => {
+            const session = sessionEntity({
+                id: 100,
+                userId: 2,
+            });
+
+            jest.spyOn(repository, 'findById').mockResolvedValue(session);
 
             await expect(
-                service.updateSession(1, 1, updateSessionRequest),
-            ).rejects.toThrow(new NotFoundUserException());
-        });
-
-        it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(
-                userEntity,
-            );
-            jest.spyOn(repository, 'updateSession').mockRejectedValue(
-                new NotFoundSessionException(),
-            );
-
-            await expect(
-                service.updateSession(1, 1, updateSessionRequest),
-            ).rejects.toThrow(NotFoundSessionException);
+                service.updateSession(1, 100, updateSessionRequest),
+            ).rejects.toThrow(ForbiddenAccessException);
+            expect(repository.findById).toHaveBeenCalledWith(100); // sessionId 확인
         });
     });
 });

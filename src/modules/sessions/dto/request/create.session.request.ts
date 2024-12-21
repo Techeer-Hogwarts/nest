@@ -1,15 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SessionCategory, SessionDate, SessionPosition } from '@prisma/client';
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsEnum, IsString } from 'class-validator';
 
 export class CreateSessionRequest {
-    @IsNumber()
-    @ApiProperty({
-        example: 1,
-        description: '작성자 아이디',
-    })
-    readonly userId: number;
-
     @IsString()
     @ApiProperty({
         example: 'https://example.com',

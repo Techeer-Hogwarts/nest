@@ -6,21 +6,21 @@ import { GetSessionResponse } from './dto/response/get.session.response';
 import { UpdateSessionRequest } from './dto/request/update.session.request';
 import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
-import { UserRepository } from '../users/repository/user.repository';
-import { NotFoundUserException } from '../../global/exception/custom.exception';
+import { ForbiddenAccessException } from '../../global/exception/custom.exception';
 
 @Injectable()
 export class SessionService {
-    constructor(
-        private readonly sessionRepository: SessionRepository,
-        private readonly userRepository: UserRepository,
-    ) {}
+    constructor(private readonly sessionRepository: SessionRepository) {}
 
     async createSession(
+        userId: number,
         createSessionRequest: CreateSessionRequest,
     ): Promise<GetSessionResponse> {
         const sessionEntity: SessionEntity =
-            await this.sessionRepository.createSession(createSessionRequest);
+            await this.sessionRepository.createSession(
+                userId,
+                createSessionRequest,
+            );
         return new GetSessionResponse(sessionEntity);
     }
 
@@ -62,10 +62,10 @@ export class SessionService {
     }
 
     async deleteSession(userId: number, sessionId: number): Promise<void> {
-        const user = await this.userRepository.findById(userId);
+        const session = await this.sessionRepository.findById(sessionId);
 
-        if (!user) {
-            throw new NotFoundUserException();
+        if (session.userId !== userId) {
+            throw new ForbiddenAccessException();
         }
 
         return this.sessionRepository.deleteSession(sessionId);
@@ -76,17 +76,17 @@ export class SessionService {
         sessionId: number,
         updateSessionRequest: UpdateSessionRequest,
     ): Promise<GetSessionResponse> {
-        const user = await this.userRepository.findById(userId);
+        const session = await this.sessionRepository.findById(sessionId);
 
-        if (!user) {
-            throw new NotFoundUserException();
+        if (session.userId !== userId) {
+            throw new ForbiddenAccessException();
         }
 
-        const session: SessionEntity =
+        const updatedSession: SessionEntity =
             await this.sessionRepository.updateSession(
                 sessionId,
                 updateSessionRequest,
             );
-        return new GetSessionResponse(session);
+        return new GetSessionResponse(updatedSession);
     }
 }

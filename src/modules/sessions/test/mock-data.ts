@@ -4,12 +4,10 @@ import { GetSessionResponse } from '../dto/response/get.session.response';
 import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
-import { UserEntity } from '../../../modules/users/entities/user.entity';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
 export const createSessionRequest: CreateSessionRequest = {
-    userId: 1,
     thumbnail: 'https://example.com',
     title: 'Test Post',
     presenter: '발표자',
@@ -25,7 +23,7 @@ export const sessionEntity = (
 ): SessionEntity => {
     return {
         id: 1,
-        userId: createSessionRequest.userId,
+        userId: 1,
         thumbnail: createSessionRequest.thumbnail,
         title: createSessionRequest.title,
         presenter: createSessionRequest.presenter,
@@ -149,36 +147,3 @@ export const updateSessionRequest: UpdateSessionRequest = {
 export const updatedSessionEntity: SessionEntity = sessionEntity({
     ...updateSessionRequest,
 });
-
-export const userEntity: UserEntity = {
-    id: 1,
-    email: 'test@test.com',
-    password: 'password123',
-    name: 'test',
-    year: 6,
-    isLft: false,
-    githubUrl: 'https://github.com/test',
-    blogUrl: 'https://example.com/blog',
-    mainPosition: 'Backend',
-    subPosition: 'Frontend',
-    school: 'Hogwarts',
-    class: '1학년',
-    profileImage: 'http://profileimage.com',
-    isDeleted: false,
-    roleId: 1,
-    isAuth: true,
-    nickname: 'tester',
-    stack: ['JavaScript', 'NestJS'],
-    isIntern: false,
-    internCompanyName: 'crowdStrike',
-    internPosition: 'Frontend',
-    isFullTime: false,
-    fullTimeCompanyName: 'paloalto',
-    fullTimePosition: 'Backend',
-    internStartDate: null,
-    internEndDate: null,
-    fullTimeStartDate: null,
-    fullTimeEndDate: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-};
