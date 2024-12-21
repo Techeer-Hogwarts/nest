@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import {
     paginationQueryDto,
     updatedResumeEntity,
@@ -15,6 +14,7 @@ import { ResumeController } from '../resume.controller';
 import { ResumeService } from '../resume.service';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 describe('ResumeController', (): void => {
     let controller: ResumeController;
@@ -121,13 +121,13 @@ describe('ResumeController', (): void => {
             expect(service.getResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException when resume not found', async (): Promise<void> => {
+        it('should throw NotFoundResumeException when resume not found', async (): Promise<void> => {
             jest.spyOn(service, 'getResume').mockRejectedValue(
-                new NotFoundException(),
+                new NotFoundResumeException(),
             );
 
             await expect(controller.getResume(999)).rejects.toThrow(
-                NotFoundException,
+                NotFoundResumeException,
             );
         });
     });
@@ -192,13 +192,13 @@ describe('ResumeController', (): void => {
             expect(service.deleteResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
+        it('should throw NotFoundResumeException if the resume does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'deleteResume').mockRejectedValue(
-                new NotFoundException('이력서를 찾을 수 없습니다.'),
+                new NotFoundResumeException(),
             );
 
             await expect(controller.deleteResume(request, 1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundResumeException,
             );
 
             expect(service.deleteResume).toHaveBeenCalledWith(user, 1);

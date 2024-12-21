@@ -12,9 +12,9 @@ import {
     updatedResumeEntity,
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
-import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { Prisma } from '@prisma/client';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -96,13 +96,13 @@ describe('ResumeRepository', (): void => {
             expect(await repository.getResume(1)).toEqual(resumeEntity());
         });
 
-        it('should throw a NotFoundException if no resume is found', async (): Promise<void> => {
+        it('should throw a NotFoundResumeException if no resume is found', async (): Promise<void> => {
             jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(
                 null,
             );
 
             await expect(repository.getResume(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundResumeException,
             );
         });
     });
@@ -210,7 +210,7 @@ describe('ResumeRepository', (): void => {
             expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
+        it('should throw NotFoundResumeException if the resume does not exist', async (): Promise<void> => {
             const prismaError: PrismaClientKnownRequestError =
                 new PrismaClientKnownRequestError('Record not found', {
                     code: 'P2025',
@@ -223,7 +223,7 @@ describe('ResumeRepository', (): void => {
 
             await expect(
                 repository.updateResume(1, updateResumeRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundResumeException);
             expect(prismaService.resume.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,

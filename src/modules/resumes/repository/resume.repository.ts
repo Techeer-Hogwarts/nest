@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
@@ -6,6 +6,7 @@ import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { Prisma } from '@prisma/client';
 import { UpdateResumeRequest } from '../dto/request/update.resume.request';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class ResumeRepository {
@@ -37,7 +38,7 @@ export class ResumeRepository {
         });
 
         if (!resume) {
-            throw new NotFoundException('이력서를 찾을 수 없습니다.');
+            throw new NotFoundResumeException();
         }
         return resume;
     }
@@ -123,7 +124,7 @@ export class ResumeRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('이력서를 찾을 수 없습니다.');
+                throw new NotFoundResumeException();
             }
             throw error;
         }
@@ -157,7 +158,7 @@ export class ResumeRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('이력서를 찾을 수 없습니다.');
+                throw new NotFoundResumeException();
             }
             throw error;
         }

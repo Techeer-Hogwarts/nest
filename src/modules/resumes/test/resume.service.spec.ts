@@ -198,7 +198,7 @@ describe('ResumeService', (): void => {
             expect(repository.deleteResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if resume does not exist', async (): Promise<void> => {
+        it('should throw NotFoundResumeException if resume does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'getResume').mockResolvedValue(undefined);
             jest.spyOn(repository, 'deleteResume').mockRejectedValue(
                 new NotFoundResumeException(),
@@ -236,7 +236,7 @@ describe('ResumeService', (): void => {
             expect(repository.updateResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
+        it('should throw NotFoundResumeException if the resume does not exist', async (): Promise<void> => {
             jest.spyOn(repository, 'updateResume').mockRejectedValue(
                 new NotFoundResumeException(),
             );
