@@ -1,5 +1,5 @@
 # 빌드 스테이지
-FROM node:18-alpine AS builder
+FROM node:18-alpine3.20 AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN npm run build
 RUN npx tsc prisma/seed.ts --outDir dist/prisma
 
 # 베포용 빌드 이미지 스테이지
-FROM node:18-alpine
+FROM node:18-alpine3.20
 
 # 프로덕션 환경변수
 ENV NODE_ENV=production
