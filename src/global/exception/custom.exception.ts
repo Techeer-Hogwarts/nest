@@ -14,6 +14,12 @@ export class NotFoundEventException extends HttpException {
 
 export class NotFoundUserException extends HttpException {
     constructor() {
-        super('사용자가 존재하지 않습니다.', HttpStatus.NOT_FOUND);
+        super('사용자를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
+    }
+}
+
+export class ForbiddenAccessException extends HttpException {
+    constructor() {
+        super('해당 게시물에 대한 권한이 없습니다.', HttpStatus.FORBIDDEN);
     }
 }
