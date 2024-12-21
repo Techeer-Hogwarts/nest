@@ -12,7 +12,7 @@ import {
 } from './mock-data';
 import { GetEventResponse } from '../dto/response/get.event.response';
 import { EventEntity } from '../entities/event.entity';
-import { NotFoundEventException } from '../../../global/exception/custom.exception';
+import { ForbiddenAccessException } from '../../../global/exception/custom.exception';
 
 describe('EventService', (): void => {
     let service: EventService;
@@ -25,6 +25,7 @@ describe('EventService', (): void => {
                 {
                     provide: EventRepository,
                     useValue: {
+                        findById: jest.fn(),
                         createEvent: jest.fn(),
                         getEventList: jest.fn(),
                         getEvent: jest.fn(),
@@ -49,11 +50,14 @@ describe('EventService', (): void => {
                 eventEntity(),
             );
 
-            const result: GetEventResponse =
-                await service.createEvent(createEventRequest);
+            const result: GetEventResponse = await service.createEvent(
+                1,
+                createEventRequest,
+            );
 
             expect(result).toEqual(getEventResponse);
             expect(repository.createEvent).toHaveBeenCalledWith(
+                1,
                 createEventRequest,
             );
             expect(repository.createEvent).toHaveBeenCalledTimes(1);
@@ -102,12 +106,16 @@ describe('EventService', (): void => {
 
     describe('updateEvent', (): void => {
         it('should successfully update a event and return a GetEventResponse', async (): Promise<void> => {
+            const event = eventEntity({ id: 100 });
+
+            jest.spyOn(repository, 'findById').mockResolvedValue(event);
             jest.spyOn(repository, 'updateEvent').mockResolvedValue(
                 updatedEventEntity,
             );
 
             const result: GetEventResponse = await service.updateEvent(
                 1,
+                100,
                 updateEventRequest,
             );
 
@@ -115,50 +123,56 @@ describe('EventService', (): void => {
             expect(result).toBeInstanceOf(GetEventResponse);
 
             expect(repository.updateEvent).toHaveBeenCalledWith(
-                1,
+                100,
                 updateEventRequest,
             );
 
             expect(repository.updateEvent).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'updateEvent').mockRejectedValue(
-                new NotFoundEventException(),
-            );
+        it('should throw ForbiddenAccessException if the user does not own the event', async (): Promise<void> => {
+            const event = eventEntity({
+                id: 100,
+                userId: 2,
+            });
+
+            jest.spyOn(repository, 'findById').mockResolvedValue(event);
 
             await expect(
-                service.updateEvent(1, updateEventRequest),
-            ).rejects.toThrow(NotFoundEventException);
-
-            expect(repository.updateEvent).toHaveBeenCalledWith(
-                1,
-                updateEventRequest,
-            );
-            expect(repository.updateEvent).toHaveBeenCalledTimes(1);
+                service.updateEvent(1, 100, updateEventRequest),
+            ).rejects.toThrow(ForbiddenAccessException);
+            expect(repository.findById).toHaveBeenCalledWith(100); // eventId 확인
         });
     });
 
     describe('deleteEvent', (): void => {
         it('should successfully delete a event', async (): Promise<void> => {
+            const event = eventEntity({ id: 100 });
+
+            jest.spyOn(repository, 'findById').mockResolvedValue(event);
             jest.spyOn(repository, 'deleteEvent').mockResolvedValue(undefined);
 
-            await service.deleteEvent(1);
+            await service.deleteEvent(1, 100);
 
-            expect(repository.deleteEvent).toHaveBeenCalledWith(1);
+            expect(repository.findById).toHaveBeenCalledWith(100);
+            expect(repository.findById).toHaveBeenCalledTimes(1);
+
+            expect(repository.deleteEvent).toHaveBeenCalledWith(100);
             expect(repository.deleteEvent).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if event does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'deleteEvent').mockRejectedValue(
-                new NotFoundEventException(),
-            );
+        it('should throw ForbiddenAccessException if the user does not own the event', async () => {
+            const event = eventEntity({
+                id: 100,
+                userId: 2,
+            });
 
-            await expect(service.deleteEvent(1)).rejects.toThrow(
-                NotFoundEventException,
+            jest.spyOn(repository, 'findById').mockResolvedValue(event);
+
+            await expect(service.deleteEvent(1, 100)).rejects.toThrow(
+                ForbiddenAccessException,
             );
-            expect(repository.deleteEvent).toHaveBeenCalledWith(1);
-            expect(repository.deleteEvent).toHaveBeenCalledTimes(1);
+            expect(repository.findById).toHaveBeenCalledWith(100); // eventId 확인
         });
     });
 });

@@ -8,6 +8,7 @@ import {
     Patch,
     Post,
     Query,
+    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -16,6 +17,7 @@ import { CreateEventRequest } from './dto/request/create.event.request';
 import { GetEventResponse } from './dto/response/get.event.response';
 import { GetEventListQueryRequest } from './dto/request/get.event.query.request';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
 
 @ApiTags('events')
 @Controller('/events')
@@ -30,9 +32,13 @@ export class EventController {
     })
     async createEvent(
         @Body() createEventRequest: CreateEventRequest,
+        @Req() request: Request,
     ): Promise<any> {
-        const event: GetEventResponse =
-            await this.eventService.createEvent(createEventRequest);
+        const user = request.user as any;
+        const event: GetEventResponse = await this.eventService.createEvent(
+            user.id,
+            createEventRequest,
+        );
         return {
             code: 201,
             message: '이벤트를 생성했습니다.',
@@ -81,8 +87,11 @@ export class EventController {
     async updateEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
         @Body() updateEventRequest: CreateEventRequest,
+        @Req() request: Request,
     ): Promise<any> {
+        const user = request.user as any;
         const event: GetEventResponse = await this.eventService.updateEvent(
+            user.id,
             eventId,
             updateEventRequest,
         );
@@ -101,8 +110,10 @@ export class EventController {
     })
     async deleteEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
+        @Req() request: Request,
     ): Promise<any> {
-        await this.eventService.deleteEvent(eventId);
+        const user = request.user as any;
+        await this.eventService.deleteEvent(user.id, eventId);
         return {
             code: 200,
             message: '이벤트가 삭제되었습니다.',
