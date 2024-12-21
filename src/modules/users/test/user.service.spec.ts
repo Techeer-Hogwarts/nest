@@ -92,6 +92,7 @@ describe('UserService', () => {
             const createResumeRequest: CreateResumeRequest = {
                 title: 'My Resume',
                 url: 'https://resume.com',
+                position: 'Backend',
                 category: 'PORTFOLIO',
             };
 

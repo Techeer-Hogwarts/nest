@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import {
     paginationQueryDto,
     updatedResumeEntity,
@@ -8,13 +7,20 @@ import {
     getResumeResponse,
     getResumesQueryRequest,
     getBestResumeResponseList,
+    request,
+    user,
 } from './mock-data';
 import { ResumeController } from '../resume.controller';
 import { ResumeService } from '../resume.service';
+import { UserRepository } from '../../users/repository/user.repository';
+import { JwtService } from '@nestjs/jwt';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 describe('ResumeController', (): void => {
     let controller: ResumeController;
     let service: ResumeService;
+    let userRepository: UserRepository;
+    let jwtService: JwtService;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -23,6 +29,7 @@ describe('ResumeController', (): void => {
                 {
                     provide: ResumeService,
                     useValue: {
+                        canActivate: jest.fn(() => true), // 항상 true를 반환하도록 Mock 처리
                         createResume: jest.fn(),
                         getBestResumes: jest.fn(),
                         getResume: jest.fn(),
@@ -32,36 +39,46 @@ describe('ResumeController', (): void => {
                         updateResume: jest.fn(),
                     },
                 },
+                {
+                    provide: UserRepository,
+                    useValue: {},
+                },
+                JwtService,
             ],
         }).compile();
 
         controller = module.get<ResumeController>(ResumeController);
         service = module.get<ResumeService>(ResumeService);
+        userRepository = module.get<UserRepository>(UserRepository);
+        jwtService = module.get<JwtService>(JwtService);
     });
 
     it('should be defined', (): void => {
         expect(controller).toBeDefined();
+        expect(service).toBeDefined();
+        expect(userRepository).toBeDefined();
+        expect(jwtService).toBeDefined();
     });
 
     describe('createResume', (): void => {
         it('should successfully create a resume', async (): Promise<void> => {
             jest.spyOn(service, 'createResume').mockResolvedValue(
-                getResumeResponseList[0],
+                getResumeResponse,
             );
 
             const result = await controller.createResume(
-                1,
+                request,
                 createResumeRequest,
             );
 
             expect(result).toEqual({
                 code: 201,
                 message: '이력서를 생성했습니다.',
-                data: getResumeResponseList[0],
+                data: getResumeResponse,
             });
             expect(service.createResume).toHaveBeenCalledWith(
                 createResumeRequest,
-                1,
+                user,
             );
             expect(service.createResume).toHaveBeenCalledTimes(1);
         });
@@ -104,13 +121,13 @@ describe('ResumeController', (): void => {
             expect(service.getResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException when resume not found', async (): Promise<void> => {
+        it('should throw NotFoundResumeException when resume not found', async (): Promise<void> => {
             jest.spyOn(service, 'getResume').mockRejectedValue(
-                new NotFoundException(),
+                new NotFoundResumeException(),
             );
 
             await expect(controller.getResume(999)).rejects.toThrow(
-                NotFoundException,
+                NotFoundResumeException,
             );
         });
     });
@@ -165,26 +182,26 @@ describe('ResumeController', (): void => {
         it('should successfully delete a resume', async (): Promise<void> => {
             jest.spyOn(service, 'deleteResume').mockResolvedValue(undefined);
 
-            const result = await controller.deleteResume(1);
+            const result = await controller.deleteResume(request, 1);
 
             expect(result).toEqual({
                 code: 200,
                 message: '이력서가 삭제되었습니다.',
             });
-            expect(service.deleteResume).toHaveBeenCalledWith(1);
+            expect(service.deleteResume).toHaveBeenCalledWith(user, 1);
             expect(service.deleteResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
+        it('should throw NotFoundResumeException if the resume does not exist', async (): Promise<void> => {
             jest.spyOn(service, 'deleteResume').mockRejectedValue(
-                new NotFoundException('이력서를 찾을 수 없습니다.'),
+                new NotFoundResumeException(),
             );
 
-            await expect(controller.deleteResume(1)).rejects.toThrow(
-                NotFoundException,
+            await expect(controller.deleteResume(request, 1)).rejects.toThrow(
+                NotFoundResumeException,
             );
 
-            expect(service.deleteResume).toHaveBeenCalledWith(1);
+            expect(service.deleteResume).toHaveBeenCalledWith(user, 1);
             expect(service.deleteResume).toHaveBeenCalledTimes(1);
         });
     });
@@ -196,6 +213,7 @@ describe('ResumeController', (): void => {
             );
 
             const result = await controller.updateResume(
+                request,
                 1,
                 updatedResumeEntity,
             );
@@ -206,6 +224,7 @@ describe('ResumeController', (): void => {
                 data: updatedResumeEntity,
             });
             expect(service.updateResume).toHaveBeenCalledWith(
+                user,
                 1,
                 updatedResumeEntity,
             );
