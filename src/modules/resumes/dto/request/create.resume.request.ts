@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ResumeCategory } from '@prisma/client';
-import { IsString, IsUrl } from 'class-validator';
+import { IsEnum, IsString, IsUrl } from 'class-validator';
 
 export class CreateResumeRequest {
     @IsUrl()
@@ -10,12 +10,19 @@ export class CreateResumeRequest {
     })
     readonly url: string;
 
-    @IsString()
+    @IsEnum(ResumeCategory)
     @ApiProperty({
         example: 'PORTFOLIO',
         description: '이력서 타입',
     })
     readonly category: ResumeCategory;
+
+    @IsString()
+    @ApiProperty({
+        example: 'BACKEND',
+        description: '이력서 포지션',
+    })
+    readonly position: string;
 
     @IsString()
     @ApiProperty({

@@ -12,6 +12,7 @@ export class ResumeEntity implements Resume {
     likeCount: number;
     viewCount: number;
     category: ResumeCategory;
+    position: string;
 
     user: User;
 }

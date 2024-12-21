@@ -46,6 +46,7 @@ export const request: Request = {
 export const createResumeRequest: CreateResumeRequest = {
     url: 'https://example.com/resume.pdf',
     category: 'PORTFOLIO',
+    position: 'BACKEND',
     title: '스타트업',
 };
 
@@ -59,6 +60,7 @@ export const resumeEntity = (
         url: createResumeRequest.url,
         isMain: false,
         category: createResumeRequest.category,
+        position: createResumeRequest.position,
         createdAt: new Date('2024-09-24T08:51:54.000Z'),
         updatedAt: new Date('2024-09-24T08:51:54.000Z'),
         isDeleted: false,
