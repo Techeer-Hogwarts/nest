@@ -1,24 +1,26 @@
 version: '3.8'
 
 services:
-    nest:
-        container_name: nest
-        build:
-            context: .
-            dockerfile: Dockerfile
-        restart: always
-        env_file:
-            - .env
-        ports:
-            - '8000:8000'
-        depends_on:
-            - postgresql
-        networks:
-            - techeerism
+    # nest:
+    #     container_name: nest
+    #     build:
+    #         context: .
+    #         dockerfile: Dockerfile
+    #     restart: always
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - '8000:8000'
+    #     depends_on:
+    #         - postgresql
+    #         - redis
+    #     networks:
+    #         - techeerism
+
 
     postgresql:
         container_name: postgresql
-        image: postgres:12.0-alpine
+        image: postgres:14-alpine3.20
         restart: always
         environment:
             POSTGRES_USER: ${POSTGRES_USERNAME}
@@ -27,7 +29,7 @@ services:
         volumes:
             - techeerism-db:/techeerism-db/postgres-data
         ports:
-            - '5001:5432'
+            - '5432:5432'
         networks:
             - techeerism
 
@@ -52,6 +54,9 @@ services:
         restart: always
         ports:
             - '6379:6379'
+        networks:
+            - techeerism
+
 
     redis-insight:
         container_name: redis-insight
@@ -61,6 +66,7 @@ services:
             - '8001:8001'
         networks:
             - techeerism
+
 
 networks:
     techeerism:
