@@ -105,7 +105,8 @@ export class BadRequestException extends HttpException {
             'isIntern이나 IsFulltime false일 때 인턴 관련 필드를 입력할 수 없습니다.',
             HttpStatus.BAD_REQUEST,
         );
-
+    }
+}
 export class NotFoundStudyTeamException extends HttpException {
     constructor() {
         super('스터디 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
