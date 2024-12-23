@@ -68,15 +68,26 @@ export class UserRepository {
                     profileImage: true,
                     githubUrl: true,
                     blogUrl: true,
-                    teamMembers: {
+                    projectMembers: {
                         where: {
                             isDeleted: false,
                         },
                         select: {
-                            team: {
+                            projectTeam: {
                                 select: {
                                     name: true,
-                                    category: true,
+                                },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            studyTeam: {
+                                select: {
+                                    name: true,
                                 },
                             },
                         },
@@ -98,10 +109,16 @@ export class UserRepository {
                     profileImage: user.profileImage,
                     githubUrl: user.githubUrl,
                     blogUrl: user.blogUrl,
-                    teams: (user.teamMembers || []).map((teamMember) => ({
-                        name: teamMember.team.name,
-                        category: teamMember.team.category,
-                    })),
+                    projectTeams: (user.projectMembers || []).map(
+                        (projectMember) => ({
+                            name: projectMember.projectTeam.name,
+                        }),
+                    ),
+                    studyTeams: (user.studyMembers || []).map(
+                        (studyMember) => ({
+                            name: studyMember.studyTeam.name,
+                        }),
+                    ),
                 };
             });
     }
@@ -215,15 +232,26 @@ export class UserRepository {
                     school: true,
                     class: true,
                     profileImage: true,
-                    teamMembers: {
+                    projectMembers: {
                         where: {
                             isDeleted: false,
                         },
                         select: {
-                            team: {
+                            projectTeam: {
                                 select: {
                                     name: true,
-                                    category: true,
+                                },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            studyTeam: {
+                                select: {
+                                    name: true,
                                 },
                             },
                         },
@@ -233,8 +261,11 @@ export class UserRepository {
             .then((users) =>
                 users.map((user) => ({
                     ...user,
-                    teams: (user.teamMembers || []).map(
-                        (teamMember) => teamMember.team,
+                    projectTeams: (user.projectMembers || []).map(
+                        (projectMember) => projectMember.projectTeam,
+                    ),
+                    studyTeams: (user.studyMembers || []).map(
+                        (studyMember) => studyMember.studyTeam,
                     ),
                 })),
             );

@@ -204,9 +204,9 @@ describe('UserRepository', () => {
 
     describe('findById', () => {
         it('should find a user by ID', async () => {
-            const userId = 999;
-            const user = {
-                id: userId,
+            const userId = 1;
+            const mockedUser = {
+                id: 1,
                 email: 'test@example.com',
                 password: 'password123',
                 name: 'Test User',
@@ -236,18 +236,20 @@ describe('UserRepository', () => {
                 fullTimeEndDate: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                teamMembers: [
+                projectMembers: [
                     {
-                        team: {
-                            name: 'Team A',
-                            category: 'Study',
-                        },
+                        projectTeam: { name: 'Team A' },
+                    },
+                ],
+                studyMembers: [
+                    {
+                        studyTeam: { name: 'Team A' },
                     },
                 ],
             };
 
             jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(
-                user,
+                mockedUser,
             );
 
             const result = await userRepository.findById(userId);
@@ -269,14 +271,19 @@ describe('UserRepository', () => {
                     profileImage: true,
                     githubUrl: true,
                     blogUrl: true,
-                    teamMembers: {
+                    projectMembers: {
                         where: { isDeleted: false },
                         select: {
-                            team: {
-                                select: {
-                                    name: true,
-                                    category: true,
-                                },
+                            projectTeam: {
+                                select: { name: true },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: { isDeleted: false },
+                        select: {
+                            studyTeam: {
+                                select: { name: true },
                             },
                         },
                     },
@@ -295,10 +302,14 @@ describe('UserRepository', () => {
                 profileImage: 'https://example.com/image.png',
                 githubUrl: 'https://github.com/tester',
                 blogUrl: 'https://blog.example.com',
-                teams: [
+                projectTeams: [
                     {
                         name: 'Team A',
-                        category: 'Study',
+                    },
+                ],
+                studyTeams: [
+                    {
+                        name: 'Team A',
                     },
                 ],
             });
@@ -652,11 +663,17 @@ describe('UserRepository', () => {
                     githubUrl: 'https://github.com/test',
                     blogUrl: 'https://example.com/blog',
                     subPosition: 'Frontend',
-                    teamMembers: [
+                    projectMembers: [
                         {
-                            team: {
+                            projectTeam: {
                                 name: 'Team A',
-                                category: 'Study',
+                            },
+                        },
+                    ],
+                    studyMembers: [
+                        {
+                            studyTeam: {
+                                name: 'Team A',
                             },
                         },
                     ],
@@ -665,7 +682,12 @@ describe('UserRepository', () => {
 
             const expectedProfiles = profiles.map((profile) => ({
                 ...profile,
-                teams: profile.teamMembers.map((teamMember) => teamMember.team),
+                projectTeams: profile.projectMembers.map(
+                    (projectMember) => projectMember.projectTeam,
+                ),
+                studyTeams: profile.studyMembers.map(
+                    (studyMember) => studyMember.studyTeam,
+                ),
             }));
 
             (prismaService.user.findMany as jest.Mock).mockResolvedValue(
@@ -694,13 +716,26 @@ describe('UserRepository', () => {
                     nickname: true,
                     profileImage: true,
                     subPosition: true,
-                    teamMembers: {
-                        where: { isDeleted: false },
+                    projectMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
                         select: {
-                            team: {
+                            projectTeam: {
                                 select: {
                                     name: true,
-                                    category: true,
+                                },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            studyTeam: {
+                                select: {
+                                    name: true,
                                 },
                             },
                         },
