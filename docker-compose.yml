@@ -13,12 +13,14 @@ services:
             - '8000:8000'
         depends_on:
             - postgresql
+            - redis
         networks:
             - techeerism
 
+
     postgresql:
         container_name: postgresql
-        image: postgres:12.0-alpine
+        image: postgres:14-alpine3.20
         restart: always
         environment:
             POSTGRES_USER: ${POSTGRES_USERNAME}
@@ -27,7 +29,7 @@ services:
         volumes:
             - techeerism-db:/techeerism-db/postgres-data
         ports:
-            - '5001:5432'
+            - '5432:5432'
         networks:
             - techeerism
 
@@ -55,6 +57,7 @@ services:
         networks:
             - techeerism
 
+
     redis-insight:
         container_name: redis-insight
         image: redislabs/redisinsight:latest
@@ -63,6 +66,7 @@ services:
             - '8001:8001'
         networks:
             - techeerism
+
 
 networks:
     techeerism:
