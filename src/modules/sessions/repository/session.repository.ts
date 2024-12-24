@@ -12,11 +12,27 @@ import { NotFoundSessionException } from '../../../global/exception/custom.excep
 export class SessionRepository {
     constructor(private readonly prisma: PrismaService) {}
 
+    async findById(sessionId: number): Promise<SessionEntity | null> {
+        return this.prisma.session.findUnique({
+            where: {
+                id: sessionId,
+                isDeleted: false,
+            },
+            include: {
+                user: true,
+            },
+        });
+    }
+
     async createSession(
+        userId: number,
         createSessionRequest: CreateSessionRequest,
     ): Promise<SessionEntity> {
         return this.prisma.session.create({
-            data: { ...createSessionRequest },
+            data: {
+                userId,
+                ...createSessionRequest,
+            },
             include: { user: true },
         });
     }

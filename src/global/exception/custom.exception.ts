@@ -18,6 +18,12 @@ export class NotFoundUserException extends HttpException {
     }
 }
 
+export class ForbiddenAccessException extends HttpException {
+    constructor() {
+        super('해당 게시물에 대한 권한이 없습니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
 export class NotVerifiedEmailException extends HttpException {
     constructor() {
         super('이메일 인증이 필요합니다.', HttpStatus.UNAUTHORIZED);

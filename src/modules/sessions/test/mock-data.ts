@@ -8,7 +8,6 @@ import { PaginationQueryDto } from '../../../global/common/pagination.query.dto'
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
 export const createSessionRequest: CreateSessionRequest = {
-    userId: 1,
     thumbnail: 'https://example.com',
     title: 'Test Post',
     presenter: '발표자',
@@ -24,7 +23,7 @@ export const sessionEntity = (
 ): SessionEntity => {
     return {
         id: 1,
-        userId: createSessionRequest.userId,
+        userId: 1,
         thumbnail: createSessionRequest.thumbnail,
         title: createSessionRequest.title,
         presenter: createSessionRequest.presenter,

@@ -11,6 +11,8 @@ import {
 } from './mock-data';
 import { GetEventResponse } from '../dto/response/get.event.response';
 import { NotFoundEventException } from '../../../global/exception/custom.exception';
+import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { Request } from 'express';
 
 describe('EventController', () => {
     let controller: EventController;
@@ -31,7 +33,12 @@ describe('EventController', () => {
                     },
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue({
+                canActivate: jest.fn().mockReturnValue(true),
+            })
+            .compile();
 
         controller = module.get<EventController>(EventController);
         service = module.get<EventService>(EventService);
@@ -47,7 +54,11 @@ describe('EventController', () => {
                 getEventResponse,
             );
 
-            const result = await controller.createEvent(createEventRequest);
+            const request = { user: { id: 1 } } as unknown as Request;
+            const result = await controller.createEvent(
+                createEventRequest,
+                request,
+            );
 
             expect(result).toEqual({
                 code: 201,
@@ -55,6 +66,7 @@ describe('EventController', () => {
                 data: getEventResponse,
             });
             expect(service.createEvent).toHaveBeenCalledWith(
+                1,
                 createEventRequest,
             );
             expect(service.createEvent).toHaveBeenCalledTimes(1);
@@ -105,7 +117,12 @@ describe('EventController', () => {
                 new GetEventResponse(updatedEventEntity),
             );
 
-            const result = await controller.updateEvent(1, updateEventRequest);
+            const request = { user: { id: 1 } } as unknown as Request;
+            const result = await controller.updateEvent(
+                100,
+                updateEventRequest,
+                request,
+            );
 
             expect(result).toEqual({
                 code: 200,
@@ -114,6 +131,7 @@ describe('EventController', () => {
             });
             expect(service.updateEvent).toHaveBeenCalledWith(
                 1,
+                100,
                 updateEventRequest,
             );
             expect(service.updateEvent).toHaveBeenCalledTimes(1);
@@ -124,12 +142,15 @@ describe('EventController', () => {
                 new NotFoundEventException(),
             );
 
+            const request = { user: { id: 1 } } as unknown as Request;
+
             await expect(
-                controller.updateEvent(1, updateEventRequest),
+                controller.updateEvent(100, updateEventRequest, request),
             ).rejects.toThrow(NotFoundEventException);
 
             expect(service.updateEvent).toHaveBeenCalledWith(
                 1,
+                100,
                 updateEventRequest,
             );
             expect(service.updateEvent).toHaveBeenCalledTimes(1);
@@ -140,14 +161,15 @@ describe('EventController', () => {
         it('should successfully delete a event', async (): Promise<void> => {
             jest.spyOn(service, 'deleteEvent').mockResolvedValue();
 
-            const result = await controller.deleteEvent(1);
+            const request = { user: { id: 1 } } as unknown as Request;
+            const result = await controller.deleteEvent(100, request);
 
             expect(result).toEqual({
                 code: 200,
                 message: '이벤트가 삭제되었습니다.',
             });
 
-            expect(service.deleteEvent).toHaveBeenCalledWith(1);
+            expect(service.deleteEvent).toHaveBeenCalledWith(1, 100);
             expect(service.deleteEvent).toHaveBeenCalledTimes(1);
         });
 
@@ -156,11 +178,13 @@ describe('EventController', () => {
                 new NotFoundEventException(),
             );
 
-            await expect(controller.deleteEvent(1)).rejects.toThrow(
+            const request = { user: { id: 1 } } as unknown as Request;
+
+            await expect(controller.deleteEvent(100, request)).rejects.toThrow(
                 NotFoundEventException,
             );
 
-            expect(service.deleteEvent).toHaveBeenCalledWith(1);
+            expect(service.deleteEvent).toHaveBeenCalledWith(1, 100);
             expect(service.deleteEvent).toHaveBeenCalledTimes(1);
         });
     });

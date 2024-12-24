@@ -43,18 +43,60 @@ describe('EventRepository', (): void => {
         expect(repository).toBeDefined();
     });
 
+    describe('findById', (): void => {
+        it('should return a event when it exists', async () => {
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                eventEntity(),
+            );
+
+            const result = await repository.findById(100);
+
+            expect(prismaService.event.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
+            expect(result).toEqual(eventEntity());
+        });
+
+        it('should return null when the event does not exist', async () => {
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                null,
+            );
+
+            const result = await repository.findById(100);
+
+            expect(prismaService.event.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
+            expect(result).toBeNull();
+        });
+    });
+
     describe('createEvent', (): void => {
         it('should successfully create a event', async (): Promise<void> => {
             jest.spyOn(prismaService.event, 'create').mockResolvedValue(
                 eventEntity(),
             );
 
-            const result: EventEntity =
-                await repository.createEvent(createEventRequest);
+            const result: EventEntity = await repository.createEvent(
+                1,
+                createEventRequest,
+            );
 
             expect(result).toEqual(eventEntity());
             expect(prismaService.event.create).toHaveBeenCalledWith({
-                data: createEventRequest,
+                data: {
+                    userId: 1,
+                    ...createEventRequest,
+                },
+                include: { user: true },
             });
             expect(prismaService.event.create).toHaveBeenCalledTimes(1);
         });
@@ -88,6 +130,7 @@ describe('EventRepository', (): void => {
                         category: getEventListQueryRequest.category,
                     }),
                 },
+                include: { user: true },
                 skip: getEventListQueryRequest.offset,
                 take: getEventListQueryRequest.limit,
             });
@@ -133,6 +176,7 @@ describe('EventRepository', (): void => {
                     isDeleted: false,
                 },
                 data: updateEventRequest,
+                include: { user: true },
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
         });
@@ -157,6 +201,7 @@ describe('EventRepository', (): void => {
                     isDeleted: false,
                 },
                 data: updateEventRequest,
+                include: { user: true },
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
         });
