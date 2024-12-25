@@ -7,7 +7,8 @@ import {
     Min,
     IsArray,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class CreateProjectTeamRequest {
     @IsNotEmpty()
@@ -21,8 +22,8 @@ export class CreateProjectTeamRequest {
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
-        example: '프로젝트 설명',
-        description: '서비스 소개',
+        example: '테커를 위한 서비스',
+        description: '프로젝트 설명',
     })
     projectExplain: string;
 
@@ -98,7 +99,7 @@ export class CreateProjectTeamRequest {
     @IsOptional()
     @IsString()
     @ApiProperty({
-        example: 'https://github.com/example',
+        example: 'https://github.com/techeerism',
         description: '깃허브 링크',
     })
     githubLink?: string;
@@ -106,7 +107,7 @@ export class CreateProjectTeamRequest {
     @IsOptional()
     @IsString()
     @ApiProperty({
-        example: 'https://notion.so/example',
+        example: 'https://notion.so/techeerism',
         description: '노션 링크',
     })
     notionLink?: string;
@@ -118,4 +119,57 @@ export class CreateProjectTeamRequest {
         description: '스택 ID 배열',
     })
     stacks?: number[];
+
+    @IsOptional()
+    @IsArray()
+    @Transform(({ value }) => {
+        try {
+            return typeof value === 'string' ? JSON.parse(value) : value;
+        } catch (e) {
+            throw new Error('projectMember는 유효한 JSON 배열이어야 합니다.');
+        }
+    })
+    @ApiProperty({
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                userId: {
+                    type: 'number',
+                    description: '사용자 ID',
+                    example: 1,
+                },
+                isLeader: {
+                    type: 'boolean',
+                    description: '리더 여부',
+                    example: true,
+                },
+                teamRole: {
+                    type: 'string',
+                    description: '팀 내 역할',
+                    example: 'Frontend Developer',
+                },
+            },
+        },
+        example: [
+            {
+                userId: 1,
+                isLeader: true,
+                teamRole: 'Frontend Developer',
+            },
+            {
+                userId: 2,
+                isLeader: false,
+                teamRole: 'Backend Developer',
+            },
+        ],
+    })
+    projectMember: {
+        userId: number;
+        isLeader: boolean;
+        teamRole: string;
+    }[];
+
+    @ApiHideProperty() // Swagger에 표시되지 않도록 설정
+    resultImages?: string[]; // 사용자가 입력하지 않음, 서버에서 자동 추가
 }

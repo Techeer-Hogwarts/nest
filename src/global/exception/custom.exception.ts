@@ -136,3 +136,77 @@ export class DuplicateStudyTeamNameException extends HttpException {
         super('이미 존재하는 스터디 이름입니다. ', HttpStatus.FORBIDDEN);
     }
 }
+export class NotFoundProjectException extends HttpException {
+    constructor() {
+        super('프로젝트 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
+    }
+}
+
+export class UploadProjectException extends HttpException {
+    constructor() {
+        super(
+            '프로젝트 공고 업로드에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+    }
+}
+
+export class UpdateProjectException extends HttpException {
+    constructor() {
+        super(
+            '프로젝트 공고 업데이트에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+    }
+}
+
+export class CloseProjectException extends HttpException {
+    constructor() {
+        super(
+            '프로젝트 공고 마감에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+    }
+}
+
+export class DeleteProjectException extends HttpException {
+    constructor() {
+        super(
+            '프로젝트 공고 삭제에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+    }
+}
+
+export class NotProjectMemberException extends HttpException {
+    constructor() {
+        super('해당 프로젝트의 멤버가 아닙니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class DuplicateProjectNameException extends HttpException {
+    constructor() {
+        super('이미 존재하는 프로젝트 이름입니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class AlreadyApprovedApplicantException extends HttpException {
+    constructor() {
+        super('이미 승인된 지원자는 변경할 수 없습니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class NotApprovedFileExtensionException extends HttpException {
+    constructor() {
+        super('허용되지 않은 파일 형식입니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class UploadProjectImageException extends HttpException {
+    constructor() {
+        super(
+            '프로젝트 이미지 업로드에 실패했습니다.',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+    }
+}
