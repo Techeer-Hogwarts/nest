@@ -49,8 +49,9 @@ export class BookmarkRepository {
 
     async toggleBookmark(
         createBookmarkRequest: CreateBookmarkRequest,
+        userId: number,
     ): Promise<BookmarkEntity> {
-        const { userId, contentId, category }: CreateBookmarkRequest =
+        const { contentId, category }: CreateBookmarkRequest =
             createBookmarkRequest;
 
         // 현재 좋아요가 존재하는지 확인
@@ -107,7 +108,7 @@ export class BookmarkRepository {
         return this.prisma.$queryRaw(
             Prisma.sql`
             SELECT l.*, c.*
-            FROM "Like" l
+            FROM "Bookmark" l
             LEFT JOIN ${Prisma.raw(`"${tableName}"`)} c ON l."contentId" = c."id"
             WHERE l."userId" = ${userId}
               AND l."category" = CAST(${category} AS "ContentCategory")
