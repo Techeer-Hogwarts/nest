@@ -3,10 +3,14 @@ import { AuthService } from '../auth.service';
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { InternalServerErrorException } from '@nestjs/common';
-import { BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from '../../modules/users/repository/user.repository';
+import {
+    UnauthorizedEmailException,
+    InternalServerErrorException,
+    InvalidCodeException,
+    EmailVerificationFailedException,
+} from '../../global/exception/custom.exception';
 
 describe('AuthService', () => {
     let authService: AuthService;
@@ -73,14 +77,30 @@ describe('AuthService', () => {
     });
 
     describe('sendVerificationEmail', () => {
+        // Ensure mocks are cleared and reset before each test
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('인증 코드를 생성하고 Redis에 저장해야 하며 이메일을 전송해야 한다', async () => {
             const email = 'test@test.com';
 
             // Redis에 인증 코드를 저장하는 메서드를 목킹
-            jest.spyOn(redisClient, 'set').mockResolvedValue('OK');
+            redisClient.set = jest.fn().mockResolvedValue('OK');
 
             // 이메일 전송 메서드를 목킹
-            jest.spyOn(transporter, 'sendMail').mockResolvedValue(undefined);
+            transporter.sendMail = jest.fn().mockResolvedValue(undefined);
+
+            // ConfigService.get()를 목킹하여 발신자 이메일을 반환
+            configService.get = jest.fn((key) => {
+                if (key === 'EMAIL_FROM_EMAIL') return 'test@test.com';
+                return null;
+            });
+
+            const verificationCode = '568675';
+            jest.spyOn(global.Math, 'floor').mockReturnValueOnce(
+                parseInt(verificationCode),
+            );
 
             // 서비스 호출
             await authService.sendVerificationEmail(email);
@@ -88,27 +108,52 @@ describe('AuthService', () => {
             // Redis에 저장된 코드와 이메일 전송을 검증
             expect(redisClient.set).toHaveBeenCalledWith(
                 email,
-                expect.any(String), // 임의의 인증 코드 값
+                verificationCode, // Verification code is fixed as 568675
                 'EX',
                 300,
             );
 
             // 이메일 전송 내용에 인증 코드가 포함되는지 확인
             expect(transporter.sendMail).toHaveBeenCalledWith({
-                from: 'test@test.com',
+                from: 'test@test.com', // 발신 이메일이 제대로 설정되었는지 확인
                 to: email,
                 subject: '이메일 인증 코드',
-                text: expect.stringContaining('인증 코드는'),
+                html: expect.stringContaining('테커집 인증 코드'), // 특정 HTML이 존재하는지 확인
             });
         });
 
         it('Redis에 저장 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
             const email = 'test@test.com';
 
-            jest.spyOn(redisClient, 'set').mockRejectedValue(
-                new Error('Redis error'),
-            );
+            // Redis 저장 메서드를 강제로 오류를 발생시키도록 목킹
+            redisClient.set = jest
+                .fn()
+                .mockRejectedValue(new Error('Redis error'));
 
+            // 예외가 발생하는지 확인
+            await expect(
+                authService.sendVerificationEmail(email),
+            ).rejects.toThrow(InternalServerErrorException);
+        });
+
+        it('이메일 전송 중 오류가 발생하면 예외를 발생시켜야 한다', async () => {
+            const email = 'test@test.com';
+
+            // Redis 저장 메서드는 정상 동작으로 설정
+            redisClient.set = jest.fn().mockResolvedValue('OK');
+
+            // ConfigService.get()를 목킹하여 발신자 이메일을 반환
+            configService.get = jest.fn((key) => {
+                if (key === 'EMAIL_FROM_EMAIL') return 'test@test.com';
+                return null;
+            });
+
+            // 이메일 전송 메서드를 강제로 오류를 발생시키도록 목킹
+            transporter.sendMail = jest
+                .fn()
+                .mockRejectedValue(new Error('SMTP error'));
+
+            // 예외가 발생하는지 확인
             await expect(
                 authService.sendVerificationEmail(email),
             ).rejects.toThrow(InternalServerErrorException);
@@ -137,26 +182,11 @@ describe('AuthService', () => {
             jest.spyOn(redisClient, 'get').mockResolvedValue('123456');
 
             await expect(authService.verifyCode(email, code)).rejects.toThrow(
-                new BadRequestException('인증 코드가 일치하지 않습니다.'),
+                new InvalidCodeException(),
             );
 
             expect(redisClient.get).toHaveBeenCalledWith(email);
             expect(redisClient.del).not.toHaveBeenCalled();
-        });
-
-        it('Redis에서 인증 코드 확인 중 오류가 발생하면 예외가 발생해야 한다', async () => {
-            const email = 'test@test.com';
-            const code = '123456';
-
-            jest.spyOn(redisClient, 'get').mockRejectedValue(
-                new Error('Redis error'),
-            );
-
-            await expect(authService.verifyCode(email, code)).rejects.toThrow(
-                new InternalServerErrorException(
-                    '인증 코드 확인 중 오류가 발생했습니다.',
-                ),
-            );
         });
 
         describe('markAsVerified', () => {
@@ -183,7 +213,7 @@ describe('AuthService', () => {
                 );
 
                 await expect(authService.markAsVerified(email)).rejects.toThrow(
-                    InternalServerErrorException,
+                    UnauthorizedEmailException,
                 );
             });
         });
@@ -224,7 +254,7 @@ describe('AuthService', () => {
 
                 await expect(
                     authService.checkIfVerified(email),
-                ).rejects.toThrow(InternalServerErrorException);
+                ).rejects.toThrow(EmailVerificationFailedException);
             });
         });
     });

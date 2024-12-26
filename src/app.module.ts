@@ -16,7 +16,10 @@ import { StudyMemberModule } from './modules/studyMembers/studyMember.module';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env',
+        }),
         RedisModule,
         PrismaModule,
         BookmarkModule,

@@ -49,13 +49,78 @@ export class UserRepository {
         });
     }
 
-    async findById(id: number): Promise<UserEntity | null> {
-        return this.prisma.user.findUnique({
-            where: {
-                id,
-                isDeleted: false,
-            },
-        });
+    async findById(id: number): Promise<any> {
+        return this.prisma.user
+            .findUnique({
+                where: {
+                    id,
+                    isDeleted: false,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    nickname: true,
+                    email: true,
+                    mainPosition: true,
+                    subPosition: true,
+                    school: true,
+                    class: true,
+                    profileImage: true,
+                    githubUrl: true,
+                    blogUrl: true,
+                    projectMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            projectTeam: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            studyTeam: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            })
+            .then((user) => {
+                if (!user) return null;
+
+                return {
+                    id: user.id,
+                    name: user.name,
+                    nickname: user.nickname,
+                    email: user.email,
+                    mainPosition: user.mainPosition,
+                    subPosition: user.subPosition,
+                    school: user.school,
+                    class: user.class,
+                    profileImage: user.profileImage,
+                    githubUrl: user.githubUrl,
+                    blogUrl: user.blogUrl,
+                    projectTeams: (user.projectMembers || []).map(
+                        (projectMember) => ({
+                            name: projectMember.projectTeam.name,
+                        }),
+                    ),
+                    studyTeams: (user.studyMembers || []).map(
+                        (studyMember) => ({
+                            name: studyMember.studyTeam.name,
+                        }),
+                    ),
+                };
+            });
     }
 
     async updateUserProfile(
@@ -149,26 +214,60 @@ export class UserRepository {
         if (university) filters.school = university;
         if (grade) filters.class = grade;
 
-        return this.prisma.user.findMany({
-            where: {
-                isDeleted: false,
-                ...filters,
-            },
-            skip: offset || 0,
-            take: limit || 10,
-            select: {
-                id: true,
-                name: true,
-                nickname: true,
-                email: true,
-                mainPosition: true,
-                subPosition: true,
-                school: true,
-                class: true,
-                profileImage: true,
-                githubUrl: true,
-                blogUrl: true,
-            },
-        });
+        return this.prisma.user
+            .findMany({
+                where: {
+                    isDeleted: false,
+                    ...filters,
+                },
+                skip: offset || 0,
+                take: limit || 10,
+                select: {
+                    id: true,
+                    name: true,
+                    nickname: true,
+                    email: true,
+                    mainPosition: true,
+                    subPosition: true,
+                    school: true,
+                    class: true,
+                    profileImage: true,
+                    projectMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            projectTeam: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: {
+                            isDeleted: false,
+                        },
+                        select: {
+                            studyTeam: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            })
+            .then((users) =>
+                users.map((user) => ({
+                    ...user,
+                    projectTeams: (user.projectMembers || []).map(
+                        (projectMember) => projectMember.projectTeam,
+                    ),
+                    studyTeams: (user.studyMembers || []).map(
+                        (studyMember) => studyMember.studyTeam,
+                    ),
+                })),
+            );
     }
 }
