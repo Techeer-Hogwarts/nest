@@ -80,12 +80,7 @@ describe('StudyTeamService', () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyTeamRepository.updateStudyTeam.mockResolvedValue({});
 
-            const result = await service.updateStudyTeam(
-                1,
-                1,
-                mockUpdateStudyTeamRequest,
-                [],
-            );
+            await service.updateStudyTeam(1, 1, mockUpdateStudyTeamRequest, []);
             expect(studyTeamRepository.updateStudyTeam).toHaveBeenCalled();
         });
     });
@@ -98,7 +93,7 @@ describe('StudyTeamService', () => {
             });
             studyTeamRepository.closeStudyTeam.mockResolvedValue({});
 
-            const result = await service.closeStudyTeam(1, 1);
+            await service.closeStudyTeam(1, 1);
             expect(studyTeamRepository.closeStudyTeam).toHaveBeenCalled();
         });
     });
@@ -108,7 +103,7 @@ describe('StudyTeamService', () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyTeamRepository.deleteStudyTeam.mockResolvedValue({});
 
-            const result = await service.deleteStudyTeam(1, 1);
+            await service.deleteStudyTeam(1, 1);
             expect(studyTeamRepository.deleteStudyTeam).toHaveBeenCalled();
         });
     });
@@ -118,7 +113,7 @@ describe('StudyTeamService', () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyMemberRepository.getApplicants.mockResolvedValue([]);
 
-            const result = await service.getApplicants(1, 1);
+            await service.getApplicants(1, 1);
             expect(studyMemberRepository.getApplicants).toHaveBeenCalled();
         });
     });
@@ -152,7 +147,7 @@ describe('StudyTeamService', () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyMemberRepository.cancelApplication.mockResolvedValue({});
 
-            const result = await service.cancelApplication(1, 1);
+            await service.cancelApplication(1, 1);
 
             expect(studyMemberRepository.cancelApplication).toHaveBeenCalled();
         });
@@ -164,7 +159,7 @@ describe('StudyTeamService', () => {
             studyMemberRepository.addMemberToStudyTeam.mockResolvedValue({});
             studyMemberRepository.isUserMemberOfStudy.mockResolvedValue(false);
 
-            const result = await service.addMemberToStudyTeam(1, 1, 2, true);
+            await service.addMemberToStudyTeam(1, 1, 2, true);
 
             expect(
                 studyMemberRepository.addMemberToStudyTeam,

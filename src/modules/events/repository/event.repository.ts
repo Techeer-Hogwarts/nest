@@ -10,11 +10,28 @@ import { NotFoundEventException } from '../../../global/exception/custom.excepti
 export class EventRepository {
     constructor(private prisma: PrismaService) {}
 
+    async findById(eventId: number): Promise<EventEntity | null> {
+        return this.prisma.event.findUnique({
+            where: {
+                id: eventId,
+                isDeleted: false,
+            },
+            include: {
+                user: true,
+            },
+        });
+    }
+
     async createEvent(
+        userId: number,
         createEventRequest: CreateEventRequest,
     ): Promise<EventEntity> {
         return this.prisma.event.create({
-            data: { ...createEventRequest },
+            data: {
+                userId,
+                ...createEventRequest,
+            },
+            include: { user: true },
         });
     }
 
@@ -42,6 +59,9 @@ export class EventRepository {
                 }),
                 ...(category && { category }),
             },
+            include: {
+                user: true,
+            },
             skip: offset,
             take: limit,
         });
@@ -52,6 +72,9 @@ export class EventRepository {
             where: {
                 id: eventId,
                 isDeleted: false,
+            },
+            include: {
+                user: true,
             },
         });
 
@@ -80,6 +103,9 @@ export class EventRepository {
                     startDate,
                     endDate,
                     url,
+                },
+                include: {
+                    user: true,
                 },
             });
         } catch (error) {
