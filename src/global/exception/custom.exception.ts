@@ -14,7 +14,37 @@ export class NotFoundEventException extends HttpException {
 
 export class NotFoundUserException extends HttpException {
     constructor() {
-        super('사용자를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
+        super('사용자가 존재하지 않습니다.', HttpStatus.NOT_FOUND);
+    }
+}
+
+export class NotFoundStudyTeamException extends HttpException {
+    constructor() {
+        super('스터디 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
+    }
+}
+
+export class NotStudyMemberException extends HttpException {
+    constructor() {
+        super('해당 스터디의 멤버가 아닙니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class AlreadyApprovedException extends HttpException {
+    constructor() {
+        super('이미 승인된 지원자는 변경할 수 없습니다.', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class NotApprovedFileExtension extends HttpException {
+    constructor() {
+        super('허용되지 않은 파일 형식입니다. ', HttpStatus.FORBIDDEN);
+    }
+}
+
+export class DuplicateStudyTeamNameException extends HttpException {
+    constructor() {
+        super('이미 존재하는 스터디 이름입니다. ', HttpStatus.FORBIDDEN);
     }
 }
 

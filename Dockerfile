@@ -11,7 +11,7 @@ RUN npm install
 # 소스코드 복사
 COPY . .
 
-# Prisma 클라이언트 생성 
+# Prisma 클라이언트 생성
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # 빌드
