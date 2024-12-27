@@ -73,6 +73,18 @@ async function bootstrap(): Promise<void> {
         logger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');
 
         const document = SwaggerModule.createDocument(app, options);
+
+        // Swagger 캐시 방지
+        app.use('/api/v1/docs', (req, res, next) => {
+            res.setHeader(
+                'Cache-Control',
+                'no-store, no-cache, must-revalidate, proxy-revalidate',
+            );
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            next();
+        });
+
         SwaggerModule.setup('api/v1/docs', app, document);
 
         logger.log('Swagger 모듈 설정이 완료되었습니다.');

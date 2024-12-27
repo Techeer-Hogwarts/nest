@@ -17,6 +17,7 @@ export class BookmarkService {
 
     async toggleBookmark(
         createBookmarkRequest: CreateBookmarkRequest,
+        userId: number,
     ): Promise<GetBookmarkResponse> {
         const { contentId, category }: CreateBookmarkRequest =
             createBookmarkRequest;
@@ -28,7 +29,10 @@ export class BookmarkService {
         }
 
         const content: BookmarkEntity =
-            await this.bookmarkRepository.toggleBookmark(createBookmarkRequest);
+            await this.bookmarkRepository.toggleBookmark(
+                createBookmarkRequest,
+                userId,
+            );
         return new GetBookmarkResponse(content);
     }
     async getBookmark(
