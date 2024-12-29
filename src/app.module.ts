@@ -11,10 +11,14 @@ import { SessionModule } from './modules/sessions/session.module';
 import { EventModule } from './modules/events/event.module';
 import { LikeModule } from './modules/likes/like.module';
 import { RedisModule } from './global/redis/redis.module';
+import { GoogleDriveModule } from './googleDrive/google.drive.module';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env',
+        }),
         RedisModule,
         PrismaModule,
         BookmarkModule,
@@ -26,6 +30,7 @@ import { RedisModule } from './global/redis/redis.module';
         SessionModule,
         EventModule,
         LikeModule,
+        GoogleDriveModule,
     ],
 })
 export class AppModule {}
