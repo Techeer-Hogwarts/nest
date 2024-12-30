@@ -12,29 +12,38 @@ export class RedisService {
         this.client.connect();
     }
 
+    /**
+     * 작업 상태 저장
+     */
     async setTaskStatus(taskId: string, task: string): Promise<void> {
         await this.client.hSet(taskId, {
             task: task,
             result: 'pending',
             processed: 'false',
         });
+        await this.client.expire(taskId, 3600); // expire 1시간 = 3600초
     }
 
+    /**
+     * 작업 세부 정보 가져오기
+     */
     async getTaskDetails(taskId: string): Promise<any> {
         return this.client.hGetAll(taskId);
     }
 
+    /**
+     * Redis Pub/Sub 채널 구독
+     */
     async subscribeToChannel(
         channel: string,
-        callback: (message: string) => void,
+        callback: (message: string) => Promise<void>,
     ): Promise<void> {
         const subscriber = this.client.duplicate();
         await subscriber.connect();
-        await subscriber.subscribe(channel, callback);
-    }
-
-    async deleteTask(taskId: string): Promise<void> {
-        await this.client.del(taskId);
-        Logger.debug(`Successfully deleted task: ${taskId}`);
+        await subscriber.subscribe(channel, async (message) => {
+            Logger.debug(`Message received on channel ${channel}: ${message}`);
+            await callback(message);
+        });
+        Logger.log(`Subscribed to channel: ${channel}`);
     }
 }

@@ -17,11 +17,16 @@ export class RabbitMQService {
         });
     }
 
-    async sendToQueue(taskId: string, task: string): Promise<void> {
+    async sendToQueue(
+        taskId: string,
+        task: string,
+        type: string,
+    ): Promise<void> {
         await this.channel.sendToQueue('crawl_queue', Buffer.from(task), {
             messageId: taskId,
+            type: type,
             contentType: 'text/plain',
         });
-        Logger.debug(`Sent task: ${task}`, taskId);
+        Logger.debug(`Sent task: ${task} - type: ${type}`, taskId);
     }
 }

@@ -4,7 +4,6 @@ export class BlogPostDto {
     readonly author: string;
     readonly authorImage: string;
     readonly thumbnail: string;
-    readonly category: string;
     readonly date: string;
     readonly tags: string[];
 
@@ -14,7 +13,6 @@ export class BlogPostDto {
         this.author = post.author;
         this.authorImage = post.authorImage;
         this.thumbnail = post.thumbnail;
-        this.category = post.category;
         this.date = post.date;
         this.tags = post.tags || [];
     }

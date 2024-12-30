@@ -4,7 +4,7 @@ import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { UpdateBlogRequest } from '../dto/request/update.blog.request';
-import { BlogCategory, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 import { NotFoundBlogException } from '../../../global/exception/custom.exception';
 
@@ -25,7 +25,7 @@ export class BlogRepository {
     }
 
     async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
-        const { userId, posts } = crawlingBlogDto;
+        const { userId, posts, category } = crawlingBlogDto;
         const blogPromises = posts.map(async (post) => {
             try {
                 await this.prisma.blog.create({
@@ -33,7 +33,7 @@ export class BlogRepository {
                         userId,
                         ...post,
                         date: new Date(post.date),
-                        category: post.category.toUpperCase() as BlogCategory,
+                        category,
                     },
                 });
             } catch (error) {

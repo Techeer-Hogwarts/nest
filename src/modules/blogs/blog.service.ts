@@ -1,11 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BlogRepository } from './repository/blog.repository';
 import { BlogEntity } from './entities/blog.entity';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 import { UpdateBlogRequest } from './dto/request/update.blog.request';
-import { CrawlingBlogResponse } from './dto/response/crawling.blog.response';
 
 @Injectable()
 export class BlogService {
@@ -53,36 +52,5 @@ export class BlogService {
         const blogs: BlogEntity[] =
             await this.blogRepository.getBestBlogs(query);
         return blogs.map((blog: BlogEntity) => new GetBlogResponse(blog));
-    }
-
-    async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
-        const { userId, posts } = crawlingBlogDto;
-
-        // 새벽 3시 기준 "어제 날짜" 계산
-        const now = new Date();
-        const startOfYesterday = new Date();
-        startOfYesterday.setDate(now.getDate() - 1);
-        startOfYesterday.setHours(3, 0, 0, 0); // 어제 새벽 3시
-        const endOfYesterday = new Date(startOfYesterday);
-        endOfYesterday.setDate(startOfYesterday.getDate() + 1);
-        endOfYesterday.setHours(2, 59, 59, 999); // 오늘 새벽 2시 59분 59초
-
-        Logger.debug(startOfYesterday);
-        Logger.debug(endOfYesterday);
-
-        // 어제 날짜에 해당하는 글만 필터링
-        const filteredPosts = posts.filter((post) => {
-            const postDate = new Date(post.date);
-            return postDate >= startOfYesterday && postDate <= endOfYesterday;
-        });
-
-        Logger.debug(
-            `어제 날짜의 글 ${filteredPosts.length}개를 필터링했습니다.`,
-            'FilteredPosts',
-        );
-        Logger.debug(filteredPosts);
-        await this.blogRepository.createBlog(
-            new CrawlingBlogResponse(userId, filteredPosts),
-        );
     }
 }
