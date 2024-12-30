@@ -1,11 +1,4 @@
-import {
-    Injectable,
-    Inject,
-    Logger,
-    InternalServerErrorException,
-    BadRequestException,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +6,17 @@ import { UserRepository } from '../modules/users/repository/user.repository'; //
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
+import {
+    NotFoundUserException,
+    InvalidException,
+    NotVerifiedEmailException,
+    InvalidTokenException,
+    InternalServerErrorException,
+    NotFoundCodeException,
+    InvalidCodeException,
+    UnauthorizedEmailException,
+    EmailVerificationFailedException,
+} from '../global/exception/custom.exception';
 
 @Injectable()
 export class AuthService {
@@ -37,8 +41,7 @@ export class AuthService {
     // 로그인: 사용자 인증 후 JWT 발급
     async login(email: string, password: string): Promise<any> {
         const user = await this.validateUser(email, password);
-        if (!user)
-            throw new UnauthorizedException('유효하지 않은 자격 증명입니다.');
+        if (!user) throw new NotFoundUserException();
 
         // 액세스 토큰과 리프레시 토큰 생성
         const accessToken = this.jwtService.sign(
@@ -61,9 +64,7 @@ export class AuthService {
         // 사용자 이메일로 DB에서 사용자 정보 조회
         const user = await this.userRepository.findOneByEmail(email);
         if (!user) {
-            throw new UnauthorizedException(
-                '이메일 또는 비밀번호가 올바르지 않습니다.',
-            );
+            throw new NotFoundUserException();
         }
 
         // 입력된 비밀번호와 저장된 비밀번호 해시 비교
@@ -73,9 +74,7 @@ export class AuthService {
         const isPasswordValid = await bcrypt.compare(password, hashedPassword);
 
         if (!isPasswordValid) {
-            throw new UnauthorizedException(
-                '이메일 또는 비밀번호가 올바르지 않습니다.',
-            );
+            throw new InvalidException();
         }
 
         // 비밀번호 검증을 통과하면 사용자 정보를 반환
@@ -92,9 +91,7 @@ export class AuthService {
         );
 
         if (!isVerified) {
-            throw new UnauthorizedException(
-                '이메일 인증이 완료되지 않았습니다.',
-            );
+            throw new NotVerifiedEmailException();
         }
         const hashedPassword = await bcrypt.hash(
             updateUserPswRequest.newPassword,
@@ -112,8 +109,7 @@ export class AuthService {
             const decoded = this.jwtService.verify(refreshToken);
             const user = await this.userRepository.findById(decoded.id);
 
-            if (!user)
-                throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+            if (!user) throw new NotFoundUserException();
 
             // 새로운 액세스 토큰 발급
             const newAccessToken = this.jwtService.sign(
@@ -122,9 +118,7 @@ export class AuthService {
             );
             return newAccessToken;
         } catch (error) {
-            throw new UnauthorizedException(
-                '유효하지 않은 리프레시 토큰입니다.',
-            );
+            throw new InvalidTokenException();
         }
     }
 
@@ -139,30 +133,93 @@ export class AuthService {
             await this.redisClient.set(email, verificationCode, 'EX', 300);
         } catch (error) {
             Logger.error(`Redis 저장 중 오류가 발생했습니다: ${error}`);
-            throw new InternalServerErrorException(
-                '인증 코드를 저장하는 중 문제가 발생했습니다.',
-            );
+            throw new InternalServerErrorException();
         }
 
         const subject = '이메일 인증 코드';
-        const content = `인증 코드는 ${verificationCode} 입니다. 이 코드는 5분간 유효합니다.`;
-
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: 'Arial', sans-serif;
+                        background-color: #FE9142;
+                        padding: 20px;
+                    }
+                    .email-container {
+                        max-width: 600px;
+                        background-color: #ffffff;
+                        border-radius: 8px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        text-align: center;
+                    }
+                    .email-header {
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #333333;
+                        margin-bottom: 20px;
+                    }
+                    .email-body {
+                        font-size: 16px;
+                        color: #555555;
+                        line-height: 1.6;
+                    }
+                    .verification-code-container {
+                        background-color: #FE9142;
+                        color: #ffffff;
+                        font-size: 24px;
+                        font-weight: bold;
+                        padding: 15px 0;
+                        border-radius: 8px;
+                        margin: 20px 0;
+                        width: 50%;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    .footer {
+                        font-size: 12px;
+                        color: #888888;
+                        margin-top: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="email-container">
+                    <div class="email-header">테커집 인증 코드</div>
+                    <div class="email-body">
+                        아래의 인증 코드를 사용하여 이메일 인증을 완료하세요.<br>
+                        <div class="verification-code-container">
+                            ${verificationCode}
+                        </div>
+                        인증 코드는 <strong>5분간 유효</strong>합니다.
+                    </div>
+                    <div class="footer">
+                        본 메일은 테커 회원 인증을 위해 발송된 이메일입니다.<br>
+                        이메일 인증에 문제가 있다면, 관리자에게 문의주세요.
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
         // 이메일 전송
         try {
             await this.transporter.sendMail({
-                from: this.configService.get<string>('EMAIL_USER'),
+                from: this.configService.get<string>('EMAIL_FROM_EMAIL'),
                 to: email,
                 subject: subject,
-                text: content,
+                html: htmlContent,
             });
             Logger.log(
                 `메일이 ${email}로 전송되었습니다. 인증 코드: ${verificationCode}`,
             );
         } catch (error) {
             Logger.error('메일 전송 중 오류가 발생했습니다:', error);
-            throw new InternalServerErrorException(
-                '메일 전송 중 문제가 발생했습니다.',
-            );
+            throw new InternalServerErrorException();
         }
     }
 
@@ -172,11 +229,11 @@ export class AuthService {
             const cachedCode = await this.redisClient.get(email);
 
             if (!cachedCode) {
-                throw new BadRequestException('인증 코드가 존재하지 않습니다.');
+                throw new NotFoundCodeException();
             }
 
             if (cachedCode !== code) {
-                throw new BadRequestException('인증 코드가 일치하지 않습니다.');
+                throw new InvalidCodeException();
             }
 
             // 코드가 일치하면 Redis에서 키를 삭제하고 true 반환
@@ -185,16 +242,11 @@ export class AuthService {
 
             return true;
         } catch (error) {
-            if (error instanceof BadRequestException) {
-                throw error;
-            }
             Logger.error(
                 'Redis에서 인증 코드를 확인하는 중 오류가 발생했습니다:',
                 error,
             );
-            throw new InternalServerErrorException(
-                '인증 코드 확인 중 오류가 발생했습니다.',
-            );
+            throw new InvalidCodeException();
         }
     }
 
@@ -205,9 +257,7 @@ export class AuthService {
             Logger.error(
                 `Redis에서 이메일 인증 상태를 저장하는 중 오류가 발생했습니다: ${error}`,
             );
-            throw new InternalServerErrorException(
-                '이메일 인증 상태 저장 중 문제가 발생했습니다.',
-            );
+            throw new UnauthorizedEmailException();
         }
     }
 
@@ -220,9 +270,7 @@ export class AuthService {
             Logger.error(
                 `Redis에서 이메일 인증 상태를 확인하는 중 오류가 발생했습니다: ${error}`,
             );
-            throw new InternalServerErrorException(
-                '이메일 인증 상태 확인 중 문제가 발생했습니다.',
-            );
+            throw new EmailVerificationFailedException();
         }
     }
 }

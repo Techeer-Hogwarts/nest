@@ -44,8 +44,10 @@ model User {
   resumes           Resume[]            @relation("UserResumes")
   bookmarks         Bookmark[]          @relation("UserBookmarks")
   likes             Like[]              @relation("UserLikes")
-  teamMembers       TeamMember[]
+  projectMembers    ProjectMember[]
+  studyMembers      StudyMember[]
   sessions          Session[]           @relation("UserSessions")
+  events            Event[]             @relation("UserEvents")
   permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
 }
 
@@ -68,20 +70,44 @@ model PermissionRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user            User     @relation("UserPermissionRequests", fields: [userId], references: [id])
+  user User @relation("UserPermissionRequests", fields: [userId], references: [id])
 }
 
-model TeamMember {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isDeleted   Boolean   @default(false)
+enum StatusCategory {
+  APPROVED
+  REJECT
+  PENDING
+}
+
+model ProjectMember {
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  isDeleted     Boolean        @default(false)
+  isLeader      Boolean
+  teamRole      String         @db.VarChar(100)
+  projectTeam   ProjectTeam    @relation(fields: [projectTeamId], references: [id])
+  projectTeamId Int
+  summary       String         @db.VarChar(100)
+  status        StatusCategory
+  user          User           @relation(fields: [userId], references: [id])
+  userId        Int
+}
+
+model StudyMember {
+  id          Int            @id @default(autoincrement())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  isDeleted   Boolean        @default(false)
   isLeader    Boolean
-  teamRole    String    @db.VarChar(100)
-  team        Team      @relation(fields: [teamId], references: [id])
-  teamId      Int
-  user        User      @relation(fields: [userId], references: [id])
+  studyTeam   StudyTeam      @relation(fields: [studyTeamId], references: [id])
+  studyTeamId Int
+  summary     String         @db.VarChar(100)
+  status      StatusCategory
+  user        User           @relation(fields: [userId], references: [id])
   userId      Int
+
+  @@unique([studyTeamId, userId])
 }
 
 enum StackCategory {
@@ -103,29 +129,80 @@ model Stack {
 }
 
 model TeamStack {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  isMain      Boolean      @default(false)
-  stackId     Int
-  teamId      Int
-  stack       Stack        @relation(fields: [stackId], references: [id])
-  team        Team         @relation(fields: [teamId], references: [id])
+  id            Int         @id @default(autoincrement())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  isDeleted     Boolean     @default(false)
+  isMain        Boolean     @default(false)
+  stackId       Int
+  projectTeamId Int
+  stack         Stack       @relation(fields: [stackId], references: [id])
+  projectTeam   ProjectTeam @relation(fields: [projectTeamId], references: [id])
 }
 
-model Team {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  isRecruited Boolean      @default(true)
-  isFinished  Boolean      @default(true)
-  name        String       @db.VarChar(100)
-  category    String       @db.VarChar(100)
-  teamStacks  TeamStack[]
-  teamMembers TeamMember[]
+model ProjectTeam {
+  id              Int             @id @default(autoincrement())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  isDeleted       Boolean         @default(false)
+  isRecruited     Boolean         @default(true)
+  isFinished      Boolean         @default(true)
+  name            String          @unique @db.VarChar(100)
+  githubLink      String          @db.VarChar(200)
+  notionLink      String          @db.VarChar(200)
+  projectExplain  String          @db.VarChar(200)
+  frontendNum     Int
+  backendNum      Int
+  devopsNum       Int
+  uiuxNum         Int
+  dataEngineerNum Int
+  recruitExplain  String          @db.VarChar(200)
+  teamStacks      TeamStack[]
+  projectMember   ProjectMember[]
+  resultImages    ProjectResultImage[]
 }
+
+model StudyTeam {
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  isDeleted      Boolean       @default(false)
+  isRecruited    Boolean       @default(true)
+  isFinished     Boolean       @default(true)
+  name           String        @unique @db.VarChar(100)
+  githubLink     String        @db.VarChar(200)
+  notionLink     String        @db.VarChar(200)
+  studyExplain   String        @db.VarChar(200)
+  goal           String        @db.VarChar(300)
+  rule           String        @db.VarChar(300)
+  recruitNum     Int
+  recruitExplain String        @db.VarChar(200)
+  studyMember    StudyMember[]
+  resultImages   StudyResultImage[]
+}
+
+model StudyResultImage {
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  isDeleted      Boolean       @default(false)
+  imageUrl       String        @db.VarChar(300)
+
+  studyTeamId  Int
+  studyTeam    StudyTeam   @relation(fields: [studyTeamId], references: [id])
+}
+
+model ProjectResultImage {
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  isDeleted      Boolean       @default(false)
+  imageUrl       String        @db.VarChar(300)
+
+  projectTeamId  Int
+  projectTeam    ProjectTeam   @relation(fields: [projectTeamId], references: [id])
+}
+
 
 enum BlogCategory {
   TECHEER
@@ -220,11 +297,14 @@ model Event {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
+  userId      Int
   category    EventCategory
   title       String       @db.VarChar(200)
   startDate   DateTime
   endDate     DateTime?
   url         String?      @db.VarChar(200)
+
+  user        User         @relation("UserEvents", fields: [userId], references: [id])
 }
 
 enum SessionDate {
@@ -256,21 +336,21 @@ enum SessionPosition {
 }
 
 model Session {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isDeleted   Boolean      @default(false)
-  title       String       @db.VarChar(200)
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
-  thumbnail   String       @db.VarChar(200)
-  videoUrl    String       @db.VarChar(200)
-  fileUrl     String       @db.VarChar(200)
-  presenter   String       @db.VarChar(50)
-  date        SessionDate
-  category    SessionCategory
-  position    SessionPosition
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
+  title     String          @db.VarChar(200)
+  likeCount Int             @default(0)
+  viewCount Int             @default(0)
+  thumbnail String          @db.VarChar(200)
+  videoUrl  String          @db.VarChar(200)
+  fileUrl   String          @db.VarChar(200)
+  presenter String          @db.VarChar(50)
+  date      SessionDate
+  category  SessionCategory
+  position  SessionPosition
 
-  user        User         @relation("UserSessions", fields: [userId], references: [id])
+  user User @relation("UserSessions", fields: [userId], references: [id])
 }

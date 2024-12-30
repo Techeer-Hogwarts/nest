@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../modules/prisma/prisma.service';
 import { RedisService } from './redis.service';
 
@@ -10,13 +10,16 @@ import { RedisService } from './redis.service';
     providers: [
         {
             provide: 'REDIS_CLIENT',
-            useFactory: (): Redis => {
-                return new Redis({
-                    host: String(process.env.REDIS_HOST),
-                    port: Number(process.env.REDIS_PORT),
-                    password: process.env.REDIS_PASSWORD,
-                });
+            useFactory: (configService: ConfigService): Redis => {
+                const redisUrl = configService.get<string>('REDIS_URL');
+                if (!redisUrl) {
+                    throw new Error(
+                        'REDIS_URL is not defined in environment variables',
+                    );
+                }
+                return new Redis(redisUrl);
             },
+            inject: [ConfigService],
         },
         PrismaService,
         RedisService,

@@ -8,6 +8,8 @@ import {
     Patch,
     Post,
     Query,
+    Req,
+    UseGuards,
 } from '@nestjs/common';
 import { SessionService } from './session.service';
 import { CreateSessionRequest } from './dto/request/create.session.request';
@@ -16,12 +18,15 @@ import { GetSessionResponse } from './dto/response/get.session.response';
 import { UpdateSessionRequest } from './dto/request/update.session.request';
 import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
 
 @ApiTags('sessions')
 @Controller('/sessions')
 export class SessionController {
     constructor(private readonly sessionService: SessionService) {}
 
+    @UseGuards(JwtAuthGuard)
     @Post()
     @ApiOperation({
         summary: '세션 게시물 생성',
@@ -29,9 +34,14 @@ export class SessionController {
     })
     async createSession(
         @Body() createSessionRequest: CreateSessionRequest,
+        @Req() request: Request,
     ): Promise<any> {
+        const user = request.user as any;
         const session: GetSessionResponse =
-            await this.sessionService.createSession(createSessionRequest);
+            await this.sessionService.createSession(
+                user.id,
+                createSessionRequest,
+            );
         return {
             code: 201,
             message: '세션 게시물을 생성했습니다.',
@@ -71,6 +81,7 @@ export class SessionController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get(':sessionId')
     @ApiOperation({
         summary: '단일 세션 게시물 조회',
@@ -88,6 +99,7 @@ export class SessionController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('/user/:userId')
     @ApiOperation({
         summary: '유저 별 세션 게시물 목록 조회',
@@ -106,6 +118,7 @@ export class SessionController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete(':sessionId')
     @ApiOperation({
         summary: '세션 게시물 삭제',
@@ -113,14 +126,17 @@ export class SessionController {
     })
     async deleteSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
+        @Req() request: Request,
     ): Promise<any> {
-        await this.sessionService.deleteSession(sessionId);
+        const user = request.user as any;
+        await this.sessionService.deleteSession(user.id, sessionId);
         return {
             code: 200,
             message: '세션 게시물이 삭제되었습니다.',
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':sessionId')
     @ApiOperation({
         summary: '세션 게시물 수정',
@@ -129,9 +145,12 @@ export class SessionController {
     async updateSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Body() updateSessionRequest: UpdateSessionRequest,
+        @Req() request: Request,
     ): Promise<any> {
+        const user = request.user as any;
         const session: GetSessionResponse =
             await this.sessionService.updateSession(
+                user.id,
                 sessionId,
                 updateSessionRequest,
             );
