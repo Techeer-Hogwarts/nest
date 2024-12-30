@@ -1,19 +1,9 @@
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseIntPipe,
-    Patch,
-    Query,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
-import { UpdateBlogRequest } from './dto/request/update.blog.request';
 
 @ApiTags('blogs')
 @Controller('/blogs')
@@ -32,20 +22,6 @@ export class BlogController {
             code: 200,
             message: '인기 게시물을 조회했습니다.',
             data: blogs,
-        };
-    }
-
-    @Get(':blogId')
-    @ApiOperation({
-        summary: '단일 블로그 게시물 조회',
-        description: '지정된 ID의 블로그 게시물을 조회합니다.',
-    })
-    async getBlog(@Param('blogId', ParseIntPipe) blogId: number): Promise<any> {
-        const blog: GetBlogResponse = await this.blogService.getBlog(blogId);
-        return {
-            code: 200,
-            message: '블로그 게시물을 조회했습니다.',
-            data: blog,
         };
     }
 
@@ -81,41 +57,6 @@ export class BlogController {
             code: 200,
             message: '블로그 게시물을 조회했습니다.',
             data: blogs,
-        };
-    }
-
-    @Delete(':blogId')
-    @ApiOperation({
-        summary: '블로그 게시물 삭제',
-        description: '지정된 ID의 블로그 게시물을 삭제합니다.',
-    })
-    async deleteBlog(
-        @Param('blogId', ParseIntPipe) blogId: number,
-    ): Promise<any> {
-        await this.blogService.deleteBlog(blogId);
-        return {
-            code: 200,
-            message: '게시물이 삭제되었습니다.',
-        };
-    }
-
-    @Patch(':blogId')
-    @ApiOperation({
-        summary: '블로그 게시물 수정',
-        description: '지정된 ID의 블로그 게시물 제목과 URL을 수정합니다.',
-    })
-    async updateBlog(
-        @Param('blogId', ParseIntPipe) blogId: number,
-        @Body() updateBlogRequest: UpdateBlogRequest,
-    ): Promise<any> {
-        const blog: GetBlogResponse = await this.blogService.updateBlog(
-            blogId,
-            updateBlogRequest,
-        );
-        return {
-            code: 200,
-            message: '게시물이 수정되었습니다.',
-            data: blog,
         };
     }
 }

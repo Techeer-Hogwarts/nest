@@ -3,10 +3,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
-import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
-import { NotFoundBlogException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class BlogRepository {
@@ -44,23 +42,6 @@ export class BlogRepository {
             }
         });
         await Promise.all(blogPromises);
-    }
-
-    async getBlog(blogId: number): Promise<BlogEntity> {
-        const blog: BlogEntity = await this.prisma.blog.findUnique({
-            where: {
-                id: blogId,
-                isDeleted: false,
-            },
-            include: {
-                user: true,
-            },
-        });
-
-        if (!blog) {
-            throw new NotFoundBlogException();
-        }
-        return blog;
     }
 
     async getBlogList(query: GetBlogsQueryRequest): Promise<BlogEntity[]> {
@@ -137,58 +118,6 @@ export class BlogRepository {
                 createdAt: Prisma.SortOrder.desc,
             },
         });
-    }
-
-    async deleteBlog(blogId: number): Promise<void> {
-        try {
-            await this.prisma.blog.update({
-                where: {
-                    id: blogId,
-                    isDeleted: false,
-                },
-                data: { isDeleted: true },
-            });
-        } catch (error) {
-            if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025'
-            ) {
-                throw new NotFoundBlogException();
-            }
-            throw error;
-        }
-    }
-
-    async updateBlog(
-        blogId: number,
-        updateBlogRequest: UpdateBlogRequest,
-    ): Promise<BlogEntity> {
-        const { title, url, date }: UpdateBlogRequest = updateBlogRequest;
-
-        try {
-            return await this.prisma.blog.update({
-                where: {
-                    id: blogId,
-                    isDeleted: false,
-                },
-                data: {
-                    title,
-                    url,
-                    date,
-                },
-                include: {
-                    user: true,
-                },
-            });
-        } catch (error) {
-            if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025'
-            ) {
-                throw new NotFoundBlogException();
-            }
-            throw error;
-        }
     }
 
     async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {

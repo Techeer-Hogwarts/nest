@@ -1,7 +1,6 @@
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
-import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { BlogCategory } from '@prisma/client';
 
@@ -70,23 +69,9 @@ export const getBlogsQueryRequest: GetBlogsQueryRequest = {
     limit: 10,
 };
 
-export const getBlogResponse: GetBlogResponse = new GetBlogResponse(
-    blogEntity(),
-);
-
 export const getBlogResponseList: GetBlogResponse[] = blogEntities.map(
     (blog: BlogEntity) => new GetBlogResponse(blog),
 );
-
-export const updateBlogRequest: UpdateBlogRequest = {
-    title: 'Updated Title',
-    url: 'https://example.com/updated-blog',
-    date: new Date('2024-09-24T08:51:54.000Z'),
-};
-
-export const updatedBlogEntity: BlogEntity = blogEntity({
-    ...updateBlogRequest,
-});
 
 export const paginationQueryDto: PaginationQueryDto = {
     offset: 0,
