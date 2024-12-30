@@ -16,6 +16,7 @@ import {
     UnauthorizedAdminException,
     NotFoundUserException,
 } from '../../../global/exception/custom.exception';
+import { TaskService } from '../../../global/task/task.service';
 
 describe('UserService', () => {
     let userService: UserService;
@@ -23,6 +24,7 @@ describe('UserService', () => {
     let resumeRepository: ResumeRepository;
     let authService: AuthService;
     let httpService: HttpService;
+    let taskService: TaskService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -62,6 +64,12 @@ describe('UserService', () => {
                         post: jest.fn(),
                     } as any,
                 },
+                {
+                    provide: TaskService,
+                    useValue: {
+                        requestSignUpBlogFetch: jest.fn(),
+                    } as any,
+                },
             ],
         }).compile();
 
@@ -70,6 +78,7 @@ describe('UserService', () => {
         resumeRepository = module.get<ResumeRepository>(ResumeRepository);
         authService = module.get<AuthService>(AuthService);
         httpService = module.get<HttpService>(HttpService);
+        taskService = module.get<TaskService>(TaskService);
     });
 
     it('should be defined', () => {
@@ -137,6 +146,10 @@ describe('UserService', () => {
                 url: 'https://example.com',
                 category: 'PORTFOLIO',
             } as ResumeEntity);
+            jest.spyOn(
+                taskService,
+                'requestSignUpBlogFetch',
+            ).mockResolvedValue();
 
             const mockHeaders = new AxiosHeaders({
                 'Content-Type': 'application/json',

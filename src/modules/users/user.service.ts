@@ -19,6 +19,7 @@ import {
     NotFoundUserException,
     BadRequestException,
 } from '../../global/exception/custom.exception';
+import { TaskService } from '../../global/task/task.service';
 
 @Injectable()
 export class UserService {
@@ -27,6 +28,7 @@ export class UserService {
         private readonly resumeRepository: ResumeRepository,
         private readonly authService: AuthService,
         private readonly httpService: HttpService,
+        private readonly taskService: TaskService,
     ) {}
 
     async validateCreateUserRequest(dto: CreateUserRequest): Promise<any> {
@@ -90,6 +92,14 @@ export class UserService {
         // 이력서 데이터 저장
         if (resumeData) {
             await this.resumeRepository.createResume(resumeData, newUser.id);
+        }
+
+        // 블로그 크롤링 요청
+        if (newUser.blogUrl) {
+            await this.taskService.requestSignUpBlogFetch(
+                newUser.id,
+                newUser.blogUrl,
+            );
         }
 
         return newUser;
