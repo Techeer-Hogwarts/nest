@@ -34,9 +34,9 @@ import { TaskModule } from './global/task/task.module';
         EventModule,
         LikeModule,
         RabbitMQModule,
-        TaskModule,
         StudyTeamModule,
         StudyMemberModule,
+        TaskModule,
     ],
 })
 export class AppModule {}
