@@ -1,13 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 import { ResumeCategory } from '@prisma/client';
-import { IsEnum, IsString, IsUrl } from 'class-validator';
+import { IsEnum, IsString, IsUrl, IsOptional } from 'class-validator';
 
 export class CreateResumeRequest {
+    @IsOptional()
     @IsUrl()
-    @ApiProperty({
-        example: 'https://example.com/resume.pdf',
-        description: '이력서 파일 URL',
-    })
+    @ApiHideProperty() // Swagger에서 이 필드를 숨김
     readonly url: string;
 
     @IsEnum(ResumeCategory)

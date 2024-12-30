@@ -8,11 +8,8 @@ import {
     createResumeRequest,
     getResumesQueryRequest,
     paginationQueryDto,
-    updateResumeRequest,
-    updatedResumeEntity,
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
@@ -182,55 +179,6 @@ describe('ResumeRepository', (): void => {
                     isDeleted: false,
                 },
                 data: { isDeleted: true },
-            });
-            expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('updateResume', (): void => {
-        it('should successfully update a resume', async (): Promise<void> => {
-            jest.spyOn(prismaService.resume, 'update').mockResolvedValue(
-                updatedResumeEntity,
-            );
-
-            const result: ResumeEntity = await repository.updateResume(
-                1,
-                updateResumeRequest,
-            );
-
-            expect(result).toEqual(updatedResumeEntity);
-            expect(prismaService.resume.update).toHaveBeenCalledWith({
-                where: {
-                    id: 1,
-                    isDeleted: false,
-                },
-                data: updateResumeRequest,
-                include: { user: true },
-            });
-            expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundResumeException if the resume does not exist', async (): Promise<void> => {
-            const prismaError: PrismaClientKnownRequestError =
-                new PrismaClientKnownRequestError('Record not found', {
-                    code: 'P2025',
-                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                });
-
-            jest.spyOn(prismaService.resume, 'update').mockRejectedValue(
-                prismaError,
-            );
-
-            await expect(
-                repository.updateResume(1, updateResumeRequest),
-            ).rejects.toThrow(NotFoundResumeException);
-            expect(prismaService.resume.update).toHaveBeenCalledWith({
-                where: {
-                    id: 1,
-                    isDeleted: false,
-                },
-                data: updateResumeRequest,
-                include: { user: true },
             });
             expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
         });

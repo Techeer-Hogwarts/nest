@@ -5,21 +5,22 @@ import {
     Get,
     Param,
     ParseIntPipe,
-    Patch,
     Post,
     Query,
     Req,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
-import { UpdateResumeRequest } from './dto/request/update.resume.request';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('resumes')
 @Controller('resumes')
@@ -59,19 +60,50 @@ export class ResumeController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
+    @UseInterceptors(FileInterceptor('file')) // 파일 업로드 처리
+    @ApiConsumes('multipart/form-data') // Swagger에서 파일 업로드 지원
     @ApiOperation({
         summary: '이력서 생성',
-        description: '새로운 이력서를 생성합니다.',
+        description: '파일과 폼 데이터를 사용해 이력서를 생성합니다.',
+    })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary', // 파일 필드
+                    description: '업로드할 파일',
+                },
+                category: {
+                    type: 'string',
+                    example: 'PORTFOLIO',
+                    description: '이력서 타입',
+                },
+                position: {
+                    type: 'string',
+                    example: 'BACKEND',
+                    description: '이력서 포지션',
+                },
+                title: {
+                    type: 'string',
+                    example: '스타트업',
+                    description: '이력서 제목',
+                },
+            },
+            required: ['file', 'category', 'position'], // 필수 필드
+        },
     })
     async createResume(
-        @Req() request: Request,
-        @Body() createResumeRequest: CreateResumeRequest,
+        @Req() request: any,
+        @UploadedFile() file: Express.Multer.File, // 파일 데이터
+        @Body() body: CreateResumeRequest, // 요청 데이터
     ): Promise<any> {
-        const user = request.user as any;
-        const resume: GetResumeResponse = await this.resumeService.createResume(
-            createResumeRequest,
-            user,
-        );
+        const user = request.user;
+
+        // 파일과 요청 데이터를 서비스로 전달
+        const resume = await this.resumeService.createResume(body, file, user);
+
         return {
             code: 201,
             message: '이력서를 생성했습니다.',
@@ -129,30 +161,6 @@ export class ResumeController {
         return {
             code: 200,
             message: '이력서가 삭제되었습니다.',
-        };
-    }
-
-    @UseGuards(JwtAuthGuard)
-    @Patch(':resumeId')
-    @ApiOperation({
-        summary: '이력서 수정',
-        description: '지정된 ID의 이력서 정보를 수정합니다.',
-    })
-    async updateResume(
-        @Req() request: Request,
-        @Param('resumeId', ParseIntPipe) resumeId: number,
-        @Body() updateResumeRequest: UpdateResumeRequest,
-    ): Promise<any> {
-        const user = request.user as any;
-        const resume: GetResumeResponse = await this.resumeService.updateResume(
-            user,
-            resumeId,
-            updateResumeRequest,
-        );
-        return {
-            code: 200,
-            message: '이력서가 수정되었습니다.',
-            data: resume,
         };
     }
 }

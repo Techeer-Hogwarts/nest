@@ -5,16 +5,19 @@ import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeEntity } from './entities/resume.entity';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
-import { UpdateResumeRequest } from './dto/request/update.resume.request';
 import { User } from '@prisma/client';
 import {
     ForbiddenException,
     NotFoundResumeException,
 } from '../../global/exception/custom.exception';
+import { GoogleDriveService } from '../../googleDrive/google.drive.service';
 
 @Injectable()
 export class ResumeService {
-    constructor(private readonly resumeRepository: ResumeRepository) {}
+    constructor(
+        private readonly resumeRepository: ResumeRepository,
+        private readonly googleDriveService: GoogleDriveService,
+    ) {}
 
     async getBestResumes(
         query: PaginationQueryDto,
@@ -28,34 +31,44 @@ export class ResumeService {
 
     async createResume(
         createResumeRequest: CreateResumeRequest,
+        file: Express.Multer.File,
         user: User,
     ): Promise<GetResumeResponse> {
-        const currentDateTime: Date = new Date();
-        const formattedDate: string = currentDateTime
-            .toISOString() // ISO 형식 문자열로 변환
-            .replace('T', '-') // 날짜와 시간을 구분하는 T를 -로 변경
-            .replace(/:/g, '') // 시간 값의 콜론(:) 제거
-            .split('.')[0] // 소수점 이하(밀리초)와 Z 제거
-            .slice(0, -2); // 초 부분 제거
+        const { title, category, position } = createResumeRequest;
 
-        // 제목 생성 로직
-        const baseTitle: string = `${user.name}-${formattedDate}`;
-        const fullTitle: string = createResumeRequest.title
-            ? `${baseTitle}-${createResumeRequest.title}`
-            : baseTitle; // 부가 설명이 있는 경우 첨부
+        if (!file) {
+            throw new Error('File is required for creating a resume.');
+        }
 
-        // 구글 드라이브 업로드
-        const resumeUrl: string = createResumeRequest.url;
-        const newResumeDto: CreateResumeRequest = {
-            ...createResumeRequest,
-            title: fullTitle,
-            url: resumeUrl,
-        };
+        // 제목 생성
+        const currentDateTime = new Date();
+        const formattedDate = currentDateTime
+            .toISOString()
+            .replace('T', '-')
+            .replace(/:/g, '')
+            .split('.')[0]
+            .slice(0, -2);
 
-        const resume: ResumeEntity = await this.resumeRepository.createResume(
-            newResumeDto,
+        const baseTitle = `${user.name}-${formattedDate}`;
+        const fullTitle = title ? `${baseTitle}-${title}` : baseTitle;
+
+        // Google Drive에 파일 업로드
+        const resumeUrl = await this.googleDriveService.uploadFileBuffer(
+            file.buffer, // 파일의 buffer 추출
+            fullTitle,
+        );
+
+        // 데이터베이스에 저장
+        const resume = await this.resumeRepository.createResume(
+            {
+                category,
+                position,
+                title: fullTitle,
+                url: resumeUrl,
+            },
             user.id,
         );
+
         return new GetResumeResponse(resume);
     }
 
@@ -89,22 +102,13 @@ export class ResumeService {
         );
     }
 
+    // IsDelted -> true, 구글 드라이브 파일은 삭제 폴더로 이동
     async deleteResume(user: User, resumeId: number): Promise<void> {
         await this.validateAuthor(user, resumeId);
+        const resumeTitle =
+            await this.resumeRepository.getResumeTitle(resumeId);
+        await this.googleDriveService.moveFileToArchive(resumeTitle);
         return this.resumeRepository.deleteResume(resumeId);
-    }
-
-    async updateResume(
-        user: User,
-        resumeId: number,
-        updateResumeRequest: UpdateResumeRequest,
-    ): Promise<GetResumeResponse> {
-        await this.validateAuthor(user, resumeId);
-        const resume: ResumeEntity = await this.resumeRepository.updateResume(
-            resumeId,
-            updateResumeRequest,
-        );
-        return new GetResumeResponse(resume);
     }
 
     private async validateAuthor(

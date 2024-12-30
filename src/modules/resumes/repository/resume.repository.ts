@@ -5,7 +5,6 @@ import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { Prisma } from '@prisma/client';
-import { UpdateResumeRequest } from '../dto/request/update.resume.request';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 @Injectable()
@@ -130,37 +129,19 @@ export class ResumeRepository {
         }
     }
 
-    async updateResume(
-        resumeId: number,
-        updateResumeRequest: UpdateResumeRequest,
-    ): Promise<ResumeEntity> {
-        const { title, url, isMain, category }: UpdateResumeRequest =
-            updateResumeRequest;
+    async getResumeTitle(resumeId: number): Promise<string> {
+        const resume = await this.prisma.resume.findUnique({
+            where: {
+                id: resumeId, // 특정 resumeId로 조회
+            },
+            select: {
+                title: true, // 제목만 조회
+            },
+        });
 
-        try {
-            return await this.prisma.resume.update({
-                where: {
-                    id: resumeId,
-                    isDeleted: false,
-                },
-                data: {
-                    title,
-                    url,
-                    isMain,
-                    category,
-                },
-                include: {
-                    user: true,
-                },
-            });
-        } catch (error) {
-            if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025'
-            ) {
-                throw new NotFoundResumeException();
-            }
-            throw error;
+        if (!resume) {
+            throw new NotFoundResumeException();
         }
+        return resume.title;
     }
 }

@@ -2,14 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { google, drive_v3 } from 'googleapis';
 import { Readable } from 'stream';
 import { ConfigService } from '@nestjs/config';
+import { OnModuleInit } from '@nestjs/common';
 
 @Injectable()
-export class GoogleDriveService {
+export class GoogleDriveService implements OnModuleInit {
     private driveClient: drive_v3.Drive;
 
-    constructor(private configService: ConfigService) {
-        console.log('Initializing Google Drive Service...');
-        this.initializeDriveClient();
+    constructor(private configService: ConfigService) {}
+
+    async onModuleInit(): Promise<void> {
+        await this.initializeDriveClient();
     }
 
     private async initializeDriveClient(): Promise<void> {
@@ -63,12 +65,16 @@ export class GoogleDriveService {
     public async uploadFileBuffer(
         fileBuffer: Buffer,
         fileName: string,
-        folderId: string,
     ): Promise<string> {
         try {
+            const folderId = this.configService.get<string>('GOOGLE_FOLDER_ID');
+            if (!folderId) {
+                throw new Error('Google Drive folder ID is not configured');
+            }
+
             const fileMetadata = {
                 name: fileName,
-                parents: [folderId],
+                parents: [folderId], // 환경변수에서 가져온 폴더 ID 사용
             };
 
             const media = {
@@ -85,6 +91,48 @@ export class GoogleDriveService {
             return response.data.webViewLink || '';
         } catch (error) {
             console.error('Error uploading file to Google Drive:', error);
+            throw error;
+        }
+    }
+
+    public async moveFileToArchive(fileName: string): Promise<void> {
+        try {
+            // 아카이브 폴더 ID와 원본 폴더 ID 가져오기
+            const archiveFolderId =
+                this.configService.get<string>('ARCHIVE_FOLDER_ID');
+            const sourceFolderId =
+                this.configService.get<string>('GOOGLE_FOLDER_ID');
+
+            // 파일 이름으로 파일 ID 검색
+            const response = await this.driveClient.files.list({
+                q: `name='${fileName}' and '${sourceFolderId}' in parents`,
+                fields: 'files(id, name)',
+                spaces: 'drive',
+            });
+
+            const files = response.data.files;
+
+            if (!files || files.length === 0) {
+                throw new Error(
+                    `File "${fileName}" not found in folder "${sourceFolderId}".`,
+                );
+            }
+
+            const fileId = files[0].id; // 첫 번째 검색 결과의 파일 ID
+
+            // 파일 이동
+            await this.driveClient.files.update({
+                fileId,
+                addParents: archiveFolderId,
+                removeParents: sourceFolderId,
+                fields: 'id, parents',
+            });
+
+            console.log(
+                `File "${fileName}" (ID: ${fileId}) moved to archive folder.`,
+            );
+        } catch (error) {
+            console.error('Error moving file to archive folder:', error);
             throw error;
         }
     }

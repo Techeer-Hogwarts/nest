@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
     paginationQueryDto,
-    updatedResumeEntity,
     createResumeRequest,
     getResumeResponseList,
     getResumeResponse,
@@ -66,8 +65,22 @@ describe('ResumeController', (): void => {
                 getResumeResponse,
             );
 
+            const mockFile: Express.Multer.File = {
+                buffer: Buffer.from('Test File Content'), // 파일 내용
+                originalname: 'resume.pdf',
+                mimetype: 'application/pdf',
+                size: 12345,
+                fieldname: 'file',
+                encoding: '7bit',
+                destination: '',
+                filename: '',
+                path: '',
+                stream: null as any,
+            };
+
             const result = await controller.createResume(
                 request,
+                mockFile,
                 createResumeRequest,
             );
 
@@ -76,9 +89,11 @@ describe('ResumeController', (): void => {
                 message: '이력서를 생성했습니다.',
                 data: getResumeResponse,
             });
+
             expect(service.createResume).toHaveBeenCalledWith(
                 createResumeRequest,
-                user,
+                mockFile,
+                user, // 올바른 데이터 전달
             );
             expect(service.createResume).toHaveBeenCalledTimes(1);
         });
@@ -203,32 +218,6 @@ describe('ResumeController', (): void => {
 
             expect(service.deleteResume).toHaveBeenCalledWith(user, 1);
             expect(service.deleteResume).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('updateResume', (): void => {
-        it('should successfully update a resume', async (): Promise<void> => {
-            jest.spyOn(service, 'updateResume').mockResolvedValue(
-                updatedResumeEntity,
-            );
-
-            const result = await controller.updateResume(
-                request,
-                1,
-                updatedResumeEntity,
-            );
-
-            expect(result).toEqual({
-                code: 200,
-                message: '이력서가 수정되었습니다.',
-                data: updatedResumeEntity,
-            });
-            expect(service.updateResume).toHaveBeenCalledWith(
-                user,
-                1,
-                updatedResumeEntity,
-            );
-            expect(service.updateResume).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -3,7 +3,6 @@ import {
     Post,
     UploadedFile,
     UseInterceptors,
-    Body,
 } from '@nestjs/common';
 import { GoogleDriveService } from './google.drive.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -35,7 +34,6 @@ export class GoogleDriveController {
     @UseInterceptors(FileInterceptor('file'))
     async uploadFile(
         @UploadedFile() file: Express.Multer.File,
-        @Body('folderId') folderId: string,
     ): Promise<{ webViewLink: string }> {
         if (!file) {
             throw new Error('No file provided');
@@ -44,7 +42,6 @@ export class GoogleDriveController {
         const webViewLink = await this.googleDriveService.uploadFileBuffer(
             file.buffer,
             fileName,
-            folderId,
         );
 
         return { webViewLink };
