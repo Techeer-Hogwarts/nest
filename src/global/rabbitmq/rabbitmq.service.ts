@@ -9,7 +9,7 @@ export class RabbitMQService {
     private channel: ChannelWrapper;
 
     constructor() {
-        this.connection = amqp.connect(['amqp://guest:guest@localhost:5672']);
+        this.connection = amqp.connect([process.env.RABBITMQ_URL]);
         this.channel = this.connection.createChannel({
             json: true,
             setup: (channel: ConfirmChannel) =>
