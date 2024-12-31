@@ -142,7 +142,7 @@ export class TaskService implements OnModuleInit {
         Logger.debug(`Fetching all blogs for task ${taskId}: ${taskData}`);
         const blogs = new CrawlingBlogResponse(
             JSON.parse(taskData),
-            BlogCategory.SHARED,
+            BlogCategory.TECHEER,
         );
         Logger.debug(blogs.posts);
         await this.blogRepository.createBlog(blogs);
