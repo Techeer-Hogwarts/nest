@@ -153,7 +153,19 @@ describe('ResumeRepository', (): void => {
                     isDeleted: false,
                     userId: 1,
                 },
-                include: { user: true },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            class: true,
+                            year: true,
+                            school: true,
+                            mainPosition: true,
+                            subPosition: true,
+                        },
+                    },
+                },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
                 orderBy: {

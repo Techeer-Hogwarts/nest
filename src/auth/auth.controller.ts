@@ -110,13 +110,15 @@ export class AuthController {
             httpOnly: true,
             path: '/',
             maxAge: 15 * 60 * 1000, // 15분
-            secure: false,
+            secure: true,
+            sameSite: 'none', // 교차 출처 허용
         });
         response.cookie('refresh_token', refreshToken, {
             httpOnly: true,
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
-            secure: false,
+            secure: true,
+            sameSite: 'none', // 교차 출처 허용
         });
         return {
             code: 200,

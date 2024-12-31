@@ -46,18 +46,59 @@ describe('SessionRepository', (): void => {
         expect(repository).toBeDefined();
     });
 
+    describe('findById', (): void => {
+        it('should return a session when it exists', async () => {
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                sessionEntity(),
+            );
+
+            const result = await repository.findById(100);
+
+            expect(prismaService.session.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
+            expect(result).toEqual(sessionEntity());
+        });
+
+        it('should return null when the session does not exist', async () => {
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                null,
+            );
+
+            const result = await repository.findById(100);
+
+            expect(prismaService.session.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
+            expect(result).toBeNull();
+        });
+    });
+
     describe('createSession', (): void => {
         it('should successfully create a session', async (): Promise<void> => {
             jest.spyOn(prismaService.session, 'create').mockResolvedValue(
                 sessionEntity(),
             );
 
-            const result: SessionEntity =
-                await repository.createSession(createSessionRequest);
+            const result: SessionEntity = await repository.createSession(
+                1,
+                createSessionRequest,
+            );
 
             expect(result).toEqual(sessionEntity());
             expect(prismaService.session.create).toHaveBeenCalledWith({
-                data: createSessionRequest,
+                data: {
+                    userId: 1,
+                    ...createSessionRequest,
+                },
                 include: { user: true },
             });
             expect(prismaService.session.create).toHaveBeenCalledTimes(1);
@@ -160,7 +201,19 @@ describe('SessionRepository', (): void => {
                     isDeleted: false,
                     userId: 1,
                 },
-                include: { user: true },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            class: true,
+                            year: true,
+                            school: true,
+                            mainPosition: true,
+                            subPosition: true,
+                        },
+                    },
+                },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
             });

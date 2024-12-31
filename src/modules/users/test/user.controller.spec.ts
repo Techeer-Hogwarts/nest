@@ -63,7 +63,7 @@ describe('UserController', () => {
                 createUserRequest: {
                     email: 'test@test.com',
                     password: 'password123',
-                    name: 'Test',
+                    name: 'test',
                     year: 6,
                     isLft: false,
                     githubUrl: 'https://github.com/test',
@@ -72,6 +72,16 @@ describe('UserController', () => {
                     subPosition: 'Frontend',
                     school: 'Hogwarts',
                     class: '1학년',
+                    isIntern: false,
+                    internCompanyName: 'crowdStrike',
+                    internPosition: 'Frontend',
+                    isFullTime: false,
+                    fullTimeCompanyName: 'paloalto',
+                    fullTimePosition: 'Backend',
+                    internStartDate: null,
+                    internEndDate: null,
+                    fullTimeStartDate: null,
+                    fullTimeEndDate: null,
                 },
             };
 

@@ -8,11 +8,14 @@ import { CreateUserRequest } from '../dto/request/create.user.request';
 import { CreateResumeRequest } from '../../resumes/dto/request/create.resume.request';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
 import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { of } from 'rxjs';
 import { User } from '@prisma/client';
 import { ResumeEntity } from '../../resumes/entities/resume.entity';
 import { AxiosHeaders, AxiosResponse } from 'axios';
+import {
+    UnauthorizedAdminException,
+    NotFoundUserException,
+} from '../../../global/exception/custom.exception';
 
 describe('UserService', () => {
     let userService: UserService;
@@ -78,15 +81,17 @@ describe('UserService', () => {
             const createUserRequest: CreateUserRequest = {
                 email: 'test@test.com',
                 password: 'password123',
-                name: 'Test',
-                year: 2023,
+                name: 'test',
+                year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://blog.com',
+                blogUrl: 'https://example.com/blog',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
                 school: 'Hogwarts',
                 class: '1학년',
+                isIntern: false,
+                isFullTime: false,
             };
 
             const createResumeRequest: CreateResumeRequest = {
@@ -183,29 +188,6 @@ describe('UserService', () => {
         });
     });
 
-    describe('findById', () => {
-        it('should return user if found by id', async () => {
-            const user = {
-                id: 1,
-                email: 'test@test.com',
-            } as User;
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
-
-            const result = await userService.findById(1);
-
-            expect(userRepository.findById).toHaveBeenCalledWith(1);
-            expect(result).toEqual(user);
-        });
-
-        it('should throw NotFoundException if user is not found', async () => {
-            jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
-
-            await expect(userService.findById(1)).rejects.toThrow(
-                NotFoundException,
-            );
-        });
-    });
-
     describe('updateUserProfile', () => {
         it('should update the user profile', async () => {
             const userId = 1;
@@ -268,7 +250,7 @@ describe('UserService', () => {
 
             await expect(
                 userService.updateUserProfile(1, updateUserRequest),
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(NotFoundUserException);
         });
     });
 
@@ -294,7 +276,7 @@ describe('UserService', () => {
             jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
 
             await expect(userService.deleteUser(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundUserException,
             );
         });
     });
@@ -361,7 +343,7 @@ describe('UserService', () => {
 
             await expect(
                 userService.updateNickname(user, nickname),
-            ).rejects.toThrow(UnauthorizedException);
+            ).rejects.toThrow(UnauthorizedAdminException);
         });
     });
 
