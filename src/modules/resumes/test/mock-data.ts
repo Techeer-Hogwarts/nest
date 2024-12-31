@@ -4,11 +4,51 @@ import { GetResumeResponse } from '../dto/response/get.resume.response';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { UpdateResumeRequest } from '../dto/request/update.resume.request';
+import { Request } from 'express';
+
+export const user = {
+    id: 1,
+    createdAt: new Date('2024-09-24T08:51:54.000Z'),
+    updatedAt: new Date('2024-09-24T08:51:54.000Z'),
+    isDeleted: false,
+    name: '홍길동',
+    email: 'hong@test.com',
+    nickname: 'hong123', // 예시 데이터 추가
+    year: 2024,
+    password: '1234',
+    isLft: false,
+    githubUrl: 'github',
+    blogUrl: 'blog',
+    mainPosition: 'Backend',
+    subPosition: 'DevOps',
+    school: 'Test University',
+    class: '4학년',
+    profileImage: 'profile-image-url',
+    stack: [], // 빈 배열 기본값
+    isAuth: true,
+    isIntern: true,
+    internPosition: 'Intern Developer',
+    internCompanyName: 'Intern Corp',
+    internStartDate: new Date('2024-01-01T00:00:00.000Z'),
+    internEndDate: new Date('2024-06-01T00:00:00.000Z'),
+    fullTimePosition: 'Full-Time Developer',
+    isFullTime: false,
+    fullTimeCompanyName: 'Full-Time Corp',
+    fullTimeStartDate: new Date('2024-07-01T00:00:00.000Z'),
+    fullTimeEndDate: new Date('2024-12-31T00:00:00.000Z'),
+    roleId: 1,
+};
+
+export const request: Request = {
+    user: user,
+} as unknown as Request;
 
 export const createResumeRequest: CreateResumeRequest = {
     url: 'https://example.com/resume.pdf',
-    title: '홍길동 20240910',
     category: 'PORTFOLIO',
+    position: 'BACKEND',
+    title: '스타트업',
+    isMain: true,
 };
 
 export const resumeEntity = (
@@ -21,43 +61,13 @@ export const resumeEntity = (
         url: createResumeRequest.url,
         isMain: false,
         category: createResumeRequest.category,
+        position: createResumeRequest.position,
         createdAt: new Date('2024-09-24T08:51:54.000Z'),
         updatedAt: new Date('2024-09-24T08:51:54.000Z'),
         isDeleted: false,
         likeCount: 0,
         viewCount: 0,
-        user: {
-            id: 1,
-            createdAt: new Date('2024-09-24T08:51:54.000Z'),
-            updatedAt: new Date('2024-09-24T08:51:54.000Z'),
-            isDeleted: false,
-            name: '홍길동',
-            email: 'hong@test.com',
-            nickname: 'hong123', // 예시 데이터 추가
-            year: 2024,
-            password: '1234',
-            isLft: false,
-            githubUrl: 'github',
-            blogUrl: 'blog',
-            mainPosition: 'Backend',
-            subPosition: 'DevOps',
-            school: 'Test University',
-            class: '4학년',
-            profileImage: 'profile-image-url',
-            stack: [], // 빈 배열 기본값
-            isAuth: true,
-            isIntern: true,
-            internPosition: 'Intern Developer',
-            internCompanyName: 'Intern Corp',
-            internStartDate: new Date('2024-01-01T00:00:00.000Z'),
-            internEndDate: new Date('2024-06-01T00:00:00.000Z'),
-            fullTimePosition: 'Full-Time Developer',
-            isFullTime: false,
-            fullTimeCompanyName: 'Full-Time Corp',
-            fullTimeStartDate: new Date('2024-07-01T00:00:00.000Z'),
-            fullTimeEndDate: new Date('2024-12-31T00:00:00.000Z'),
-            roleId: 1,
-        },
+        user: user,
         ...overrides,
     };
 };

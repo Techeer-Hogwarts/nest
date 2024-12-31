@@ -255,26 +255,27 @@ model Bookmark {
 }
 
 enum ResumeCategory {
+  RESUME
   PORTFOLIO
   ICT
-  SOMA
   OTHER
 }
 
 model Resume {
-  id        Int            @id @default(autoincrement())
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  isDeleted Boolean        @default(false)
-  userId    Int
-  title     String         @db.VarChar(100)
-  url       String         @db.VarChar(100)
-  isMain    Boolean        @default(false)
-  likeCount Int            @default(0)
-  viewCount Int            @default(0)
-  category  ResumeCategory
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  userId      Int
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(100)
+  isMain      Boolean      @default(false)
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
+  category    ResumeCategory
+  position    String       @db.VarChar(100)
 
-  user User @relation("UserResumes", fields: [userId], references: [id])
+  user        User         @relation("UserResumes", fields: [userId], references: [id])
 }
 
 enum EventCategory {

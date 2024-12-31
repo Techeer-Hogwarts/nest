@@ -21,7 +21,13 @@ module.exports = {
         eqeqeq: [2, 'allow-null'], // == 금지
         'no-empty': ['error', { allowEmptyCatch: false }], // 빈 catch 금지
         'eol-last': 2, // 파일 끝에 개행문자가 없을 경우 경고
-        camelcase: ['error', { properties: 'never' }], // 변수, 함수명 카멜케이스 강제
+        camelcase: [
+            'error',
+            {
+                properties: 'never',
+                allow: ['drive_v3'], // drive_v3를 예외로 설정
+            },
+        ], // 변수, 함수명 카멜케이스 강제
         'space-in-parens': [2, 'never'], // () 안에 공백을 추가하지 않음
         'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }], // 빈 줄 최대 1개
         'space-before-blocks': [2, 'always'], // 블록 앞에 공백을 강제

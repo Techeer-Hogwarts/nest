@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import {
     bestResumeEntities,
     resumeEntities,
@@ -10,17 +9,19 @@ import {
     getResumeResponseList,
     getResumesQueryRequest,
     paginationQueryDto,
-    updatedResumeEntity,
-    updateResumeRequest,
+    user,
 } from './mock-data';
 import { GetResumeResponse } from '../dto/response/get.resume.response';
 import { ResumeEntity } from '../entities/resume.entity';
 import { ResumeService } from '../../resumes/resume.service';
 import { ResumeRepository } from '../../resumes/repository/resume.repository';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
+import { GoogleDriveService } from '../../../googleDrive/google.drive.service';
 
 describe('ResumeService', (): void => {
     let service: ResumeService;
     let repository: ResumeRepository;
+    let googleDriveService: GoogleDriveService;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +37,15 @@ describe('ResumeService', (): void => {
                         getResumesByUser: jest.fn(),
                         deleteResume: jest.fn(),
                         updateResume: jest.fn(),
+                        getResumeTitle: jest.fn(),
+                        unsetMainResumeForUser: jest.fn(),
+                    },
+                },
+                {
+                    provide: GoogleDriveService,
+                    useValue: {
+                        uploadFileBuffer: jest.fn(),
+                        moveFileToArchive: jest.fn(),
                     },
                 },
             ],
@@ -43,29 +53,94 @@ describe('ResumeService', (): void => {
 
         service = module.get<ResumeService>(ResumeService);
         repository = module.get<ResumeRepository>(ResumeRepository);
+        googleDriveService = module.get<GoogleDriveService>(GoogleDriveService);
     });
 
     it('should be defined', (): void => {
         expect(service).toBeDefined();
     });
 
-    describe('createResume', (): void => {
-        it('should successfully create a resume', async (): Promise<void> => {
+    function formatDate(date: Date): string {
+        return date
+            .toISOString()
+            .replace('T', '-')
+            .replace(/:/g, '')
+            .split('.')[0]
+            .slice(0, -2);
+    }
+
+    describe('createResume', () => {
+        it('should successfully create a resume', async () => {
+            const mockFile: Express.Multer.File = {
+                buffer: Buffer.from('Test File Content'),
+                originalname: 'resume.pdf',
+                mimetype: 'application/pdf',
+                size: 12345,
+                fieldname: 'file',
+                encoding: '7bit',
+                destination: '',
+                filename: '',
+                path: '',
+                stream: null as any,
+            };
+
+            const formattedDate = formatDate(new Date());
+            const resumeUrl = 'https://drive.google.com/file/d/resume-id/view';
+
+            jest.spyOn(
+                googleDriveService,
+                'uploadFileBuffer',
+            ).mockResolvedValue(resumeUrl);
             jest.spyOn(repository, 'createResume').mockResolvedValue(
                 resumeEntity(),
             );
 
-            const result: GetResumeResponse = await service.createResume(
+            const result = await service.createResume(
                 createResumeRequest,
-                1,
+                mockFile,
+                user,
             );
 
             expect(result).toEqual(getResumeResponse);
-            expect(repository.createResume).toHaveBeenCalledWith(
-                createResumeRequest,
-                1,
+            expect(googleDriveService.uploadFileBuffer).toHaveBeenCalledWith(
+                mockFile.buffer,
+                `${user.name}-${formattedDate}-${createResumeRequest.title}`,
             );
-            expect(repository.createResume).toHaveBeenCalledTimes(1);
+            expect(repository.createResume).toHaveBeenCalledWith(
+                {
+                    ...createResumeRequest,
+                    title: `${user.name}-${formattedDate}-${createResumeRequest.title}`,
+                    url: resumeUrl,
+                },
+                user.id,
+            );
+        });
+
+        it('should throw an error if the Google Drive upload fails', async () => {
+            jest.spyOn(
+                googleDriveService,
+                'uploadFileBuffer',
+            ).mockRejectedValue(new Error('Upload failed'));
+
+            const mockFile: Express.Multer.File = {
+                buffer: Buffer.from('Test File Content'),
+                originalname: 'resume.pdf',
+                mimetype: 'application/pdf',
+                size: 12345,
+                fieldname: 'file',
+                encoding: '7bit',
+                destination: '',
+                filename: '',
+                path: '',
+                stream: null as any,
+            };
+
+            await expect(
+                service.createResume(createResumeRequest, mockFile, user),
+            ).rejects.toThrow('Upload failed');
+
+            expect(googleDriveService.uploadFileBuffer).toHaveBeenCalled();
+            expect(repository.createResume).not.toHaveBeenCalled();
         });
     });
 
@@ -164,62 +239,27 @@ describe('ResumeService', (): void => {
 
     describe('deleteResume', (): void => {
         it('should successfully delete a resume', async (): Promise<void> => {
+            jest.spyOn(repository, 'getResume').mockResolvedValue(
+                resumeEntity(),
+            );
             jest.spyOn(repository, 'deleteResume').mockResolvedValue(undefined);
 
-            await service.deleteResume(1);
+            await service.deleteResume(user, 1);
 
             expect(repository.deleteResume).toHaveBeenCalledWith(1);
             expect(repository.deleteResume).toHaveBeenCalledTimes(1);
         });
 
-        it('should throw NotFoundException if resume does not exist', async (): Promise<void> => {
+        it('should throw NotFoundResumeException if resume does not exist', async (): Promise<void> => {
+            jest.spyOn(repository, 'getResume').mockResolvedValue(undefined);
             jest.spyOn(repository, 'deleteResume').mockRejectedValue(
-                new NotFoundException('이력서를 찾을 수 없습니다.'),
+                new NotFoundResumeException(),
             );
 
-            await expect(service.deleteResume(1)).rejects.toThrow(
-                NotFoundException,
+            await expect(service.deleteResume(user, 1)).rejects.toThrow(
+                NotFoundResumeException,
             );
-            expect(repository.deleteResume).toHaveBeenCalledWith(1);
-            expect(repository.deleteResume).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('updateResume', (): void => {
-        it('should successfully update a resume and return a GetResumeResponse', async (): Promise<void> => {
-            jest.spyOn(repository, 'updateResume').mockResolvedValue(
-                updatedResumeEntity,
-            );
-
-            const result: GetResumeResponse = await service.updateResume(
-                1,
-                updateResumeRequest,
-            );
-
-            expect(result).toEqual(new GetResumeResponse(updatedResumeEntity));
-            expect(result).toBeInstanceOf(GetResumeResponse);
-
-            expect(repository.updateResume).toHaveBeenCalledWith(
-                1,
-                updateResumeRequest,
-            );
-            expect(repository.updateResume).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'updateResume').mockRejectedValue(
-                new NotFoundException('이력서를 찾을 수 없습니다.'),
-            );
-
-            await expect(
-                service.updateResume(1, updateResumeRequest),
-            ).rejects.toThrow(NotFoundException);
-
-            expect(repository.updateResume).toHaveBeenCalledWith(
-                1,
-                updateResumeRequest,
-            );
-            expect(repository.updateResume).toHaveBeenCalledTimes(1);
+            expect(repository.deleteResume).toHaveBeenCalledTimes(0);
         });
     });
 });

@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
 import { Prisma } from '@prisma/client';
-import { UpdateResumeRequest } from '../dto/request/update.resume.request';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class ResumeRepository {
@@ -18,9 +18,22 @@ export class ResumeRepository {
         return this.prisma.resume.create({
             data: {
                 ...createResumeRequest,
-                user: { connect: { id: userId } }, // user와 연결
+                title: createResumeRequest.title,
+                user: { connect: { id: userId } },
             },
             include: { user: true },
+        });
+    }
+
+    async unsetMainResumeForUser(userId: number): Promise<void> {
+        await this.prisma.resume.updateMany({
+            where: {
+                userId: userId,
+                isMain: true,
+            },
+            data: {
+                isMain: false,
+            },
         });
     }
 
@@ -46,7 +59,7 @@ export class ResumeRepository {
         });
 
         if (!resume) {
-            throw new NotFoundException('이력서를 찾을 수 없습니다.');
+            throw new NotFoundResumeException();
         }
         return resume;
     }
@@ -91,6 +104,9 @@ export class ResumeRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
     }
 
@@ -119,6 +135,9 @@ export class ResumeRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
     }
 
@@ -136,43 +155,37 @@ export class ResumeRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundException('이력서를 찾을 수 없습니다.');
+                throw new NotFoundResumeException();
             }
             throw error;
         }
     }
 
+    async getResumeTitle(resumeId: number): Promise<string> {
+        const resume = await this.prisma.resume.findUnique({
+            where: {
+                id: resumeId, // 특정 resumeId로 조회
+            },
+            select: {
+                title: true, // 제목만 조회
+            },
+        });
+
+        if (!resume) {
+            throw new NotFoundResumeException();
+        }
+        return resume.title;
+    }
+
     async updateResume(
         resumeId: number,
-        updateResumeRequest: UpdateResumeRequest,
-    ): Promise<ResumeEntity> {
-        const { title, url, isMain, category }: UpdateResumeRequest =
-            updateResumeRequest;
-
-        try {
-            return await this.prisma.resume.update({
-                where: {
-                    id: resumeId,
-                    isDeleted: false,
-                },
-                data: {
-                    title,
-                    url,
-                    isMain,
-                    category,
-                },
-                include: {
-                    user: true,
-                },
-            });
-        } catch (error) {
-            if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025'
-            ) {
-                throw new NotFoundException('이력서를 찾을 수 없습니다.');
-            }
-            throw error;
-        }
+        data: { isMain: boolean },
+    ): Promise<void> {
+        await this.prisma.resume.update({
+            where: {
+                id: resumeId,
+            },
+            data,
+        });
     }
 }
