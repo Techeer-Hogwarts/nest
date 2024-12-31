@@ -68,6 +68,7 @@ export class GoogleDriveService implements OnModuleInit {
     ): Promise<string> {
         try {
             const folderId = this.configService.get<string>('GOOGLE_FOLDER_ID');
+
             if (!folderId) {
                 throw new Error('Google Drive folder ID is not configured');
             }

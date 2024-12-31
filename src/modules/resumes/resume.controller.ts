@@ -11,6 +11,7 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFile,
+    Patch,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreateResumeRequest } from './dto/request/create.resume.request';
@@ -90,8 +91,13 @@ export class ResumeController {
                     example: '스타트업',
                     description: '이력서 제목',
                 },
+                isMain: {
+                    type: 'boolean',
+                    example: true,
+                    description: '이력서 대표 여부',
+                },
             },
-            required: ['file', 'category', 'position'], // 필수 필드
+            required: ['file', 'category', 'position', 'title', 'isMain'], // 필수 필드
         },
     })
     async createResume(
@@ -161,6 +167,25 @@ export class ResumeController {
         return {
             code: 200,
             message: '이력서가 삭제되었습니다.',
+        };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(':resumeId')
+    @ApiOperation({
+        summary: '메인 이력서 지정',
+        description:
+            '사용자가 올린 이력서들 중 메인으로 표시할 이력서를 변경합니다.',
+    })
+    async updateMainResume(
+        @Req() request: any,
+        @Param('resumeId', ParseIntPipe) resumeId: number,
+    ): Promise<any> {
+        const user = request.user as any;
+        await this.resumeService.updateMainResume(user, resumeId);
+        return {
+            code: 200,
+            message: '메인 이력서를 변경했습니다.',
         };
     }
 }

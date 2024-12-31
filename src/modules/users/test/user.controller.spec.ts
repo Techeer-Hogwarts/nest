@@ -73,12 +73,6 @@ describe('UserController', () => {
                     school: 'Hogwarts',
                     class: '1학년',
                 },
-                createResumeRequest: {
-                    title: 'My Resume',
-                    url: 'https://example.com/resume.pdf',
-                    position: 'Backend',
-                    category: 'PORTFOLIO',
-                },
             };
 
             const userEntity: UserEntity = {

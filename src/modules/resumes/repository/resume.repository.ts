@@ -25,6 +25,18 @@ export class ResumeRepository {
         });
     }
 
+    async unsetMainResumeForUser(userId: number): Promise<void> {
+        await this.prisma.resume.updateMany({
+            where: {
+                userId: userId,
+                isMain: true,
+            },
+            data: {
+                isMain: false,
+            },
+        });
+    }
+
     async getResume(resumeId: number): Promise<ResumeEntity> {
         const resume: ResumeEntity = await this.prisma.resume.findUnique({
             where: {
@@ -143,5 +155,17 @@ export class ResumeRepository {
             throw new NotFoundResumeException();
         }
         return resume.title;
+    }
+
+    async updateResume(
+        resumeId: number,
+        data: { isMain: boolean },
+    ): Promise<void> {
+        await this.prisma.resume.update({
+            where: {
+                id: resumeId,
+            },
+            data,
+        });
     }
 }

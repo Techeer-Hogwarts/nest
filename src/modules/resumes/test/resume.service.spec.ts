@@ -38,6 +38,7 @@ describe('ResumeService', (): void => {
                         deleteResume: jest.fn(),
                         updateResume: jest.fn(),
                         getResumeTitle: jest.fn(),
+                        unsetMainResumeForUser: jest.fn(),
                     },
                 },
                 {

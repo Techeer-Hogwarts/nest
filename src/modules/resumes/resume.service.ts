@@ -34,7 +34,7 @@ export class ResumeService {
         file: Express.Multer.File,
         user: User,
     ): Promise<GetResumeResponse> {
-        const { title, category, position } = createResumeRequest;
+        const { title, category, position, isMain } = createResumeRequest;
 
         if (!file) {
             throw new Error('File is required for creating a resume.');
@@ -58,6 +58,11 @@ export class ResumeService {
             fullTitle,
         );
 
+        // 메인 이력서 중복 방지 처리
+        if (isMain) {
+            await this.resumeRepository.unsetMainResumeForUser(user.id);
+        }
+
         // 데이터베이스에 저장
         const resume = await this.resumeRepository.createResume(
             {
@@ -65,6 +70,7 @@ export class ResumeService {
                 position,
                 title: fullTitle,
                 url: resumeUrl,
+                isMain,
             },
             user.id,
         );
@@ -124,5 +130,11 @@ export class ResumeService {
             throw new ForbiddenException();
         }
         return resume;
+    }
+
+    async updateMainResume(user: any, resumeId: number): Promise<void> {
+        const userId = user.id;
+        await this.resumeRepository.unsetMainResumeForUser(userId);
+        await this.resumeRepository.updateResume(resumeId, { isMain: true });
     }
 }

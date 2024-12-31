@@ -1,6 +1,13 @@
 import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 import { ResumeCategory } from '@prisma/client';
-import { IsEnum, IsString, IsUrl, IsOptional } from 'class-validator';
+import {
+    IsEnum,
+    IsString,
+    IsUrl,
+    IsOptional,
+    IsBoolean,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateResumeRequest {
     @IsOptional()
@@ -28,4 +35,12 @@ export class CreateResumeRequest {
         description: '이력서 제목에 추가할 부가 설명',
     })
     readonly title?: string;
+
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true' || value === true)
+    @ApiProperty({
+        example: true,
+        description: '이력서 대표 지정 여부',
+    })
+    readonly isMain: boolean;
 }

@@ -48,6 +48,7 @@ export const createResumeRequest: CreateResumeRequest = {
     category: 'PORTFOLIO',
     position: 'BACKEND',
     title: '스타트업',
+    isMain: true,
 };
 
 export const resumeEntity = (
