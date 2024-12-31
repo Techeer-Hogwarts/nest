@@ -1,30 +1,24 @@
-// mock-data.ts
 import { BlogEntity } from '../entities/blog.entity';
-import { CreateBlogRequest } from '../dto/request/create.blog.request';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
-import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
-
-export const createBlogRequest: CreateBlogRequest = {
-    userId: 1,
-    title: 'Test Post',
-    url: 'https://example.com/blog',
-    date: new Date('2024-09-24T08:51:54.000Z'),
-    category: 'Backend',
-};
+import { BlogCategory } from '@prisma/client';
 
 export const blogEntity = (overrides?: Partial<BlogEntity>): BlogEntity => {
     return {
         id: 1,
-        userId: createBlogRequest.userId,
-        title: createBlogRequest.title,
-        url: createBlogRequest.url,
-        date: createBlogRequest.date,
-        category: createBlogRequest.category,
-        createdAt: createBlogRequest.date,
-        updatedAt: createBlogRequest.date,
+        createdAt: new Date('2024-09-24T08:51:54.000Z'),
+        updatedAt: new Date('2024-09-24T08:51:54.000Z'),
         isDeleted: false,
+        userId: 1,
+        title: 'Test Post',
+        url: 'https://example.com/blog',
+        thumbnail: 'https://example.com/thumbnail',
+        author: 'authorTest',
+        authorImage: 'https://example.com/author',
+        date: new Date('2024-09-24T08:51:54.000Z'),
+        category: BlogCategory.TECHEER,
+        tags: ['sql'],
         likeCount: 0,
         viewCount: 0,
         user: {
@@ -70,29 +64,14 @@ export const blogEntities: BlogEntity[] = [
 
 export const getBlogsQueryRequest: GetBlogsQueryRequest = {
     keyword: 'Test',
-    category: 'Backend',
-    position: 'Backend',
+    category: BlogCategory.TECHEER,
     offset: 0,
     limit: 10,
 };
 
-export const getBlogResponse: GetBlogResponse = new GetBlogResponse(
-    blogEntity(),
-);
-
 export const getBlogResponseList: GetBlogResponse[] = blogEntities.map(
     (blog: BlogEntity) => new GetBlogResponse(blog),
 );
-
-export const updateBlogRequest: UpdateBlogRequest = {
-    title: 'Updated Title',
-    url: 'https://example.com/updated-blog',
-    date: createBlogRequest.date,
-};
-
-export const updatedBlogEntity: BlogEntity = blogEntity({
-    ...updateBlogRequest,
-});
 
 export const paginationQueryDto: PaginationQueryDto = {
     offset: 0,

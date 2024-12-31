@@ -1,19 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogService } from '../blog.service';
 import { BlogRepository } from '../repository/blog.repository';
-import { NotFoundException } from '@nestjs/common';
 import {
     bestBlogEntities,
     blogEntities,
-    blogEntity,
-    createBlogRequest,
     getBestBlogResponseList,
-    getBlogResponse,
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
-    updateBlogRequest,
-    updatedBlogEntity,
 } from './mock-data';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { BlogEntity } from '../entities/blog.entity';
@@ -29,13 +23,9 @@ describe('BlogService', (): void => {
                 {
                     provide: BlogRepository,
                     useValue: {
-                        createBlog: jest.fn(),
                         getBestBlogs: jest.fn(),
-                        getBlog: jest.fn(),
                         getBlogList: jest.fn(),
                         getBlogsByUser: jest.fn(),
-                        deleteBlog: jest.fn(),
-                        updateBlog: jest.fn(),
                     },
                 },
             ],
@@ -47,23 +37,6 @@ describe('BlogService', (): void => {
 
     it('should be defined', (): void => {
         expect(service).toBeDefined();
-    });
-
-    describe('createBlog', (): void => {
-        it('should successfully create a blog', async (): Promise<void> => {
-            jest.spyOn(repository, 'createBlog').mockResolvedValue(
-                blogEntity(),
-            );
-
-            const result: GetBlogResponse =
-                await service.createBlog(createBlogRequest);
-
-            expect(result).toEqual(getBlogResponse);
-            expect(repository.createBlog).toHaveBeenCalledWith(
-                createBlogRequest,
-            );
-            expect(repository.createBlog).toHaveBeenCalledTimes(1);
-        });
     });
 
     describe('getBestBlogs', (): void => {
@@ -88,18 +61,6 @@ describe('BlogService', (): void => {
                 paginationQueryDto,
             );
             expect(repository.getBestBlogs).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('getBlog', (): void => {
-        it('should return a GetBlogResponse when a blog is found', async (): Promise<void> => {
-            jest.spyOn(repository, 'getBlog').mockResolvedValue(blogEntity());
-
-            const result: GetBlogResponse = await service.getBlog(1);
-
-            expect(result).toEqual(getBlogResponse);
-            expect(result).toBeInstanceOf(GetBlogResponse);
-            expect(repository.getBlog).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -154,67 +115,6 @@ describe('BlogService', (): void => {
                         item instanceof GetBlogResponse,
                 ),
             ).toBe(true);
-        });
-    });
-
-    describe('deleteBlog', (): void => {
-        it('should successfully delete a blog', async (): Promise<void> => {
-            jest.spyOn(repository, 'deleteBlog').mockResolvedValue(undefined);
-
-            await service.deleteBlog(1);
-
-            expect(repository.deleteBlog).toHaveBeenCalledWith(1);
-            expect(repository.deleteBlog).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if blog does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'deleteBlog').mockRejectedValue(
-                new NotFoundException('게시물을 찾을 수 없습니다.'),
-            );
-
-            await expect(service.deleteBlog(1)).rejects.toThrow(
-                NotFoundException,
-            );
-            expect(repository.deleteBlog).toHaveBeenCalledWith(1);
-            expect(repository.deleteBlog).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('updateBlog', (): void => {
-        it('should successfully update a blog and return a GetBlogResponse', async (): Promise<void> => {
-            jest.spyOn(repository, 'updateBlog').mockResolvedValue(
-                updatedBlogEntity,
-            );
-
-            const result: GetBlogResponse = await service.updateBlog(
-                1,
-                updateBlogRequest,
-            );
-
-            expect(result).toEqual(new GetBlogResponse(updatedBlogEntity));
-            expect(result).toBeInstanceOf(GetBlogResponse);
-
-            expect(repository.updateBlog).toHaveBeenCalledWith(
-                1,
-                updateBlogRequest,
-            );
-            expect(repository.updateBlog).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if the blog does not exist', async (): Promise<void> => {
-            jest.spyOn(repository, 'updateBlog').mockRejectedValue(
-                new NotFoundException('게시물을 찾을 수 없습니다.'),
-            );
-
-            await expect(
-                service.updateBlog(1, updateBlogRequest),
-            ).rejects.toThrow(NotFoundException);
-
-            expect(repository.updateBlog).toHaveBeenCalledWith(
-                1,
-                updateBlogRequest,
-            );
-            expect(repository.updateBlog).toHaveBeenCalledTimes(1);
         });
     });
 });
