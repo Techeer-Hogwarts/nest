@@ -8,14 +8,6 @@ export class CreateBookmarkRequest {
     @Type(() => Number)
     @ApiProperty({
         example: 1,
-        description: '작성자 아이디',
-    })
-    readonly userId: number;
-
-    @IsNumber()
-    @Type(() => Number)
-    @ApiProperty({
-        example: 1,
         description: '북마크를 누른 콘텐츠 아이디',
     })
     readonly contentId: number;

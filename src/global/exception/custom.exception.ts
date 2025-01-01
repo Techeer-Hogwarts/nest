@@ -107,6 +107,7 @@ export class BadRequestException extends HttpException {
         );
     }
 }
+
 export class NotFoundStudyTeamException extends HttpException {
     constructor() {
         super('스터디 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
@@ -136,6 +137,7 @@ export class DuplicateStudyTeamNameException extends HttpException {
         super('이미 존재하는 스터디 이름입니다. ', HttpStatus.FORBIDDEN);
     }
 }
+
 export class NotFoundProjectException extends HttpException {
     constructor() {
         super('프로젝트 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
@@ -208,5 +210,9 @@ export class UploadProjectImageException extends HttpException {
             '프로젝트 이미지 업로드에 실패했습니다.',
             HttpStatus.INTERNAL_SERVER_ERROR,
         );
+
+export class ForbiddenAccessException extends HttpException {
+    constructor() {
+        super('해당 게시물에 대한 권한이 없습니다.', HttpStatus.FORBIDDEN);
     }
 }

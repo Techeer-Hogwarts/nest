@@ -1,5 +1,4 @@
-import { StatusCategory, User } from '@prisma/client';
-import { ProjectMember } from '@prisma/client';
+import { ProjectMember, StatusCategory, User } from '@prisma/client';
 
 export class ProjectMemberEntity implements ProjectMember {
     id: number;

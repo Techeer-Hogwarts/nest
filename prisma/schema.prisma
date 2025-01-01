@@ -47,6 +47,7 @@ model User {
   projectMembers    ProjectMember[]
   studyMembers      StudyMember[]
   sessions          Session[]           @relation("UserSessions")
+  events            Event[]             @relation("UserEvents")
   permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
 }
 
@@ -285,15 +286,18 @@ enum EventCategory {
 }
 
 model Event {
-  id        Int           @id @default(autoincrement())
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  isDeleted Boolean       @default(false)
-  category  EventCategory
-  title     String        @db.VarChar(200)
-  startDate DateTime
-  endDate   DateTime?
-  url       String?       @db.VarChar(200)
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  userId      Int
+  category    EventCategory
+  title       String       @db.VarChar(200)
+  startDate   DateTime
+  endDate     DateTime?
+  url         String?      @db.VarChar(200)
+
+  user        User         @relation("UserEvents", fields: [userId], references: [id])
 }
 
 enum SessionDate {
