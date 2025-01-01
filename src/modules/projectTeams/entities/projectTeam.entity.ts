@@ -1,6 +1,6 @@
 import { ProjectMemberEntity } from '../../projectMembers/entities/projectMember.entity';
 import { TeamStackEntity } from '../../teamStacks/entities/teamStack.entity';
-import { ProjectTeam } from '@prisma/client';
+import { ProjectResultImage, ProjectTeam } from '@prisma/client';
 
 export class ProjectTeamEntity implements ProjectTeam {
     id: number;
@@ -31,6 +31,8 @@ export class ProjectTeamEntity implements ProjectTeam {
         updatedAt: Date;
         isDeleted: boolean;
     }[];
+
+    resultImages: ProjectResultImage[];
 
     constructor(partial: Partial<ProjectTeamEntity>) {
         Object.assign(this, partial);

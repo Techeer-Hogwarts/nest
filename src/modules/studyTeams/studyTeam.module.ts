@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthModule } from 'src/auth/auth.module';
 import { StudyTeamController } from './studyTeam.controller';
@@ -9,7 +9,7 @@ import { AwsService } from 'src/awsS3/aws.service';
 import { StudyMemberModule } from '../studyMembers/studyMember.module';
 
 @Module({
-    imports: [AuthModule, StudyMemberModule],
+    imports: [AuthModule, forwardRef(() => StudyMemberModule)], // forwardRef 사용
     controllers: [StudyTeamController],
     providers: [
         StudyTeamService,
