@@ -211,6 +211,9 @@ export class UploadProjectImageException extends HttpException {
             HttpStatus.INTERNAL_SERVER_ERROR,
         );
 
+    }
+}
+
 export class ForbiddenAccessException extends HttpException {
     constructor() {
         super('해당 게시물에 대한 권한이 없습니다.', HttpStatus.FORBIDDEN);
