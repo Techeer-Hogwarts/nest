@@ -435,4 +435,14 @@ export class StudyTeamRepository {
             throw error;
         }
     }
+
+    async getAllActiveStudyTeams(): Promise<any[]> {
+        return this.prisma.studyTeam.findMany({
+            where: { isDeleted: false },
+            include: {
+                resultImages: true,
+                studyMember: true,
+            },
+        });
+    }
 }

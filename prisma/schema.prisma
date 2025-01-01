@@ -91,6 +91,8 @@ model ProjectMember {
   status        StatusCategory
   user          User           @relation(fields: [userId], references: [id])
   userId        Int
+
+  @@unique([projectTeamId, userId], name: "projectTeamId_userId_unique")
 }
 
 model StudyMember {

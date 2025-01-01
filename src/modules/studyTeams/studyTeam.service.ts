@@ -467,4 +467,8 @@ export class StudyTeamService {
         this.logger.debug('✅ [SUCCESS] 스터디 팀원 추가 성공');
         return data;
     }
+
+    async getAllStudyTeams(): Promise<any[]> {
+        return this.studyTeamRepository.getAllActiveStudyTeams();
+    }
 }
