@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateProjectTeamRequest } from '../dto/request/create.projectTeam.request';
 import { UpdateProjectTeamRequest } from '../dto/request/update.projectTeam.request';
 import {
     NotFoundProjectException,
-    UploadProjectException,
     CloseProjectException,
     DeleteProjectException,
     DuplicateProjectNameException,
@@ -59,73 +57,73 @@ export class ProjectTeamRepository {
         }
     }
 
-    async createProject(
-        createProjectTeamRequest: CreateProjectTeamRequest,
-    ): Promise<any> {
-        try {
-            this.logger.debug('🔥 [START] createProjectTeam 요청 시작');
-
-            // DTO에서 추출된 데이터
-            const {
-                projectMember,
-                resultImages,
-                frontendNum, // 필수 필드 추가
-                backendNum,
-                devopsNum,
-                uiuxNum,
-                dataEngineerNum,
-                ...projectData
-            } = createProjectTeamRequest;
-
-            // 기본값 설정
-            const validProjectMember = Array.isArray(projectMember)
-                ? projectMember
-                : [];
-            const validResultImages = Array.isArray(resultImages)
-                ? resultImages
-                : [];
-
-            // 데이터베이스 요청
-            const projectTeam = await this.prisma.projectTeam.create({
-                data: {
-                    ...projectData,
-                    frontendNum,
-                    backendNum,
-                    devopsNum,
-                    uiuxNum,
-                    dataEngineerNum, // 추가
-                    githubLink: projectData.githubLink || '',
-                    notionLink: projectData.notionLink || '',
-                    recruitExplain:
-                        projectData.recruitExplain || '프로젝트 모집 설명',
-                    projectMember: {
-                        create: validProjectMember.map((member) => ({
-                            user: { connect: { id: member.userId } },
-                            isLeader: member.isLeader,
-                            teamRole: member.teamRole, // 필수 필드 기본값 추가
-                            summary: '초기 참여 인원입니다',
-                            status: 'APPROVED' as StatusCategory, // 필수 필드 추가
-                        })),
-                    },
-                    resultImages: {
-                        create: validResultImages.map((imageUrl) => ({
-                            imageUrl,
-                        })),
-                    },
-                },
-                include: {
-                    projectMember: true,
-                    resultImages: true,
-                },
-            });
-
-            this.logger.debug('✅ Project created successfully');
-            return projectTeam;
-        } catch (error) {
-            this.logger.error('❌ Error while creating project', error);
-            throw new UploadProjectException();
-        }
-    }
+    // async createProject(data: CreateProjectTeamRequest): Promise<any> {
+    //     try {
+    //         // 이름 기반으로 스택 ID 조회
+    //         const validStacks = await this.prisma.stack.findMany({
+    //             where: {
+    //                 name: {
+    //                     in: data.teamStacks?.map((stack) => stack.stack) || [],
+    //                 },
+    //             },
+    //         });
+    //
+    //         if (validStacks.length !== (data.teamStacks?.length || 0)) {
+    //             throw new Error('유효하지 않은 스택 이름이 포함되어 있습니다.');
+    //         }
+    //
+    //         // teamStacks 데이터를 Prisma 형식으로 변환
+    //         const teamStacksData = data.teamStacks?.map((stack) => {
+    //             const matchedStack = validStacks.find(
+    //                 (validStack) => validStack.name === stack.stack,
+    //             );
+    //             if (!matchedStack) {
+    //                 throw new Error(`스택(${stack.stack})을 찾을 수 없습니다.`);
+    //             }
+    //             return {
+    //                 stackId: matchedStack.id,
+    //                 isMain: stack.isMain,
+    //             };
+    //         });
+    //
+    //         // 데이터 저장
+    //         const createdProject = await this.prisma.projectTeam.create({
+    //             data: {
+    //                 ...data,
+    //                 githubLink: data.githubLink || '', // 기본값 추가
+    //                 notionLink: data.notionLink || '', // 기본값 추가
+    //                 teamStacks: {
+    //                     create: teamStacksData, // 변환된 teamStacks 데이터 전달
+    //                 },
+    //                 projectMember: {
+    //                     create: data.projectMember.map((member) => ({
+    //                         user: { connect: { id: member.userId } },
+    //                         isLeader: member.isLeader,
+    //                         teamRole: member.teamRole,
+    //                         summary: '초기 참여 인원입니다',
+    //                         status: 'APPROVED',
+    //                     })),
+    //                 },
+    //                 resultImages: {
+    //                     create: data.resultImages?.map((url) => ({
+    //                         imageUrl: url,
+    //                     })),
+    //                 },
+    //             },
+    //             include: {
+    //                 teamStacks: { include: { stack: true } },
+    //                 projectMember: { include: { user: true } },
+    //                 resultImages: true,
+    //             },
+    //         });
+    //
+    //         return createdProject;
+    //     } catch (error) {
+    //         throw new Error(
+    //             `프로젝트 생성 중 오류가 발생했습니다: ${error.message}`,
+    //         );
+    //     }
+    // }
 
     async closeProject(id: number): Promise<any> {
         try {
@@ -158,27 +156,36 @@ export class ProjectTeamRepository {
     }
 
     async getProjectById(id: number): Promise<any> {
+        if (!id) {
+            throw new Error('ID가 전달되지 않았습니다.');
+        }
+
         try {
+            this.logger.debug(`🔍 [INFO] ID(${id})로 프로젝트 조회 시작`);
+
             const project = await this.prisma.projectTeam.findUnique({
                 where: {
-                    id,
-                    isDeleted: false,
+                    id: id, // 유니크한 `id`가 전달되어야 함
                 },
                 include: {
-                    resultImages: { where: { isDeleted: false } },
-                    projectMember: { where: { isDeleted: false } },
+                    resultImages: {
+                        where: { isDeleted: false },
+                    },
+                    projectMember: {
+                        where: { isDeleted: false },
+                    },
                 },
             });
 
-            if (!project) {
+            if (!project || project.isDeleted) {
                 throw new NotFoundProjectException();
             }
 
-            this.logger.debug('✅ Project retrieved successfully');
+            this.logger.debug('✅ 프로젝트 조회 성공');
             return project;
         } catch (error) {
-            this.logger.error('❌ Error while retrieving project', error);
-            throw new NotFoundProjectException();
+            this.logger.error('❌ [ERROR] 프로젝트 조회 중 예외 발생: ', error);
+            throw error;
         }
     }
 
@@ -350,6 +357,72 @@ export class ProjectTeamRepository {
                 error,
             );
             throw new Error('데이터베이스 에러가 발생했습니다.');
+        }
+    }
+
+    async getProjectTeamMembersById(id: number): Promise<any> {
+        try {
+            const projectTeam = await this.prisma.projectTeam.findUnique({
+                where: {
+                    id: id,
+                    isDeleted: false,
+                },
+                select: {
+                    name: true,
+                    projectMember: {
+                        where: {
+                            isDeleted: false,
+                            status: 'APPROVED', // 🔥 APPROVED 상태의 멤버만 조회
+                        },
+                        select: {
+                            user: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                            teamRole: true, // 역할 가져오기
+                            isLeader: true, // 팀장 여부 가져오기
+                        },
+                    },
+                },
+            });
+
+            if (!projectTeam) {
+                return null;
+            }
+
+            const formattedProjectTeam = {
+                projectName: projectTeam.name,
+                members: projectTeam.projectMember.map((member) => ({
+                    name: member.user.name,
+                    role: member.teamRole,
+                    isLeader: member.isLeader, // 팀장 여부 추가
+                })),
+            };
+
+            this.logger.debug('✅ [SUCCESS] 프로젝트의 모든 인원 조회 성공');
+            return formattedProjectTeam;
+        } catch (error) {
+            this.logger.error(
+                '❌ [ERROR] getProjectTeamMembersById 에서 예외 발생: ',
+                error,
+            );
+            throw new Error('데이터베이스 에러가 발생했습니다.');
+        }
+    }
+
+    async isUserExists(userId: number): Promise<boolean> {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id: userId },
+            });
+            return !!user; // 사용자가 존재하면 true, 그렇지 않으면 false 반환
+        } catch (error) {
+            this.logger.error(
+                '❌ [ERROR] isUserExists 에서 예외 발생: ',
+                error,
+            );
+            throw new Error('사용자 존재 여부 확인 중 오류가 발생했습니다.');
         }
     }
 }
