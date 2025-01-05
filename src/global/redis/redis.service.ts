@@ -46,4 +46,15 @@ export class RedisService {
         });
         Logger.log(`Subscribed to channel: ${channel}`);
     }
+
+    /**
+     * 완료된 작업 삭제
+     */
+    async deleteTask(taskId: string): Promise<void> {
+        try {
+            await this.client.del(taskId);
+        } catch {
+            Logger.error(`Failed to delete task: ${taskId} Trying TTL...`);
+        }
+    }
 }

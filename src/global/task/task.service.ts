@@ -93,6 +93,7 @@ export class TaskService implements OnModuleInit {
         blogs.posts = await this.filterPosts(blogs.posts); // 필터링
         Logger.debug('filtering posts:', blogs.posts);
         await this.blogRepository.createBlog(blogs);
+        await this.redisService.deleteTask(taskId);
     }
     //  새벽 3시 기준 "어제 날짜" 계산
     private async filterPosts(posts: BlogPostDto[]): Promise<BlogPostDto[]> {
@@ -146,6 +147,7 @@ export class TaskService implements OnModuleInit {
         );
         Logger.debug(blogs.posts);
         await this.blogRepository.createBlog(blogs);
+        await this.redisService.deleteTask(taskId);
     }
 
     /**
