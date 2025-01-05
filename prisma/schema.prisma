@@ -264,9 +264,9 @@ model Bookmark {
 }
 
 enum ResumeCategory {
+  RESUME
   PORTFOLIO
   ICT
-  SOMA
   OTHER
 }
 
@@ -282,6 +282,7 @@ model Resume {
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
   category    ResumeCategory
+  position    String       @db.VarChar(100)
 
   user        User         @relation("UserResumes", fields: [userId], references: [id])
 }

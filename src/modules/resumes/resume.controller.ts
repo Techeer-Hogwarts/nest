@@ -5,17 +5,23 @@ import {
     Get,
     Param,
     ParseIntPipe,
-    Patch,
     Post,
     Query,
+    Req,
+    UseGuards,
+    UseInterceptors,
+    UploadedFile,
+    Patch,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
-import { UpdateResumeRequest } from './dto/request/update.resume.request';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('resumes')
 @Controller('resumes')
@@ -53,19 +59,57 @@ export class ResumeController {
         };
     }
 
-    @Post(':userId')
+    @UseGuards(JwtAuthGuard)
+    @Post()
+    @UseInterceptors(FileInterceptor('file')) // 파일 업로드 처리
+    @ApiConsumes('multipart/form-data') // Swagger에서 파일 업로드 지원
     @ApiOperation({
         summary: '이력서 생성',
-        description: '새로운 이력서를 생성합니다.',
+        description: '파일과 폼 데이터를 사용해 이력서를 생성합니다.',
+    })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary', // 파일 필드
+                    description: '업로드할 파일',
+                },
+                category: {
+                    type: 'string',
+                    example: 'PORTFOLIO',
+                    description: '이력서 타입',
+                },
+                position: {
+                    type: 'string',
+                    example: 'BACKEND',
+                    description: '이력서 포지션',
+                },
+                title: {
+                    type: 'string',
+                    example: '스타트업',
+                    description: '이력서 제목',
+                },
+                isMain: {
+                    type: 'boolean',
+                    example: true,
+                    description: '이력서 대표 여부',
+                },
+            },
+            required: ['file', 'category', 'position', 'title', 'isMain'], // 필수 필드
+        },
     })
     async createResume(
-        @Param('userId') userId: number,
-        @Body() createResumeRequest: CreateResumeRequest,
+        @Req() request: any,
+        @UploadedFile() file: Express.Multer.File, // 파일 데이터
+        @Body() body: CreateResumeRequest, // 요청 데이터
     ): Promise<any> {
-        const resume: GetResumeResponse = await this.resumeService.createResume(
-            createResumeRequest,
-            userId,
-        );
+        const user = request.user;
+
+        // 파일과 요청 데이터를 서비스로 전달
+        const resume = await this.resumeService.createResume(body, file, user);
+
         return {
             code: 201,
             message: '이력서를 생성했습니다.',
@@ -108,38 +152,40 @@ export class ResumeController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete(':resumeId')
     @ApiOperation({
         summary: '이력서 삭제',
         description: '지정된 ID의 이력서를 삭제합니다.',
     })
     async deleteResume(
+        @Req() request: Request,
         @Param('resumeId', ParseIntPipe) resumeId: number,
     ): Promise<any> {
-        await this.resumeService.deleteResume(resumeId);
+        const user = request.user as any;
+        await this.resumeService.deleteResume(user, resumeId);
         return {
             code: 200,
             message: '이력서가 삭제되었습니다.',
         };
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':resumeId')
     @ApiOperation({
-        summary: '이력서 수정',
-        description: '지정된 ID의 이력서 정보를 수정합니다.',
+        summary: '메인 이력서 지정',
+        description:
+            '사용자가 올린 이력서들 중 메인으로 표시할 이력서를 변경합니다.',
     })
-    async updateResume(
+    async updateMainResume(
+        @Req() request: any,
         @Param('resumeId', ParseIntPipe) resumeId: number,
-        @Body() updateResumeRequest: UpdateResumeRequest,
     ): Promise<any> {
-        const resume: GetResumeResponse = await this.resumeService.updateResume(
-            resumeId,
-            updateResumeRequest,
-        );
+        const user = request.user as any;
+        await this.resumeService.updateMainResume(user, resumeId);
         return {
             code: 200,
-            message: '이력서가 수정되었습니다.',
-            data: resume,
+            message: '메인 이력서를 변경했습니다.',
         };
     }
 }
