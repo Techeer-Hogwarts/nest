@@ -11,8 +11,11 @@ import { SessionModule } from './modules/sessions/session.module';
 import { EventModule } from './modules/events/event.module';
 import { LikeModule } from './modules/likes/like.module';
 import { RedisModule } from './global/redis/redis.module';
+import { GoogleDriveModule } from './googleDrive/google.drive.module';
 import { StudyTeamModule } from './modules/studyTeams/studyTeam.module';
 import { StudyMemberModule } from './modules/studyMembers/studyMember.module';
+import { RabbitMQModule } from './global/rabbitmq/rabbitmq.module';
+import { TaskModule } from './global/task/task.module';
 
 @Module({
     imports: [
@@ -31,8 +34,11 @@ import { StudyMemberModule } from './modules/studyMembers/studyMember.module';
         SessionModule,
         EventModule,
         LikeModule,
+        GoogleDriveModule,
+        RabbitMQModule,
         StudyTeamModule,
         StudyMemberModule,
+        TaskModule,
     ],
 })
 export class AppModule {}

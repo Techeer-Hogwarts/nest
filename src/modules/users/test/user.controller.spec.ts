@@ -83,11 +83,6 @@ describe('UserController', () => {
                     fullTimeStartDate: null,
                     fullTimeEndDate: null,
                 },
-                createResumeRequest: {
-                    title: 'My Resume',
-                    url: 'https://example.com/resume.pdf',
-                    category: 'PORTFOLIO',
-                },
             };
 
             const userEntity: UserEntity = {

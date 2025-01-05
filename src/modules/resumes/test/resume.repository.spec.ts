@@ -8,12 +8,10 @@ import {
     createResumeRequest,
     getResumesQueryRequest,
     paginationQueryDto,
-    updateResumeRequest,
-    updatedResumeEntity,
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
-import { NotFoundException } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -95,13 +93,13 @@ describe('ResumeRepository', (): void => {
             expect(await repository.getResume(1)).toEqual(resumeEntity());
         });
 
-        it('should throw a NotFoundException if no resume is found', async (): Promise<void> => {
+        it('should throw a NotFoundResumeException if no resume is found', async (): Promise<void> => {
             jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(
                 null,
             );
 
             await expect(repository.getResume(1)).rejects.toThrow(
-                NotFoundException,
+                NotFoundResumeException,
             );
         });
     });
@@ -130,6 +128,9 @@ describe('ResumeRepository', (): void => {
                 include: { user: true },
                 skip: getResumesQueryRequest.offset,
                 take: getResumesQueryRequest.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.resume.findMany).toHaveBeenCalledTimes(1);
         });
@@ -167,6 +168,9 @@ describe('ResumeRepository', (): void => {
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
+                orderBy: {
+                    createdAt: Prisma.SortOrder.desc,
+                },
             });
             expect(prismaService.resume.findMany).toHaveBeenCalledTimes(1);
         });
@@ -187,55 +191,6 @@ describe('ResumeRepository', (): void => {
                     isDeleted: false,
                 },
                 data: { isDeleted: true },
-            });
-            expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('updateResume', (): void => {
-        it('should successfully update a resume', async (): Promise<void> => {
-            jest.spyOn(prismaService.resume, 'update').mockResolvedValue(
-                updatedResumeEntity,
-            );
-
-            const result: ResumeEntity = await repository.updateResume(
-                1,
-                updateResumeRequest,
-            );
-
-            expect(result).toEqual(updatedResumeEntity);
-            expect(prismaService.resume.update).toHaveBeenCalledWith({
-                where: {
-                    id: 1,
-                    isDeleted: false,
-                },
-                data: updateResumeRequest,
-                include: { user: true },
-            });
-            expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if the resume does not exist', async (): Promise<void> => {
-            const prismaError: PrismaClientKnownRequestError =
-                new PrismaClientKnownRequestError('Record not found', {
-                    code: 'P2025',
-                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                });
-
-            jest.spyOn(prismaService.resume, 'update').mockRejectedValue(
-                prismaError,
-            );
-
-            await expect(
-                repository.updateResume(1, updateResumeRequest),
-            ).rejects.toThrow(NotFoundException);
-            expect(prismaService.resume.update).toHaveBeenCalledWith({
-                where: {
-                    id: 1,
-                    isDeleted: false,
-                },
-                data: updateResumeRequest,
-                include: { user: true },
             });
             expect(prismaService.resume.update).toHaveBeenCalledTimes(1);
         });
