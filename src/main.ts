@@ -17,9 +17,7 @@ async function bootstrap(): Promise<void> {
                     const allowedDomainPatterns = [
                         /^https:\/\/.*-techeerzip\.vercel\.app$/,
                         /^https:\/\/www\.techeerzip\.cloud$/,
-                        /^http:\/\/localhost:5173$/,
-                        /^http:\/\/localhost:8000$/,
-                        /^http:\/\/localhost:3000$/,
+                        /^http:\/\/(localhost|127\.0\.0\.1):\d+$/, // localhost와 127.0.0.1의 모든 포트 허용
                         /^null$/, // Allow requests without Origin (like curl, Postman)
                     ];
 
@@ -34,7 +32,7 @@ async function bootstrap(): Promise<void> {
                         callback(new Error('Not allowed by CORS'));
                     }
                 },
-                methods: 'GET, HEAD, PUT, PATCH, POST, DELETE',
+                methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
                 preflightContinue: false,
                 optionsSuccessStatus: 204,
                 credentials: true,
