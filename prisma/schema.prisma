@@ -119,13 +119,13 @@ enum StackCategory {
 }
 
 model Stack {
-  id         Int           @id @default(autoincrement())
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  isDeleted  Boolean       @default(false)
-  name       String
-  category   StackCategory
-  teamStacks TeamStack[]
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  name        String
+  category    StackCategory
+  teamStacks  TeamStack[]
 }
 
 model TeamStack {
@@ -187,8 +187,8 @@ model StudyResultImage {
   updatedAt      DateTime      @updatedAt
   isDeleted      Boolean       @default(false)
   imageUrl       String        @db.VarChar(300)
-  
-  studyTeamId  Int          
+
+  studyTeamId  Int
   studyTeam    StudyTeam   @relation(fields: [studyTeamId], references: [id])
 }
 
@@ -199,25 +199,34 @@ model ProjectResultImage {
   isDeleted      Boolean       @default(false)
   imageUrl       String        @db.VarChar(300)
 
-  projectTeamId  Int          
+  projectTeamId  Int
   projectTeam    ProjectTeam   @relation(fields: [projectTeamId], references: [id])
 }
 
 
-model Blog {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
-  userId    Int
-  title     String   @db.VarChar(100)
-  url       String   @db.VarChar(100)
-  date      DateTime
-  category  String   @db.VarChar(200)
-  likeCount Int      @default(0)
-  viewCount Int      @default(0)
+enum BlogCategory {
+  TECHEER
+  SHARED
+}
 
-  user User @relation("UserBlogs", fields: [userId], references: [id])
+model Blog {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  userId      Int
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(200)
+  thumbnail   String?      @db.VarChar(200)
+  author      String?      @db.VarChar(100)
+  authorImage String?      @db.VarChar(200)
+  date        DateTime
+  category    BlogCategory
+  tags         String[]    @default([])
+  likeCount   Int          @default(0)
+  viewCount   Int          @default(0)
+
+  user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
 enum ContentCategory {
@@ -227,15 +236,15 @@ enum ContentCategory {
 }
 
 model Like {
-  id        Int             @id @default(autoincrement())
-  userId    Int
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  isDeleted Boolean         @default(false)
-  contentId Int
-  category  ContentCategory
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
+  contentId   Int
+  category    ContentCategory
 
-  user User @relation("UserLikes", fields: [userId], references: [id])
+  user        User         @relation("UserLikes", fields: [userId], references: [id])
 
   @@unique([userId, contentId, category]) // 복합 고유 키 설정
 }

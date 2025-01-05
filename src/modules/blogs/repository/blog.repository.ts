@@ -1,45 +1,53 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateBlogRequest } from '../dto/request/create.blog.request';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
-import { UpdateBlogRequest } from '../dto/request/update.blog.request';
 import { Prisma } from '@prisma/client';
+import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 
 @Injectable()
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async createBlog(createBlogDomain: CreateBlogRequest): Promise<BlogEntity> {
-        return this.prisma.blog.create({
-            data: { ...createBlogDomain },
-            include: { user: true },
+    async getAllUserBlogUrl(): Promise<{ id: number; blogUrl: string }[]> {
+        return this.prisma.user.findMany({
+            where: {
+                isDeleted: false,
+            },
+            select: {
+                id: true,
+                blogUrl: true,
+            },
         });
     }
 
-    async getBlog(blogId: number): Promise<BlogEntity> {
-        const blog: BlogEntity = await this.prisma.blog.findUnique({
-            where: {
-                id: blogId,
-                isDeleted: false,
-            },
-            include: {
-                user: true,
-            },
+    async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
+        const { userId, posts, category } = crawlingBlogDto;
+        const blogPromises = posts.map(async (post) => {
+            try {
+                await this.prisma.blog.create({
+                    data: {
+                        userId,
+                        ...post,
+                        date: new Date(post.date),
+                        category,
+                    },
+                });
+            } catch (error) {
+                Logger.error(
+                    `블로그 데이터 저장 실패: ${post.title}, Error: ${error.message}`,
+                    error.stack,
+                );
+            }
         });
-
-        if (!blog) {
-            throw new NotFoundException('게시물을 찾을 수 없습니다.');
-        }
-        return blog;
+        await Promise.all(blogPromises);
     }
 
     async getBlogList(query: GetBlogsQueryRequest): Promise<BlogEntity[]> {
         const {
             keyword,
             category,
-            position,
             offset = 0,
             limit = 10,
         }: GetBlogsQueryRequest = query;
@@ -56,10 +64,7 @@ export class BlogRepository {
                             },
                         },
                         {
-                            category: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
+                            category: category,
                         },
                         {
                             user: {
@@ -72,15 +77,15 @@ export class BlogRepository {
                     ],
                 }),
                 ...(category && { category }),
-                ...(position && {
-                    user: { mainPosition: position },
-                }),
             },
             include: {
                 user: true,
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
     }
 
@@ -109,59 +114,10 @@ export class BlogRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
         });
-    }
-
-    async deleteBlog(blogId: number): Promise<void> {
-        try {
-            await this.prisma.blog.update({
-                where: {
-                    id: blogId,
-                    isDeleted: false,
-                },
-                data: { isDeleted: true },
-            });
-        } catch (error) {
-            if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025'
-            ) {
-                throw new NotFoundException('게시물을 찾을 수 없습니다.');
-            }
-            throw error;
-        }
-    }
-
-    async updateBlog(
-        blogId: number,
-        updateBlogRequest: UpdateBlogRequest,
-    ): Promise<BlogEntity> {
-        const { title, url, date }: UpdateBlogRequest = updateBlogRequest;
-
-        try {
-            return await this.prisma.blog.update({
-                where: {
-                    id: blogId,
-                    isDeleted: false,
-                },
-                data: {
-                    title,
-                    url,
-                    date,
-                },
-                include: {
-                    user: true,
-                },
-            });
-        } catch (error) {
-            if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025'
-            ) {
-                throw new NotFoundException('게시물을 찾을 수 없습니다.');
-            }
-            throw error;
-        }
     }
 
     async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {
