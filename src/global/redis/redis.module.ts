@@ -1,17 +1,17 @@
 import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '../../modules/prisma/prisma.service';
 import { RedisService } from './redis.service';
 
-@Global() // 전역 모듈로 설정하여 애플리케이션 어디서나 사용 가능
+@Global() // 전역 모듈로 설정
 @Module({
     imports: [ConfigModule],
     providers: [
         {
             provide: 'REDIS_CLIENT',
-            useFactory: (configService: ConfigService): Redis => {
-                const redisUrl = configService.get<string>('REDIS_URL');
+            useFactory: (): Redis => {
+                const redisUrl = process.env.REDIS_URL; // process.env로 변경
                 if (!redisUrl) {
                     throw new Error(
                         'REDIS_URL is not defined in environment variables',
@@ -19,7 +19,6 @@ import { RedisService } from './redis.service';
                 }
                 return new Redis(redisUrl);
             },
-            inject: [ConfigService],
         },
         PrismaService,
         RedisService,

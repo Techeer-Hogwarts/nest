@@ -29,7 +29,6 @@ import { TaskModule } from './global/task/task.module';
         ProjectTeamModule,
         BlogModule,
         UserModule,
-        ResumeModule,
         AuthModule,
         SessionModule,
         EventModule,
@@ -39,6 +38,7 @@ import { TaskModule } from './global/task/task.module';
         StudyTeamModule,
         StudyMemberModule,
         TaskModule,
+        ResumeModule,
     ],
 })
 export class AppModule {}

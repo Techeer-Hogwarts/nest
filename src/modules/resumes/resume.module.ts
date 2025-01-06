@@ -10,7 +10,7 @@ import { GoogleDriveModule } from '../../googleDrive/google.drive.module';
 @Module({
     imports: [
         PrismaModule,
-        AuthModule,
+        forwardRef(() => AuthModule),
         forwardRef(() => UserModule),
         GoogleDriveModule,
     ],
