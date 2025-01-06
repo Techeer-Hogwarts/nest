@@ -379,9 +379,9 @@ export class StudyTeamRepository {
                             user: {
                                 select: {
                                     name: true,
-                                    year: true, // 유저의 이름과 기수
                                 },
                             },
+                            isLeader: true,
                         },
                     },
                 },
@@ -395,7 +395,7 @@ export class StudyTeamRepository {
                 studyName: studyTeam.name,
                 members: studyTeam.studyMember.map((member) => ({
                     name: member.user.name,
-                    year: member.user.year,
+                    isLeader: member.isLeader,
                 })),
             };
 
