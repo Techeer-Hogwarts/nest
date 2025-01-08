@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { UserRepository } from './repository/user.repository';
-import { ResumeRepository } from '../resumes/repository/resume.repository';
 import { CreateUserRequest } from './dto/request/create.user.request';
 import { CreateResumeRequest } from '../resumes/dto/request/create.resume.request';
 import { AuthService } from '../../auth/auth.service';
@@ -20,15 +19,19 @@ import {
     BadRequestException,
 } from '../../global/exception/custom.exception';
 import { TaskService } from '../../global/task/task.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ResumeService } from '../resumes/resume.service';
 
 @Injectable()
 export class UserService {
     constructor(
         private readonly userRepository: UserRepository,
-        private readonly resumeRepository: ResumeRepository,
+        @Inject(forwardRef(() => ResumeService))
+        private readonly resumeService: ResumeService,
         private readonly authService: AuthService,
         private readonly httpService: HttpService,
         private readonly taskService: TaskService,
+        private readonly prisma: PrismaService,
     ) {}
 
     async validateCreateUserRequest(dto: CreateUserRequest): Promise<any> {
@@ -55,6 +58,7 @@ export class UserService {
 
     async signUp(
         createUserRequest: CreateUserRequest,
+        file: Express.Multer.File,
         resumeData?: CreateResumeRequest,
     ): Promise<any> {
         // 추가 검증 로직 호출
@@ -86,22 +90,37 @@ export class UserService {
             password: hashedPassword,
         };
 
-        // 저장 로직
-        const newUser = await this.userRepository.createUser(newUserDTO, image);
-
-        // 이력서 데이터 저장
-        if (resumeData) {
-            await this.resumeRepository.createResume(resumeData, newUser.id);
-        }
-
-        // 블로그 크롤링 요청
-        if (newUser.blogUrl) {
-            await this.taskService.requestSignUpBlogFetch(
-                newUser.id,
-                newUser.blogUrl,
+        const newUser = await this.prisma.$transaction(async (prisma) => {
+            // 사용자 생성
+            const newUser = await this.userRepository.createUser(
+                newUserDTO,
+                image,
+                prisma,
             );
-        }
 
+            // 이력서 저장
+            if (resumeData) {
+                await this.resumeService.createResume(
+                    resumeData,
+                    file,
+                    newUser.id,
+                    prisma,
+                );
+            }
+
+            // 블로그 크롤링 요청
+            if (newUser.blogUrl) {
+                await this.taskService.requestSignUpBlogFetch(
+                    newUser.id,
+                    newUser.blogUrl,
+                );
+            }
+
+            // 트랜잭션 내에서 생성된 사용자 반환
+            return newUser;
+        });
+
+        // 생성된 사용자 반환
         return newUser;
     }
 
@@ -161,7 +180,7 @@ export class UserService {
         );
     }
 
-    private async getProfileImageUrl(
+    async getProfileImageUrl(
         email: string,
     ): Promise<{ image: string; isTecheer: boolean }> {
         const updateUrl =

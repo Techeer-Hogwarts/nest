@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../modules/users/user.module'; // UserModule과의 순환참조 방지
 import { RedisModule } from '../global/redis/redis.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { RedisModule } from '../global/redis/redis.module';
         }),
         RedisModule, // Redis 모듈 분리
         forwardRef(() => UserModule), // 순환참조 방지
+        HttpModule,
     ],
     controllers: [AuthController],
     providers: [AuthService, JwtStrategy],

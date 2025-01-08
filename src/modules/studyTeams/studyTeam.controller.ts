@@ -318,7 +318,7 @@ export class StudyTeamController {
         }
     }
 
-    // 특정 스터디 모든 인원을 조회하는 api(아이디로, 토큰검사 X, 스터디 이름과 인원들의 유저테이블에서 이름:name, 기수:yaer 반환)
+    // 특정 스터디 모든 인원을 조회하는 api(아이디로, 토큰검사 X, 스터디 이름과 인원들의 유저테이블에서 이름:name, 리더여부)
     @Get('/:studyTeamId/members')
     @ApiOperation({
         summary: '스터디의 모든 인원 조회',

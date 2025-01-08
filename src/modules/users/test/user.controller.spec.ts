@@ -83,6 +83,26 @@ describe('UserController', () => {
                     fullTimeStartDate: null,
                     fullTimeEndDate: null,
                 },
+                createResumeRequest: {
+                    title: 'My Resume',
+                    url: 'https://example.com/resume.pdf',
+                    position: 'Backend',
+                    category: 'PORTFOLIO',
+                    isMain: true,
+                },
+            };
+
+            const mockFile: Express.Multer.File = {
+                fieldname: 'file',
+                originalname: 'resume.pdf',
+                encoding: '7bit',
+                mimetype: 'application/pdf',
+                buffer: Buffer.from('mock file content'),
+                size: 1024,
+                stream: null,
+                destination: '',
+                filename: '',
+                path: '',
             };
 
             const userEntity: UserEntity = {
@@ -122,10 +142,12 @@ describe('UserController', () => {
 
             const result = await userController.signUp(
                 createUserWithResumeRequest,
+                mockFile,
             );
 
             expect(userService.signUp).toHaveBeenCalledWith(
                 createUserWithResumeRequest.createUserRequest,
+                mockFile,
                 createUserWithResumeRequest.createResumeRequest,
             );
             expect(result).toEqual({

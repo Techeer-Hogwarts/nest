@@ -16,7 +16,12 @@ import {
     InvalidCodeException,
     UnauthorizedEmailException,
     EmailVerificationFailedException,
+    NotFoundTecheerException,
+    DuplicateEmailException,
+    NotFoundProfileImageException,
 } from '../global/exception/custom.exception';
+import { lastValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +32,7 @@ export class AuthService {
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
         private readonly userRepository: UserRepository,
+        private readonly httpService: HttpService,
     ) {
         // 이메일 전송을 위한 nodemailer 설정
         this.transporter = nodemailer.createTransport({
@@ -121,9 +127,42 @@ export class AuthService {
             throw new InvalidTokenException();
         }
     }
+    async getProfileImageUrl(
+        email: string,
+    ): Promise<{ image: string; isTecheer: boolean }> {
+        const updateUrl =
+            'https://techeer-029051b54345.herokuapp.com/api/v1/profile/picture';
+        const secret = process.env.SLACK;
+
+        const response = await lastValueFrom(
+            this.httpService.post(updateUrl, {
+                email,
+                secret,
+            }),
+        );
+
+        if (response.status === 200 && response.data) {
+            const { image, isTecheer } = response.data;
+            return {
+                image,
+                isTecheer,
+            };
+        }
+
+        throw new NotFoundProfileImageException();
+    }
 
     // 이메일 인증 코드 생성 및 캐싱 + 이메일 전송
     async sendVerificationEmail(email: string): Promise<void> {
+        const { isTecheer } = await this.getProfileImageUrl(email);
+        if (!isTecheer) {
+            throw new NotFoundTecheerException();
+        }
+
+        const existingUser = await this.userRepository.findOneByEmail(email);
+        if (existingUser) {
+            throw new DuplicateEmailException();
+        }
         const verificationCode = Math.floor(
             100000 + Math.random() * 900000,
         ).toString(); // 6자리 인증 코드 생성

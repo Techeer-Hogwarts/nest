@@ -4,8 +4,8 @@ import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
-import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ResumeRepository {
@@ -14,8 +14,9 @@ export class ResumeRepository {
     async createResume(
         createResumeRequest: CreateResumeRequest,
         userId: number,
+        prisma: Prisma.TransactionClient = this.prisma, // 기본값으로 this.prisma 사용
     ): Promise<ResumeEntity> {
-        return this.prisma.resume.create({
+        return prisma.resume.create({
             data: {
                 ...createResumeRequest,
                 title: createResumeRequest.title,
