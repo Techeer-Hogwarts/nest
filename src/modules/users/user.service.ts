@@ -58,7 +58,7 @@ export class UserService {
 
     async signUp(
         createUserRequest: CreateUserRequest,
-        file: Express.Multer.File,
+        file?: Express.Multer.File,
         resumeData?: CreateResumeRequest,
     ): Promise<any> {
         // 추가 검증 로직 호출
@@ -90,7 +90,7 @@ export class UserService {
             password: hashedPassword,
         };
 
-        const newUser = await this.prisma.$transaction(async (prisma) => {
+        return this.prisma.$transaction(async (prisma) => {
             // 사용자 생성
             const newUser = await this.userRepository.createUser(
                 newUserDTO,
@@ -99,7 +99,7 @@ export class UserService {
             );
 
             // 이력서 저장
-            if (resumeData) {
+            if (file && resumeData) {
                 await this.resumeService.createResume(
                     resumeData,
                     file,
@@ -119,9 +119,6 @@ export class UserService {
             // 트랜잭션 내에서 생성된 사용자 반환
             return newUser;
         });
-
-        // 생성된 사용자 반환
-        return newUser;
     }
 
     async updateUserProfile(
@@ -230,11 +227,7 @@ export class UserService {
         }
 
         // 닉네임 업데이트 로직 호출
-        const updatedUser = await this.userRepository.updateNickname(
-            user.id,
-            nickname,
-        );
-        return updatedUser;
+        return this.userRepository.updateNickname(user.id, nickname);
     }
 
     async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {

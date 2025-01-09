@@ -24,6 +24,7 @@ import { UpdateProfileImageRequest } from './dto/request/update.profile.image.re
 import { GetUserssQueryRequest } from './dto/request/get.user.query.request';
 import { GetUserResponse } from './dto/response/get.user.response';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ParseJsonAndValidatePipe } from '../../global/common/validation/ParseJsonAndValidatePipe';
 
 @ApiTags('users')
 @Controller('/users')
@@ -31,182 +32,194 @@ export class UserController {
     constructor(private readonly userService: UserService) {}
 
     @Post('/signup')
-    @UseInterceptors(FileInterceptor('file')) // 파일 업로드 처리
-    @ApiConsumes('multipart/form-data') // Swagger에서 파일 업로드 지원
     @ApiOperation({
         summary: '회원 가입',
         description: '새로운 회원을 생성하고, 선택적으로 이력서를 등록합니다.',
     })
+    @ApiConsumes('multipart/form-data') // 파일 업로드를 위한 Consumes 설정
     @ApiBody({
+        description: '회원가입 정보 및 파일 업로드',
+        required: true,
         schema: {
             type: 'object',
             properties: {
                 file: {
                     type: 'string',
-                    format: 'binary', // 파일 필드
-                    description: '업로드할 이력서 파일',
+                    format: 'binary', // 파일 업로드 타입
+                    description: '이력서 파일',
                 },
-                createUserRequest: {
+                createUserWithResumeRequest: {
                     type: 'object',
                     properties: {
-                        name: {
-                            type: 'string',
-                            example: '김테커',
-                            description: '사용자 이름',
+                        createUserRequest: {
+                            type: 'object',
+                            properties: {
+                                name: {
+                                    type: 'string',
+                                    example: '김테커',
+                                    description: '사용자 이름',
+                                },
+                                email: {
+                                    type: 'string',
+                                    example: 'user@example.com',
+                                    description: '사용자 이메일',
+                                },
+                                year: {
+                                    type: 'number',
+                                    example: 6,
+                                    description: '테커 기수',
+                                },
+                                password: {
+                                    type: 'string',
+                                    example: 'Passw0rd!',
+                                    description:
+                                        '영어, 숫자, 특수문자를 포함한 비밀번호',
+                                },
+                                isLft: {
+                                    type: 'boolean',
+                                    example: false,
+                                    description: 'LFT 여부',
+                                },
+                                githubUrl: {
+                                    type: 'string',
+                                    format: 'url',
+                                    example: 'https://github.com/username',
+                                    description: 'GitHub 프로필 URL',
+                                },
+                                blogUrl: {
+                                    type: 'string',
+                                    format: 'url',
+                                    example: 'https://example.com/blog',
+                                    description: '사용자 블로그 URL',
+                                },
+                                mainPosition: {
+                                    type: 'string',
+                                    example: 'Backend',
+                                    description: '주요 직무',
+                                },
+                                subPosition: {
+                                    type: 'string',
+                                    example: 'Frontend',
+                                    description: '부차적 직무 (선택 사항)',
+                                },
+                                school: {
+                                    type: 'string',
+                                    example:
+                                        'Hogwarts School of Witchcraft and Wizardry',
+                                    description: '학교 이름',
+                                },
+                                class: {
+                                    type: 'string',
+                                    example: '1학년',
+                                    description: '학년',
+                                },
+                                isIntern: {
+                                    type: 'boolean',
+                                    example: true,
+                                    description: '인턴 여부',
+                                },
+                                internCompanyName: {
+                                    type: 'string',
+                                    example: 'CrowdStrike',
+                                    description: '인턴 회사 이름',
+                                },
+                                internPosition: {
+                                    type: 'string',
+                                    example: 'Frontend',
+                                    description: '인턴 직무',
+                                },
+                                internStartDate: {
+                                    type: 'string',
+                                    format: 'date',
+                                    example: '2023-01-01',
+                                    description: '인턴 시작 날짜 (YYYY-MM-DD)',
+                                },
+                                internEndDate: {
+                                    type: 'string',
+                                    format: 'date',
+                                    example: '2023-06-01',
+                                    description: '인턴 종료 날짜 (YYYY-MM-DD)',
+                                },
+                                isFullTime: {
+                                    type: 'boolean',
+                                    example: true,
+                                    description: '정규직 여부',
+                                },
+                                fullTimeCompanyName: {
+                                    type: 'string',
+                                    example: 'PaloAlto',
+                                    description: '정규직 회사 이름',
+                                },
+                                fullTimePosition: {
+                                    type: 'string',
+                                    example: 'Backend',
+                                    description: '정규직 직무',
+                                },
+                                fullTimeStartDate: {
+                                    type: 'string',
+                                    format: 'date',
+                                    example: '2024-01-01',
+                                    description:
+                                        '정규직 시작 날짜 (YYYY-MM-DD)',
+                                },
+                                fullTimeEndDate: {
+                                    type: 'string',
+                                    format: 'date',
+                                    example: '2024-12-01',
+                                    description:
+                                        '정규직 종료 날짜 (YYYY-MM-DD)',
+                                },
+                            },
+                            required: [
+                                'name',
+                                'email',
+                                'year',
+                                'password',
+                                'githubUrl',
+                                'blogUrl',
+                                'mainPosition',
+                                'school',
+                                'class',
+                            ],
                         },
-                        email: {
-                            type: 'string',
-                            example: 'user@example.com',
-                            description: '사용자 이메일',
-                        },
-                        year: {
-                            type: 'number',
-                            example: 6,
-                            description: '테커 기수',
-                        },
-                        password: {
-                            type: 'string',
-                            example: 'Passw0rd!',
-                            description:
-                                '영어, 숫자, 특수문자를 포함한 비밀번호',
-                        },
-                        isLft: {
-                            type: 'boolean',
-                            example: false,
-                            description: 'LFT 여부',
-                        },
-                        githubUrl: {
-                            type: 'string',
-                            format: 'url',
-                            example: 'https://github.com/username',
-                            description: 'GitHub 프로필 URL',
-                        },
-                        blogUrl: {
-                            type: 'string',
-                            format: 'url',
-                            example: 'https://example.com/blog',
-                            description: '사용자 블로그 URL',
-                        },
-                        mainPosition: {
-                            type: 'string',
-                            example: 'Backend',
-                            description: '주요 직무',
-                        },
-                        subPosition: {
-                            type: 'string',
-                            example: 'Frontend',
-                            description: '부차적 직무 (선택 사항)',
-                        },
-                        school: {
-                            type: 'string',
-                            example:
-                                'Hogwarts School of Witchcraft and Wizardry',
-                            description: '학교 이름',
-                        },
-                        class: {
-                            type: 'string',
-                            example: '1학년',
-                            description: '학년',
-                        },
-                        isIntern: {
-                            type: 'boolean',
-                            example: true,
-                            description: '인턴 여부',
-                        },
-                        internCompanyName: {
-                            type: 'string',
-                            example: 'CrowdStrike',
-                            description: '인턴 회사 이름',
-                        },
-                        internPosition: {
-                            type: 'string',
-                            example: 'Frontend',
-                            description: '인턴 직무',
-                        },
-                        internStartDate: {
-                            type: 'string',
-                            format: 'date',
-                            example: '2023-01-01',
-                            description: '인턴 시작 날짜 (YYYY-MM-DD)',
-                        },
-                        internEndDate: {
-                            type: 'string',
-                            format: 'date',
-                            example: '2023-06-01',
-                            description: '인턴 종료 날짜 (YYYY-MM-DD)',
-                        },
-                        isFullTime: {
-                            type: 'boolean',
-                            example: true,
-                            description: '정규직 여부',
-                        },
-                        fullTimeCompanyName: {
-                            type: 'string',
-                            example: 'PaloAlto',
-                            description: '정규직 회사 이름',
-                        },
-                        fullTimePosition: {
-                            type: 'string',
-                            example: 'Backend',
-                            description: '정규직 직무',
-                        },
-                        fullTimeStartDate: {
-                            type: 'string',
-                            format: 'date',
-                            example: '2024-01-01',
-                            description: '정규직 시작 날짜 (YYYY-MM-DD)',
-                        },
-                        fullTimeEndDate: {
-                            type: 'string',
-                            format: 'date',
-                            example: '2024-12-01',
-                            description: '정규직 종료 날짜 (YYYY-MM-DD)',
+                        createResumeRequest: {
+                            type: 'object',
+                            properties: {
+                                category: {
+                                    type: 'string',
+                                    example: 'PORTFOLIO',
+                                    description: '이력서 타입',
+                                },
+                                position: {
+                                    type: 'string',
+                                    example: 'BACKEND',
+                                    description: '이력서 포지션',
+                                },
+                                title: {
+                                    type: 'string',
+                                    example: '스타트업',
+                                    description:
+                                        '이력서 제목에 추가할 부가 설명',
+                                },
+                                isMain: {
+                                    type: 'boolean',
+                                    example: true,
+                                    description: '이력서 대표 여부',
+                                },
+                            },
+                            required: ['category', 'position', 'isMain'],
                         },
                     },
-                    required: [
-                        'name',
-                        'email',
-                        'year',
-                        'password',
-                        'githubUrl',
-                        'blogUrl',
-                        'mainPosition',
-                        'school',
-                        'class',
-                    ],
-                },
-                createResumeRequest: {
-                    type: 'object',
-                    properties: {
-                        category: {
-                            type: 'string',
-                            example: 'PORTFOLIO',
-                            description: '이력서 타입',
-                        },
-                        position: {
-                            type: 'string',
-                            example: 'BACKEND',
-                            description: '이력서 포지션',
-                        },
-                        title: {
-                            type: 'string',
-                            example: '스타트업',
-                            description: '이력서 제목에 추가할 부가 설명',
-                        },
-                        isMain: {
-                            type: 'boolean',
-                            example: true,
-                            description: '이력서 대표 여부',
-                        },
-                    },
-                    required: ['category', 'position', 'isMain'],
+                    required: ['createUserRequest'],
                 },
             },
-            required: ['file', 'createUserRequest', 'createResumeRequest'],
+            required: ['createUserWithResumeRequest'],
         },
     })
+    @UseInterceptors(FileInterceptor('file')) // 파일 업로드 처리
     async signUp(
-        @Body() createUserWithResumeRequest: CreateUserWithResumeRequest,
+        @Body('createUserWithResumeRequest', ParseJsonAndValidatePipe)
+        createUserWithResumeRequest: CreateUserWithResumeRequest,
         @UploadedFile() file: Express.Multer.File, // 파일 데이터
     ): Promise<any> {
         const { createUserRequest, createResumeRequest } =
