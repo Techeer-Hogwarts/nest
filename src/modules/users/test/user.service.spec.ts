@@ -247,7 +247,7 @@ describe('UserService', () => {
             expect(resumeService.createResume).toHaveBeenCalledWith(
                 createResumeRequest,
                 mockFile,
-                mockUser.id,
+                mockUser,
                 expect.anything(), // Prisma 트랜잭션
             );
 

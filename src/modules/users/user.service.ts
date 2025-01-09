@@ -103,7 +103,7 @@ export class UserService {
                 await this.resumeService.createResume(
                     resumeData,
                     file,
-                    newUser.id,
+                    newUser,
                     prisma,
                 );
             }
