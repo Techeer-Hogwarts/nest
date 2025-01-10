@@ -18,7 +18,8 @@ async function bootstrap(): Promise<void> {
                         /^https:\/\/.*-techeerzip\.vercel\.app$/,
                         /^https:\/\/www\.techeerzip\.cloud$/,
                         /^http:\/\/(localhost|127\.0\.0\.1):\d+$/, // localhost와 127.0.0.1의 모든 포트 허용
-                        /^null$/, // Allow requests without Origin (like curl, Postman)
+                        /^null$/,
+                        /^https:\/\/api\.techeerzip\.cloud$/,
                     ];
 
                     if (
