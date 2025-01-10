@@ -144,14 +144,14 @@ export const mockStudyTeamWithMembers = {
         {
             user: {
                 name: 'User 1',
-                year: 2022,
             },
+            isLeader: true,
         },
         {
             user: {
                 name: 'User 2',
-                year: 2023,
             },
+            isLeader: false,
         },
     ],
 };

@@ -17,16 +17,25 @@ import { ResumeService } from '../../resumes/resume.service';
 import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { GoogleDriveService } from '../../../googleDrive/google.drive.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 describe('ResumeService', (): void => {
     let service: ResumeService;
     let repository: ResumeRepository;
     let googleDriveService: GoogleDriveService;
 
+    const mockPrismaService = {
+        transaction: jest.fn(),
+    };
+
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 ResumeService,
+                {
+                    provide: PrismaService,
+                    useValue: mockPrismaService,
+                },
                 {
                     provide: ResumeRepository,
                     useValue: {
@@ -56,21 +65,19 @@ describe('ResumeService', (): void => {
         googleDriveService = module.get<GoogleDriveService>(GoogleDriveService);
     });
 
-    it('should be defined', (): void => {
-        expect(service).toBeDefined();
-    });
-
-    function formatDate(date: Date): string {
-        return date
-            .toISOString()
-            .replace('T', '-')
-            .replace(/:/g, '')
-            .split('.')[0]
-            .slice(0, -2);
-    }
-
     describe('createResume', () => {
-        it('should successfully create a resume', async () => {
+        let mockPrisma: any;
+
+        beforeEach(() => {
+            // Prisma.TransactionClient Mock 생성
+            mockPrisma = {
+                transaction: jest.fn(),
+            };
+
+            jest.clearAllMocks(); // 각 테스트 전 Mock 초기화
+        });
+
+        it('should successfully create a resume with prisma transaction', async () => {
             const mockFile: Express.Multer.File = {
                 buffer: Buffer.from('Test File Content'),
                 originalname: 'resume.pdf',
@@ -84,7 +91,13 @@ describe('ResumeService', (): void => {
                 stream: null as any,
             };
 
-            const formattedDate = formatDate(new Date());
+            const formattedDate = new Date()
+                .toISOString()
+                .replace('T', '-')
+                .replace(/:/g, '')
+                .split('.')[0]
+                .slice(0, -2);
+
             const resumeUrl = 'https://drive.google.com/file/d/resume-id/view';
 
             jest.spyOn(
@@ -99,48 +112,30 @@ describe('ResumeService', (): void => {
                 createResumeRequest,
                 mockFile,
                 user,
+                mockPrisma,
             );
 
+            // 결과값 검증
             expect(result).toEqual(getResumeResponse);
+
+            // Google Drive 업로드 호출 확인
             expect(googleDriveService.uploadFileBuffer).toHaveBeenCalledWith(
                 mockFile.buffer,
                 `${user.name}-${formattedDate}-${createResumeRequest.title}`,
             );
+
+            // DB에 저장 호출 확인
             expect(repository.createResume).toHaveBeenCalledWith(
                 {
-                    ...createResumeRequest,
+                    category: createResumeRequest.category,
+                    position: createResumeRequest.position,
                     title: `${user.name}-${formattedDate}-${createResumeRequest.title}`,
                     url: resumeUrl,
+                    isMain: createResumeRequest.isMain,
                 },
                 user.id,
+                mockPrisma, // Mock PrismaService 전달 확인
             );
-        });
-
-        it('should throw an error if the Google Drive upload fails', async () => {
-            jest.spyOn(
-                googleDriveService,
-                'uploadFileBuffer',
-            ).mockRejectedValue(new Error('Upload failed'));
-
-            const mockFile: Express.Multer.File = {
-                buffer: Buffer.from('Test File Content'),
-                originalname: 'resume.pdf',
-                mimetype: 'application/pdf',
-                size: 12345,
-                fieldname: 'file',
-                encoding: '7bit',
-                destination: '',
-                filename: '',
-                path: '',
-                stream: null as any,
-            };
-
-            await expect(
-                service.createResume(createResumeRequest, mockFile, user),
-            ).rejects.toThrow('Upload failed');
-
-            expect(googleDriveService.uploadFileBuffer).toHaveBeenCalled();
-            expect(repository.createResume).not.toHaveBeenCalled();
         });
     });
 

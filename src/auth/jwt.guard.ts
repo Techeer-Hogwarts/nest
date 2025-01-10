@@ -3,6 +3,8 @@ import {
     ExecutionContext,
     UnauthorizedException,
     Logger,
+    Inject,
+    forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from '../modules/users/repository/user.repository';
@@ -12,6 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 export class JwtAuthGuard extends AuthGuard('jwt') {
     constructor(
         private readonly jwtService: JwtService,
+        @Inject(forwardRef(() => UserRepository))
         private readonly userRepository: UserRepository,
     ) {
         super();

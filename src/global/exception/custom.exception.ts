@@ -12,7 +12,6 @@ export class NotFoundEventException extends HttpException {
     }
 }
 
-
 export class NotFoundResumeException extends HttpException {
     constructor() {
         super('이력서를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
@@ -33,7 +32,6 @@ export class NotFoundBlogException extends HttpException {
         super('블로그를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
     }
 }
-
 
 export class NotFoundUserException extends HttpException {
     constructor() {
@@ -233,7 +231,6 @@ export class UploadProjectImageException extends HttpException {
             '프로젝트 이미지 업로드에 실패했습니다.',
             HttpStatus.INTERNAL_SERVER_ERROR,
         );
-
     }
 }
 
@@ -243,3 +240,8 @@ export class ForbiddenAccessException extends HttpException {
     }
 }
 
+export class DuplicateEmailException extends HttpException {
+    constructor() {
+        super('이미 가입한 이메일입니다. ', HttpStatus.FORBIDDEN);
+    }
+}

@@ -4,6 +4,7 @@ import { UserEntity } from '../entities/user.entity';
 import { CreateUserRequest } from '../dto/request/create.user.request';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
 import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserRepository {
@@ -12,8 +13,9 @@ export class UserRepository {
     async createUser(
         createUserRequest: CreateUserRequest,
         profileImage: string, // 슬랙에서 받아온 프로필 이미지
+        prisma: Prisma.TransactionClient = this.prisma, // 기본값으로 this.prisma 사용
     ): Promise<any> {
-        return this.prisma.user.create({
+        return prisma.user.create({
             data: {
                 ...createUserRequest,
                 roleId: 3,

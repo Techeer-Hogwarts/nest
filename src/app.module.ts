@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { BlogModule } from './modules/blogs/blog.module';
@@ -28,9 +28,8 @@ import { TaskModule } from './global/task/task.module';
         BookmarkModule,
         ProjectTeamModule,
         BlogModule,
-        UserModule,
-        ResumeModule,
-        AuthModule,
+        forwardRef(() => UserModule),
+        forwardRef(() => AuthModule),
         SessionModule,
         EventModule,
         LikeModule,
@@ -39,6 +38,7 @@ import { TaskModule } from './global/task/task.module';
         StudyTeamModule,
         StudyMemberModule,
         TaskModule,
+        ResumeModule,
     ],
 })
-export class AppModule {}
+export class AppModule { }

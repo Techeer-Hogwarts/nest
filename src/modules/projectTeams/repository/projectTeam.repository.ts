@@ -1,13 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateProjectTeamRequest } from '../dto/request/update.projectTeam.request';
 import {
-    NotFoundProjectException,
     CloseProjectException,
     DeleteProjectException,
     DuplicateProjectNameException,
 } from '../../../global/exception/custom.exception';
-import { StatusCategory } from '@prisma/client';
 
 @Injectable()
 export class ProjectTeamRepository {

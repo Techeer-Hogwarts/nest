@@ -5,16 +5,18 @@ import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeEntity } from './entities/resume.entity';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import {
     ForbiddenException,
     NotFoundResumeException,
 } from '../../global/exception/custom.exception';
 import { GoogleDriveService } from '../../googleDrive/google.drive.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ResumeService {
     constructor(
+        private readonly prismaService: PrismaService,
         private readonly resumeRepository: ResumeRepository,
         private readonly googleDriveService: GoogleDriveService,
     ) {}
@@ -33,6 +35,7 @@ export class ResumeService {
         createResumeRequest: CreateResumeRequest,
         file: Express.Multer.File,
         user: User,
+        prisma?: Prisma.TransactionClient,
     ): Promise<GetResumeResponse> {
         const { title, category, position, isMain } = createResumeRequest;
 
@@ -73,6 +76,7 @@ export class ResumeService {
                 isMain,
             },
             user.id,
+            prisma ?? this.prismaService,
         );
 
         return new GetResumeResponse(resume);

@@ -22,9 +22,9 @@
         "seed": "node dist/prisma/seed.js"
     },
     "dependencies": {
-        "@google-cloud/secret-manager": "^5.6.0",
         "@aws-sdk/client-s3": "^3.717.0",
         "@golevelup/nestjs-rabbitmq": "^5.6.1",
+        "@google-cloud/secret-manager": "^5.6.0",
         "@nestjs/axios": "^3.1.0",
         "@nestjs/cache-manager": "^2.2.2",
         "@nestjs/common": "^10.4.1",
@@ -41,6 +41,7 @@
         "amqplib": "^0.10.5",
         "axios": "^1.7.7",
         "bcryptjs": "^2.4.3",
+        "body-parser": "^1.20.3",
         "cache-manager-ioredis": "^2.1.0",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.1",
@@ -49,6 +50,7 @@
         "express-basic-auth": "^1.2.1",
         "googleapis": "^144.0.0",
         "ioredis": "^5.4.1",
+        "multer": "^1.4.5-lts.1",
         "nodemailer": "^6.9.15",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",

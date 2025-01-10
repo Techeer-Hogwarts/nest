@@ -95,7 +95,7 @@ export class CreateUserRequest {
 
     @IsBoolean()
     @ApiProperty({
-        example: false,
+        example: true,
         description: '인턴 여부',
     })
     readonly isIntern: boolean;
@@ -140,7 +140,7 @@ export class CreateUserRequest {
 
     @IsBoolean()
     @ApiProperty({
-        example: false,
+        example: true,
         description: '정규직 여부',
     })
     readonly isFullTime: boolean;

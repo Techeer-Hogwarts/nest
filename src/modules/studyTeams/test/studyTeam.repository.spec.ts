@@ -307,14 +307,15 @@ describe('StudyTeamRepository', () => {
                 members: [
                     {
                         name: 'User 1',
-                        year: 2022,
+                        isLeader: true,
                     },
                     {
                         name: 'User 2',
-                        year: 2023,
+                        isLeader: false,
                     },
                 ],
             });
+
             expect(prismaService.studyTeam.findUnique).toHaveBeenCalledWith({
                 where: {
                     id: 1,
@@ -328,9 +329,9 @@ describe('StudyTeamRepository', () => {
                             user: {
                                 select: {
                                     name: true,
-                                    year: true,
                                 },
                             },
+                            isLeader: true,
                         },
                     },
                 },

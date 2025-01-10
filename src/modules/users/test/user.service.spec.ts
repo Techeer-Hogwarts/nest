@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { UserRepository } from '../repository/user.repository';
-import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { AuthService } from '../../../auth/auth.service';
 import { HttpService } from '@nestjs/axios';
 import { CreateUserRequest } from '../dto/request/create.user.request';
@@ -17,14 +16,17 @@ import {
     NotFoundUserException,
 } from '../../../global/exception/custom.exception';
 import { TaskService } from '../../../global/task/task.service';
+import { ResumeService } from '../../resumes/resume.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 describe('UserService', () => {
     let userService: UserService;
     let userRepository: UserRepository;
-    let resumeRepository: ResumeRepository;
+    let resumeService: ResumeService;
     let authService: AuthService;
     let httpService: HttpService;
     let taskService: TaskService;
+    let prismaService: PrismaService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -47,7 +49,7 @@ describe('UserService', () => {
                     },
                 },
                 {
-                    provide: ResumeRepository,
+                    provide: ResumeService,
                     useValue: {
                         createResume: jest.fn(),
                     },
@@ -70,15 +72,20 @@ describe('UserService', () => {
                         requestSignUpBlogFetch: jest.fn(),
                     } as any,
                 },
+                {
+                    provide: PrismaService,
+                    useValue: {},
+                },
             ],
         }).compile();
 
         userService = module.get<UserService>(UserService);
         userRepository = module.get<UserRepository>(UserRepository);
-        resumeRepository = module.get<ResumeRepository>(ResumeRepository);
+        resumeService = module.get<ResumeService>(ResumeService);
         authService = module.get<AuthService>(AuthService);
         httpService = module.get<HttpService>(HttpService);
         taskService = module.get<TaskService>(TaskService);
+        prismaService = module.get<PrismaService>(PrismaService);
     });
 
     it('should be defined', () => {
@@ -86,118 +93,172 @@ describe('UserService', () => {
     });
 
     describe('signUp', () => {
-        it('should create a user and resume', async () => {
-            const createUserRequest: CreateUserRequest = {
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                isIntern: false,
-                isFullTime: false,
-            };
+        const createUserRequest: CreateUserRequest = {
+            email: 'test@test.com',
+            password: 'password123',
+            name: 'test',
+            year: 6,
+            isLft: false,
+            githubUrl: 'https://github.com/test',
+            blogUrl: 'https://example.com/blog',
+            mainPosition: 'Backend',
+            subPosition: 'Frontend',
+            school: 'Hogwarts',
+            class: '1학년',
+            isIntern: false,
+            isFullTime: false,
+        };
 
-            const createResumeRequest: CreateResumeRequest = {
-                title: 'My Resume',
-                url: 'https://resume.com',
-                position: 'Backend',
-                category: 'PORTFOLIO',
-                isMain: true,
-            };
+        const createResumeRequest: CreateResumeRequest = {
+            title: 'My Resume',
+            url: 'https://resume.com',
+            position: 'Backend',
+            category: 'PORTFOLIO',
+            isMain: true,
+        };
 
-            const user = {
-                id: 1,
-                email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
-                year: 6,
-                isLft: false,
-                githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
-                isDeleted: false,
-                roleId: 1,
-                isAuth: true,
-                nickname: 'tester',
-                stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            } as User;
+        const mockUser: User = {
+            id: 1,
+            email: 'test@test.com',
+            password: 'hashedPassword',
+            name: 'test',
+            year: 6,
+            isLft: false,
+            githubUrl: 'https://github.com/test',
+            blogUrl: 'https://example.com/blog',
+            mainPosition: 'Backend',
+            subPosition: 'Frontend',
+            school: 'Hogwarts',
+            class: '1학년',
+            profileImage: 'http://profileimage.com',
+            isDeleted: false,
+            roleId: 1,
+            isAuth: true,
+            nickname: 'tester',
+            stack: ['JavaScript', 'NestJS'],
+            isIntern: false,
+            internCompanyName: null,
+            internPosition: null,
+            isFullTime: false,
+            fullTimeCompanyName: null,
+            fullTimePosition: null,
+            internStartDate: null,
+            internEndDate: null,
+            fullTimeStartDate: null,
+            fullTimeEndDate: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
 
+        const mockResumeEntity: ResumeEntity = {
+            id: 1,
+            title: 'Resume Title',
+            url: 'https://example.com',
+            category: 'PORTFOLIO',
+            isMain: true,
+            position: 'Backend',
+            userId: 1,
+            user: mockUser, // 누락된 필드 추가
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isDeleted: false,
+            likeCount: 0,
+            viewCount: 2,
+        };
+
+        const mockImageUrlResponse: AxiosResponse<{
+            image: string;
+            isTecheer: boolean;
+        }> = {
+            data: {
+                image: 'https://newprofileimage.com',
+                isTecheer: true,
+            },
+            status: 200,
+            statusText: 'OK',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            config: {
+                headers: new AxiosHeaders({
+                    'Content-Type': 'application/json',
+                }),
+            },
+        };
+
+        beforeEach(() => {
             jest.spyOn(authService, 'checkIfVerified').mockResolvedValue(true);
-            jest.spyOn(userRepository, 'createUser').mockResolvedValue(user);
-            jest.spyOn(resumeRepository, 'createResume').mockResolvedValue({
-                id: 1,
-                title: 'Resume Title',
-                url: 'https://example.com',
-                category: 'PORTFOLIO',
-            } as ResumeEntity);
+            jest.spyOn(httpService, 'post').mockReturnValue(
+                of(mockImageUrlResponse),
+            );
+            jest.spyOn(userRepository, 'createUser').mockResolvedValue(
+                mockUser,
+            );
+            jest.spyOn(resumeService, 'createResume').mockResolvedValue(
+                mockResumeEntity,
+            );
             jest.spyOn(
                 taskService,
                 'requestSignUpBlogFetch',
             ).mockResolvedValue();
 
-            const mockHeaders = new AxiosHeaders({
-                'Content-Type': 'application/json',
-            });
+            // Prisma $transaction 모의
+            prismaService.$transaction = jest.fn(async (callback: any) => {
+                return await callback(prismaService);
+            }) as unknown as PrismaService['$transaction'];
+        });
 
-            const mockImageUrlResponse: AxiosResponse<{
-                image: string;
-                isTecheer: boolean;
-            }> = {
-                data: {
-                    image: 'https://newprofileimage.com',
-                    isTecheer: true,
-                },
-                status: 200,
-                statusText: 'OK',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                config: {
-                    url: 'https://example.com/api',
-                    method: 'post', // HTTP method
-                    headers: mockHeaders,
-                    data: {
-                        email: 'test@test.com',
-                    },
-                },
+        it('should create a user and resume successfully', async () => {
+            const mockFile: Express.Multer.File = {
+                fieldname: 'file',
+                originalname: 'resume.pdf',
+                encoding: '7bit',
+                mimetype: 'application/pdf',
+                buffer: Buffer.from('mock file content'),
+                size: 1024,
+                stream: null,
+                destination: '',
+                filename: '',
+                path: '',
             };
-
-            jest.spyOn(httpService, 'post').mockReturnValue(
-                of(mockImageUrlResponse),
-            );
 
             const result = await userService.signUp(
                 createUserRequest,
+                mockFile,
                 createResumeRequest,
             );
 
+            // 이메일 인증 확인
             expect(authService.checkIfVerified).toHaveBeenCalledWith(
                 createUserRequest.email,
             );
-            expect(userRepository.createUser).toHaveBeenCalled();
-            expect(resumeRepository.createResume).toHaveBeenCalledWith(
-                createResumeRequest,
-                user.id,
+
+            // 사용자 생성 호출 확인
+            expect(userRepository.createUser).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    email: createUserRequest.email,
+                    name: createUserRequest.name,
+                }),
+                expect.any(String), // 프로필 이미지 URL
+                expect.anything(), // Prisma 트랜잭션
             );
-            expect(result).toEqual(user);
+
+            // 이력서 생성 호출 확인
+            expect(resumeService.createResume).toHaveBeenCalledWith(
+                createResumeRequest,
+                mockFile,
+                mockUser,
+                expect.anything(), // Prisma 트랜잭션
+            );
+
+            // 블로그 크롤링 요청 호출 확인
+            expect(taskService.requestSignUpBlogFetch).toHaveBeenCalledWith(
+                mockUser.id,
+                createUserRequest.blogUrl,
+            );
+
+            // 최종 결과 검증
+            expect(result).toEqual(mockUser);
         });
     });
 
