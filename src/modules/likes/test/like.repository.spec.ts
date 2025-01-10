@@ -102,26 +102,26 @@ describe('LikeRepository', (): void => {
     });
 
     describe('toggleLike', (): void => {
-        it('좋아요 적용 시 Redis에 상태 업데이트 및 개수 증가', async (): Promise<void> => {
+        it('좋아요 적용 시 개수 증가', async (): Promise<void> => {
             const request: CreateLikeRequest = createLikeRequest();
 
             jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
                 likeEntity(),
             );
 
-            await repository.toggleLike(request);
+            await repository.toggleLike(1, request);
 
             expect(prismaService.like.upsert).toHaveBeenCalledWith({
                 where: {
                     userId_contentId_category: {
-                        userId: request.userId,
+                        userId: 1,
                         contentId: request.contentId,
                         category: request.category,
                     },
                 },
                 update: { isDeleted: !request.likeStatus },
                 create: {
-                    userId: request.userId,
+                    userId: 1,
                     contentId: request.contentId,
                     category: request.category,
                     isDeleted: !request.likeStatus,
@@ -138,19 +138,19 @@ describe('LikeRepository', (): void => {
                 likeEntity(),
             );
 
-            await repository.toggleLike(request);
+            await repository.toggleLike(1, request);
 
             expect(prismaService.like.upsert).toHaveBeenCalledWith({
                 where: {
                     userId_contentId_category: {
-                        userId: request.userId,
+                        userId: 1,
                         contentId: request.contentId,
                         category: request.category,
                     },
                 },
                 update: { isDeleted: !request.likeStatus },
                 create: {
-                    userId: request.userId,
+                    userId: 1,
                     contentId: request.contentId,
                     category: request.category,
                     isDeleted: !request.likeStatus,

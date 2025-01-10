@@ -29,9 +29,10 @@ export class LikeRepository {
     }
 
     async toggleLike(
+        userId: number,
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
-        const { userId, contentId, category, likeStatus }: CreateLikeRequest =
+        const { contentId, category, likeStatus }: CreateLikeRequest =
             createLikeRequest;
         const like = await this.prisma.like.upsert({
             where: {
