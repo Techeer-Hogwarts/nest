@@ -52,5 +52,4 @@ export const getLikeListRequest = (
 
 export const getLikeResponse: GetLikeResponse = new GetLikeResponse(
     likeEntity(),
-    true,
 );

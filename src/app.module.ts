@@ -41,4 +41,4 @@ import { TaskModule } from './global/task/task.module';
         ResumeModule,
     ],
 })
-export class AppModule { }
+export class AppModule {}

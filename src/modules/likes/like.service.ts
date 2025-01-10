@@ -24,7 +24,6 @@ export class LikeService {
         if (!isContentExist) {
             throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
         }
-
         return await this.likeRepository.toggleLike(createLikeRequest);
     }
 
