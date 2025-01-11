@@ -24,19 +24,26 @@ describe('LikeRepository', (): void => {
                     useValue: {
                         session: {
                             findUnique: jest.fn(),
+                            update: jest.fn(),
                         },
                         blog: {
                             findUnique: jest.fn(),
+                            update: jest.fn(),
                         },
                         resume: {
                             findUnique: jest.fn(),
+                            update: jest.fn(),
                         },
                         like: {
                             findUnique: jest.fn(),
                             upsert: jest.fn(),
                             count: jest.fn(),
+                            update: jest.fn(),
                         },
                         $queryRaw: jest.fn(),
+                        $transaction: jest.fn(async (callback) => {
+                            return await callback(prismaService);
+                        }),
                     },
                 },
                 {
@@ -102,15 +109,32 @@ describe('LikeRepository', (): void => {
     });
 
     describe('toggleLike', (): void => {
-        it('좋아요 적용 시 개수 증가', async (): Promise<void> => {
+        it('좋아요 적용 시 트랜잭션이 올바르게 호출됨', async (): Promise<void> => {
             const request: CreateLikeRequest = createLikeRequest();
 
+            // `like` 모의 객체 생성
             jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
                 likeEntity(),
             );
 
+            // 모든 키 포함하는 `contentTableMap` 모의 객체 생성
+            const mockContentTable = {
+                update: jest.fn().mockResolvedValue({ likeCount: 5 }),
+            };
+            const mockContentTableMap = {
+                RESUME: mockContentTable,
+                SESSION: mockContentTable,
+                BLOG: mockContentTable,
+            };
+
+            // `contentTableMap`에 접근할 수 있도록 설정
+            (repository as any).contentTableMap = mockContentTableMap;
+
+            const transactionSpy = jest.spyOn(prismaService, '$transaction');
+
             await repository.toggleLike(1, request);
 
+            expect(transactionSpy).toHaveBeenCalledTimes(1);
             expect(prismaService.like.upsert).toHaveBeenCalledWith({
                 where: {
                     userId_contentId_category: {
@@ -127,34 +151,11 @@ describe('LikeRepository', (): void => {
                     isDeleted: !request.likeStatus,
                 },
             });
-        });
 
-        it('좋아요 취소 시 Redis에 상태 업데이트 및 개수 감소', async (): Promise<void> => {
-            const request: CreateLikeRequest = createLikeRequest({
-                likeStatus: false,
-            });
-
-            jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
-                likeEntity(),
-            );
-
-            await repository.toggleLike(1, request);
-
-            expect(prismaService.like.upsert).toHaveBeenCalledWith({
-                where: {
-                    userId_contentId_category: {
-                        userId: 1,
-                        contentId: request.contentId,
-                        category: request.category,
-                    },
-                },
-                update: { isDeleted: !request.likeStatus },
-                create: {
-                    userId: 1,
-                    contentId: request.contentId,
-                    category: request.category,
-                    isDeleted: !request.likeStatus,
-                },
+            // `update`가 올바르게 호출되었는지 확인
+            expect(mockContentTable.update).toHaveBeenCalledWith({
+                where: { id: request.contentId },
+                data: { likeCount: { increment: request.likeStatus ? 1 : -1 } },
             });
         });
     });

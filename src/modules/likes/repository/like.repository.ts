@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentCategory, Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
 import { GetLikeListRequest } from '../dto/request/get.like-list.request';
 import { GetLikeResponse } from '../dto/response/get.like.response';
+import { GetLikeRequest } from '../dto/request/get.like.request';
 
 @Injectable()
 export class LikeRepository {
@@ -14,6 +15,14 @@ export class LikeRepository {
         [ContentCategory.BLOG]: this.prisma.blog,
         [ContentCategory.RESUME]: this.prisma.resume,
     };
+
+    private getTableName(category: ContentCategory): string {
+        return {
+            [ContentCategory.RESUME]: 'Resume',
+            [ContentCategory.BLOG]: 'Blog',
+            [ContentCategory.SESSION]: 'Session',
+        }[category];
+    }
 
     async isContentExist(
         contentId: number,
@@ -28,13 +37,12 @@ export class LikeRepository {
         return content !== null;
     }
 
-    async toggleLike(
+    async getLikeStatus(
         userId: number,
-        createLikeRequest: CreateLikeRequest,
-    ): Promise<GetLikeResponse> {
-        const { contentId, category, likeStatus }: CreateLikeRequest =
-            createLikeRequest;
-        const like = await this.prisma.like.upsert({
+        getLikeRequest: GetLikeRequest,
+    ): Promise<boolean> {
+        const { contentId, category } = getLikeRequest;
+        const like = await this.prisma.like.findUnique({
             where: {
                 userId_contentId_category: {
                     userId,
@@ -42,15 +50,62 @@ export class LikeRepository {
                     category,
                 },
             },
-            update: { isDeleted: !likeStatus },
-            create: {
-                userId,
-                contentId,
-                category,
-                isDeleted: !likeStatus,
-            },
         });
-        return new GetLikeResponse(like);
+        return like !== null && !like.isDeleted;
+    }
+
+    async toggleLike(
+        userId: number,
+        createLikeRequest: CreateLikeRequest,
+    ): Promise<GetLikeResponse> {
+        const { contentId, category, likeStatus }: CreateLikeRequest =
+            createLikeRequest;
+
+        const result = await this.prisma.$transaction(async (prisma) => {
+            // 현재 좋아요 상태 확인
+            const existingLike = await prisma.like.findUnique({
+                where: {
+                    userId_contentId_category: {
+                        userId,
+                        contentId,
+                        category,
+                    },
+                },
+            });
+            // 상태가 동일하면 아무 작업도 하지 않음
+            if (existingLike && existingLike.isDeleted === !likeStatus) {
+                Logger.debug('이미 좋아요 상태가 동일합니다.');
+                return existingLike;
+            }
+            // 상태 변경 수행
+            Logger.debug(`좋아요 상태 변경: ${likeStatus}`);
+            const like = await prisma.like.upsert({
+                where: {
+                    userId_contentId_category: {
+                        userId,
+                        contentId,
+                        category,
+                    },
+                },
+                update: { isDeleted: !likeStatus },
+                create: {
+                    userId,
+                    contentId,
+                    category,
+                    isDeleted: !likeStatus,
+                },
+            });
+            // 좋아요 상태에 따라 likeCount를 증감
+            const changeValue = likeStatus ? 1 : -1; // true: 좋아요 추가, false: 좋아요 삭제
+            Logger.debug(`좋아요 카운트 변경: ${changeValue}`);
+            const updateContent = await this.contentTableMap[category].update({
+                where: { id: contentId },
+                data: { likeCount: { increment: changeValue } },
+            });
+            Logger.debug(`좋아요 카운트 변경 완료: ${updateContent.likeCount}`);
+            return like;
+        });
+        return new GetLikeResponse(result);
     }
 
     async getLikeList(
@@ -71,14 +126,6 @@ export class LikeRepository {
             LIMIT ${limit} OFFSET ${offset}
         `,
         );
-    }
-
-    private getTableName(category: ContentCategory): string {
-        return {
-            [ContentCategory.RESUME]: 'Resume',
-            [ContentCategory.BLOG]: 'Blog',
-            [ContentCategory.SESSION]: 'Session',
-        }[category];
     }
 
     async getLikeCount(

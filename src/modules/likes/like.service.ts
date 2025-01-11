@@ -9,6 +9,7 @@ import { BlogEntity } from '../blogs/entities/blog.entity';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { ResumeEntity } from '../resumes/entities/resume.entity';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
+import { GetLikeRequest } from './dto/request/get.like.request';
 
 @Injectable()
 export class LikeService {
@@ -25,7 +26,7 @@ export class LikeService {
         if (!isContentExist) {
             throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
         }
-        return await this.likeRepository.toggleLike(userId, createLikeRequest);
+        return this.likeRepository.toggleLike(userId, createLikeRequest);
     }
 
     async getLikeList(
@@ -50,5 +51,12 @@ export class LikeService {
                     (content: ResumeEntity) => new GetResumeResponse(content),
                 );
         }
+    }
+
+    async getLikeStatus(
+        userId: number,
+        getLikeRequest: GetLikeRequest,
+    ): Promise<boolean> {
+        return this.likeRepository.getLikeStatus(userId, getLikeRequest);
     }
 }

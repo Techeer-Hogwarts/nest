@@ -16,6 +16,7 @@ import { GetLikeResponse } from './dto/response/get.like.response';
 import { GetLikeListRequest } from './dto/request/get.like-list.request';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
+import { GetLikeRequest } from './dto/request/get.like.request';
 
 @ApiTags('likes')
 @Controller('/likes')
@@ -62,6 +63,27 @@ export class LikeController {
             code: 200,
             message: '좋아요 목록을 조회했습니다.',
             data: contents,
+        };
+    }
+
+    @Get()
+    @ApiOperation({
+        summary: '좋아요 상태 조회',
+        description: '조회한 콘텐츠의 좋아요 상태를 조회합니다.',
+    })
+    async getLikeStatus(
+        @Req() request: Request,
+        @Body() getLikeRequest: GetLikeRequest,
+    ): Promise<any> {
+        const user = request.user as any;
+        const likeStatus = await this.likeService.getLikeStatus(
+            user.id,
+            getLikeRequest,
+        );
+        return {
+            code: 200,
+            message: '유저의 좋아요 상태를 조회했습니다.',
+            data: likeStatus,
         };
     }
 }
