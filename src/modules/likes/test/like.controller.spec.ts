@@ -6,8 +6,11 @@ import {
     getLikeListRequest,
     getLikeResponse,
     likeEntities,
+    request,
 } from './mock-data';
 import { NotFoundException } from '@nestjs/common';
+import { UserRepository } from '../../users/repository/user.repository';
+import { JwtService } from '@nestjs/jwt';
 
 describe('LikeController', (): void => {
     let controller: LikeController;
@@ -24,6 +27,11 @@ describe('LikeController', (): void => {
                         getLikeList: jest.fn(),
                     },
                 },
+                {
+                    provide: UserRepository,
+                    useValue: {},
+                },
+                JwtService,
             ],
         }).compile();
 
@@ -33,6 +41,7 @@ describe('LikeController', (): void => {
 
     it('should be defined', (): void => {
         expect(controller).toBeDefined();
+        expect(service).toBeDefined();
     });
 
     describe('toggleLike', (): void => {
@@ -40,8 +49,10 @@ describe('LikeController', (): void => {
             jest.spyOn(service, 'toggleLike').mockResolvedValue(
                 getLikeResponse,
             );
-
-            const result = await controller.toggleLike(createLikeRequest());
+            const result = await controller.toggleLike(
+                request,
+                createLikeRequest(),
+            );
 
             expect(result).toEqual({
                 code: 201,
@@ -49,6 +60,7 @@ describe('LikeController', (): void => {
                 data: getLikeResponse,
             });
             expect(service.toggleLike).toHaveBeenCalledWith(
+                1,
                 createLikeRequest(),
             );
             expect(service.toggleLike).toHaveBeenCalledTimes(1);
@@ -60,10 +72,11 @@ describe('LikeController', (): void => {
             );
 
             await expect(
-                controller.toggleLike(createLikeRequest()),
+                controller.toggleLike(request, createLikeRequest()),
             ).rejects.toThrow(NotFoundException);
 
             expect(service.toggleLike).toHaveBeenCalledWith(
+                1,
                 createLikeRequest(),
             );
             expect(service.toggleLike).toHaveBeenCalledTimes(1);

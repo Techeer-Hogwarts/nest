@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { google, drive_v3 } from 'googleapis';
 import { Readable } from 'stream';
 import { ConfigService } from '@nestjs/config';
@@ -52,7 +52,7 @@ export class GoogleDriveService implements OnModuleInit {
             auth: authClient,
         });
 
-        console.log('Google Drive Service initialized successfully.');
+        Logger.log('Google Drive Service initialized successfully.');
     }
 
     private bufferToStream(buffer: Buffer): Readable {
@@ -91,7 +91,7 @@ export class GoogleDriveService implements OnModuleInit {
 
             return response.data.webViewLink || '';
         } catch (error) {
-            console.error('Error uploading file to Google Drive:', error);
+            Logger.error('Error uploading file to Google Drive:', error);
             throw error;
         }
     }
@@ -129,11 +129,11 @@ export class GoogleDriveService implements OnModuleInit {
                 fields: 'id, parents',
             });
 
-            console.log(
+            Logger.log(
                 `File "${fileName}" (ID: ${fileId}) moved to archive folder.`,
             );
         } catch (error) {
-            console.error('Error moving file to archive folder:', error);
+            Logger.error('Error moving file to archive folder:', error);
             throw error;
         }
     }

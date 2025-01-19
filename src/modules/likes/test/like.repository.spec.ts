@@ -10,12 +10,10 @@ import {
     likeEntities,
     likeEntity,
 } from './mock-data';
-import Redis from 'ioredis';
 
 describe('LikeRepository', (): void => {
     let repository: LikeRepository;
     let prismaService: PrismaService;
-    let redisClient: Redis;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -26,19 +24,26 @@ describe('LikeRepository', (): void => {
                     useValue: {
                         session: {
                             findUnique: jest.fn(),
+                            update: jest.fn(),
                         },
                         blog: {
                             findUnique: jest.fn(),
+                            update: jest.fn(),
                         },
                         resume: {
                             findUnique: jest.fn(),
+                            update: jest.fn(),
                         },
                         like: {
                             findUnique: jest.fn(),
                             upsert: jest.fn(),
                             count: jest.fn(),
+                            update: jest.fn(),
                         },
                         $queryRaw: jest.fn(),
+                        $transaction: jest.fn(async (callback) => {
+                            return await callback(prismaService);
+                        }),
                     },
                 },
                 {
@@ -55,7 +60,6 @@ describe('LikeRepository', (): void => {
 
         repository = module.get<LikeRepository>(LikeRepository);
         prismaService = module.get<PrismaService>(PrismaService);
-        redisClient = module.get<Redis>('REDIS_CLIENT');
     });
 
     it('should be defined', (): void => {
@@ -105,89 +109,53 @@ describe('LikeRepository', (): void => {
     });
 
     describe('toggleLike', (): void => {
-        it('좋아요 적용 시 Redis에 상태 업데이트 및 개수 증가', async (): Promise<void> => {
+        it('좋아요 적용 시 트랜잭션이 올바르게 호출됨', async (): Promise<void> => {
             const request: CreateLikeRequest = createLikeRequest();
 
-            jest.spyOn(redisClient, 'get').mockResolvedValue('false');
-            jest.spyOn(redisClient, 'set').mockResolvedValue('OK');
-            jest.spyOn(redisClient, 'incr').mockResolvedValue(1);
+            // `like` 모의 객체 생성
             jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
                 likeEntity(),
             );
 
-            await repository.toggleLike(request);
+            // 모든 키 포함하는 `contentTableMap` 모의 객체 생성
+            const mockContentTable = {
+                update: jest.fn().mockResolvedValue({ likeCount: 5 }),
+            };
+            const mockContentTableMap = {
+                RESUME: mockContentTable,
+                SESSION: mockContentTable,
+                BLOG: mockContentTable,
+            };
 
-            expect(redisClient.get).toHaveBeenCalledWith(
-                `like:${request.category}:${request.contentId}:${request.userId}`,
-            );
-            expect(redisClient.set).toHaveBeenCalledWith(
-                `like:${request.category}:${request.contentId}:${request.userId}`,
-                request.likeStatus.toString(),
-                'EX',
-                86400,
-            );
-            expect(redisClient.incr).toHaveBeenCalledWith(
-                `likeCount:${request.category}:${request.contentId}`,
-            );
+            // `contentTableMap`에 접근할 수 있도록 설정
+            (repository as any).contentTableMap = mockContentTableMap;
+
+            const transactionSpy = jest.spyOn(prismaService, '$transaction');
+
+            await repository.toggleLike(1, request);
+
+            expect(transactionSpy).toHaveBeenCalledTimes(1);
             expect(prismaService.like.upsert).toHaveBeenCalledWith({
                 where: {
                     userId_contentId_category: {
-                        userId: request.userId,
+                        userId: 1,
                         contentId: request.contentId,
                         category: request.category,
                     },
                 },
                 update: { isDeleted: !request.likeStatus },
                 create: {
-                    userId: request.userId,
+                    userId: 1,
                     contentId: request.contentId,
                     category: request.category,
                     isDeleted: !request.likeStatus,
                 },
             });
-        });
 
-        it('좋아요 취소 시 Redis에 상태 업데이트 및 개수 감소', async (): Promise<void> => {
-            const request: CreateLikeRequest = createLikeRequest({
-                likeStatus: false,
-            });
-
-            jest.spyOn(redisClient, 'get').mockResolvedValue('true');
-            jest.spyOn(redisClient, 'set').mockResolvedValue('OK');
-            jest.spyOn(redisClient, 'decr').mockResolvedValue(0);
-            jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
-                likeEntity(),
-            );
-
-            await repository.toggleLike(request);
-
-            expect(redisClient.get).toHaveBeenCalledWith(
-                `like:${request.category}:${request.contentId}:${request.userId}`,
-            );
-            expect(redisClient.set).toHaveBeenCalledWith(
-                `like:${request.category}:${request.contentId}:${request.userId}`,
-                request.likeStatus.toString(),
-                'EX',
-                86400,
-            );
-            expect(redisClient.decr).toHaveBeenCalledWith(
-                `likeCount:${request.category}:${request.contentId}`,
-            );
-            expect(prismaService.like.upsert).toHaveBeenCalledWith({
-                where: {
-                    userId_contentId_category: {
-                        userId: request.userId,
-                        contentId: request.contentId,
-                        category: request.category,
-                    },
-                },
-                update: { isDeleted: !request.likeStatus },
-                create: {
-                    userId: request.userId,
-                    contentId: request.contentId,
-                    category: request.category,
-                    isDeleted: !request.likeStatus,
-                },
+            // `update`가 올바르게 호출되었는지 확인
+            expect(mockContentTable.update).toHaveBeenCalledWith({
+                where: { id: request.contentId },
+                data: { likeCount: { increment: request.likeStatus ? 1 : -1 } },
             });
         });
     });
@@ -221,31 +189,23 @@ describe('LikeRepository', (): void => {
     });
 
     describe('getLikeCount', (): void => {
-        it('Redis에서 좋아요 개수를 가져오고 캐시 미스 시 DB에서 조회하여 Redis에 저장함', async (): Promise<void> => {
-            const contentId: number = 1;
-            const category: ContentCategory = ContentCategory.SESSION;
+        it('DB에서 좋아요 개수를 조회함', async (): Promise<void> => {
+            jest.spyOn(prismaService.like, 'count').mockResolvedValue(10);
 
-            // 캐시 미스 설정
-            jest.spyOn(redisClient, 'get').mockResolvedValue(null);
-            jest.spyOn(repository, 'countLikes').mockResolvedValue(10);
+            const contentId = 1;
+            const category = ContentCategory.SESSION;
 
-            const result: number = await repository.getLikeCount(
-                contentId,
-                category,
-            );
+            const result = await repository.getLikeCount(contentId, category);
 
             expect(result).toEqual(10);
-            expect(redisClient.get).toHaveBeenCalledWith(
-                `likeCount:${category}:${contentId}`,
-            );
-            expect(repository.countLikes).toHaveBeenCalledWith(
-                contentId,
-                category,
-            );
-            expect(redisClient.set).toHaveBeenCalledWith(
-                `likeCount:${category}:${contentId}`,
-                '10',
-            );
+            expect(prismaService.like.count).toHaveBeenCalledWith({
+                where: {
+                    contentId,
+                    category,
+                    isDeleted: false,
+                },
+            });
+            expect(prismaService.like.count).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -8,14 +8,6 @@ export class CreateLikeRequest {
     @Type(() => Number)
     @ApiProperty({
         example: 1,
-        description: '유저 아이디',
-    })
-    readonly userId: number;
-
-    @IsNumber()
-    @Type(() => Number)
-    @ApiProperty({
-        example: 1,
         description: '좋아요를 누른 콘텐츠 아이디',
     })
     readonly contentId: number;

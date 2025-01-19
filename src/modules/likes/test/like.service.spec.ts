@@ -54,7 +54,10 @@ describe('LikeService', (): void => {
             );
 
             const request: CreateLikeRequest = createLikeRequest();
-            const result: GetLikeResponse = await service.toggleLike(request);
+            const result: GetLikeResponse = await service.toggleLike(
+                1,
+                request,
+            );
 
             expect(result).toEqual(getLikeResponse);
             expect(repository.isContentExist).toHaveBeenCalledWith(
@@ -63,6 +66,7 @@ describe('LikeService', (): void => {
             );
             expect(repository.isContentExist).toHaveBeenCalledTimes(1);
             expect(repository.toggleLike).toHaveBeenCalledWith(
+                1,
                 createLikeRequest(),
             );
             expect(repository.toggleLike).toHaveBeenCalledTimes(1);
@@ -72,7 +76,7 @@ describe('LikeService', (): void => {
             jest.spyOn(repository, 'isContentExist').mockResolvedValue(false);
 
             await expect(
-                service.toggleLike(createLikeRequest()),
+                service.toggleLike(1, createLikeRequest()),
             ).rejects.toThrow(
                 new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.'),
             );
