@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { forwardRef, Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { BlogModule } from './modules/blogs/blog.module';
@@ -16,6 +16,8 @@ import { StudyTeamModule } from './modules/studyTeams/studyTeam.module';
 import { StudyMemberModule } from './modules/studyMembers/studyMember.module';
 import { RabbitMQModule } from './global/rabbitmq/rabbitmq.module';
 import { TaskModule } from './global/task/task.module';
+import { CustomWinstonLogger } from './global/logger/winston.logger';
+import { LoggerModule } from './global/logger/logger.module';
 
 @Module({
     imports: [
@@ -39,6 +41,13 @@ import { TaskModule } from './global/task/task.module';
         StudyMemberModule,
         TaskModule,
         ResumeModule,
+        LoggerModule,
+    ],
+    providers: [
+        {
+            provide: Logger,
+            useExisting: CustomWinstonLogger,
+        },
     ],
 })
-export class AppModule { }
+export class AppModule {}

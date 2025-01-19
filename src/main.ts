@@ -1,15 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { PrismaService } from './modules/prisma/prisma.service';
 import * as cookieParser from 'cookie-parser';
 import { GlobalExceptionsFilter } from './global/exception/global-exception.filter';
 import * as basicAuth from 'express-basic-auth';
+import { CustomWinstonLogger } from './global/logger/winston.logger';
 
 async function bootstrap(): Promise<void> {
-    const logger = new Logger('Bootstrap');
-
     try {
         const app = await NestFactory.create(AppModule, {
             cors: {
@@ -38,14 +37,19 @@ async function bootstrap(): Promise<void> {
                 optionsSuccessStatus: 204,
                 credentials: true,
             },
-            logger: ['log', 'error', 'warn', 'debug', 'verbose'],
         });
+
+        // CustomWinstonLogger 인스턴스 가져오기
+        const customLogger = app.get(CustomWinstonLogger);
+
+        // 인스턴스 전달
+        app.useLogger(customLogger);
 
         // cookie-parser 미들웨어 추가
         app.use(cookieParser());
 
         app.setGlobalPrefix('api/v1');
-        logger.log('Global prefix를 "api/v1"로 설정했습니다.');
+        customLogger.log('Global prefix를 "api/v1"로 설정했습니다.');
 
         // Basic Auth 미들웨어 추가
         app.use(
@@ -70,7 +74,7 @@ async function bootstrap(): Promise<void> {
             })
             .build();
 
-        logger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');
+        customLogger.debug('Swagger 옵션이 성공적으로 생성되었습니다.');
 
         const document = SwaggerModule.createDocument(app, options);
 
@@ -87,7 +91,7 @@ async function bootstrap(): Promise<void> {
 
         SwaggerModule.setup('api/v1/docs', app, document);
 
-        logger.log('Swagger 모듈 설정이 완료되었습니다.');
+        customLogger.log('Swagger 모듈 설정이 완료되었습니다.');
 
         app.useGlobalPipes(
             new ValidationPipe({
@@ -95,7 +99,7 @@ async function bootstrap(): Promise<void> {
                 forbidNonWhitelisted: true, // DTO에 없는 값이 들어오면 예외 발생
             }),
         );
-        logger.log('Global validation 파이프가 설정되었습니다.');
+        customLogger.log('Global validation 파이프가 설정되었습니다.');
 
         const prismaService = app.get(PrismaService);
         let retries = 5;
@@ -104,16 +108,16 @@ async function bootstrap(): Promise<void> {
         while (retries) {
             try {
                 await prismaService.$connect();
-                logger.log('데이터베이스에 성공적으로 연결되었습니다.');
+                customLogger.log('데이터베이스에 성공적으로 연결되었습니다.');
                 break;
             } catch (err) {
                 retries -= 1;
-                logger.warn(
+                customLogger.warn(
                     `데이터베이스 연결에 실패했습니다. 남은 재시도 횟수: ${retries}`,
                 );
-                logger.debug(`에러 스택 트레이스: ${err.stack}`);
+                customLogger.debug(`에러 스택 트레이스: ${err.stack}`);
                 if (retries === 0) {
-                    logger.error(
+                    customLogger.error(
                         '모든 재시도가 실패했습니다. 프로세스를 종료합니다.',
                     );
                     process.exit(1);
@@ -124,12 +128,9 @@ async function bootstrap(): Promise<void> {
 
         app.useGlobalFilters(new GlobalExceptionsFilter());
 
-        app.useLogger(['log', 'error', 'warn', 'debug']);
-
         await app.listen(8000);
-        logger.log('애플리케이션이 포트 8000에서 작동 중입니다.');
+        customLogger.log('애플리케이션이 포트 8000에서 작동 중입니다.');
     } catch (error) {
-        logger.error('애플리케이션 부트스트랩에 실패했습니다.', error.stack);
         process.exit(1);
     }
 }
