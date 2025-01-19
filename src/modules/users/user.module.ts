@@ -24,4 +24,4 @@ import { TaskModule } from '../../global/task/task.module';
     providers: [UserService, UserRepository, PrismaService],
     exports: [UserService, UserRepository],
 })
-export class UserModule { }
+export class UserModule {}

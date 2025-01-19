@@ -3,10 +3,12 @@ import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
 import { BadRequestException } from '@nestjs/common';
 import { UserRepository } from '../../modules/users/repository/user.repository';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 describe('AuthController', () => {
     let authController: AuthController;
     let authService: AuthService;
+    let logger: CustomWinstonLogger;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -24,7 +26,13 @@ describe('AuthController', () => {
                     useValue: {
                         findById: jest.fn(),
                         createPermissionRequest: jest.fn(),
-                        // other methods as needed
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        log: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
@@ -32,6 +40,7 @@ describe('AuthController', () => {
 
         authController = module.get<AuthController>(AuthController);
         authService = module.get<AuthService>(AuthService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
     it('정의되어 있어야 한다', () => {
@@ -48,6 +57,7 @@ describe('AuthController', () => {
             );
 
             await authController.sendVerificationEmail(email);
+            logger.log('인증 코드를 전송하였습니다.', AuthController.name);
 
             // sendVerificationEmail이 호출되었는지 확인
             expect(authService.sendVerificationEmail).toHaveBeenCalledWith(

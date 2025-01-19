@@ -18,4 +18,4 @@ import { UserModule } from '../users/user.module';
     providers: [ResumeService, ResumeRepository],
     exports: [ResumeService, ResumeRepository],
 })
-export class ResumeModule { }
+export class ResumeModule {}

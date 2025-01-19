@@ -4,11 +4,15 @@ import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt.guard';
 import { Response } from 'express';
 import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
+import { CustomWinstonLogger } from '../global/logger/winston.logger';
 
 @ApiTags('auth')
 @Controller('/auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly authService: AuthService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     @Post('/email')
     @ApiOperation({
@@ -33,6 +37,7 @@ export class AuthController {
     })
     async sendVerificationEmail(@Body('email') email: string): Promise<any> {
         await this.authService.sendVerificationEmail(email);
+        this.logger.log('인증 코드를 전송하였습니다.', AuthController.name);
         return {
             code: 201,
             message: '인증 코드가 전송되었습니다.',

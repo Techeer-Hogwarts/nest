@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +22,7 @@ import {
 } from '../global/exception/custom.exception';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { CustomWinstonLogger } from '../global/logger/winston.logger';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +34,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly userRepository: UserRepository,
         private readonly httpService: HttpService,
+        private readonly logger: CustomWinstonLogger,
     ) {
         // 이메일 전송을 위한 nodemailer 설정
         this.transporter = nodemailer.createTransport({
@@ -166,12 +168,12 @@ export class AuthService {
         const verificationCode = Math.floor(
             100000 + Math.random() * 900000,
         ).toString(); // 6자리 인증 코드 생성
+        this.logger.log('verificationCode', verificationCode);
 
         // Redis에 이메일-코드 매핑 저장, TTL 5분 (300초)
         try {
             await this.redisClient.set(email, verificationCode, 'EX', 300);
         } catch (error) {
-            Logger.error(`Redis 저장 중 오류가 발생했습니다: ${error}`);
             throw new InternalServerErrorException();
         }
 
@@ -253,11 +255,7 @@ export class AuthService {
                 subject: subject,
                 html: htmlContent,
             });
-            Logger.log(
-                `메일이 ${email}로 전송되었습니다. 인증 코드: ${verificationCode}`,
-            );
         } catch (error) {
-            Logger.error('메일 전송 중 오류가 발생했습니다:', error);
             throw new InternalServerErrorException();
         }
     }
@@ -281,10 +279,6 @@ export class AuthService {
 
             return true;
         } catch (error) {
-            Logger.error(
-                'Redis에서 인증 코드를 확인하는 중 오류가 발생했습니다:',
-                error,
-            );
             throw new InvalidCodeException();
         }
     }
@@ -293,9 +287,6 @@ export class AuthService {
         try {
             await this.redisClient.set(`verified_${email}`, 'true', 'EX', 6000);
         } catch (error) {
-            Logger.error(
-                `Redis에서 이메일 인증 상태를 저장하는 중 오류가 발생했습니다: ${error}`,
-            );
             throw new UnauthorizedEmailException();
         }
     }
@@ -306,9 +297,6 @@ export class AuthService {
             const isVerified = await this.redisClient.get(`verified_${email}`);
             return isVerified === 'true';
         } catch (error) {
-            Logger.error(
-                `Redis에서 이메일 인증 상태를 확인하는 중 오류가 발생했습니다: ${error}`,
-            );
             throw new EmailVerificationFailedException();
         }
     }
