@@ -31,11 +31,11 @@ export class BookmarkService {
         );
     }
 
-    async getBookmark(
+    async getBookmarkList(
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
     ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
-        const contents = await this.bookmarkRepository.getBookmark(
+        const contents = await this.bookmarkRepository.getBookmarkList(
             userId,
             getBookmarkListRequest,
         );

@@ -30,7 +30,7 @@ export class BookmarkController {
         description:
             '북마크를 저장 혹은 설정을 변경합니다.\n\n카테고리는 SESSION, BLOG, RESUME, PROJECT, STUDY 입니다.',
     })
-    async createBookmark(
+    async toggleBookmark(
         @Body() createBookmarkRequest: CreateBookmarkRequest,
         @Req() request: Request,
     ): Promise<GetBookmarkResponse> {
@@ -49,12 +49,12 @@ export class BookmarkController {
         description:
             '유저별 북마크한 콘텐츠 목록을 조회합니다.\n\n카테고리는 SESSION, BLOG, RESUME, PROJECT, STUDY 입니다.',
     })
-    async getBookmark(
+    async getBookmarkList(
         @Req() request: Request,
         @Query() getBookmarkListRequest: GetBookmarkListRequest,
     ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
         const user = request.user as any;
-        return await this.bookmarkService.getBookmark(
+        return await this.bookmarkService.getBookmarkList(
             user.id,
             getBookmarkListRequest,
         );

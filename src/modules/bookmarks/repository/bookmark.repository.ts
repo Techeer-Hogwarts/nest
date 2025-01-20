@@ -77,7 +77,7 @@ export class BookmarkRepository {
         );
     }
 
-    async getBookmark(
+    async getBookmarkList(
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
     ): Promise<any> {
