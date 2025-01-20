@@ -191,6 +191,8 @@ describe('StudyTeamRepository', () => {
                 rule: 'Follow best practices',
                 recruitNum: 5,
                 recruitExplain: 'Looking for dedicated learners',
+                likeCount: 0,
+                viewCount: 0,
             });
 
             // 방법 2: 부분적 속성만 검증

@@ -1,4 +1,4 @@
-import { Bookmark, ContentCategory } from '@prisma/client';
+import { Bookmark } from '@prisma/client';
 
 export class BookmarkEntity implements Bookmark {
     id: number;
@@ -7,5 +7,5 @@ export class BookmarkEntity implements Bookmark {
     isDeleted: boolean;
     userId: number;
     contentId: number;
-    category: ContentCategory;
+    category: string;
 }

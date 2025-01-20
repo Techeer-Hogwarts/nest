@@ -162,6 +162,8 @@ model ProjectTeam {
   teamStacks      TeamStack[]
   projectMember   ProjectMember[]
   resultImages    ProjectResultImage[]
+  likeCount       Int             @default(0)
+  viewCount       Int             @default(0)
 }
 
 model StudyTeam {
@@ -181,6 +183,8 @@ model StudyTeam {
   recruitExplain String        @db.VarChar(200)
   studyMember    StudyMember[]
   resultImages   StudyResultImage[]
+  likeCount      Int           @default(0)
+  viewCount      Int           @default(0)
 }
 
 model StudyResultImage {
@@ -231,12 +235,6 @@ model Blog {
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
-enum ContentCategory {
-  RESUME
-  SESSION
-  BLOG
-}
-
 model Like {
   id          Int          @id @default(autoincrement())
   userId      Int
@@ -244,7 +242,7 @@ model Like {
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   contentId   Int
-  category    ContentCategory
+  category    String       @db.VarChar(50)
 
   user        User         @relation("UserLikes", fields: [userId], references: [id])
 
@@ -258,7 +256,7 @@ model Bookmark {
   updatedAt DateTime        @updatedAt
   isDeleted Boolean         @default(false)
   contentId Int
-  category  ContentCategory
+  category  String          @db.VarChar(50)
 
   user User @relation("UserBookmarks", fields: [userId], references: [id])
 

@@ -1,89 +1,80 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ContentCategory, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { CreateBookmarkRequest } from '../dto/request/create.bookmark.request';
 import { BookmarkEntity } from '../entities/bookmark.entity';
 import { GetBookmarkListRequest } from '../dto/request/get.bookmark-list.request';
+import { CreateContentTableMap } from '../../../global/common/category/content-category.table.map';
+import { GetBookmarkResponse } from '../dto/response/get.bookmark.response';
+import { DuplicateStatusException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class BookmarkRepository {
-    constructor(private readonly prisma: PrismaService) {}
+    private readonly contentTableMap;
+
+    constructor(private readonly prisma: PrismaService) {
+        this.contentTableMap = CreateContentTableMap(prisma);
+    }
 
     async isContentExist(
         contentId: number,
-        category: ContentCategory,
+        category: string,
     ): Promise<boolean> {
-        // 타입에 따라 다른 테이블에서 콘텐츠 존재 여부를 확인하는 로직
-        switch (category) {
-            case ContentCategory.SESSION:
-                return (
-                    (await this.prisma.session.findUnique({
-                        where: {
-                            id: contentId,
-                            isDeleted: false,
-                        },
-                    })) !== null
-                );
-            case ContentCategory.BLOG:
-                return (
-                    (await this.prisma.blog.findUnique({
-                        where: {
-                            id: contentId,
-                            isDeleted: false,
-                        },
-                    })) !== null
-                );
-            case ContentCategory.RESUME:
-                return (
-                    (await this.prisma.resume.findUnique({
-                        where: {
-                            id: contentId,
-                            isDeleted: false,
-                        },
-                    })) !== null
-                );
-            default:
-                return false;
-        }
+        const content = await this.contentTableMap[category].table.findUnique({
+            where: {
+                id: contentId,
+                isDeleted: false,
+            },
+        });
+        return content !== null;
     }
 
     async toggleBookmark(
         createBookmarkRequest: CreateBookmarkRequest,
         userId: number,
-    ): Promise<BookmarkEntity> {
-        const { contentId, category }: CreateBookmarkRequest =
+    ): Promise<GetBookmarkResponse> {
+        const { contentId, category, bookmarkStatus }: CreateBookmarkRequest =
             createBookmarkRequest;
+        return this.prisma.$transaction(
+            async (prisma): Promise<GetBookmarkResponse> => {
+                const existingBookmark: BookmarkEntity =
+                    await prisma.bookmark.findUnique({
+                        where: {
+                            userId_contentId_category: {
+                                userId,
+                                contentId,
+                                category,
+                            },
+                        },
+                    });
+                if (
+                    existingBookmark &&
+                    existingBookmark.isDeleted === !bookmarkStatus
+                ) {
+                    Logger.debug('북마크 상태가 동일합니다.');
+                    throw new DuplicateStatusException();
+                }
 
-        // 현재 좋아요가 존재하는지 확인
-        const existingBookmark: BookmarkEntity =
-            await this.prisma.bookmark.findUnique({
-                where: {
-                    userId_contentId_category: {
+                Logger.debug(`북마크 상태 변경: ${bookmarkStatus}`);
+                const bookmark = await prisma.bookmark.upsert({
+                    where: {
+                        userId_contentId_category: {
+                            userId,
+                            contentId,
+                            category,
+                        },
+                    },
+                    update: { isDeleted: !bookmarkStatus },
+                    create: {
                         userId,
                         contentId,
                         category,
+                        isDeleted: !bookmarkStatus,
                     },
-                },
-            });
-
-        // 존재하는 경우 isDeleted 값을 토글하여 업데이트, 존재하지 않는 경우 새로 생성
-        return this.prisma.bookmark.upsert({
-            where: {
-                userId_contentId_category: {
-                    userId,
-                    contentId,
-                    category,
-                },
+                });
+                return new GetBookmarkResponse(bookmark);
             },
-            update: {
-                isDeleted: !existingBookmark?.isDeleted, // 현재 상태 반전
-            },
-            create: {
-                userId,
-                contentId,
-                category,
-            },
-        });
+        );
     }
 
     async getBookmark(
@@ -92,30 +83,18 @@ export class BookmarkRepository {
     ): Promise<any> {
         const { category, offset, limit }: GetBookmarkListRequest =
             getBookmarkListRequest;
-
-        const tableMap = {
-            [ContentCategory.RESUME]: 'Resume',
-            [ContentCategory.BLOG]: 'Blog',
-            [ContentCategory.SESSION]: 'Session',
-        };
-
-        const tableName: string = tableMap[category];
-
-        if (!tableName) {
-            throw new Error('Invalid category type');
-        }
-
+        const tableName = `"${this.contentTableMap[category].name}"`;
         return this.prisma.$queryRaw(
             Prisma.sql`
-            SELECT l.*, c.*
-            FROM "Bookmark" l
-            LEFT JOIN ${Prisma.raw(`"${tableName}"`)} c ON l."contentId" = c."id"
-            WHERE l."userId" = ${userId}
-              AND l."category" = CAST(${category} AS "ContentCategory")
-              AND l."isDeleted" = false
-            ORDER BY l."createdAt" DESC
-            LIMIT ${limit} OFFSET ${offset}
-        `,
+                SELECT b.*, c.*
+                FROM "Bookmark" b
+                         LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
+                WHERE b."userId" = ${userId}
+                  AND b."category" = ${category}
+                  AND b."isDeleted" = false
+                ORDER BY b."createdAt" DESC
+                    LIMIT ${limit} OFFSET ${offset}
+            `,
         );
     }
 }

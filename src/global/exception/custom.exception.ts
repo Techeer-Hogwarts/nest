@@ -245,3 +245,9 @@ export class DuplicateEmailException extends HttpException {
         super('이미 가입한 이메일입니다. ', HttpStatus.FORBIDDEN);
     }
 }
+
+export class DuplicateStatusException extends HttpException {
+    constructor() {
+        super('상태가 동일합니다.', HttpStatus.CONFLICT);
+    }
+}

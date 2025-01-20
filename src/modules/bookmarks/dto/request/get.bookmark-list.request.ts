@@ -1,15 +1,15 @@
-import { ContentCategory } from '@prisma/client';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ContentCategory } from '../../../../global/common/category/content-category';
 
 export class GetBookmarkListRequest {
     @ApiPropertyOptional({
         description: '카테고리',
         example: 'RESUME',
     })
-    @IsEnum(ContentCategory)
-    readonly category: ContentCategory;
+    @IsEnum(ContentCategory, { message: '존재하지 않는 카테고리입니다.' })
+    readonly category: string;
 
     @ApiPropertyOptional({
         description: '오프셋',
