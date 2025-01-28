@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { UserRepository } from '../modules/users/repository/user.repository'; // UserRepository 사용
+import { UserRepository } from '../modules/users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
@@ -17,13 +17,13 @@ import {
     UnauthorizedEmailException,
     EmailVerificationFailedException,
     NotFoundTecheerException,
-    DuplicateEmailException,
     NotFoundProfileImageException,
 } from '../global/exception/custom.exception';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { CustomWinstonLogger } from '../global/logger/winston.logger';
-
+import { LoginResponse } from './dto/response/login.reponse';
+import { User } from '@prisma/client';
 @Injectable()
 export class AuthService {
     private transporter: nodemailer.Transporter;
@@ -47,58 +47,61 @@ export class AuthService {
     }
 
     // 로그인: 사용자 인증 후 JWT 발급
-    async login(email: string, password: string): Promise<any> {
+    async login(email: string, password: string): Promise<LoginResponse> {
         const user = await this.validateUser(email, password);
-        if (!user) throw new NotFoundUserException();
+        if (!user) {
+            this.logger.error('사용자를 찾을 수 없습니다.', AuthService.name);
+            throw new NotFoundUserException();
+        }
 
         // 액세스 토큰과 리프레시 토큰 생성
         const accessToken = this.jwtService.sign(
             { id: user.id },
-            { expiresIn: '15m' },
+            { expiresIn: '15m' }, // 15분
         );
         const refreshToken = this.jwtService.sign(
             { id: user.id },
-            { expiresIn: '7d' },
+            { expiresIn: '7d' }, // 7일
         );
-
+        this.logger.debug('토큰 생성을 완료했습니다.', AuthService.name);
         return {
-            accessToken,
-            refreshToken,
+            data: {
+                accessToken,
+                refreshToken,
+            },
         };
     }
 
     // 이메일과 비밀번호를 기반으로 사용자 인증
-    async validateUser(email: string, password: string): Promise<any> {
-        // 사용자 이메일로 DB에서 사용자 정보 조회
+    async validateUser(email: string, password: string): Promise<User> {
         const user = await this.userRepository.findOneByEmail(email);
+        this.logger.debug('사용자 조회', AuthService.name);
         if (!user) {
+            this.logger.error('사용자를 찾을 수 없습니다.', AuthService.name);
             throw new NotFoundUserException();
         }
-
-        // 입력된 비밀번호와 저장된 비밀번호 해시 비교
         const hashedPassword = user.password;
-
-        // 비밀번호를 직접 bcrypt로 비교
         const isPasswordValid = await bcrypt.compare(password, hashedPassword);
 
         if (!isPasswordValid) {
+            this.logger.debug('비밀번호 불일치', AuthService.name);
             throw new InvalidException();
         }
-
-        // 비밀번호 검증을 통과하면 사용자 정보를 반환
+        this.logger.debug('사용자 인증 완료', AuthService.name);
         return user;
     }
 
     // 비밀번호 재설정 (이메일 인증 후)
     async resetPassword(
         updateUserPswRequest: UpdateUserPswRequest,
-    ): Promise<any> {
+    ): Promise<void> {
         const isVerified = await this.verifyCode(
             updateUserPswRequest.email,
             updateUserPswRequest.code,
         );
-
+        this.logger.debug('비밀번호 재설정', AuthService.name);
         if (!isVerified) {
+            this.logger.error('이메일 인증 실패', AuthService.name);
             throw new NotVerifiedEmailException();
         }
         const hashedPassword = await bcrypt.hash(
@@ -117,18 +120,27 @@ export class AuthService {
             const decoded = this.jwtService.verify(refreshToken);
             const user = await this.userRepository.findById(decoded.id);
 
-            if (!user) throw new NotFoundUserException();
+            if (!user) {
+                this.logger.error(
+                    '사용자를 찾을 수 없습니다.',
+                    AuthService.name,
+                );
+                throw new NotFoundUserException();
+            }
 
             // 새로운 액세스 토큰 발급
             const newAccessToken = this.jwtService.sign(
                 { id: user.id },
                 { expiresIn: '15m' },
             );
+            this.logger.debug('액세스 토큰 재발급', AuthService.name);
             return newAccessToken;
         } catch (error) {
+            this.logger.error('토큰 재발급 실패', AuthService.name);
             throw new InvalidTokenException();
         }
     }
+
     async getProfileImageUrl(
         email: string,
     ): Promise<{ image: string; isTecheer: boolean }> {
@@ -145,12 +157,13 @@ export class AuthService {
 
         if (response.status === 200 && response.data) {
             const { image, isTecheer } = response.data;
+            this.logger.debug('프로필 이미지 조회', AuthService.name);
             return {
                 image,
                 isTecheer,
             };
         }
-
+        this.logger.error('프로필 이미지 조회 실패', AuthService.name);
         throw new NotFoundProfileImageException();
     }
 
@@ -158,13 +171,10 @@ export class AuthService {
     async sendVerificationEmail(email: string): Promise<void> {
         const { isTecheer } = await this.getProfileImageUrl(email);
         if (!isTecheer) {
+            this.logger.error('테커 회원이 아닙니다.', AuthService.name);
             throw new NotFoundTecheerException();
         }
 
-        const existingUser = await this.userRepository.findOneByEmail(email);
-        if (existingUser) {
-            throw new DuplicateEmailException();
-        }
         const verificationCode = Math.floor(
             100000 + Math.random() * 900000,
         ).toString(); // 6자리 인증 코드 생성
@@ -174,6 +184,7 @@ export class AuthService {
         try {
             await this.redisClient.set(email, verificationCode, 'EX', 300);
         } catch (error) {
+            this.logger.error('Redis 저장 실패', AuthService.name);
             throw new InternalServerErrorException();
         }
 
@@ -255,7 +266,9 @@ export class AuthService {
                 subject: subject,
                 html: htmlContent,
             });
+            this.logger.debug('이메일 전송 완료', AuthService.name);
         } catch (error) {
+            this.logger.error('이메일 전송 실패', AuthService.name);
             throw new InternalServerErrorException();
         }
     }
@@ -266,6 +279,10 @@ export class AuthService {
             const cachedCode = await this.redisClient.get(email);
 
             if (!cachedCode) {
+                this.logger.error(
+                    '이메일 인증이 필요합니다.',
+                    AuthService.name,
+                );
                 throw new NotFoundCodeException();
             }
 
@@ -276,9 +293,13 @@ export class AuthService {
             // 코드가 일치하면 Redis에서 키를 삭제하고 true 반환
             await this.redisClient.del(email);
             await this.markAsVerified(email);
-
+            this.logger.debug('인증 코드 확인 완료', AuthService.name);
             return true;
         } catch (error) {
+            this.logger.error(
+                '인증 코드가 일치하지 않습니다.',
+                AuthService.name,
+            );
             throw new InvalidCodeException();
         }
     }
@@ -286,7 +307,9 @@ export class AuthService {
     async markAsVerified(email: string): Promise<void> {
         try {
             await this.redisClient.set(`verified_${email}`, 'true', 'EX', 6000);
+            this.logger.debug('이메일 인증 완료', AuthService.name);
         } catch (error) {
+            this.logger.error('이메일 인증 실패', AuthService.name);
             throw new UnauthorizedEmailException();
         }
     }
@@ -295,8 +318,10 @@ export class AuthService {
     async checkIfVerified(email: string): Promise<boolean> {
         try {
             const isVerified = await this.redisClient.get(`verified_${email}`);
+            this.logger.debug('이메일 인증 확인', AuthService.name);
             return isVerified === 'true';
         } catch (error) {
+            this.logger.error('이메일 인증 확인 실패', AuthService.name);
             throw new EmailVerificationFailedException();
         }
     }

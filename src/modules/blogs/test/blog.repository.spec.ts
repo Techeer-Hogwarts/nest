@@ -127,7 +127,7 @@ describe('BlogRepository', (): void => {
                         select: {
                             id: true,
                             name: true,
-                            class: true,
+                            grade: true,
                             year: true,
                             school: true,
                             mainPosition: true,

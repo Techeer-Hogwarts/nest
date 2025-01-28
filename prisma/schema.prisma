@@ -8,39 +8,38 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  isDeleted    Boolean  @default(false)
-  name         String
-  email        String   @unique
-  nickname     String?  @db.VarChar(200)
-  year         Int
-  password     String
-  isLft        Boolean  @default(false)
-  githubUrl    String   @db.VarChar(200)
-  mediumUrl    String?  @db.VarChar(200)
-  velogUrl     String?  @db.VarChar(200)
-  tistoryUrl   String?  @db.VarChar(200)
-  mainPosition String   @db.VarChar(100)
-  subPosition  String?  @db.VarChar(100)
-  school       String   @db.VarChar(100)
-  grade        String   @db.VarChar(100)
-  profileImage String   @db.VarChar(200)
-  stack        String[] @default([]) // 배열의 기본값을 빈 배열로 설정
-  isAuth       Boolean  @default(false)
-  roleId       Int
-
-  role              Role?               @relation("UserRole", fields: [roleId], references: [id])
+  id                Int                 @id @default(autoincrement())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  isDeleted         Boolean             @default(false)
+  name              String
+  email             String              @unique
+  nickname          String?             @db.VarChar(200)
+  year              Int
+  password          String
+  isLft             Boolean             @default(false)
+  githubUrl         String              @db.VarChar(200)
+  mainPosition      String              @db.VarChar(100)
+  subPosition       String?             @db.VarChar(100)
+  school            String              @db.VarChar(100)
+  profileImage      String              @db.VarChar(200)
+  stack             String[]            @default([])
+  isAuth            Boolean             @default(false)
+  roleId            Int
+  grade             String              @db.VarChar(100)
+  mediumUrl         String?             @db.VarChar(200)
+  tistoryUrl        String?             @db.VarChar(200)
+  velogUrl          String?             @db.VarChar(200)
   blogs             Blog[]              @relation("UserBlogs")
-  resumes           Resume[]            @relation("UserResumes")
   bookmarks         Bookmark[]          @relation("UserBookmarks")
-  likes             Like[]              @relation("UserLikes")
-  projectMembers    ProjectMember[]
-  studyMembers      StudyMember[]
-  sessions          Session[]           @relation("UserSessions")
   events            Event[]             @relation("UserEvents")
+  likes             Like[]              @relation("UserLikes")
   permissionRequest PermissionRequest[] @relation("UserPermissionRequests")
+  projectMembers    ProjectMember[]
+  resumes           Resume[]            @relation("UserResumes")
+  sessions          Session[]           @relation("UserSessions")
+  studyMembers      StudyMember[]
+  role              Role                @relation("UserRole", fields: [roleId], references: [id])
   experiences       UserExperience[]    @relation("UserToExperiences")
 }
 
@@ -52,40 +51,34 @@ model UserExperience {
   userId      Int
   position    String    @db.VarChar(100)
   companyName String    @db.VarChar(200)
-  startDate   DateTime // 시작 날짜
-  EndDate     DateTime? // 종료 날짜
-  category    String    @db.VarChar(100) // intern, fulltime
+  startDate   DateTime
+  endDate     DateTime?
+  category    String    @db.VarChar(100)
   isFinished  Boolean   @default(false)
+  user        User      @relation("UserToExperiences", fields: [userId], references: [id])
 
-  user User @relation("UserToExperiences", fields: [userId], references: [id])
+  @@unique([userId, position, companyName, startDate])
 }
 
 model Role {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  users     User[]   @relation("UserRole")
-  parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
   parentId  Int?
-  children  Role[]   @relation("RoleParent")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  parent    Role?    @relation("RoleParent", fields: [parentId], references: [id])
+  children  Role[]   @relation("RoleParent")
+  users     User[]   @relation("UserRole")
 }
 
 model PermissionRequest {
   id              Int            @id @default(autoincrement())
   userId          Int
   requestedRoleId Int
-  status          StatusCategory @default(PENDING) // 상태는 'PENDING', 'APPROVED' 등으로 관리
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-
-  user User @relation("UserPermissionRequests", fields: [userId], references: [id])
-}
-
-enum StatusCategory {
-  APPROVED
-  REJECT
-  PENDING
+  status          StatusCategory @default(PENDING)
+  user            User           @relation("UserPermissionRequests", fields: [userId], references: [id])
 }
 
 model ProjectMember {
@@ -95,12 +88,12 @@ model ProjectMember {
   isDeleted     Boolean        @default(false)
   isLeader      Boolean
   teamRole      String         @db.VarChar(100)
-  projectTeam   ProjectTeam    @relation(fields: [projectTeamId], references: [id])
   projectTeamId Int
+  userId        Int
   summary       String         @db.VarChar(100)
   status        StatusCategory
+  projectTeam   ProjectTeam    @relation(fields: [projectTeamId], references: [id])
   user          User           @relation(fields: [userId], references: [id])
-  userId        Int
 
   @@unique([projectTeamId, userId], name: "projectTeamId_userId_unique")
 }
@@ -111,22 +104,14 @@ model StudyMember {
   updatedAt   DateTime       @updatedAt
   isDeleted   Boolean        @default(false)
   isLeader    Boolean
-  studyTeam   StudyTeam      @relation(fields: [studyTeamId], references: [id])
   studyTeamId Int
+  userId      Int
   summary     String         @db.VarChar(100)
   status      StatusCategory
+  studyTeam   StudyTeam      @relation(fields: [studyTeamId], references: [id])
   user        User           @relation(fields: [userId], references: [id])
-  userId      Int
 
   @@unique([studyTeamId, userId])
-}
-
-enum StackCategory {
-  BACKEND
-  FRONTEND
-  MONITORING
-  INFRA
-  ETC
 }
 
 model Stack {
@@ -147,8 +132,8 @@ model TeamStack {
   isMain        Boolean     @default(false)
   stackId       Int
   projectTeamId Int
-  stack         Stack       @relation(fields: [stackId], references: [id])
   projectTeam   ProjectTeam @relation(fields: [projectTeamId], references: [id])
+  stack         Stack       @relation(fields: [stackId], references: [id])
 }
 
 model ProjectTeam {
@@ -168,9 +153,9 @@ model ProjectTeam {
   uiuxNum         Int
   dataEngineerNum Int
   recruitExplain  String               @db.VarChar(200)
-  teamStacks      TeamStack[]
   projectMember   ProjectMember[]
   resultImages    ProjectResultImage[]
+  teamStacks      TeamStack[]
 }
 
 model StudyTeam {
@@ -193,30 +178,23 @@ model StudyTeam {
 }
 
 model StudyResultImage {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
-  imageUrl  String   @db.VarChar(300)
-
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isDeleted   Boolean   @default(false)
+  imageUrl    String    @db.VarChar(300)
   studyTeamId Int
   studyTeam   StudyTeam @relation(fields: [studyTeamId], references: [id])
 }
 
 model ProjectResultImage {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
-  imageUrl  String   @db.VarChar(300)
-
+  id            Int         @id @default(autoincrement())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  isDeleted     Boolean     @default(false)
+  imageUrl      String      @db.VarChar(300)
   projectTeamId Int
   projectTeam   ProjectTeam @relation(fields: [projectTeamId], references: [id])
-}
-
-enum BlogCategory {
-  TECHEER
-  SHARED
 }
 
 model Blog {
@@ -227,22 +205,15 @@ model Blog {
   userId      Int
   title       String       @db.VarChar(100)
   url         String       @db.VarChar(200)
-  thumbnail   String?      @db.VarChar(200)
-  author      String?      @db.VarChar(100)
-  authorImage String?      @db.VarChar(200)
   date        DateTime
-  category    BlogCategory
-  tags        String[]     @default([])
   likeCount   Int          @default(0)
   viewCount   Int          @default(0)
-
-  user User @relation("UserBlogs", fields: [userId], references: [id])
-}
-
-enum ContentCategory {
-  RESUME
-  SESSION
-  BLOG
+  author      String?      @db.VarChar(100)
+  authorImage String?      @db.VarChar(200)
+  category    BlogCategory
+  thumbnail   String?      @db.VarChar(200)
+  tags        String[]     @default([])
+  user        User         @relation("UserBlogs", fields: [userId], references: [id])
 }
 
 model Like {
@@ -253,10 +224,9 @@ model Like {
   isDeleted Boolean         @default(false)
   contentId Int
   category  ContentCategory
+  user      User            @relation("UserLikes", fields: [userId], references: [id])
 
-  user User @relation("UserLikes", fields: [userId], references: [id])
-
-  @@unique([userId, contentId, category]) // 복합 고유 키 설정
+  @@unique([userId, contentId, category])
 }
 
 model Bookmark {
@@ -267,17 +237,9 @@ model Bookmark {
   isDeleted Boolean         @default(false)
   contentId Int
   category  ContentCategory
+  user      User            @relation("UserBookmarks", fields: [userId], references: [id])
 
-  user User @relation("UserBookmarks", fields: [userId], references: [id])
-
-  @@unique([userId, contentId, category]) // 복합 고유 키 설정
-}
-
-enum ResumeCategory {
-  RESUME
-  PORTFOLIO
-  ICT
-  OTHER
+  @@unique([userId, contentId, category])
 }
 
 model Resume {
@@ -293,14 +255,7 @@ model Resume {
   viewCount Int            @default(0)
   category  ResumeCategory
   position  String         @db.VarChar(100)
-
-  user User @relation("UserResumes", fields: [userId], references: [id])
-}
-
-enum EventCategory {
-  TECHEER
-  CONFERENCE
-  JOBINFO
+  user      User           @relation("UserResumes", fields: [userId], references: [id])
 }
 
 model Event {
@@ -308,14 +263,70 @@ model Event {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   isDeleted Boolean       @default(false)
-  userId    Int
   category  EventCategory
   title     String        @db.VarChar(200)
   startDate DateTime
   endDate   DateTime?
   url       String?       @db.VarChar(200)
+  userId    Int
+  user      User          @relation("UserEvents", fields: [userId], references: [id])
+}
 
-  user User @relation("UserEvents", fields: [userId], references: [id])
+model Session {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
+  title     String          @db.VarChar(200)
+  likeCount Int             @default(0)
+  viewCount Int             @default(0)
+  thumbnail String          @db.VarChar(200)
+  videoUrl  String          @db.VarChar(200)
+  fileUrl   String          @db.VarChar(200)
+  presenter String          @db.VarChar(50)
+  date      SessionDate
+  category  SessionCategory
+  position  SessionPosition
+  user      User            @relation("UserSessions", fields: [userId], references: [id])
+}
+
+enum StatusCategory {
+  APPROVED
+  REJECT
+  PENDING
+}
+
+enum StackCategory {
+  BACKEND
+  FRONTEND
+  MONITORING
+  INFRA
+  ETC
+}
+
+enum BlogCategory {
+  TECHEER
+  SHARED
+}
+
+enum ContentCategory {
+  RESUME
+  SESSION
+  BLOG
+}
+
+enum ResumeCategory {
+  RESUME
+  PORTFOLIO
+  ICT
+  OTHER
+}
+
+enum EventCategory {
+  TECHEER
+  CONFERENCE
+  JOBINFO
 }
 
 enum SessionDate {
@@ -344,24 +355,4 @@ enum SessionPosition {
   BACKEND
   DEVOPS
   OTHERS
-}
-
-model Session {
-  id        Int             @id @default(autoincrement())
-  userId    Int
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  isDeleted Boolean         @default(false)
-  title     String          @db.VarChar(200)
-  likeCount Int             @default(0)
-  viewCount Int             @default(0)
-  thumbnail String          @db.VarChar(200)
-  videoUrl  String          @db.VarChar(200)
-  fileUrl   String          @db.VarChar(200)
-  presenter String          @db.VarChar(50)
-  date      SessionDate
-  category  SessionCategory
-  position  SessionPosition
-
-  user User @relation("UserSessions", fields: [userId], references: [id])
 }

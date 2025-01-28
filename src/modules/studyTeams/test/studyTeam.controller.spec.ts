@@ -341,6 +341,7 @@ describe('StudyTeamController', () => {
                 studyTeamId: 1,
                 memberId: 2,
                 isLeader: true,
+                profileImage: 'https://s3-url.com/test.jpg',
             };
 
             const mockResponse = {
@@ -372,6 +373,7 @@ describe('StudyTeamController', () => {
                 studyTeamId: 1,
                 memberId: 2,
                 isLeader: true,
+                profileImage: 'https://s3-url.com/test.jpg',
             };
 
             service.addMemberToStudyTeam.mockRejectedValue(

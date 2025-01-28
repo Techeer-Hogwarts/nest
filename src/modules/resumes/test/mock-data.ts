@@ -2,7 +2,7 @@ import { ResumeEntity } from '../entities/resume.entity';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { GetResumeResponse } from '../dto/response/get.resume.response';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
 import { UpdateResumeRequest } from '../dto/request/update.resume.request';
 import { Request } from 'express';
 
@@ -18,24 +18,16 @@ export const user = {
     password: '1234',
     isLft: false,
     githubUrl: 'github',
-    blogUrl: 'blog',
+    mediumUrl: 'blog',
+    velogUrl: 'blog',
+    tistoryUrl: 'blog',
     mainPosition: 'Backend',
     subPosition: 'DevOps',
     school: 'Test University',
-    class: '4학년',
+    grade: '4학년',
     profileImage: 'profile-image-url',
     stack: [], // 빈 배열 기본값
     isAuth: true,
-    isIntern: true,
-    internPosition: 'Intern Developer',
-    internCompanyName: 'Intern Corp',
-    internStartDate: new Date('2024-01-01T00:00:00.000Z'),
-    internEndDate: new Date('2024-06-01T00:00:00.000Z'),
-    fullTimePosition: 'Full-Time Developer',
-    isFullTime: false,
-    fullTimeCompanyName: 'Full-Time Corp',
-    fullTimeStartDate: new Date('2024-07-01T00:00:00.000Z'),
-    fullTimeEndDate: new Date('2024-12-31T00:00:00.000Z'),
     roleId: 1,
 };
 

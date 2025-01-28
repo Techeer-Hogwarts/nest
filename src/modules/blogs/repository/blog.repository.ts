@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
-import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
 import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 
@@ -10,17 +10,42 @@ import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async getAllUserBlogUrl(): Promise<{ id: number; blogUrl: string }[]> {
-        return this.prisma.user.findMany({
-            where: {
-                isDeleted: false,
-            },
-            select: {
-                id: true,
-                blogUrl: true,
-            },
-        });
-    }
+    // async getAllUserBlogUrl(): Promise<{ id: number; blogUrl: string }[]> {
+    //     return this.prisma.user.findMany({
+    //         where: {
+    //             isDeleted: false,
+    //         },
+    //         select: {
+    //             id: true,
+    //             blogUrl: true,
+    //         },
+    //     });
+    // }
+
+    // async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {
+    //     return this.prisma.user
+    //         .findMany({
+    //             where: {
+    //                 isDeleted: false,
+    //             },
+    //             select: {
+    //                 id: true,
+    //                 tistoryUrl: true,
+    //                 mediumUrl: true,
+    //                 velogUrl: true,
+    //             },
+    //         })
+    //         .then((users) =>
+    //             users.map((user) => ({
+    //                 id: user.id,
+    //                 blogUrls: [
+    //                     user.tistoryUrl,
+    //                     user.mediumUrl,
+    //                     user.velogUrl,
+    //                 ].filter((url) => url !== null),
+    //             })),
+    //         );
+    // }
 
     async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
         const { userId, posts, category } = crawlingBlogDto;
@@ -104,7 +129,7 @@ export class BlogRepository {
                     select: {
                         id: true,
                         name: true,
-                        class: true,
+                        grade: true,
                         year: true,
                         school: true,
                         mainPosition: true,

@@ -1,15 +1,25 @@
-import { IsString, IsUrl, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsUrl, IsOptional, IsBoolean, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserRequest {
-    @IsString()
+    @IsInt()
+    @IsOptional()
     @ApiProperty({
-        example: 'https://profileimage.com',
-        description: '슬랙 이미지 URL',
+        example: 6,
+        description: '테커 기수',
     })
-    readonly profileImage: string;
+    readonly year?: number;
+
+    @IsBoolean()
+    @IsOptional()
+    @ApiProperty({
+        example: false,
+        description: '매칭 참여 여부',
+    })
+    readonly isLft?: boolean;
 
     @IsString()
+    @IsOptional()
     @ApiProperty({
         example: 'Hogwarts School of Witchcraft and Wizardry',
         description: '학교 이름',
@@ -17,13 +27,15 @@ export class UpdateUserRequest {
     readonly school: string;
 
     @IsString()
+    @IsOptional()
     @ApiProperty({
         example: '휴학중 or 1학년',
         description: '학년',
     })
-    readonly class: string;
+    readonly grade: string;
 
     @IsString()
+    @IsOptional()
     @ApiProperty({
         example: 'Backend',
         description: '주요 직무',
@@ -40,6 +52,7 @@ export class UpdateUserRequest {
     readonly subPosition?: string;
 
     @IsUrl()
+    @IsOptional()
     @ApiProperty({
         example: 'https://github.com/username',
         description: 'GitHub 프로필 URL',
@@ -47,56 +60,26 @@ export class UpdateUserRequest {
     readonly githubUrl: string;
 
     @IsUrl()
+    @IsOptional()
     @ApiProperty({
         example: 'https://example.com/blog',
-        description: '사용자 블로그 URL',
+        description: '사용자 미디움 URL',
     })
-    readonly blogUrl: string;
+    readonly mediumUrl: string;
 
-    @IsBoolean()
+    @IsUrl()
+    @IsOptional()
     @ApiProperty({
-        example: false,
-        description: 'LFT 여부',
+        example: 'https://example.com/blog',
+        description: '사용자 벨로그 URL',
     })
-    readonly isLft: boolean;
+    readonly velogUrl: string;
 
+    @IsUrl()
+    @IsOptional()
     @ApiProperty({
-        example: 'false',
-        description: '인턴 여부',
+        example: 'https://example.com/blog',
+        description: '사용자 티스토리 URL',
     })
-    readonly isIntern: boolean;
-
-    @IsString()
-    @ApiProperty({
-        example: 'crowdStrike',
-        description: '인턴 회사 이름',
-    })
-    readonly internCompanyName: string;
-
-    @IsString()
-    @ApiProperty({
-        example: 'Frontend',
-        description: '인턴 직무',
-    })
-    readonly internPosition: string;
-
-    @ApiProperty({
-        example: 'false',
-        description: '정규직 여부',
-    })
-    readonly isFullTime: boolean;
-
-    @IsString()
-    @ApiProperty({
-        example: 'palo Alto',
-        description: '정규직 회사 이름',
-    })
-    readonly fullTimeCompanyName: string;
-
-    @IsString()
-    @ApiProperty({
-        example: 'Backend',
-        description: '정규직 직무',
-    })
-    readonly fullTimePosition: string;
+    readonly tistoryUrl: string;
 }

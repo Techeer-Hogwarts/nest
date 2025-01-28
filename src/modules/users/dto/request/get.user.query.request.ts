@@ -12,13 +12,13 @@ export class GetUserssQueryRequest {
     readonly position?: string;
 
     @ApiPropertyOptional({
-        description: '테커 기수',
-        example: 6,
+        description: '테커 기수 (여러 개 선택 가능)',
+        example: [6, 7],
     })
     @IsOptional()
     @Type(() => Number)
-    @IsNumber()
-    readonly year?: number;
+    @IsNumber({}, { each: true }) // 배열 요소가 숫자인지 검증
+    readonly year?: number[];
 
     @ApiPropertyOptional({
         description: '학교 이름 (school)',
@@ -29,7 +29,7 @@ export class GetUserssQueryRequest {
     readonly university?: string;
 
     @ApiPropertyOptional({
-        description: '학년 (class)',
+        description: 'grade',
         example: '1학년',
     })
     @IsOptional()

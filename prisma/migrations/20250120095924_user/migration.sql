@@ -50,7 +50,7 @@ CREATE TABLE "UserExperience" (
     "position" VARCHAR(100) NOT NULL,
     "companyName" VARCHAR(200) NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
-    "EndDate" TIMESTAMP(3),
+    "endDate" TIMESTAMP(3),
     "category" VARCHAR(100) NOT NULL,
     "isFinished" BOOLEAN NOT NULL DEFAULT false,
 
@@ -62,3 +62,6 @@ CREATE UNIQUE INDEX "ProjectMember_projectTeamId_userId_key" ON "ProjectMember"(
 
 -- AddForeignKey
 ALTER TABLE "UserExperience" ADD CONSTRAINT "UserExperience_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AlterTable
+ALTER TABLE "UserExperience" ADD CONSTRAINT "UserExperience_userId_position_companyName_startDate_key" UNIQUE ("userId", "position", "companyName", "startDate");

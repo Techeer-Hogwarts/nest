@@ -5,6 +5,7 @@ import { JwtAuthGuard } from './jwt.guard';
 import { Response } from 'express';
 import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
 import { CustomWinstonLogger } from '../global/logger/winston.logger';
+import { LoginResponse } from './dto/response/login.reponse';
 
 @ApiTags('auth')
 @Controller('/auth')
@@ -32,17 +33,11 @@ export class AuthController {
         },
     })
     @ApiResponse({
-        status: 201,
         description: '인증 코드가 전송되었습니다.',
     })
-    async sendVerificationEmail(@Body('email') email: string): Promise<any> {
+    async sendVerificationEmail(@Body('email') email: string): Promise<void> {
         await this.authService.sendVerificationEmail(email);
-        this.logger.log('인증 코드를 전송하였습니다.', AuthController.name);
-        return {
-            code: 201,
-            message: '인증 코드가 전송되었습니다.',
-            data: null,
-        };
+        this.logger.debug('인증 코드를 전송하였습니다.', AuthController.name);
     }
 
     @Post('/code')
@@ -68,18 +63,13 @@ export class AuthController {
     })
     @ApiResponse({
         status: 200,
-        description: '이메일 인증이 완료되었습니다.',
     })
     async verifyCode(
         @Body('email') email: string,
         @Body('code') code: string,
-    ): Promise<any> {
+    ): Promise<void> {
         await this.authService.verifyCode(email, code);
-        return {
-            code: 200,
-            message: '이메일 인증이 완료되었습니다.',
-            data: null,
-        };
+        this.logger.debug('이메일 인증이 완료되었습니다.', AuthController.name);
     }
 
     @Post('/login')
@@ -106,8 +96,10 @@ export class AuthController {
     async login(
         @Body() loginRequest: any,
         @Res({ passthrough: true }) response: Response,
-    ): Promise<any> {
-        const { accessToken, refreshToken } = await this.authService.login(
+    ): Promise<LoginResponse> {
+        const {
+            data: { accessToken, refreshToken },
+        } = await this.authService.login(
             loginRequest.email,
             loginRequest.password,
         );
@@ -125,9 +117,8 @@ export class AuthController {
             secure: true,
             sameSite: 'none', // 교차 출처 허용
         });
+        this.logger.debug('로그인이 완료되었습니다.', AuthController.name);
         return {
-            code: 200,
-            message: '로그인이 완료되었습니다.',
             data: {
                 accessToken,
                 refreshToken,
@@ -141,13 +132,12 @@ export class AuthController {
         summary: '로그아웃',
         description: '로그아웃을 진행합니다.',
     })
-    async logout(@Res({ passthrough: true }) response: Response): Promise<any> {
+    async logout(
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<void> {
         response.cookie('access_token', '', { maxAge: 0 });
         response.cookie('refresh_token', '', { maxAge: 0 });
-        return {
-            code: 200,
-            message: '로그아웃이 완료되었습니다.',
-        };
+        this.logger.debug('로그아웃에 성공하였습니다.', AuthController.name);
     }
 
     @Patch('/findPwd')
@@ -161,13 +151,8 @@ export class AuthController {
     })
     async resetPassword(
         @Body() updateUserPswRequest: UpdateUserPswRequest,
-    ): Promise<any> {
-        const newPassword =
-            await this.authService.resetPassword(updateUserPswRequest);
-        return {
-            code: 200,
-            message: '성공적으로 비밀번호를 업데이트했습니다.',
-            data: newPassword,
-        };
+    ): Promise<void> {
+        await this.authService.resetPassword(updateUserPswRequest);
+        this.logger.debug('비밀번호를 재설정했습니다.', AuthController.name);
     }
 }

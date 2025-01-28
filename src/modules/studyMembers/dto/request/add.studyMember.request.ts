@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class AddMemberToStudyTeamRequest {
     @IsInt()
@@ -25,4 +25,12 @@ export class AddMemberToStudyTeamRequest {
         example: true,
     })
     isLeader: boolean; // 팀장 여부
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({
+        description: '사용자 프로필 이미지',
+        example: 'https://example.com/image.png',
+    })
+    profileImage: string;
 }
