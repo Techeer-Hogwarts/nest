@@ -142,6 +142,7 @@ export class StudyMemberRepository {
                         select: {
                             name: true,
                             email: true,
+                            profileImage: true,
                         },
                     },
                 },

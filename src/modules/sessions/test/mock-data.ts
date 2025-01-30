@@ -3,7 +3,7 @@ import { CreateSessionRequest } from '../dto/request/create.session.request';
 import { GetSessionResponse } from '../dto/response/get.session.response';
 import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
-import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
@@ -49,24 +49,16 @@ export const sessionEntity = (
             password: '1234',
             isLft: false,
             githubUrl: 'github',
-            blogUrl: 'blog',
+            mediumUrl: 'blog',
+            velogUrl: 'blog',
+            tistoryUrl: 'blog',
             mainPosition: 'Backend',
             subPosition: 'DevOps',
             school: 'Test University',
-            class: '4학년',
+            grade: '4학년',
             profileImage: 'profile-image-url',
             stack: [], // 빈 배열 기본값
             isAuth: true,
-            isIntern: true,
-            internPosition: 'Intern Developer',
-            internCompanyName: 'Intern Corp',
-            internStartDate: new Date('2024-01-01T00:00:00.000Z'),
-            internEndDate: new Date('2024-06-01T00:00:00.000Z'),
-            fullTimePosition: 'Full-Time Developer',
-            isFullTime: false,
-            fullTimeCompanyName: 'Full-Time Corp',
-            fullTimeStartDate: new Date('2024-07-01T00:00:00.000Z'),
-            fullTimeEndDate: new Date('2024-12-31T00:00:00.000Z'),
             roleId: 1,
         },
         ...overrides,

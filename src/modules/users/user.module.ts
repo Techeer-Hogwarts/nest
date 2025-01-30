@@ -8,6 +8,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
 import { TaskModule } from '../../global/task/task.module';
+import { UserExperienceModule } from '../userExperiences/userExperience.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { TaskModule } from '../../global/task/task.module';
         HttpModule,
         TaskModule,
         forwardRef(() => ResumeModule),
+        UserExperienceModule,
     ],
     controllers: [UserController],
     providers: [UserService, UserRepository, PrismaService],

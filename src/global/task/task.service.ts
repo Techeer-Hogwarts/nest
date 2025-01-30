@@ -2,10 +2,11 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import { RedisService } from '../redis/redis.service';
 import { BlogRepository } from '../../modules/blogs/repository/blog.repository';
-import { Cron } from '@nestjs/schedule';
+// import { Cron } from '@nestjs/schedule';
 import { CrawlingBlogResponse } from '../../modules/blogs/dto/response/crawling.blog.response';
 import { BlogPostDto } from '../../modules/blogs/dto/request/post.blog.request';
 import { BlogCategory } from '@prisma/client';
+// import { user } from '../../modules/resumes/test/mock-data';
 
 @Injectable()
 export class TaskService implements OnModuleInit {
@@ -56,26 +57,26 @@ export class TaskService implements OnModuleInit {
     /**
      * 매일 새벽 3시 - 유저 최신 블로그 게시물 크롤링 요청
      */
-    @Cron('0 3 * * *')
-    async requestDailyUpdate(): Promise<void> {
-        const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
-        await Promise.all(
-            userBlogUrls.map(async (url) => {
-                if (url.blogUrl.trim() === '') {
-                    Logger.error('Cannot send an empty task.');
-                    return;
-                }
-                const taskID = `task-${Date.now()}-${url.id}`;
-                await this.rabbitMQService.sendToQueue(
-                    taskID,
-                    url.blogUrl,
-                    'blogs_daily_update',
-                );
-                await this.redisService.setTaskStatus(taskID, url.blogUrl);
-                Logger.debug(`Received task: ${url.blogUrl}`);
-            }),
-        );
-    }
+    // @Cron('0 3 * * *')
+    // async requestDailyUpdate(): Promise<void> {
+    //     const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
+    //     await Promise.all(
+    //         userBlogUrls.map(async (url) => {
+    //             if (url.blogUrl.trim() === '') {
+    //                 Logger.error('Cannot send an empty task.');
+    //                 return;
+    //             }
+    //             const taskID = `task-${Date.now()}-${url.id}`;
+    //             await this.rabbitMQService.sendToQueue(
+    //                 taskID,
+    //                 url.blogUrl,
+    //                 'blogs_daily_update',
+    //             );
+    //             await this.redisService.setTaskStatus(taskID, url.blogUrl);
+    //             Logger.debug(`Received task: ${url.blogUrl}`);
+    //         }),
+    //     );
+    // }
 
     /**
      * 매일 새벽 3시 - 유저 최신 블로그 게시물 크롤링 응답 후 처리

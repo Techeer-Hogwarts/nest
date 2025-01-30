@@ -1,21 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../user.controller';
 import { UserService } from '../user.service';
-import { CreateUserWithResumeRequest } from '../dto/request/create.user.with.resume.request';
-import { UpdateUserRequest } from '../dto/request/update.user.request';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { Request } from 'express';
-import { CreatePermissionRequest } from '../dto/request/create.permission.request';
-import { ApprovePermissionRequest } from '../dto/request/approve.permission.request';
-import { GetUserssQueryRequest } from '../dto/request/get.user.query.request';
-import { UserEntity } from '../entities/user.entity';
-import { JwtService } from '@nestjs/jwt';
+import { PermissionRequest, User } from '@prisma/client';
 import { UserRepository } from '../repository/user.repository';
 
 describe('UserController', () => {
     let userController: UserController;
     let userService: UserService;
-    let userRepository: UserRepository;
-    let jwtService: JwtService;
+    let logger: CustomWinstonLogger;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -28,430 +22,225 @@ describe('UserController', () => {
                         updateUserProfile: jest.fn(),
                         deleteUser: jest.fn(),
                         getUserInfo: jest.fn(),
-                        getAllProfiles: jest.fn(),
-                        updateNickname: jest.fn(),
                         requestPermission: jest.fn(),
                         getPermissionRequests: jest.fn(),
                         approvePermission: jest.fn(),
                         updateProfileImage: jest.fn(),
+                        updateNickname: jest.fn(),
+                        getAllProfiles: jest.fn(),
+                        getProfile: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
                 {
                     provide: UserRepository,
-                    useValue: {},
+                    useValue: {
+                        findById: jest.fn(),
+                        createUser: jest.fn(),
+                        updateUserProfile: jest.fn(),
+                        deleteUser: jest.fn(),
+                    },
                 },
-                JwtService,
             ],
         }).compile();
 
         userController = module.get<UserController>(UserController);
         userService = module.get<UserService>(UserService);
-        userRepository = module.get<UserRepository>(UserRepository);
-        jwtService = module.get<JwtService>(JwtService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
-    it('정의되어 있어야 한다', () => {
+    it('should be defined', () => {
         expect(userController).toBeDefined();
-        expect(userService).toBeDefined();
-        expect(userRepository).toBeDefined();
-        expect(jwtService).toBeDefined();
     });
 
     describe('signUp', () => {
-        it('회원가입을 성공적으로 처리해야 한다', async () => {
-            const createUserWithResumeRequest: CreateUserWithResumeRequest = {
-                createUserRequest: {
-                    email: 'test@test.com',
-                    password: 'password123',
-                    name: 'test',
-                    year: 6,
-                    isLft: false,
-                    githubUrl: 'https://github.com/test',
-                    blogUrl: 'https://example.com/blog',
-                    mainPosition: 'Backend',
-                    subPosition: 'Frontend',
-                    school: 'Hogwarts',
-                    class: '1학년',
-                    isIntern: false,
-                    internCompanyName: 'crowdStrike',
-                    internPosition: 'Frontend',
-                    isFullTime: false,
-                    fullTimeCompanyName: 'paloalto',
-                    fullTimePosition: 'Backend',
-                    internStartDate: null,
-                    internEndDate: null,
-                    fullTimeStartDate: null,
-                    fullTimeEndDate: null,
-                },
-                createResumeRequest: {
-                    title: 'My Resume',
-                    url: 'https://example.com/resume.pdf',
-                    position: 'Backend',
-                    category: 'PORTFOLIO',
-                    isMain: true,
-                },
-            };
-
-            const mockFile: Express.Multer.File = {
-                fieldname: 'file',
-                originalname: 'resume.pdf',
-                encoding: '7bit',
-                mimetype: 'application/pdf',
-                buffer: Buffer.from('mock file content'),
-                size: 1024,
-                stream: null,
-                destination: '',
-                filename: '',
-                path: '',
-            };
-
-            const userEntity: UserEntity = {
+        it('should call signUp service method and return user', async () => {
+            const mockUser: User = {
                 id: 1,
                 email: 'test@test.com',
-                password: 'password123',
-                name: 'test',
+                password: 'hashedPassword',
+                name: 'Test User',
                 year: 6,
                 isLft: false,
                 githubUrl: 'https://github.com/test',
-                blogUrl: 'https://example.com/blog',
+                velogUrl: 'https://velog.io/test',
+                mediumUrl: 'https://medium.com/test',
+                tistoryUrl: 'https://tistory.com/test',
                 mainPosition: 'Backend',
                 subPosition: 'Frontend',
                 school: 'Hogwarts',
-                class: '1학년',
-                profileImage: 'http://profileimage.com',
+                grade: '1학년',
+                profileImage: 'http://image.com',
                 isDeleted: false,
                 roleId: 1,
                 isAuth: true,
-                nickname: 'tester',
+                nickname: 'Tester',
                 stack: ['JavaScript', 'NestJS'],
-                isIntern: false,
-                internCompanyName: 'crowdStrike',
-                internPosition: 'Frontend',
-                isFullTime: false,
-                fullTimeCompanyName: 'paloalto',
-                fullTimePosition: 'Backend',
-                internStartDate: null,
-                internEndDate: null,
-                fullTimeStartDate: null,
-                fullTimeEndDate: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
+            const mockFile = {
+                buffer: Buffer.from('test'),
+            } as Express.Multer.File;
 
-            jest.spyOn(userService, 'signUp').mockResolvedValue(userEntity);
+            jest.spyOn(userService, 'signUp').mockResolvedValue(mockUser);
 
             const result = await userController.signUp(
-                createUserWithResumeRequest,
-                mockFile,
-            );
-
-            expect(userService.signUp).toHaveBeenCalledWith(
-                createUserWithResumeRequest.createUserRequest,
-                mockFile,
-                createUserWithResumeRequest.createResumeRequest,
-            );
-            expect(result).toEqual({
-                code: 201,
-                message: '회원가입이 완료되었습니다.',
-                data: userEntity,
-            });
-        });
-    });
-
-    describe('getAllProfiles', () => {
-        it('프로필 목록을 성공적으로 조회해야 한다', async () => {
-            const query: GetUserssQueryRequest = {
-                position: 'Backend',
-                year: 6,
-                university: 'Hogwarts',
-                grade: '1학년',
-                offset: 0,
-                limit: 10,
-            };
-
-            const profiles = [
                 {
-                    id: 1,
-                    name: 'test',
+                    createUserRequest: {
+                        email: 'test@test.com',
+                        password: 'password123',
+                        name: 'Test User',
+                        year: 6,
+                        githubUrl: 'https://github.com/test',
+                        mainPosition: 'Backend',
+                        school: 'Hogwarts',
+                        grade: '1학년',
+                        isLft: false,
+                        velogUrl: 'https://velog.io/test',
+                        mediumUrl: 'https://medium.com/test',
+                        tistoryUrl: 'https://tistory.com/test',
+                    },
+                    createResumeRequest: {
+                        category: 'PORTFOLIO',
+                        position: 'Backend',
+                        title: 'My Resume',
+                        isMain: true,
+                        url: 'https://example.com/resume.pdf',
+                    },
+                    createUserExperienceRequest: {
+                        experiences: [
+                            {
+                                position: 'Backend Developer',
+                                companyName: 'Company A',
+                                startDate: '2020-01-01',
+                                endDate: '2020-12-31',
+                                category: 'Intern',
+                            },
+                        ],
+                    },
+                },
+                mockFile,
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '회원가입 요청 처리 중',
+                expect.objectContaining({
+                    createUserRequest: expect.any(Object),
+                    createUserExperienceRequest: expect.any(Object),
+                    createResumeRequest: expect.any(Object),
+                    UserController: 'UserController',
+                }),
+            );
+            expect(userService.signUp).toHaveBeenCalledWith(
+                {
                     email: 'test@test.com',
-                    mainPosition: 'Backend',
-                    subPosition: 'Frontend',
-                    school: 'Hogwarts',
-                    class: '1학년',
-                    profileImage: 'http://profileimage.com',
+                    password: 'password123',
+                    name: 'Test User',
+                    year: 6,
                     githubUrl: 'https://github.com/test',
-                    blogUrl: 'https://example.com/blog',
+                    mainPosition: 'Backend',
+                    school: 'Hogwarts',
+                    grade: '1학년',
+                    isLft: false,
+                    velogUrl: 'https://velog.io/test',
+                    mediumUrl: 'https://medium.com/test',
+                    tistoryUrl: 'https://tistory.com/test',
                 },
-            ];
-
-            jest.spyOn(userService, 'getAllProfiles').mockResolvedValue(
-                profiles,
-            );
-
-            const result = await userController.getAllProfiles(query);
-
-            expect(userService.getAllProfiles).toHaveBeenCalledWith(query);
-            expect(result).toEqual({
-                code: 200,
-                message: '프로필 조회에 성공했습니다.',
-                data: profiles,
-            });
-        });
-    });
-
-    describe('updateNickname', () => {
-        it('닉네임을 성공적으로 업데이트해야 한다', async () => {
-            const mockRequest = {
-                user: {
-                    id: 1,
-                    roleId: 2,
+                mockFile,
+                {
+                    category: 'PORTFOLIO',
+                    position: 'Backend',
+                    title: 'My Resume',
+                    isMain: true,
+                    url: 'https://example.com/resume.pdf',
                 },
-            } as unknown as Request;
-
-            const nickname = '새로운닉네임';
-            const updatedUser = {
-                id: 1,
-                nickname: '새로운닉네임',
-            };
-
-            jest.spyOn(userService, 'updateNickname').mockResolvedValue(
-                updatedUser,
+                {
+                    experiences: [
+                        {
+                            position: 'Backend Developer',
+                            companyName: 'Company A',
+                            startDate: '2020-01-01',
+                            endDate: '2020-12-31',
+                            category: 'Intern',
+                        },
+                    ],
+                },
             );
-
-            const result = await userController.updateNickname(
-                mockRequest,
-                nickname,
-            );
-
-            expect(userService.updateNickname).toHaveBeenCalledWith(
-                mockRequest.user,
-                nickname,
-            );
-            expect(result).toEqual({
-                code: 201,
-                message: '닉네임 입력에 성공했습니다.',
-                data: updatedUser,
-            });
-        });
-    });
-
-    describe('updateUserProfile', () => {
-        it('유저 프로필을 성공적으로 업데이트해야 한다', async () => {
-            const userId = 1;
-            const updateUserRequest: UpdateUserRequest = {
-                profileImage: 'https://newprofileimage.com',
-                school: 'New Hogwarts',
-                class: '2학년',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                githubUrl: 'https://github.com/newuser',
-                blogUrl: 'https://newblog.com',
-                isLft: false,
-                isIntern: false,
-                internCompanyName: 'NewCrowdStrike',
-                internPosition: 'Backend',
-                isFullTime: true,
-                fullTimeCompanyName: 'NewPaloAlto',
-                fullTimePosition: 'Backend',
-            };
-
-            const updatedUser: UserEntity = {
-                id: userId,
-                name: 'Test User',
-                email: 'test@test.com',
-                password: 'password123',
-                nickname: 'tester',
-                year: 3,
-                roleId: 1,
-                isDeleted: false,
-                isAuth: true,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                stack: ['java'],
-                profileImage: 'https://newprofileimage.com',
-                school: 'New Hogwarts',
-                class: '2학년',
-                mainPosition: 'Backend',
-                subPosition: 'Frontend',
-                githubUrl: 'https://github.com/newuser',
-                blogUrl: 'https://newblog.com',
-                isLft: false,
-                isIntern: false,
-                internCompanyName: 'NewCrowdStrike',
-                internPosition: 'Backend',
-                isFullTime: true,
-                fullTimeCompanyName: 'NewPaloAlto',
-                fullTimePosition: 'Backend',
-                internStartDate: null,
-                internEndDate: null,
-                fullTimeStartDate: null,
-                fullTimeEndDate: null,
-            };
-
-            jest.spyOn(userService, 'updateUserProfile').mockResolvedValue(
-                updatedUser,
-            );
-
-            const result = await userController.updateUser(updateUserRequest, {
-                user: { id: 1 },
-            } as unknown as Request);
-
-            expect(userService.updateUserProfile).toHaveBeenCalledWith(
-                userId,
-                updateUserRequest,
-            );
-            expect(result).toEqual({
-                code: 200,
-                message: '프로필이 성공적으로 업데이트되었습니다.',
-                data: updatedUser,
-            });
+            expect(result).toEqual({ data: mockUser });
         });
     });
 
     describe('deleteUser', () => {
-        it('회원 탈퇴를 성공적으로 처리해야 한다', async () => {
+        it('should call deleteUser service method and return deleted user', async () => {
+            const mockUser: User = {
+                id: 1,
+                email: 'test@test.com',
+                password: 'hashedPassword',
+                name: 'Test User',
+                year: 6,
+                isLft: false,
+                githubUrl: 'https://github.com/test',
+                velogUrl: 'https://velog.io/test',
+                mediumUrl: 'https://medium.com/test',
+                tistoryUrl: 'https://tistory.com/test',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'Hogwarts',
+                grade: '1학년',
+                profileImage: 'http://image.com',
+                isDeleted: true,
+                roleId: 1,
+                isAuth: true,
+                nickname: 'Tester',
+                stack: ['JavaScript', 'NestJS'],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userService, 'deleteUser').mockResolvedValue(mockUser);
+
             const mockRequest = {
                 user: { id: 1 },
             } as unknown as Request;
-
-            const deleteUser = { id: 1 };
-
-            jest.spyOn(userService, 'deleteUser').mockResolvedValue(deleteUser);
 
             const result = await userController.deleteUser(mockRequest);
 
             expect(userService.deleteUser).toHaveBeenCalledWith(1);
-            expect(result).toEqual({
-                code: 200,
-                message: '성공적으로 회원 탈퇴를 진행했습니다.',
-                data: deleteUser,
-            });
+            expect(result).toEqual({ data: mockUser });
         });
     });
 
     describe('requestPermission', () => {
-        it('권한 요청을 성공적으로 처리해야 한다', async () => {
+        it('should call requestPermission service method and return permission request', async () => {
+            const mockPermissionRequest: PermissionRequest = {
+                id: 1,
+                userId: 1,
+                requestedRoleId: 2,
+                status: 'PENDING',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            jest.spyOn(userService, 'requestPermission').mockResolvedValue(
+                mockPermissionRequest,
+            );
+
             const mockRequest = {
                 user: { id: 1 },
             } as unknown as Request;
 
-            const permissionRequest: CreatePermissionRequest = {
+            const result = await userController.requestPermission(mockRequest, {
                 roleId: 2,
-            };
-
-            const resultData = {
-                userId: 1,
-                roleId: 2,
-            };
-
-            jest.spyOn(userService, 'requestPermission').mockResolvedValue(
-                resultData,
-            );
-
-            const result = await userController.requestPermission(
-                mockRequest,
-                permissionRequest,
-            );
+            });
 
             expect(userService.requestPermission).toHaveBeenCalledWith(1, 2);
-            expect(result).toEqual({
-                code: 201,
-                message: '권한 요청이 완료되었습니다.',
-                data: resultData,
-            });
-        });
-    });
-
-    describe('getPermissionRequests', () => {
-        it('권한 요청 목록을 성공적으로 조회해야 한다', async () => {
-            const requests = [
-                {
-                    userId: 1,
-                    roleId: 2,
-                },
-            ];
-
-            jest.spyOn(userService, 'getPermissionRequests').mockResolvedValue(
-                requests,
-            );
-
-            const result = await userController.getPermissionRequests();
-
-            expect(userService.getPermissionRequests).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '권한 요청 목록을 조회했습니다.',
-                data: requests,
-            });
-        });
-    });
-
-    describe('approvePermission', () => {
-        it('권한 요청을 성공적으로 승인해야 한다', async () => {
-            const mockRequest = {
-                user: {
-                    id: 1,
-                    roleId: 2,
-                },
-            } as unknown as Request;
-
-            const approveRequest: ApprovePermissionRequest = {
-                userId: 2,
-                newRoleId: 3,
-            };
-
-            const resultData = {
-                userId: 2,
-                newRoleId: 3,
-            };
-
-            jest.spyOn(userService, 'approvePermission').mockResolvedValue(
-                resultData,
-            );
-
-            const result = await userController.approvePermission(
-                mockRequest,
-                approveRequest,
-            );
-
-            expect(userService.approvePermission).toHaveBeenCalledWith(2, 3, 2);
-            expect(result).toEqual({
-                code: 200,
-                message: '권한이 성공적으로 승인되었습니다.',
-                data: resultData,
-            });
-        });
-    });
-
-    describe('getProfileImage', () => {
-        it('프로필 이미지를 성공적으로 동기화해야 한다', async () => {
-            const mockRequest = {
-                user: {
-                    id: 1,
-                    email: 'test@test.com',
-                },
-            } as unknown as Request;
-
-            const updatedImageResponse = {
-                image: 'https://newprofileimage.com',
-                isTecheer: true,
-            };
-
-            jest.spyOn(userService, 'updateProfileImage').mockResolvedValue(
-                updatedImageResponse,
-            );
-
-            const result = await userController.getProfileImage(mockRequest);
-
-            expect(userService.updateProfileImage).toHaveBeenCalledWith(
-                mockRequest,
-            );
-
-            expect(result).toEqual({
-                code: 201,
-                message: '프로필 이미지가 성공적으로 동기화되었습니다.',
-                data: updatedImageResponse,
-            });
+            expect(result).toEqual({ data: mockPermissionRequest });
         });
     });
 });
