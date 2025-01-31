@@ -6,7 +6,6 @@ import {
     IsBoolean,
     Matches,
     IsEmail,
-    ValidateIf,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -56,12 +55,29 @@ export class CreateUserRequest {
     })
     readonly githubUrl: string;
 
+    @IsOptional()
     @IsUrl()
     @ApiProperty({
         example: 'https://example.com/blog',
-        description: '사용자 블로그 URL',
+        description: '벨로그 URL',
     })
-    readonly blogUrl: string;
+    readonly velogUrl: string;
+
+    @IsOptional()
+    @IsUrl()
+    @ApiProperty({
+        example: 'https://example.com/blog',
+        description: '미디움 URL',
+    })
+    readonly mediumUrl: string;
+
+    @IsOptional()
+    @IsUrl()
+    @ApiProperty({
+        example: 'https://example.com/blog',
+        description: '티스토리 URL',
+    })
+    readonly tistoryUrl: string;
 
     @IsString()
     @ApiProperty({
@@ -91,95 +107,5 @@ export class CreateUserRequest {
         example: '1학년',
         description: '학년',
     })
-    readonly class: string;
-
-    @IsBoolean()
-    @ApiProperty({
-        example: true,
-        description: '인턴 여부',
-    })
-    readonly isIntern: boolean;
-
-    @ValidateIf((o) => o.isIntern === true)
-    @IsString()
-    @ApiProperty({
-        example: 'crowdStrike',
-        description: '인턴 회사 이름',
-    })
-    readonly internCompanyName?: string;
-
-    @ValidateIf((o) => o.isIntern === true)
-    @IsString()
-    @ApiProperty({
-        example: 'Frontend',
-        description: '인턴 직무',
-    })
-    readonly internPosition?: string;
-
-    @ValidateIf((o) => o.isIntern === true)
-    @Matches(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/, {
-        message: '인턴 시작 날짜는 YYYY-MM-DD 형식이어야 합니다.',
-    })
-    @ApiProperty({
-        example: '2023-01-01',
-        description: '인턴 시작 날짜',
-        type: String,
-    })
-    readonly internStartDate?: string;
-
-    @ValidateIf((o) => o.isIntern === true)
-    @Matches(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/, {
-        message: '인턴 종료 날짜는 YYYY-MM-DD 형식이어야 합니다.',
-    })
-    @ApiProperty({
-        example: '2023-06-01',
-        description: '인턴 종료 날짜',
-        type: String,
-    })
-    readonly internEndDate?: string;
-
-    @IsBoolean()
-    @ApiProperty({
-        example: true,
-        description: '정규직 여부',
-    })
-    readonly isFullTime: boolean;
-
-    @ValidateIf((o) => o.isFullTime === true)
-    @IsString()
-    @ApiProperty({
-        example: 'paloalto',
-        description: '정규직 회사 이름',
-    })
-    readonly fullTimeCompanyName?: string;
-
-    @ValidateIf((o) => o.isFullTime === true)
-    @IsString()
-    @ApiProperty({
-        example: 'Backend',
-        description: '정규직 직무',
-    })
-    readonly fullTimePosition?: string;
-
-    @ValidateIf((o) => o.isFullTime === true)
-    @Matches(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/, {
-        message: '정규직 시작 날짜는 YYYY-MM-DD 형식이어야 합니다.',
-    })
-    @ApiProperty({
-        example: '2024-01-01',
-        description: '정규직 시작 날짜',
-        type: String,
-    })
-    readonly fullTimeStartDate?: string;
-
-    @ValidateIf((o) => o.isFullTime === true)
-    @Matches(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/, {
-        message: '정규직 종료 날짜는 YYYY-MM-DD 형식이어야 합니다.',
-    })
-    @ApiProperty({
-        example: '2024-12-01',
-        description: '정규직 종료 날짜',
-        type: String,
-    })
-    readonly fullTimeEndDate?: string;
+    readonly grade: string;
 }

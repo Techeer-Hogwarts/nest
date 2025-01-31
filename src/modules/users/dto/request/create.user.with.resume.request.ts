@@ -1,13 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ValidateNested } from 'class-validator';
+import { IsOptional, ValidateNested } from 'class-validator';
 import { CreateUserRequest } from './create.user.request';
 import { CreateResumeRequest } from '../../../resumes/dto/request/create.resume.request';
+import { CreateExperienceDto } from '../../../../modules/userExperiences/dto/request/create.experience.request';
 
 export class CreateUserWithResumeRequest {
     @ApiProperty({ type: CreateUserRequest })
-    @ValidateNested() // 중첩된 객체 유효성 검사를 위한 데코레이터
-    @Type(() => CreateUserRequest) // 중첩된 객체 변환을 위한 Type 데코레이터
+    @ValidateNested()
+    @Type(() => CreateUserRequest)
     createUserRequest: CreateUserRequest;
 
     @ApiProperty({
@@ -15,6 +16,15 @@ export class CreateUserWithResumeRequest {
         required: false,
     })
     @ValidateNested()
-    @Type(() => CreateResumeRequest) // 중첩된 객체 변환을 위한 Type 데코레이터
+    @IsOptional()
+    @Type(() => CreateResumeRequest)
     createResumeRequest?: CreateResumeRequest;
+
+    @ApiProperty({
+        type: CreateExperienceDto,
+        description: '사용자의 경력 정보',
+    })
+    @ValidateNested()
+    @Type(() => CreateExperienceDto)
+    createUserExperienceRequest: CreateExperienceDto;
 }

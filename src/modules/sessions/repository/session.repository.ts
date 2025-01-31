@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { Prisma } from '@prisma/client';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
-import { PaginationQueryDto } from '../../../global/common/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
 import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 @Injectable()
@@ -120,7 +120,7 @@ export class SessionRepository {
                     select: {
                         id: true,
                         name: true,
-                        class: true,
+                        grade: true,
                         year: true,
                         school: true,
                         mainPosition: true,

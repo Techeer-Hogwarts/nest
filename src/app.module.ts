@@ -18,6 +18,7 @@ import { RabbitMQModule } from './global/rabbitmq/rabbitmq.module';
 import { TaskModule } from './global/task/task.module';
 import { CustomWinstonLogger } from './global/logger/winston.logger';
 import { LoggerModule } from './global/logger/logger.module';
+import { UserExperienceModule } from './modules/userExperiences/userExperience.module';
 
 @Module({
     imports: [
@@ -42,6 +43,7 @@ import { LoggerModule } from './global/logger/logger.module';
         TaskModule,
         ResumeModule,
         LoggerModule,
+        UserExperienceModule,
     ],
     providers: [
         {

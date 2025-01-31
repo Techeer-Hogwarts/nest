@@ -2,7 +2,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { GetBlogResponse } from './dto/response/get.blog.response';
-import { PaginationQueryDto } from '../../global/common/pagination.query.dto';
+import { PaginationQueryDto } from '../../global/patination/pagination.query.dto';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
 
 @ApiTags('blogs')

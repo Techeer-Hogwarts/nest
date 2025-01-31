@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @Injectable()
 export class ParseJsonAndValidatePipe implements PipeTransform {
+    private readonly logger = new CustomWinstonLogger();
     /**
      * 들어온 값을 JSON으로 파싱하고 DTO로 변환 후 유효성 검사를 수행합니다.
      * @param value - JSON 문자열로 전달된 값.
@@ -16,27 +18,33 @@ export class ParseJsonAndValidatePipe implements PipeTransform {
      * @returns 유효성 검사를 통과한 DTO 객체.
      */
     async transform(value: any, { metatype }: ArgumentMetadata): Promise<any> {
-        // metatype이 유효한 타입이 아닌 경우 그대로 반환
+        this.logger.debug('Start transforming');
         if (!metatype || !this.isValidMetatype(metatype)) {
+            this.logger.debug('Invalid metatype, skipping validation');
             return value;
         }
 
-        let parsedValue: any;
         try {
-            parsedValue = JSON.parse(value); // JSON 문자열 파싱
+            this.logger.debug('Parsing JSON');
+            const parsedValue = JSON.parse(value);
+            this.logger.debug('Parsed value:', parsedValue);
+
+            const object = plainToInstance(metatype, parsedValue);
+            const errors = await validate(object);
+
+            if (errors.length > 0) {
+                this.logger.error('Validation failed', { errors });
+                throw new BadRequestException(errors);
+            }
+
+            this.logger.debug('Validation succeeded');
+            return object;
         } catch (error) {
-            throw new BadRequestException('JSON 형식이 잘못되었습니다.');
+            this.logger.error('Error occurred during transformation', {
+                error,
+            });
+            throw error; // Exception Filter로 전달
         }
-
-        // 파싱된 값을 DTO로 변환 후 유효성 검사
-        const object = plainToInstance(metatype, parsedValue);
-        const errors = await validate(object);
-
-        if (errors.length > 0) {
-            throw new BadRequestException(errors); // 유효성 검사 실패 시 예외 발생
-        }
-
-        return object; // 유효성 검사를 통과한 객체 반환
     }
 
     /**
