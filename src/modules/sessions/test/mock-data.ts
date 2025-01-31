@@ -3,7 +3,7 @@ import { CreateSessionRequest } from '../dto/request/create.session.request';
 import { GetSessionResponse } from '../dto/response/get.session.response';
 import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 

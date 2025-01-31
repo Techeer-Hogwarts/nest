@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ContentCategory } from '../../../../global/common/category/content-category';
+import { ContentCategory } from '../../../../global/category/contentCategory';
 
 export class GetLikeListRequest {
     @ApiPropertyOptional({

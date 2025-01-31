@@ -5,7 +5,7 @@ import { SessionEntity } from './entities/session.entity';
 import { GetSessionResponse } from './dto/response/get.session.response';
 import { UpdateSessionRequest } from './dto/request/update.session.request';
 import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
-import { PaginationQueryDto } from '../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { ForbiddenAccessException } from '../../global/exception/custom.exception';
 
 @Injectable()

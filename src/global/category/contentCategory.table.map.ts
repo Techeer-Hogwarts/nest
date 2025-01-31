@@ -1,5 +1,5 @@
-import { ContentCategory } from '../../../global/common/category/content-category';
-import { PrismaService } from '../../../modules/prisma/prisma.service';
+import { ContentCategory } from './contentCategory';
+import { PrismaService } from '../../modules/prisma/prisma.service';
 
 type ContentTableMap = Record<ContentCategory, { table: any; name: string }>;
 

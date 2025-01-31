@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { CreateBookmarkRequest } from '../dto/request/create.bookmark.request';
 import { BookmarkEntity } from '../entities/bookmark.entity';
 import { GetBookmarkListRequest } from '../dto/request/get.bookmark-list.request';
-import { CreateContentTableMap } from '../../../global/common/category/content-category.table.map';
+import { CreateContentTableMap } from '../../../global/category/contentCategory.table.map';
 import { GetBookmarkResponse } from '../dto/response/get.bookmark.response';
 import { DuplicateStatusException } from '../../../global/exception/custom.exception';
 

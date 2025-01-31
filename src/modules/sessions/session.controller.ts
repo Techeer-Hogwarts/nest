@@ -17,7 +17,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GetSessionResponse } from './dto/response/get.session.response';
 import { UpdateSessionRequest } from './dto/request/update.session.request';
 import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
-import { PaginationQueryDto } from '../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
 

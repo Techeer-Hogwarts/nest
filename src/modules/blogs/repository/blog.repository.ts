@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 

@@ -9,6 +9,9 @@ import { BlogEntity } from '../blogs/entities/blog.entity';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { ResumeEntity } from '../resumes/entities/resume.entity';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
+import { BadRequestCategoryException } from '../../global/exception/custom.exception';
+// import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
+// import { StudyTeamEntity } from '../studyTeams/entities/studyTeam.entity';
 
 @Injectable()
 export class LikeService {
@@ -49,6 +52,18 @@ export class LikeService {
                 return contents.map(
                     (content: ResumeEntity) => new GetResumeResponse(content),
                 );
+            // case 'PROJECT':
+            //     return contents.map(
+            //         (content: ProjectTeamEntity) =>
+            //             new GetResumeResponse(content),
+            //     );
+            // case 'STUDY':
+            //     return contents.map(
+            //         (content: StudyTeamEntity) =>
+            //             new GetResumeResponse(content),
+            //     );
+            default:
+                throw new BadRequestCategoryException();
         }
     }
 }

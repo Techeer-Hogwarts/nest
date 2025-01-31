@@ -251,3 +251,9 @@ export class DuplicateStatusException extends HttpException {
         super('상태가 동일합니다.', HttpStatus.CONFLICT);
     }
 }
+
+export class BadRequestCategoryException extends HttpException {
+    constructor() {
+        super('존재하지 않는 카테고리입니다.', HttpStatus.BAD_REQUEST);
+    }
+}

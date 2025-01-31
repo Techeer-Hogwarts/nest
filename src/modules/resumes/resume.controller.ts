@@ -18,7 +18,7 @@ import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
