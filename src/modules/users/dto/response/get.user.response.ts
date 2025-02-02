@@ -14,6 +14,8 @@ export class GetUserResponse {
     readonly velogUrl: string;
     readonly tistoryUrl: string;
     readonly isLft: boolean;
+    readonly year: number;
+    readonly stack: string[];
 
     readonly projectTeams: { name: string; resultImages: string[] }[];
     readonly studyTeams: { name: string; resultImages: string[] }[];
@@ -40,6 +42,8 @@ export class GetUserResponse {
         this.velogUrl = userEntity.velogUrl;
         this.tistoryUrl = userEntity.tistoryUrl;
         this.isLft = userEntity.isLft;
+        this.year = userEntity.year;
+        this.stack = userEntity.stack;
 
         // projectMembers와 studyMembers가 undefined일 경우 빈 배열로 초기화
         this.projectTeams = Array.isArray(userEntity.projectMembers)
