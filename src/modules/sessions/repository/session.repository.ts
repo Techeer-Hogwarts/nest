@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { Prisma } from '@prisma/client';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 
 @Injectable()

@@ -1,9 +1,8 @@
-import { ContentCategory } from '@prisma/client';
 import { LikeEntity } from '../../entities/like.entity';
 
 export class GetLikeResponse {
     readonly contentId: number;
-    readonly category: ContentCategory;
+    readonly category: string;
     readonly likeStatus: boolean;
 
     constructor(likeData: LikeEntity) {

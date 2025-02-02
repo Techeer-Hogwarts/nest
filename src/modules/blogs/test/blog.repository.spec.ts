@@ -8,7 +8,8 @@ import {
     paginationQueryDto,
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
-import { BlogCategory, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { BlogCategory } from '../../../global/category/blog.category';
 
 describe('BlogRepository', (): void => {
     let repository: BlogRepository;

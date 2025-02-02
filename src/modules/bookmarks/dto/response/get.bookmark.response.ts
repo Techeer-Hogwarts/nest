@@ -1,9 +1,8 @@
-import { ContentCategory } from '@prisma/client';
 import { BookmarkEntity } from '../../entities/bookmark.entity';
 
 export class GetBookmarkResponse {
     readonly contentId: number;
-    readonly category: ContentCategory;
+    readonly category: string;
     readonly isDeleted: boolean;
 
     constructor(bookmarkEntity: BookmarkEntity) {

@@ -1,5 +1,4 @@
 import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
-import { ResumeCategory } from '@prisma/client';
 import {
     IsEnum,
     IsString,
@@ -8,6 +7,8 @@ import {
     IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ResumeCategory } from '../../../../global/category/resume.category';
+import { normalizeString } from '../../../../global/category/normalize';
 
 export class CreateResumeRequest {
     @IsOptional()
@@ -15,12 +16,13 @@ export class CreateResumeRequest {
     @ApiHideProperty() // Swagger에서 이 필드를 숨김
     readonly url: string;
 
-    @IsEnum(ResumeCategory)
+    @IsEnum(ResumeCategory, { message: '존재하지 않는 카테고리입니다.' })
     @ApiProperty({
         example: 'PORTFOLIO',
         description: '이력서 타입',
     })
-    readonly category: ResumeCategory;
+    @Transform(({ value }) => normalizeString(value))
+    readonly category: string;
 
     @IsString()
     @ApiProperty({

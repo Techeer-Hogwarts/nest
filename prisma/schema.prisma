@@ -175,6 +175,8 @@ model StudyTeam {
   recruitExplain String             @db.VarChar(200)
   studyMember    StudyMember[]
   resultImages   StudyResultImage[]
+  likeCount      Int           @default(0)
+  viewCount      Int           @default(0)
 }
 
 model StudyResultImage {
@@ -206,14 +208,14 @@ model Blog {
   title       String       @db.VarChar(100)
   url         String       @db.VarChar(200)
   date        DateTime
-  likeCount   Int          @default(0)
-  viewCount   Int          @default(0)
   author      String?      @db.VarChar(100)
   authorImage String?      @db.VarChar(200)
-  category    BlogCategory
+  category    String       @db.VarChar(50)
   thumbnail   String?      @db.VarChar(200)
   tags        String[]     @default([])
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
+  likeCount       Int             @default(0)
+  viewCount       Int             @default(0)
 }
 
 model Like {
@@ -223,7 +225,7 @@ model Like {
   updatedAt DateTime        @updatedAt
   isDeleted Boolean         @default(false)
   contentId Int
-  category  ContentCategory
+  category  String          @db.VarChar(50)
   user      User            @relation("UserLikes", fields: [userId], references: [id])
 
   @@unique([userId, contentId, category])
@@ -236,8 +238,9 @@ model Bookmark {
   updatedAt DateTime        @updatedAt
   isDeleted Boolean         @default(false)
   contentId Int
-  category  ContentCategory
-  user      User            @relation("UserBookmarks", fields: [userId], references: [id])
+  category  String          @db.VarChar(50)
+
+  user User @relation("UserBookmarks", fields: [userId], references: [id])
 
   @@unique([userId, contentId, category])
 }
@@ -251,11 +254,11 @@ model Resume {
   title     String         @db.VarChar(100)
   url       String         @db.VarChar(100)
   isMain    Boolean        @default(false)
-  likeCount Int            @default(0)
-  viewCount Int            @default(0)
-  category  ResumeCategory
+  category  String         @db.VarChar(50)
   position  String         @db.VarChar(100)
   user      User           @relation("UserResumes", fields: [userId], references: [id])
+  likeCount       Int             @default(0)
+  viewCount       Int             @default(0)
 }
 
 model Event {
@@ -303,24 +306,6 @@ enum StackCategory {
   MONITORING
   INFRA
   ETC
-}
-
-enum BlogCategory {
-  TECHEER
-  SHARED
-}
-
-enum ContentCategory {
-  RESUME
-  SESSION
-  BLOG
-}
-
-enum ResumeCategory {
-  RESUME
-  PORTFOLIO
-  ICT
-  OTHER
 }
 
 enum EventCategory {

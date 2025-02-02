@@ -5,7 +5,6 @@ import { SessionEntity } from '../sessions/entities/session.entity';
 import { BookmarkRepository } from './repository/bookmark.repository';
 import { CreateBookmarkRequest } from './dto/request/create.bookmark.request';
 import { GetBookmarkResponse } from './dto/response/get.bookmark.response';
-import { BookmarkEntity } from './entities/bookmark.entity';
 import { GetBookmarkListRequest } from './dto/request/get.bookmark-list.request';
 import { GetSessionResponse } from '../sessions/dto/response/get.session.response';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
@@ -19,31 +18,27 @@ export class BookmarkService {
         createBookmarkRequest: CreateBookmarkRequest,
         userId: number,
     ): Promise<GetBookmarkResponse> {
-        const { contentId, category }: CreateBookmarkRequest =
-            createBookmarkRequest;
+        const { contentId, category } = createBookmarkRequest;
         // 각 콘텐츠 유형별로 존재 여부를 검증하는 로직 추가
         const isContentExist: boolean =
             await this.bookmarkRepository.isContentExist(contentId, category);
         if (!isContentExist) {
             throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
         }
-
-        const content: BookmarkEntity =
-            await this.bookmarkRepository.toggleBookmark(
-                createBookmarkRequest,
-                userId,
-            );
-        return new GetBookmarkResponse(content);
+        return await this.bookmarkRepository.toggleBookmark(
+            createBookmarkRequest,
+            userId,
+        );
     }
-    async getBookmark(
+
+    async getBookmarkList(
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
-    ): Promise<any> {
-        const contents = await this.bookmarkRepository.getBookmark(
+    ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
+        const contents = await this.bookmarkRepository.getBookmarkList(
             userId,
             getBookmarkListRequest,
         );
-
         switch (getBookmarkListRequest.category) {
             case 'SESSION':
                 return contents.map(

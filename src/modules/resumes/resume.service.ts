@@ -4,7 +4,7 @@ import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeEntity } from './entities/resume.entity';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { Prisma, User } from '@prisma/client';
 import {
     ForbiddenException,

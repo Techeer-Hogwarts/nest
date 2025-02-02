@@ -34,6 +34,9 @@ export class ProjectTeamEntity implements ProjectTeam {
 
     resultImages: ProjectResultImage[];
 
+    likeCount: number;
+    viewCount: number;
+
     constructor(partial: Partial<ProjectTeamEntity>) {
         Object.assign(this, partial);
     }

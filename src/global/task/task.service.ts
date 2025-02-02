@@ -5,8 +5,8 @@ import { BlogRepository } from '../../modules/blogs/repository/blog.repository';
 // import { Cron } from '@nestjs/schedule';
 import { CrawlingBlogResponse } from '../../modules/blogs/dto/response/crawling.blog.response';
 import { BlogPostDto } from '../../modules/blogs/dto/request/post.blog.request';
-import { BlogCategory } from '@prisma/client';
-// import { user } from '../../modules/resumes/test/mock-data';
+import { BlogCategory } from '../category/blog.category';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class TaskService implements OnModuleInit {
@@ -57,26 +57,30 @@ export class TaskService implements OnModuleInit {
     /**
      * 매일 새벽 3시 - 유저 최신 블로그 게시물 크롤링 요청
      */
-    // @Cron('0 3 * * *')
-    // async requestDailyUpdate(): Promise<void> {
-    //     const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
-    //     await Promise.all(
-    //         userBlogUrls.map(async (url) => {
-    //             if (url.blogUrl.trim() === '') {
-    //                 Logger.error('Cannot send an empty task.');
-    //                 return;
-    //             }
-    //             const taskID = `task-${Date.now()}-${url.id}`;
-    //             await this.rabbitMQService.sendToQueue(
-    //                 taskID,
-    //                 url.blogUrl,
-    //                 'blogs_daily_update',
-    //             );
-    //             await this.redisService.setTaskStatus(taskID, url.blogUrl);
-    //             Logger.debug(`Received task: ${url.blogUrl}`);
-    //         }),
-    //     );
-    // }
+    @Cron('0 3 * * *')
+    async requestDailyUpdate(): Promise<void> {
+        const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
+        Logger.debug(`userBlogUrls: ${JSON.stringify(userBlogUrls)}`);
+
+        await Promise.all(
+            userBlogUrls.flatMap((user) =>
+                user.blogUrls.map(async (url, idx) => {
+                    if (url.trim() === '') {
+                        Logger.error('Cannot send an empty task.');
+                        return;
+                    }
+                    const taskID = `task-${Date.now()}:${idx}-${user.id}`;
+                    await this.rabbitMQService.sendToQueue(
+                        taskID,
+                        url,
+                        'blogs_daily_update',
+                    );
+                    await this.redisService.setTaskStatus(taskID, url);
+                    Logger.debug(`Received task: ${url}`);
+                }),
+            ),
+        );
+    }
 
     /**
      * 매일 새벽 3시 - 유저 최신 블로그 게시물 크롤링 응답 후 처리
@@ -85,33 +89,38 @@ export class TaskService implements OnModuleInit {
         taskId: string,
         taskData: string,
     ): Promise<void> {
-        Logger.debug(`Performing daily update for task ${taskId}: ${taskData}`);
+        Logger.debug(
+            `Performing daily update for task ${taskId}: ${JSON.stringify(taskData)}`,
+        );
         // 최신 블로그 글 가져오기 로직
         const blogs = new CrawlingBlogResponse(
             JSON.parse(taskData),
             BlogCategory.TECHEER,
         );
         blogs.posts = await this.filterPosts(blogs.posts); // 필터링
-        Logger.debug('filtering posts:', blogs.posts);
+        Logger.debug(`filtering posts:, ${JSON.stringify(blogs.posts)}`);
         await this.blogRepository.createBlog(blogs);
         await this.redisService.deleteTask(taskId);
     }
-    //  새벽 3시 기준 "어제 날짜" 계산
+    // 현재 시간 기준 24시간 동안의 글 필터링
     private async filterPosts(posts: BlogPostDto[]): Promise<BlogPostDto[]> {
         const now = new Date();
-        const startOfYesterday = new Date();
-        startOfYesterday.setDate(now.getDate() - 1);
-        startOfYesterday.setHours(3, 0, 0, 0); // 어제 새벽 3시
-        const endOfYesterday = new Date(startOfYesterday);
-        endOfYesterday.setDate(startOfYesterday.getDate() + 1);
-        endOfYesterday.setHours(2, 59, 59, 999); // 오늘 새벽 2시 59분 59초
-
+        Logger.debug(`현재 시간: ${now}`, 'FilteredPosts');
+        const startOfLast24Hours = new Date();
+        startOfLast24Hours.setHours(
+            now.getHours() - 24,
+            now.getMinutes(),
+            now.getSeconds(),
+            now.getMilliseconds(),
+        ); // 24시간 전
+        Logger.debug(`24시간 전 시간: ${startOfLast24Hours}`, 'FilteredPosts');
         const filteredPosts = posts.filter((post) => {
             const postDate = new Date(post.date);
-            return postDate >= startOfYesterday && postDate <= endOfYesterday;
+            Logger.debug(`postDate: ${postDate}`, 'FilteredPosts');
+            return postDate >= startOfLast24Hours && postDate <= now;
         });
         Logger.debug(
-            `어제 날짜의 글 ${filteredPosts.length}개를 필터링했습니다.`,
+            `지난 24시간 동안의 글 ${filteredPosts.length}개를 필터링했습니다.`,
             'FilteredPosts',
         );
         return filteredPosts;

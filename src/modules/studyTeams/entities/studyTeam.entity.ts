@@ -16,6 +16,9 @@ export class StudyTeamEntity implements StudyTeam {
     recruitNum: number;
     recruitExplain: string;
 
-    studyMeber: StudyMember[];
+    studyMember: StudyMember[];
     resultImages: StudyResultImage[];
+
+    likeCount: number;
+    viewCount: number;
 }
