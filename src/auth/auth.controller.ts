@@ -5,7 +5,6 @@ import { JwtAuthGuard } from './jwt.guard';
 import { Response } from 'express';
 import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
 import { CustomWinstonLogger } from '../global/logger/winston.logger';
-import { LoginResponse } from './dto/response/login.reponse';
 
 @ApiTags('auth')
 @Controller('/auth')
@@ -96,7 +95,7 @@ export class AuthController {
     async login(
         @Body() loginRequest: any,
         @Res({ passthrough: true }) response: Response,
-    ): Promise<LoginResponse> {
+    ): Promise<{ accessToken: string; refreshToken: string }> {
         const {
             data: { accessToken, refreshToken },
         } = await this.authService.login(
@@ -119,10 +118,8 @@ export class AuthController {
         });
         this.logger.debug('로그인이 완료되었습니다.', AuthController.name);
         return {
-            data: {
-                accessToken,
-                refreshToken,
-            },
+            accessToken,
+            refreshToken,
         };
     }
 
