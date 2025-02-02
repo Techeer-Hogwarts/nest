@@ -130,6 +130,8 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             email: true,
+                            mainPosition: true,
+                            profileImage: true,
                         },
                     },
                 },

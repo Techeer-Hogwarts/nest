@@ -158,6 +158,11 @@ export class ProjectTeamService {
                             imageUrl: url,
                         })),
                     },
+                    mainImages: {
+                        create: uploadedImageUrls.map((url) => ({
+                            imageUrl: url,
+                        })),
+                    },
                     teamStacks: {
                         create: stackData, // stackId와 isMain 값 포함
                     },
@@ -173,6 +178,7 @@ export class ProjectTeamService {
                 },
                 include: {
                     resultImages: true,
+                    mainImages: true,
                     teamStacks: { include: { stack: true } }, // 스택 정보 포함
                     projectMember: true,
                 },
@@ -192,6 +198,7 @@ export class ProjectTeamService {
                 where: { id: projectTeamId },
                 include: {
                     resultImages: true, // 프로젝트의 결과 이미지 포함
+                    mainImages: true,
                     projectMember: {
                         where: { isDeleted: false }, // 삭제되지 않은 멤버만
                         select: {
@@ -207,6 +214,10 @@ export class ProjectTeamService {
                                 },
                             },
                         },
+                    },
+                    teamStacks: {
+                        where: { isMain: true }, // `isMain`이 true인 데이터만 가져옴
+                        include: { stack: true },
                     },
                 },
             });
@@ -238,6 +249,15 @@ export class ProjectTeamService {
                     isDeleted: image.isDeleted,
                     imageUrl: image.imageUrl,
                 })),
+                mainImages: project.resultImages.map((image) => ({
+                    id: image.id,
+                    isDeleted: image.isDeleted,
+                    imageUrl: image.imageUrl,
+                })),
+                teamStacks: project.teamStacks.map((stack) => ({
+                    stackName: stack.stack.name,
+                    isMain: stack.isMain,
+                })), // `isMain`이 true인 데이터만 포함
                 projectMember: project.projectMember.map((member) => ({
                     id: member.id,
                     name: member.user.name,
@@ -317,6 +337,10 @@ export class ProjectTeamService {
                         deleteMany: { id: { in: deleteImages } }, // 삭제할 이미지
                         create: fileUrls.map((url) => ({ imageUrl: url })), // 새로운 이미지 추가
                     },
+                    mainImages: {
+                        deleteMany: { id: { in: deleteImages } }, // 삭제할 이미지
+                        create: fileUrls.map((url) => ({ imageUrl: url })), // 새로운 이미지 추가
+                    },
                     teamStacks: {
                         deleteMany: {}, // 기존 스택 삭제
                         create: stackData, // 새로운 스택 추가
@@ -334,6 +358,7 @@ export class ProjectTeamService {
                 },
                 include: {
                     resultImages: true,
+                    mainImages: true,
                     teamStacks: { include: { stack: true } },
                     projectMember: { include: { user: true } },
                 },
@@ -439,6 +464,10 @@ export class ProjectTeamService {
                         where: { isDeleted: false },
                         select: { imageUrl: true },
                     },
+                    mainImages: {
+                        where: { isDeleted: false },
+                        select: { imageUrl: true },
+                    },
                     projectMember: {
                         where: { isDeleted: false },
                         select: {
@@ -471,6 +500,9 @@ export class ProjectTeamService {
                 dataEngineerNum: project.dataEngineerNum,
                 recruitExplain: project.recruitExplain,
                 resultImages: project.resultImages.map((image) => ({
+                    imageUrl: image.imageUrl,
+                })),
+                mainImages: project.mainImages.map((image) => ({
                     imageUrl: image.imageUrl,
                 })),
                 projectMember: project.projectMember.map(
@@ -698,6 +730,10 @@ export class ProjectTeamService {
                         where: { isDeleted: false },
                         select: { imageUrl: true },
                     },
+                    mainImages: {
+                        where: { isDeleted: false },
+                        select: { imageUrl: true },
+                    },
                     teamStacks: {
                         where: { isMain: true }, // `isMain`이 true인 데이터만 가져옴
                         include: { stack: true },
@@ -735,6 +771,7 @@ export class ProjectTeamService {
                 resultImages: project.resultImages.map(
                     (image) => image.imageUrl,
                 ),
+                mainImages: project.mainImages.map((image) => image.imageUrl),
                 teamStacks: project.teamStacks.map((stack) => ({
                     stackName: stack.stack.name,
                     isMain: stack.isMain,
