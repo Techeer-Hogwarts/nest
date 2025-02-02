@@ -126,6 +126,17 @@ CREATE TABLE "StudyResultImage" (
     CONSTRAINT "StudyResultImage_studyTeamId_fkey" FOREIGN KEY ("studyTeamId") REFERENCES "StudyTeam" ("id") ON DELETE CASCADE
 );
 
+CREATE TABLE "ProjectMainImage" (
+                                      "id" SERIAL NOT NULL,
+                                      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                      "updatedAt" TIMESTAMP(3) NOT NULL,
+                                      "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+                                      "imageUrl" VARCHAR(300) NOT NULL,
+                                      "projectTeamId" INTEGER NOT NULL,
+
+                                      CONSTRAINT "ProjectMainImage_pkey" PRIMARY KEY ("id"),
+                                      CONSTRAINT "ProjectMainImage_projectTeamId_fkey" FOREIGN KEY ("projectTeamId") REFERENCES "ProjectTeam" ("id") ON DELETE CASCADE
+);
 
 -- AddForeignKey
 ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_projectTeamId_fkey" FOREIGN KEY ("projectTeamId") REFERENCES "ProjectTeam"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

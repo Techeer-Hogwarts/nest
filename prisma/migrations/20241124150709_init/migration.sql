@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "StackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'MONITORING', 'INFRA', 'ETC');
+CREATE TYPE "StackCategory" AS ENUM ('BACKEND', 'FRONTEND', 'DATABASE', 'DEVOPS', 'OTEHR');
 
 -- CreateEnum
 CREATE TYPE "ContentCategory" AS ENUM ('RESUME', 'SESSION', 'BLOG');
