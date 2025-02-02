@@ -172,7 +172,7 @@ describe('UserController', () => {
                     ],
                 },
             );
-            expect(result).toEqual({ data: mockUser });
+            expect(result).toEqual(mockUser);
         });
     });
 
@@ -212,7 +212,7 @@ describe('UserController', () => {
             const result = await userController.deleteUser(mockRequest);
 
             expect(userService.deleteUser).toHaveBeenCalledWith(1);
-            expect(result).toEqual({ data: mockUser });
+            expect(result).toEqual(mockUser);
         });
     });
 
@@ -240,7 +240,7 @@ describe('UserController', () => {
             });
 
             expect(userService.requestPermission).toHaveBeenCalledWith(1, 2);
-            expect(result).toEqual({ data: mockPermissionRequest });
+            expect(result).toEqual(mockPermissionRequest);
         });
     });
 });
