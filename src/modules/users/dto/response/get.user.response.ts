@@ -1,6 +1,7 @@
 import { UserEntity } from '../../entities/user.entity';
 
 export class GetUserResponse {
+    readonly id: number;
     readonly profileImage: string;
     readonly name: string;
     readonly nickname: string;
@@ -29,6 +30,7 @@ export class GetUserResponse {
     }[];
 
     constructor(userEntity: UserEntity) {
+        this.id = userEntity.id;
         this.profileImage = userEntity.profileImage;
         this.name = userEntity.name;
         this.nickname = userEntity.nickname;
