@@ -46,11 +46,7 @@ describe('BlogController', (): void => {
 
             const result = await controller.getBestBlogs(paginationQueryDto);
 
-            expect(result).toEqual({
-                code: 200,
-                message: '인기 게시물을 조회했습니다.',
-                data: getBestBlogResponseList,
-            });
+            expect(result).toEqual(getBestBlogResponseList);
             expect(service.getBestBlogs).toHaveBeenCalledWith(
                 paginationQueryDto,
             );
@@ -66,11 +62,7 @@ describe('BlogController', (): void => {
 
             const result = await controller.getBlogList(getBlogsQueryRequest);
 
-            expect(result).toEqual({
-                code: 200,
-                message: '블로그 게시물 목록을 조회했습니다.',
-                data: getBlogResponseList,
-            });
+            expect(result).toEqual(getBlogResponseList);
             expect(service.getBlogList).toHaveBeenCalledWith(
                 getBlogsQueryRequest,
             );
@@ -97,13 +89,11 @@ describe('BlogController', (): void => {
             );
             expect(service.getBlogsByUser).toHaveBeenCalledTimes(1);
 
-            expect(result).toEqual({
-                code: 200,
-                message: '블로그 게시물을 조회했습니다.',
-                data: blogEntities.map(
+            expect(result).toEqual(
+                blogEntities.map(
                     (blog: BlogEntity) => new GetBlogResponse(blog),
                 ),
-            });
+            );
         });
     });
 });

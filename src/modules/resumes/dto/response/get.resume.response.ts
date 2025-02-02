@@ -1,4 +1,4 @@
-import { ResumeCategory, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { ResumeEntity } from '../../entities/resume.entity';
 
 export class GetResumeResponse {
@@ -9,7 +9,7 @@ export class GetResumeResponse {
     readonly url: string;
     readonly likeCount: number;
     readonly viewCount: number;
-    readonly category: ResumeCategory;
+    readonly category: string;
 
     readonly user: User;
 

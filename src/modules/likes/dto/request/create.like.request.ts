@@ -1,7 +1,7 @@
 import { IsBoolean, IsEnum, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ContentCategory } from '../../../../global/category/contentCategory';
+import { ContentCategory } from '../../../../global/category/content.category';
 
 export class CreateLikeRequest {
     @IsNumber()

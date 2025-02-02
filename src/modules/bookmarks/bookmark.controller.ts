@@ -54,7 +54,7 @@ export class BookmarkController {
         @Query() getBookmarkListRequest: GetBookmarkListRequest,
     ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
         const user = request.user as any;
-        return await this.bookmarkService.getBookmarkList(
+        return this.bookmarkService.getBookmarkList(
             user.id,
             getBookmarkListRequest,
         );

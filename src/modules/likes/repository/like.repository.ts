@@ -4,8 +4,8 @@ import { Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
 import { GetLikeListRequest } from '../dto/request/get.like-list.request';
 import { GetLikeResponse } from '../dto/response/get.like.response';
-import { ContentCategory } from '../../../global/category/contentCategory';
-import { CreateContentTableMap } from '../../../global/category/contentCategory.table.map';
+import { ContentCategory } from '../../../global/category/content.category';
+import { CreateContentTableMap } from '../../../global/category/content.category.table.map';
 import { DuplicateStatusException } from '../../../global/exception/custom.exception';
 
 @Injectable()

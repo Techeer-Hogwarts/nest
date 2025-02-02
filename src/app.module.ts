@@ -40,10 +40,10 @@ import { UserExperienceModule } from './modules/userExperiences/userExperience.m
         RabbitMQModule,
         StudyTeamModule,
         StudyMemberModule,
-        TaskModule,
         ResumeModule,
         LoggerModule,
         UserExperienceModule,
+        TaskModule,
     ],
     providers: [
         {

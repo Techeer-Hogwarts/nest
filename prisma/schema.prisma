@@ -210,7 +210,7 @@ model Blog {
   date        DateTime
   author      String?      @db.VarChar(100)
   authorImage String?      @db.VarChar(200)
-  category    BlogCategory
+  category    String       @db.VarChar(50)
   thumbnail   String?      @db.VarChar(200)
   tags        String[]     @default([])
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
@@ -254,7 +254,7 @@ model Resume {
   title     String         @db.VarChar(100)
   url       String         @db.VarChar(100)
   isMain    Boolean        @default(false)
-  category  ResumeCategory
+  category  String         @db.VarChar(50)
   position  String         @db.VarChar(100)
   user      User           @relation("UserResumes", fields: [userId], references: [id])
   likeCount       Int             @default(0)
@@ -306,18 +306,6 @@ enum StackCategory {
   MONITORING
   INFRA
   ETC
-}
-
-enum BlogCategory {
-  TECHEER
-  SHARED
-}
-
-enum ResumeCategory {
-  RESUME
-  PORTFOLIO
-  ICT
-  OTHER
 }
 
 enum EventCategory {

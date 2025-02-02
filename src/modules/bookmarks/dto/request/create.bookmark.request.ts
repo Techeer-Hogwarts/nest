@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ContentCategory } from '../../../../global/category/contentCategory';
+import { ContentCategory } from '../../../../global/category/content.category';
 
 export class CreateBookmarkRequest {
     @IsNumber()

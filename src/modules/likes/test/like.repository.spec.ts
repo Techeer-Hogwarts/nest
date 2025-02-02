@@ -10,7 +10,7 @@ import {
     likeEntities,
     likeEntity,
 } from './mock-data';
-import { ContentCategory } from '../../../global/category/contentCategory';
+import { ContentCategory } from '../../../global/category/content.category';
 
 describe('LikeRepository', (): void => {
     let repository: LikeRepository;
