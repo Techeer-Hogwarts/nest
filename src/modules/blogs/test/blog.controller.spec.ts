@@ -12,6 +12,7 @@ import {
 import { BlogEntity } from '../entities/blog.entity';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('BlogController', (): void => {
     let controller: BlogController;
@@ -34,6 +35,13 @@ describe('BlogController', (): void => {
                     useValue: {},
                 },
                 JwtService,
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 

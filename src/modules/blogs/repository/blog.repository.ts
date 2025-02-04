@@ -1,38 +1,25 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 @Injectable()
 export class BlogRepository {
-    constructor(private readonly prisma: PrismaService) {}
-
-    // async getAllUserBlogUrl(): Promise<
-    //     {
-    //         id: number;
-    //         velogUrl: string;
-    //         mediumUrl: string;
-    //         tistoryUrl: string;
-    //     }[]
-    // > {
-    //     return this.prisma.user.findMany({
-    //         where: {
-    //             isDeleted: false,
-    //         },
-    //         select: {
-    //             id: true,
-    //             velogUrl: true,
-    //             mediumUrl: true,
-    //             tistoryUrl: true,
-    //         },
-    //     });
-    // }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {
-        return this.prisma.user
+        this.logger.debug(
+            `모든 유저의 블로그 url 조회 처리 중`,
+            BlogRepository.name,
+        );
+        const result = await this.prisma.user
             .findMany({
                 where: {
                     isDeleted: false,
@@ -54,12 +41,18 @@ export class BlogRepository {
                     ].filter((url) => url !== null && url.trim() !== ''),
                 })),
             );
+        this.logger.debug(
+            `모든 유저의 블로그 url 조회 성공`,
+            BlogRepository.name,
+        );
+        return result;
     }
 
     async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
         const { userId, posts, category } = crawlingBlogDto;
-        Logger.debug(
+        this.logger.debug(
             `블로그 데이터 저장 시작: ${JSON.stringify(crawlingBlogDto)}`,
+            BlogRepository.name,
         );
         const blogPromises = posts.map(async (post) => {
             try {
@@ -72,9 +65,9 @@ export class BlogRepository {
                     },
                 });
             } catch (error) {
-                Logger.error(
-                    `블로그 데이터 저장 실패: ${post.title}, Error: ${error.message}`,
-                    error.stack,
+                this.logger.error(
+                    `블로그 데이터 저장 실패: ${post.title}, Error: ${error.message} error stack: ${error.stack}`,
+                    BlogRepository.name,
                 );
             }
         });
@@ -88,8 +81,11 @@ export class BlogRepository {
             offset = 0,
             limit = 10,
         }: GetBlogsQueryRequest = query;
-
-        return this.prisma.blog.findMany({
+        this.logger.debug(
+            `query - keyword: ${keyword}, category: ${category}, offset: ${offset}, limit: ${limit}`,
+            BlogRepository.name,
+        );
+        const blogs = await this.prisma.blog.findMany({
             where: {
                 isDeleted: false,
                 ...(keyword && {
@@ -124,30 +120,29 @@ export class BlogRepository {
                 createdAt: Prisma.SortOrder.desc,
             },
         });
+        this.logger.debug(
+            `${blogs.length}개의 블로그 엔티티 목록 조회 성공`,
+            BlogRepository.name,
+        );
+        return blogs;
     }
 
     async getBlogsByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<any> {
+    ): Promise<BlogEntity[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
-        return this.prisma.blog.findMany({
+        this.logger.debug(
+            `query - offset: ${offset}, limit: ${limit}`,
+            BlogRepository.name,
+        );
+        const blogs = await this.prisma.blog.findMany({
             where: {
                 isDeleted: false,
                 userId: userId,
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        grade: true,
-                        year: true,
-                        school: true,
-                        mainPosition: true,
-                        subPosition: true,
-                    },
-                },
+                user: true,
             },
             skip: offset,
             take: limit,
@@ -155,6 +150,11 @@ export class BlogRepository {
                 createdAt: Prisma.SortOrder.desc,
             },
         });
+        this.logger.debug(
+            `${blogs.length}개의 유저 별 블로그 엔티티 목록 조회 성공`,
+            BlogRepository.name,
+        );
+        return blogs;
     }
 
     async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {
@@ -162,13 +162,19 @@ export class BlogRepository {
         // 2주 계산
         const twoWeeksAgo: Date = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        this.logger.debug(`2주 전 날짜: ${twoWeeksAgo}`, BlogRepository.name);
         // SQL 쿼리
-        return this.prisma.$queryRaw<BlogEntity[]>(Prisma.sql`
+        const blogs = await this.prisma.$queryRaw<BlogEntity[]>(Prisma.sql`
             SELECT * FROM "Blog"
             WHERE "isDeleted" = false
                 AND "date" >= ${twoWeeksAgo}
             ORDER BY ("viewCount" + "likeCount" * 10) DESC
             LIMIT ${limit} OFFSET ${offset}
         `);
+        this.logger.debug(
+            `${blogs.length}개의 인기글 블로그 엔티티 목록 조회 성공`,
+            BlogRepository.name,
+        );
+        return blogs;
     }
 }

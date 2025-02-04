@@ -10,6 +10,7 @@ import {
 import { BlogEntity } from '../entities/blog.entity';
 import { Prisma } from '@prisma/client';
 import { BlogCategory } from '../../../global/category/blog.category';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('BlogRepository', (): void => {
     let repository: BlogRepository;
@@ -27,6 +28,13 @@ describe('BlogRepository', (): void => {
                             findMany: jest.fn(),
                             update: jest.fn(),
                         },
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
@@ -124,17 +132,7 @@ describe('BlogRepository', (): void => {
                     userId: 1,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            grade: true,
-                            year: true,
-                            school: true,
-                            mainPosition: true,
-                            subPosition: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,

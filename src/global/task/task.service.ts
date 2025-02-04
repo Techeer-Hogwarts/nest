@@ -6,6 +6,7 @@ import { CrawlingBlogResponse } from '../../modules/blogs/dto/response/crawling.
 import { BlogPostDto } from '../../modules/blogs/dto/request/post.blog.request';
 import { BlogCategory } from '../category/blog.category';
 import { Cron } from '@nestjs/schedule';
+import { CustomWinstonLogger } from '../logger/winston.logger';
 
 @Injectable()
 export class TaskService implements OnModuleInit {
@@ -13,30 +14,45 @@ export class TaskService implements OnModuleInit {
         private readonly rabbitMQService: RabbitMQService,
         private readonly redisService: RedisService,
         private readonly blogRepository: BlogRepository,
+        private readonly logger: CustomWinstonLogger,
     ) {}
 
     async onModuleInit(): Promise<void> {
-        Logger.log('Initializing TaskService...');
+        this.logger.log(`TaskService 초기화 중`, TaskService.name);
 
         // 3개의 채널 구독
         await this.subscribeToTaskCompletion('signUp_blog_fetch');
         await this.subscribeToTaskCompletion('blogs_daily_update');
         await this.subscribeToTaskCompletion('shared_post_fetch');
+
+        this.logger.debug(
+            `signUp_blog_fetch, blogs_daily_update, shared_post_fetch 채널 구독 시작`,
+            TaskService.name,
+        );
     }
 
     private async subscribeToTaskCompletion(queueName: string): Promise<void> {
+        this.logger.debug(`채널 구독 중: ${queueName}`, TaskService.name);
         await this.redisService.subscribeToChannel(
             queueName,
             async (taskId) => {
+                this.logger.debug(
+                    `작업 완료 알림 수신 - queueName: ${queueName}, taskId: ${taskId}`,
+                    TaskService.name,
+                );
                 const taskDetails =
                     await this.redisService.getTaskDetails(taskId);
                 if (!taskDetails || !taskDetails.result) {
-                    Logger.error(`Task details not found for ID: ${taskId}`);
+                    this.logger.error(
+                        `Task details not found for ID: ${taskId}`,
+                        TaskService.name,
+                    );
                     return;
                 }
                 const taskData = taskDetails.result;
-                Logger.debug(
+                this.logger.debug(
                     `Processing task from channel ${queueName}: ${taskId}`,
+                    TaskService.name,
                 );
 
                 // 실제 비즈니스 로직 처리
@@ -47,7 +63,10 @@ export class TaskService implements OnModuleInit {
                 } else if (queueName === 'shared_post_fetch') {
                     await this.processSharedPostFetch(taskId, taskData);
                 }
-                Logger.debug(`Task ${taskId} completed.`);
+                this.logger.debug(
+                    `Task ${taskId} completed.`,
+                    TaskService.name,
+                );
             },
         );
     }
@@ -58,13 +77,18 @@ export class TaskService implements OnModuleInit {
     @Cron('0 3 * * *')
     async requestDailyUpdate(): Promise<void> {
         const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
-        Logger.debug(`userBlogUrls: ${JSON.stringify(userBlogUrls)}`);
-
+        this.logger.debug(
+            `userBlogUrls: ${JSON.stringify(userBlogUrls)}`,
+            TaskService.name,
+        );
         await Promise.all(
             userBlogUrls.flatMap((user) =>
                 user.blogUrls.map(async (url, idx) => {
                     if (url.trim() === '') {
-                        Logger.error('Cannot send an empty task.');
+                        this.logger.error(
+                            'Cannot send an empty task.',
+                            TaskService.name,
+                        );
                         return;
                     }
                     const taskID = `task-${Date.now()}:${idx}-${user.id}`;
@@ -72,6 +96,10 @@ export class TaskService implements OnModuleInit {
                         taskID,
                         url,
                         'blogs_daily_update',
+                    );
+                    this.logger.debug(
+                        `Sending task: ${taskID} - ${url}`,
+                        TaskService.name,
                     );
                     await this.redisService.setTaskStatus(taskID, url);
                 }),
@@ -86,8 +114,9 @@ export class TaskService implements OnModuleInit {
         taskId: string,
         taskData: string,
     ): Promise<void> {
-        Logger.debug(
+        this.logger.debug(
             `Performing daily update for task ${taskId}: ${JSON.stringify(taskData)}`,
+            TaskService.name,
         );
         // 최신 블로그 글 가져오기 로직
         const blogs = new CrawlingBlogResponse(
@@ -95,14 +124,17 @@ export class TaskService implements OnModuleInit {
             BlogCategory.TECHEER,
         );
         blogs.posts = await this.filterPosts(blogs.posts); // 필터링
-        Logger.debug(`filtering posts:, ${JSON.stringify(blogs.posts)}`);
+        this.logger.debug(
+            `필터링한 블로그 생성 요청 중 - posts: ${JSON.stringify(blogs.posts)}`,
+            TaskService.name,
+        );
         await this.blogRepository.createBlog(blogs);
+        this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
         await this.redisService.deleteTask(taskId);
     }
     // 현재 시간 기준 24시간 동안의 글 필터링
     private async filterPosts(posts: BlogPostDto[]): Promise<BlogPostDto[]> {
         const now = new Date();
-        Logger.debug(`현재 시간: ${now}`, 'FilteredPosts');
         const startOfLast24Hours = new Date();
         startOfLast24Hours.setHours(
             now.getHours() - 24,
@@ -110,15 +142,18 @@ export class TaskService implements OnModuleInit {
             now.getSeconds(),
             now.getMilliseconds(),
         ); // 24시간 전
-        Logger.debug(`24시간 전 시간: ${startOfLast24Hours}`, 'FilteredPosts');
+        this.logger.debug(
+            `현재 시간: ${now}, 24시간 전 시간: ${startOfLast24Hours}`,
+            TaskService.name,
+        );
         const filteredPosts = posts.filter((post) => {
             const postDate = new Date(post.date);
-            Logger.debug(`postDate: ${postDate}`, 'FilteredPosts');
+            this.logger.debug(`postDate: ${postDate}`, TaskService.name);
             return postDate >= startOfLast24Hours && postDate <= now;
         });
-        Logger.debug(
+        this.logger.debug(
             `지난 24시간 동안의 글 ${filteredPosts.length}개를 필터링했습니다.`,
-            'FilteredPosts',
+            TaskService.name,
         );
         return filteredPosts;
     }
@@ -126,18 +161,16 @@ export class TaskService implements OnModuleInit {
     /**
      * 신규 유저의 최신 게시물 저장 요청
      */
-    async requestSignUpBlogFetch(
-        userId: number,
-        blogUrl: string,
-    ): Promise<void> {
+    async requestSignUpBlogFetch(userId: number, url: string): Promise<void> {
         const taskID = `task-${Date.now()}-${userId}`;
         await this.rabbitMQService.sendToQueue(
             taskID,
-            blogUrl,
+            url,
             'signUp_blog_fetch',
         );
-        await this.redisService.setTaskStatus(taskID, blogUrl);
-        Logger.debug(`Received task: ${blogUrl}`);
+        this.logger.debug(`Sending task: ${taskID} - ${url}`, TaskService.name);
+        await this.redisService.setTaskStatus(taskID, url);
+        this.logger.debug(`Received task: ${url}`, TaskService.name);
     }
 
     /**
@@ -147,13 +180,20 @@ export class TaskService implements OnModuleInit {
         taskId: string,
         taskData: string,
     ): Promise<void> {
-        Logger.debug(`Fetching all blogs for task ${taskId}: ${taskData}`);
+        this.logger.debug(
+            `Fetching all blogs for task ${taskId}: ${taskData}`,
+            TaskService.name,
+        );
         const blogs = new CrawlingBlogResponse(
             JSON.parse(taskData),
             BlogCategory.TECHEER,
         );
-        Logger.debug(blogs.posts);
+        this.logger.debug(
+            `신규 유저의 블로그 생성 요청 중 - posts: ${blogs.posts}`,
+            TaskService.name,
+        );
         await this.blogRepository.createBlog(blogs);
+        this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
         await this.redisService.deleteTask(taskId);
     }
 
@@ -167,8 +207,9 @@ export class TaskService implements OnModuleInit {
             url,
             'shared_post_fetch',
         );
+        this.logger.debug(`Sending task: ${taskID} - ${url}`, TaskService.name);
         await this.redisService.setTaskStatus(taskID, url);
-        Logger.debug(`Received task: ${url}`);
+        this.logger.debug('Received task: ${url}', TaskService.name);
     }
 
     /**
@@ -183,7 +224,12 @@ export class TaskService implements OnModuleInit {
             JSON.parse(taskData),
             BlogCategory.SHARED,
         );
+        this.logger.debug(
+            `외부 블로그 생성 요청 중 - posts: ${post}`,
+            TaskService.name,
+        );
         await this.blogRepository.createBlog(post);
+        this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
         await this.redisService.deleteTask(taskId);
     }
 }

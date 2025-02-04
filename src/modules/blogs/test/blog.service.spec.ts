@@ -14,6 +14,7 @@ import { BlogEntity } from '../entities/blog.entity';
 import { TaskService } from '../../../global/task/task.service';
 import { RabbitMQService } from '../../../global/rabbitmq/rabbitmq.service';
 import { RedisService } from '../../../global/redis/redis.service';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('BlogService', (): void => {
     let service: BlogService;
@@ -39,6 +40,13 @@ describe('BlogService', (): void => {
                 {
                     provide: RedisService, // 🛠 Mock RedisService 추가
                     useValue: {},
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
                 },
             ],
         }).compile();
