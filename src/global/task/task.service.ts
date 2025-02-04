@@ -2,7 +2,6 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import { RedisService } from '../redis/redis.service';
 import { BlogRepository } from '../../modules/blogs/repository/blog.repository';
-// import { Cron } from '@nestjs/schedule';
 import { CrawlingBlogResponse } from '../../modules/blogs/dto/response/crawling.blog.response';
 import { BlogPostDto } from '../../modules/blogs/dto/request/post.blog.request';
 import { BlogCategory } from '../category/blog.category';
@@ -48,7 +47,6 @@ export class TaskService implements OnModuleInit {
                 } else if (queueName === 'shared_post_fetch') {
                     await this.processSharedPostFetch(taskId, taskData);
                 }
-
                 Logger.debug(`Task ${taskId} completed.`);
             },
         );
@@ -76,7 +74,6 @@ export class TaskService implements OnModuleInit {
                         'blogs_daily_update',
                     );
                     await this.redisService.setTaskStatus(taskID, url);
-                    Logger.debug(`Received task: ${url}`);
                 }),
             ),
         );
@@ -161,13 +158,32 @@ export class TaskService implements OnModuleInit {
     }
 
     /**
-     * shared 외부 게시물 저장 (추가 기능)
+     * shared 외부 게시물 저장 요청
+     */
+    async requestSharedPostFetch(userId: number, url: string): Promise<void> {
+        const taskID = `task-${Date.now()}-${userId}`;
+        await this.rabbitMQService.sendToQueue(
+            taskID,
+            url,
+            'shared_post_fetch',
+        );
+        await this.redisService.setTaskStatus(taskID, url);
+        Logger.debug(`Received task: ${url}`);
+    }
+
+    /**
+     * shared 외부 게시물 저장
      */
     private async processSharedPostFetch(
         taskId: string,
         taskData: string,
     ): Promise<void> {
         Logger.debug(`Fetching post details for task ${taskId}: ${taskData}`);
-        // 특정 게시물 정보 가져오기 로직
+        const post = new CrawlingBlogResponse(
+            JSON.parse(taskData),
+            BlogCategory.SHARED,
+        );
+        await this.blogRepository.createBlog(post);
+        await this.redisService.deleteTask(taskId);
     }
 }

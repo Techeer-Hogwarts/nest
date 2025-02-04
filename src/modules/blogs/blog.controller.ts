@@ -1,14 +1,45 @@
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+    Controller,
+    Get,
+    Param,
+    ParseIntPipe,
+    Post,
+    Query,
+    Req,
+    UseGuards,
+} from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
 
 @ApiTags('blogs')
 @Controller('/blogs')
 export class BlogController {
     constructor(private readonly blogService: BlogService) {}
+
+    @UseGuards(JwtAuthGuard)
+    @Post()
+    @ApiOperation({
+        summary: '외부 블로그 게시',
+        description: '외부 블로그를 게시합니다.',
+    })
+    @ApiQuery({
+        name: 'url',
+        type: String,
+        description: '게시할 외부 블로그의 URL',
+        required: true,
+    })
+    async createSharedBlog(
+        @Req() request: Request,
+        @Query('url') url: string,
+    ): Promise<void> {
+        const user = request.user as any;
+        return this.blogService.createSharedBlog(user.id, url);
+    }
 
     @Get('/best')
     @ApiOperation({

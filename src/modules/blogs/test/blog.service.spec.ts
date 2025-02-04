@@ -11,6 +11,9 @@ import {
 } from './mock-data';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { BlogEntity } from '../entities/blog.entity';
+import { TaskService } from '../../../global/task/task.service';
+import { RabbitMQService } from '../../../global/rabbitmq/rabbitmq.service';
+import { RedisService } from '../../../global/redis/redis.service';
 
 describe('BlogService', (): void => {
     let service: BlogService;
@@ -27,6 +30,15 @@ describe('BlogService', (): void => {
                         getBlogList: jest.fn(),
                         getBlogsByUser: jest.fn(),
                     },
+                },
+                TaskService,
+                {
+                    provide: RabbitMQService,
+                    useValue: {},
+                },
+                {
+                    provide: RedisService, // 🛠 Mock RedisService 추가
+                    useValue: {},
                 },
             ],
         }).compile();

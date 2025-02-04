@@ -10,6 +10,8 @@ import {
     paginationQueryDto,
 } from './mock-data';
 import { BlogEntity } from '../entities/blog.entity';
+import { UserRepository } from '../../users/repository/user.repository';
+import { JwtService } from '@nestjs/jwt';
 
 describe('BlogController', (): void => {
     let controller: BlogController;
@@ -27,6 +29,11 @@ describe('BlogController', (): void => {
                         getBlogsByUser: jest.fn(),
                     },
                 },
+                {
+                    provide: UserRepository,
+                    useValue: {},
+                },
+                JwtService,
             ],
         }).compile();
 
