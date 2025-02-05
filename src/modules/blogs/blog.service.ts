@@ -16,6 +16,10 @@ export class BlogService {
     ) {}
 
     async createSharedBlog(userId: number, url: string): Promise<void> {
+        this.logger.debug(
+            `외부 블로그 게시 요청 중 - userId: ${userId}, url: ${url}`,
+            BlogService.name,
+        );
         await this.taskService.requestSharedPostFetch(userId, url);
     }
 

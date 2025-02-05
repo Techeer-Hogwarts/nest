@@ -14,6 +14,7 @@ import { ResumeService } from '../resume.service';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ResumeController', (): void => {
     let controller: ResumeController;
@@ -43,6 +44,13 @@ describe('ResumeController', (): void => {
                     useValue: {},
                 },
                 JwtService,
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 

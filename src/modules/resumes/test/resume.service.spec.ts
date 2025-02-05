@@ -18,6 +18,7 @@ import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { GoogleDriveService } from '../../../googleDrive/google.drive.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ResumeService', (): void => {
     let service: ResumeService;
@@ -55,6 +56,13 @@ describe('ResumeService', (): void => {
                     useValue: {
                         uploadFileBuffer: jest.fn(),
                         moveFileToArchive: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],

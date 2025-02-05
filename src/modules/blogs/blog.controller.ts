@@ -43,7 +43,7 @@ export class BlogController {
     ): Promise<void> {
         const user = request.user as any;
         this.logger.debug(
-            `외부 블로그 게시 요청 처리 중- userId: ${user.id}, url: ${url}`,
+            `외부 블로그 게시 요청 처리 중 - userId: ${user.id}, url: ${url}`,
             BlogController.name,
         );
         await this.blogService.createSharedBlog(user.id, url);

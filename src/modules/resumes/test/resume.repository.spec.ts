@@ -12,6 +12,7 @@ import {
 import { ResumeEntity } from '../entities/resume.entity';
 import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -31,6 +32,13 @@ describe('ResumeRepository', (): void => {
                             findMany: jest.fn(),
                             update: jest.fn(),
                         },
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
@@ -154,17 +162,7 @@ describe('ResumeRepository', (): void => {
                     userId: 1,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            grade: true,
-                            year: true,
-                            school: true,
-                            mainPosition: true,
-                            subPosition: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
