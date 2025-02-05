@@ -1,7 +1,8 @@
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { BlogCategory } from '../../../../global/category/blog.category';
+import { normalizeString } from '../../../../global/category/normalize';
 
 export class GetBlogsQueryRequest {
     @ApiPropertyOptional({
@@ -16,8 +17,12 @@ export class GetBlogsQueryRequest {
         description:
             '검색할 카테고리 (TECHEER: 테커인 블로그, SHARED: 외부 블로그)',
         example: 'TECHEER',
+        enum: BlogCategory,
     })
     @IsOptional()
+    @Transform(({ value }) =>
+        Array.isArray(value) ? value.map(normalizeString) : value,
+    )
     @IsEnum(BlogCategory, { message: '존재하지 않는 카테고리입니다.' })
     readonly category: string;
 

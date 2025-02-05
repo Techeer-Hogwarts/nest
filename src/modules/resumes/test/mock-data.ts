@@ -70,8 +70,8 @@ export const resumeEntities: ResumeEntity[] = [
 ];
 
 export const getResumesQueryRequest: GetResumesQueryRequest = {
-    position: 'Backend',
-    year: 3,
+    position: ['BACKEND', 'FRONTEND'],
+    year: [1, 2, 3],
     offset: 0,
     limit: 10,
 };

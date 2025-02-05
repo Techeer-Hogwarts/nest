@@ -126,11 +126,15 @@ describe('ResumeRepository', (): void => {
             expect(prismaService.resume.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    ...(getResumesQueryRequest.position && {
-                        user: { mainPosition: getResumesQueryRequest.position },
+                    ...(getResumesQueryRequest.position?.length && {
+                        user: {
+                            mainPosition: {
+                                in: getResumesQueryRequest.position,
+                            },
+                        },
                     }),
-                    ...(getResumesQueryRequest.year && {
-                        user: { year: getResumesQueryRequest.year },
+                    ...(getResumesQueryRequest.year?.length && {
+                        user: { year: { in: getResumesQueryRequest.year } },
                     }),
                 },
                 include: { user: true },

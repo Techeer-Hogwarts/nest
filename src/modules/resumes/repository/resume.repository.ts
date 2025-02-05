@@ -101,11 +101,11 @@ export class ResumeRepository {
         const resumes = await this.prisma.resume.findMany({
             where: {
                 isDeleted: false,
-                ...(position && {
-                    user: { mainPosition: position },
+                ...(position?.length && {
+                    user: { mainPosition: { in: position } },
                 }),
-                ...(year && {
-                    user: { year: year },
+                ...(year?.length && {
+                    user: { year: { in: year } },
                 }),
             },
             include: {
