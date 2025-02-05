@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
@@ -7,12 +7,16 @@ import { GetLikeResponse } from '../dto/response/get.like.response';
 import { ContentCategory } from '../../../global/category/content.category';
 import { CreateContentTableMap } from '../../../global/category/content.category.table.map';
 import { DuplicateStatusException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 @Injectable()
 export class LikeRepository {
     private readonly contentTableMap;
 
-    constructor(private readonly prisma: PrismaService) {
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {
         this.contentTableMap = CreateContentTableMap(prisma);
     }
 
@@ -20,12 +24,20 @@ export class LikeRepository {
         contentId: number,
         category: string,
     ): Promise<boolean> {
+        this.logger.debug(
+            `콘텐츠 존재 여부 검사 시작 - contentId: ${contentId}, category: ${category}`,
+            LikeRepository.name,
+        );
         const content = await this.contentTableMap[category].table.findUnique({
             where: {
                 id: contentId,
                 isDeleted: false,
             },
         });
+        this.logger.debug(
+            `콘텐츠 존재 여부 검사 성공 - ${content !== null}`,
+            LikeRepository.name,
+        );
         return content !== null;
     }
 
@@ -35,6 +47,10 @@ export class LikeRepository {
     ): Promise<GetLikeResponse> {
         const { contentId, category, likeStatus }: CreateLikeRequest =
             createLikeRequest;
+        this.logger.debug(
+            `좋아요 생성 및 설정 변경 시작 - userId: ${userId}, contentId: ${contentId}, category: ${category}, likeStatus: ${likeStatus}`,
+            LikeRepository.name,
+        );
         return this.prisma.$transaction(
             async (prisma): Promise<GetLikeResponse> => {
                 const existingLike = await prisma.like.findUnique({
@@ -47,10 +63,16 @@ export class LikeRepository {
                     },
                 });
                 if (existingLike && existingLike.isDeleted === !likeStatus) {
-                    Logger.debug('이미 좋아요 상태가 동일합니다.');
+                    this.logger.error(
+                        `좋아요 상태가 동일함 (중복 요청)`,
+                        LikeRepository.name,
+                    );
                     throw new DuplicateStatusException();
                 }
-                Logger.debug(`좋아요 상태 변경: ${likeStatus}`);
+                this.logger.debug(
+                    `좋아요 상태 변경: ${likeStatus}`,
+                    LikeRepository.name,
+                );
                 const like = await prisma.like.upsert({
                     where: {
                         userId_contentId_category: {
@@ -68,29 +90,37 @@ export class LikeRepository {
                     },
                 });
                 const changeValue = likeStatus ? 1 : -1;
-                Logger.debug(`좋아요 카운트 변경: ${changeValue}`);
+                this.logger.debug(
+                    `좋아요 카운트 변경: ${changeValue}`,
+                    LikeRepository.name,
+                );
                 const updateContent = await this.contentTableMap[
                     category
                 ].table.update({
                     where: { id: contentId },
                     data: { likeCount: { increment: changeValue } },
                 });
-                Logger.debug(
+                this.logger.debug(
                     `좋아요 카운트 변경 완료: ${updateContent.likeCount}`,
+                    LikeRepository.name,
                 );
                 return new GetLikeResponse(like);
             },
         );
     }
 
-    async getLikeList(
+    async getLikeList<T extends object>(
         userId: number,
         getLikeListRequest: GetLikeListRequest,
-    ): Promise<any> {
+    ): Promise<T[]> {
         const { category, offset, limit }: GetLikeListRequest =
             getLikeListRequest;
         const tableName = `"${this.contentTableMap[category].name}"`;
-        return this.prisma.$queryRaw(
+        this.logger.debug(
+            `좋아요 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}, tableName: ${tableName}`,
+            LikeRepository.name,
+        );
+        const result = await this.prisma.$queryRaw<T[]>(
             Prisma.sql`
             SELECT l.*, c.*
             FROM "Like" l
@@ -102,18 +132,32 @@ export class LikeRepository {
             LIMIT ${limit} OFFSET ${offset}
         `,
         );
+        this.logger.debug(
+            `좋아요 목록 조회 성공: ${JSON.stringify(result)}`,
+            LikeRepository.name,
+        );
+        return result;
     }
 
     async getLikeCount(
         contentId: number,
         category: ContentCategory,
     ): Promise<number> {
-        return this.prisma.like.count({
+        this.logger.debug(
+            `좋아요 카운트 조회 시작 - contentId: ${contentId}, category: ${category}`,
+            LikeRepository.name,
+        );
+        const result = await this.prisma.like.count({
             where: {
                 contentId: contentId,
                 category: category,
                 isDeleted: false,
             },
         });
+        this.logger.debug(
+            `좋아요 카운트 조회 성공 - count: ${result}`,
+            LikeRepository.name,
+        );
+        return result;
     }
 }

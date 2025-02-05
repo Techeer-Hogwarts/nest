@@ -11,6 +11,7 @@ import { NotFoundException } from '@nestjs/common';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { getResumeResponseList } from '../../resumes/test/mock-data';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('LikeController', (): void => {
     let controller: LikeController;
@@ -32,6 +33,13 @@ describe('LikeController', (): void => {
                     useValue: {},
                 },
                 JwtService,
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
