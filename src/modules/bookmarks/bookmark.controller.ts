@@ -17,11 +17,15 @@ import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { GetSessionResponse } from '../sessions/dto/response/get.session.response';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('bookmark')
 @Controller('/bookmark')
 export class BookmarkController {
-    constructor(private readonly bookmarkService: BookmarkService) {}
+    constructor(
+        private readonly bookmarkService: BookmarkService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     @UseGuards(JwtAuthGuard)
     @Post('')
@@ -35,11 +39,19 @@ export class BookmarkController {
         @Req() request: Request,
     ): Promise<GetBookmarkResponse> {
         const user = request.user as any;
-        const userId = user.id;
-        return this.bookmarkService.toggleBookmark(
-            createBookmarkRequest,
-            userId,
+        this.logger.debug(
+            `북마크 생성 및 설정 변경 요청 처리 중 - userId: ${user.id}`,
+            BookmarkController.name,
         );
+        const result = await this.bookmarkService.toggleBookmark(
+            createBookmarkRequest,
+            user.id,
+        );
+        this.logger.debug(
+            `북마크 생성 및 설정 변경 요청 처리 완료`,
+            BookmarkController.name,
+        );
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -54,9 +66,18 @@ export class BookmarkController {
         @Query() getBookmarkListRequest: GetBookmarkListRequest,
     ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
         const user = request.user as any;
-        return this.bookmarkService.getBookmarkList(
+        this.logger.debug(
+            `유저 별 북마크 목록 조회 요청 처리 중- userId: ${user.id}`,
+            BookmarkController.name,
+        );
+        const result = await this.bookmarkService.getBookmarkList(
             user.id,
             getBookmarkListRequest,
         );
+        this.logger.debug(
+            `유저 별 북마크 목록 조회 요청 처리 완료`,
+            BookmarkController.name,
+        );
+        return result;
     }
 }

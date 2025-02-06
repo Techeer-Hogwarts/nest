@@ -2,16 +2,17 @@ import { ResumeRepository } from '../repository/resume.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-    bestResumeEntities,
     resumeEntities,
     resumeEntity,
     createResumeRequest,
     getResumesQueryRequest,
     paginationQueryDto,
+    getResumeResponseList,
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
 import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -31,6 +32,13 @@ describe('ResumeRepository', (): void => {
                             findMany: jest.fn(),
                             update: jest.fn(),
                         },
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
@@ -70,13 +78,12 @@ describe('ResumeRepository', (): void => {
     describe('getBestResumes', (): void => {
         it('should return a list of ResumeEntity based on pagination query', async (): Promise<void> => {
             jest.spyOn(prismaService, '$queryRaw').mockResolvedValue(
-                bestResumeEntities,
+                resumeEntities,
             );
 
-            const result: ResumeEntity[] =
-                await repository.getBestResumes(paginationQueryDto);
+            const result = await repository.getBestResumes(paginationQueryDto);
 
-            expect(result).toEqual(bestResumeEntities);
+            expect(result).toEqual(resumeEntities);
             expect(prismaService.$queryRaw).toHaveBeenCalledWith(
                 expect.anything(),
             );
@@ -110,22 +117,36 @@ describe('ResumeRepository', (): void => {
                 resumeEntities,
             );
 
-            const result: ResumeEntity[] = await repository.getResumeList(
+            const result = await repository.getResumeList(
                 getResumesQueryRequest,
             );
 
-            expect(result).toEqual(resumeEntities);
+            expect(result).toEqual(getResumeResponseList);
             expect(prismaService.resume.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    ...(getResumesQueryRequest.position && {
-                        user: { mainPosition: getResumesQueryRequest.position },
+                    ...(getResumesQueryRequest.position?.length && {
+                        user: {
+                            mainPosition: {
+                                in: getResumesQueryRequest.position,
+                            },
+                        },
                     }),
-                    ...(getResumesQueryRequest.year && {
-                        user: { year: getResumesQueryRequest.year },
+                    ...(getResumesQueryRequest.year?.length && {
+                        user: { year: { in: getResumesQueryRequest.year } },
                     }),
                 },
-                include: { user: true },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            nickname: true,
+                            roleId: true,
+                            profileImage: true,
+                        },
+                    },
+                },
                 skip: getResumesQueryRequest.offset,
                 take: getResumesQueryRequest.limit,
                 orderBy: {
@@ -142,12 +163,12 @@ describe('ResumeRepository', (): void => {
                 resumeEntities,
             );
 
-            const result: ResumeEntity[] = await repository.getResumesByUser(
+            const result = await repository.getResumesByUser(
                 1,
                 paginationQueryDto,
             );
 
-            expect(result).toEqual(resumeEntities);
+            expect(result).toEqual(getResumeResponseList);
             expect(prismaService.resume.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
@@ -158,11 +179,9 @@ describe('ResumeRepository', (): void => {
                         select: {
                             id: true,
                             name: true,
-                            grade: true,
-                            year: true,
-                            school: true,
-                            mainPosition: true,
-                            subPosition: true,
+                            nickname: true,
+                            roleId: true,
+                            profileImage: true,
                         },
                     },
                 },

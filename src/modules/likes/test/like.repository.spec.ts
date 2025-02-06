@@ -11,6 +11,7 @@ import {
     likeEntity,
 } from './mock-data';
 import { ContentCategory } from '../../../global/category/content.category';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('LikeRepository', (): void => {
     let repository: LikeRepository;
@@ -46,6 +47,13 @@ describe('LikeRepository', (): void => {
                         $transaction: jest.fn(async (callback) => {
                             return await callback(prisma);
                         }),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],

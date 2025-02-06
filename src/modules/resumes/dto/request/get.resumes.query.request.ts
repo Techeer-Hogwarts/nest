@@ -1,24 +1,34 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { StackCategory } from '../../../../global/category/stack.category';
+import { normalizeString } from '../../../../global/category/normalize';
 
 export class GetResumesQueryRequest {
     @ApiPropertyOptional({
-        description: '검색할 직책',
-        example: 'Backend',
+        description:
+            '검색할 직책 (여러 개 가능) - BACKEND, FRONTEND, DEVOPS, FULL_STACK, DATA_ENGINEER',
+        example: ['BACKEND', 'FRONTEND'],
+        isArray: true,
     })
     @IsOptional()
-    @IsString()
-    readonly position?: string;
+    @IsArray()
+    @Transform(({ value }) =>
+        Array.isArray(value) ? value.map(normalizeString) : value,
+    )
+    @IsEnum(StackCategory, { each: true })
+    readonly position?: string[];
 
     @ApiPropertyOptional({
-        description: '검색할 기수',
-        example: 1,
+        description: '검색할 기수 (여러 개 가능)',
+        example: [1, 2, 3],
+        isArray: true,
     })
     @IsOptional()
+    @IsArray()
     @Type(() => Number)
-    @IsNumber()
-    readonly year?: number;
+    @IsNumber({}, { each: true })
+    readonly year?: number[];
 
     @ApiPropertyOptional({
         description: '오프셋',

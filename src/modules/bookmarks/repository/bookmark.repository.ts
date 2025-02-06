@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateBookmarkRequest } from '../dto/request/create.bookmark.request';
@@ -7,12 +7,16 @@ import { GetBookmarkListRequest } from '../dto/request/get.bookmark-list.request
 import { CreateContentTableMap } from '../../../global/category/content.category.table.map';
 import { GetBookmarkResponse } from '../dto/response/get.bookmark.response';
 import { DuplicateStatusException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 @Injectable()
 export class BookmarkRepository {
     private readonly contentTableMap;
 
-    constructor(private readonly prisma: PrismaService) {
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {
         this.contentTableMap = CreateContentTableMap(prisma);
     }
 
@@ -20,12 +24,20 @@ export class BookmarkRepository {
         contentId: number,
         category: string,
     ): Promise<boolean> {
+        this.logger.debug(
+            `콘텐츠 저장 여부 조회 시작 - contentId: ${contentId}, category: ${category}`,
+            BookmarkRepository.name,
+        );
         const content = await this.contentTableMap[category].table.findUnique({
             where: {
                 id: contentId,
                 isDeleted: false,
             },
         });
+        this.logger.debug(
+            `콘텐츠 저장 여부 조회 성공 : ${content !== null}`,
+            BookmarkRepository.name,
+        );
         return content !== null;
     }
 
@@ -35,6 +47,10 @@ export class BookmarkRepository {
     ): Promise<GetBookmarkResponse> {
         const { contentId, category, bookmarkStatus }: CreateBookmarkRequest =
             createBookmarkRequest;
+        this.logger.debug(
+            `북마크 생성 및 설정 변경 시작 - userId: ${userId}, contentId: ${contentId}, category: ${category}, bookmarkStatus: ${bookmarkStatus}`,
+            BookmarkRepository.name,
+        );
         return this.prisma.$transaction(
             async (prisma): Promise<GetBookmarkResponse> => {
                 const existingBookmark: BookmarkEntity =
@@ -51,11 +67,16 @@ export class BookmarkRepository {
                     existingBookmark &&
                     existingBookmark.isDeleted === !bookmarkStatus
                 ) {
-                    Logger.debug('북마크 상태가 동일합니다.');
+                    this.logger.error(
+                        '북마크 상태가 동일함 (중복 요청)',
+                        BookmarkRepository.name,
+                    );
                     throw new DuplicateStatusException();
                 }
-
-                Logger.debug(`북마크 상태 변경: ${bookmarkStatus}`);
+                this.logger.debug(
+                    `북마크 상태 변경: ${bookmarkStatus}`,
+                    BookmarkRepository.name,
+                );
                 const bookmark = await prisma.bookmark.upsert({
                     where: {
                         userId_contentId_category: {
@@ -72,19 +93,27 @@ export class BookmarkRepository {
                         isDeleted: !bookmarkStatus,
                     },
                 });
+                this.logger.debug(
+                    `북마크 상태 변경 성공 후 GetBookmarkResponse로 변환 중`,
+                    BookmarkRepository.name,
+                );
                 return new GetBookmarkResponse(bookmark);
             },
         );
     }
 
-    async getBookmarkList(
+    async getBookmarkList<T extends object>(
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
-    ): Promise<any> {
+    ): Promise<T[]> {
         const { category, offset, limit }: GetBookmarkListRequest =
             getBookmarkListRequest;
         const tableName = `"${this.contentTableMap[category].name}"`;
-        return this.prisma.$queryRaw(
+        this.logger.debug(
+            `북마크 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}, tableName: ${tableName}`,
+            BookmarkRepository.name,
+        );
+        const result = await this.prisma.$queryRaw<T[]>(
             Prisma.sql`
                 SELECT b.*, c.*
                 FROM "Bookmark" b
@@ -96,5 +125,10 @@ export class BookmarkRepository {
                     LIMIT ${limit} OFFSET ${offset}
             `,
         );
+        this.logger.debug(
+            `북마크 목록 조회 성공: ${JSON.stringify(result)}`,
+            BookmarkRepository.name,
+        );
+        return result;
     }
 }
