@@ -2,12 +2,12 @@ import { BlogRepository } from '../repository/blog.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-    bestBlogEntities,
+    authorUserMock,
     blogEntities,
+    getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
 } from './mock-data';
-import { BlogEntity } from '../entities/blog.entity';
 import { Prisma } from '@prisma/client';
 import { BlogCategory } from '../../../global/category/blog.category';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
@@ -27,6 +27,9 @@ describe('BlogRepository', (): void => {
                         blog: {
                             findMany: jest.fn(),
                             update: jest.fn(),
+                        },
+                        user: {
+                            findUnique: jest.fn(),
                         },
                     },
                 },
@@ -51,13 +54,15 @@ describe('BlogRepository', (): void => {
     describe('getBestBlogs', (): void => {
         it('should return a list of BlogEntity based on pagination query', async (): Promise<void> => {
             jest.spyOn(prismaService, '$queryRaw').mockResolvedValue(
-                bestBlogEntities,
+                blogEntities,
+            );
+            jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(
+                authorUserMock,
             );
 
-            const result: BlogEntity[] =
-                await repository.getBestBlogs(paginationQueryDto);
+            const result = await repository.getBestBlogs(paginationQueryDto);
 
-            expect(result).toEqual(bestBlogEntities);
+            expect(result).toEqual(getBlogResponseList);
             expect(prismaService.$queryRaw).toHaveBeenCalledWith(
                 expect.anything(),
             );
@@ -71,10 +76,9 @@ describe('BlogRepository', (): void => {
                 blogEntities,
             );
 
-            const result: BlogEntity[] =
-                await repository.getBlogList(getBlogsQueryRequest);
+            const result = await repository.getBlogList(getBlogsQueryRequest);
 
-            expect(result).toEqual(blogEntities);
+            expect(result).toEqual(getBlogResponseList);
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
@@ -103,7 +107,17 @@ describe('BlogRepository', (): void => {
                         category: getBlogsQueryRequest.category,
                     }),
                 },
-                include: { user: true },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            nickname: true,
+                            roleId: true,
+                            profileImage: true,
+                        },
+                    },
+                },
                 skip: getBlogsQueryRequest.offset,
                 take: getBlogsQueryRequest.limit,
                 orderBy: {
@@ -120,19 +134,27 @@ describe('BlogRepository', (): void => {
                 blogEntities,
             );
 
-            const result: BlogEntity[] = await repository.getBlogsByUser(
+            const result = await repository.getBlogsByUser(
                 1,
                 paginationQueryDto,
             );
 
-            expect(result).toEqual(blogEntities);
+            expect(result).toEqual(getBlogResponseList);
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
                     userId: 1,
                 },
                 include: {
-                    user: true,
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            nickname: true,
+                            roleId: true,
+                            profileImage: true,
+                        },
+                    },
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,

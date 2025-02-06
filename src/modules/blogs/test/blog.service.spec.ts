@@ -2,15 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BlogService } from '../blog.service';
 import { BlogRepository } from '../repository/blog.repository';
 import {
-    bestBlogEntities,
-    blogEntities,
-    getBestBlogResponseList,
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
 } from './mock-data';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
-import { BlogEntity } from '../entities/blog.entity';
 import { TaskService } from '../../../global/task/task.service';
 import { RabbitMQService } from '../../../global/rabbitmq/rabbitmq.service';
 import { RedisService } from '../../../global/redis/redis.service';
@@ -62,13 +58,13 @@ describe('BlogService', (): void => {
     describe('getBestBlogs', (): void => {
         it('should return a list of GetBlogResponse objects based on pagination query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBestBlogs').mockResolvedValue(
-                bestBlogEntities,
+                getBlogResponseList,
             );
 
             const result: GetBlogResponse[] =
                 await service.getBestBlogs(paginationQueryDto);
 
-            expect(result).toEqual(getBestBlogResponseList);
+            expect(result).toEqual(getBlogResponseList);
             // 반환된 모든 요소가 GetBlogDto의 인스턴스인지 확인
             expect(
                 result.every(
@@ -87,7 +83,7 @@ describe('BlogService', (): void => {
     describe('getBlogList', (): void => {
         it('should return a list of GetBlogResponse objects based on query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlogList').mockResolvedValue(
-                blogEntities,
+                getBlogResponseList,
             );
 
             const result: GetBlogResponse[] =
@@ -110,7 +106,7 @@ describe('BlogService', (): void => {
     describe('getBlogsByUser', (): void => {
         it('should return a list of GetBlogResponse objects for a specific user', async (): Promise<void> => {
             jest.spyOn(repository, 'getBlogsByUser').mockResolvedValue(
-                blogEntities,
+                getBlogResponseList,
             );
 
             const result: GetBlogResponse[] = await service.getBlogsByUser(
@@ -124,11 +120,7 @@ describe('BlogService', (): void => {
             );
             expect(repository.getBlogsByUser).toHaveBeenCalledTimes(1);
 
-            expect(result).toEqual(
-                blogEntities.map(
-                    (blog: BlogEntity) => new GetBlogResponse(blog),
-                ),
-            );
+            expect(result).toEqual(getBlogResponseList);
             expect(
                 result.every(
                     (item: GetBlogResponse): boolean =>

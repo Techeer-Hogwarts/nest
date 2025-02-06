@@ -105,15 +105,13 @@ export class ResumeService {
     async getResumeList(
         query: GetResumesQueryRequest,
     ): Promise<GetResumeResponse[]> {
-        const resumes: ResumeEntity[] =
+        const resumes: GetResumeResponse[] =
             await this.resumeRepository.getResumeList(query);
         this.logger.debug(
             `${resumes.length}개의 이력서 목록 조회 후 GetResumeResponse 변환 중`,
             ResumeService.name,
         );
-        return resumes.map(
-            (resume: ResumeEntity) => new GetResumeResponse(resume),
-        );
+        return resumes;
     }
 
     async getResume(resumeId: number): Promise<GetResumeResponse> {
@@ -131,15 +129,13 @@ export class ResumeService {
         userId: number,
         query: PaginationQueryDto,
     ): Promise<GetResumeResponse[]> {
-        const resumes: ResumeEntity[] =
+        const resumes: GetResumeResponse[] =
             await this.resumeRepository.getResumesByUser(userId, query);
         this.logger.debug(
             `${resumes.length}개의 유저 별 이력서 엔티티 목록 조회 후 GetResumeResponse 변환 중`,
             ResumeService.name,
         );
-        return resumes.map(
-            (resume: ResumeEntity) => new GetResumeResponse(resume),
-        );
+        return resumes;
     }
 
     // IsDelted -> true, 구글 드라이브 파일은 삭제 폴더로 이동

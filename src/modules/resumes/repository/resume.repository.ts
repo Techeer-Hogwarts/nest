@@ -7,6 +7,7 @@ import { PaginationQueryDto } from '../../../global/pagination/pagination.query.
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { GetResumeResponse } from '../dto/response/get.resume.response';
 
 @Injectable()
 export class ResumeRepository {
@@ -87,7 +88,7 @@ export class ResumeRepository {
 
     async getResumeList(
         query: GetResumesQueryRequest,
-    ): Promise<ResumeEntity[]> {
+    ): Promise<GetResumeResponse[]> {
         const {
             position,
             year,
@@ -109,7 +110,15 @@ export class ResumeRepository {
                 }),
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                },
             },
             skip: offset,
             take: limit,
@@ -121,13 +130,13 @@ export class ResumeRepository {
             `${resumes.length}개의 인기 이력서 목록 조회 성공`,
             ResumeRepository.name,
         );
-        return resumes;
+        return resumes.map((resume) => new GetResumeResponse(resume));
     }
 
     async getResumesByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<ResumeEntity[]> {
+    ): Promise<GetResumeResponse[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         this.logger.debug(
             `유저 별 이력서 조회 - userId: ${userId}, offset: ${offset}, limit: ${limit}`,
@@ -139,7 +148,15 @@ export class ResumeRepository {
                 userId: userId,
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                },
             },
             skip: offset,
             take: limit,
@@ -151,7 +168,7 @@ export class ResumeRepository {
             `${resumes.length}개의 유저 별 이력서 목록 조회 성공`,
             ResumeRepository.name,
         );
-        return resumes;
+        return resumes.map((resume) => new GetResumeResponse(resume));
     }
 
     async deleteResume(resumeId: number): Promise<void> {

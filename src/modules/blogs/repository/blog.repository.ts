@@ -6,6 +6,7 @@ import { PaginationQueryDto } from '../../../global/pagination/pagination.query.
 import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { GetBlogResponse } from '../dto/response/get.blog.response';
 
 @Injectable()
 export class BlogRepository {
@@ -74,7 +75,7 @@ export class BlogRepository {
         await Promise.all(blogPromises);
     }
 
-    async getBlogList(query: GetBlogsQueryRequest): Promise<BlogEntity[]> {
+    async getBlogList(query: GetBlogsQueryRequest): Promise<GetBlogResponse[]> {
         const {
             keyword,
             category,
@@ -112,7 +113,15 @@ export class BlogRepository {
                 ...(category && { category }),
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                },
             },
             skip: offset,
             take: limit,
@@ -124,13 +133,13 @@ export class BlogRepository {
             `${blogs.length}개의 블로그 엔티티 목록 조회 성공`,
             BlogRepository.name,
         );
-        return blogs;
+        return blogs.map((blog) => new GetBlogResponse(blog));
     }
 
     async getBlogsByUser(
         userId: number,
         query: PaginationQueryDto,
-    ): Promise<BlogEntity[]> {
+    ): Promise<GetBlogResponse[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         this.logger.debug(
             `query - offset: ${offset}, limit: ${limit}`,
@@ -142,7 +151,15 @@ export class BlogRepository {
                 userId: userId,
             },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                },
             },
             skip: offset,
             take: limit,
@@ -154,10 +171,10 @@ export class BlogRepository {
             `${blogs.length}개의 유저 별 블로그 엔티티 목록 조회 성공`,
             BlogRepository.name,
         );
-        return blogs;
+        return blogs.map((blog) => new GetBlogResponse(blog));
     }
 
-    async getBestBlogs(query: PaginationQueryDto): Promise<BlogEntity[]> {
+    async getBestBlogs(query: PaginationQueryDto): Promise<GetBlogResponse[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         // 2주 계산
         const twoWeeksAgo: Date = new Date();
@@ -171,10 +188,29 @@ export class BlogRepository {
             ORDER BY ("viewCount" + "likeCount" * 10) DESC
             LIMIT ${limit} OFFSET ${offset}
         `);
+        // User 정보 추가 조회
+        const blogsWithUser = await Promise.all(
+            blogs.map(async (blog) => {
+                const user = await this.prisma.user.findUnique({
+                    where: { id: blog.userId },
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                });
+                return {
+                    ...blog,
+                    user,
+                }; // blog 객체에 user 추가
+            }),
+        );
         this.logger.debug(
-            `${blogs.length}개의 인기글 블로그 엔티티 목록 조회 성공`,
+            `${blogs.length}개의 인기글 블로그 엔티티 목록 조회 성공 - ${JSON.stringify(blogs)}`,
             BlogRepository.name,
         );
-        return blogs;
+        return blogsWithUser.map((blog) => new GetBlogResponse(blog));
     }
 }

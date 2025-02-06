@@ -99,36 +99,3 @@ export const paginationQueryDto: PaginationQueryDto = {
     offset: 0,
     limit: 10,
 };
-
-export const bestResumeEntities: ResumeEntity[] = [
-    resumeEntity({
-        id: 1,
-        viewCount: 100,
-        likeCount: 5,
-    }),
-    resumeEntity({
-        id: 2,
-        viewCount: 150,
-        likeCount: 3,
-    }),
-    resumeEntity({
-        id: 3,
-        viewCount: 80,
-        likeCount: 10,
-    }),
-    resumeEntity({
-        id: 4,
-        viewCount: 120,
-        likeCount: 2,
-    }),
-    resumeEntity({
-        id: 5,
-        viewCount: 50,
-        likeCount: 12,
-    }),
-];
-
-export const getBestResumeResponseList: GetResumeResponse[] =
-    bestResumeEntities.map(
-        (resume: ResumeEntity) => new GetResumeResponse(resume),
-    );

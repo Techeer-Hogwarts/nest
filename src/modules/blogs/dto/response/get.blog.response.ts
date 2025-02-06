@@ -1,5 +1,19 @@
-import { User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { BlogEntity } from '../../entities/blog.entity';
+
+type BlogWithUser = Prisma.BlogGetPayload<{
+    include: {
+        user: {
+            select: {
+                id: true;
+                name: true;
+                nickname: true;
+                roleId: true;
+                profileImage: true;
+            };
+        };
+    };
+}>;
 
 export class GetBlogResponse {
     readonly id: number;
@@ -7,19 +21,44 @@ export class GetBlogResponse {
     readonly url: string;
     readonly date: Date;
     readonly category: string;
+    readonly createdAt: Date;
     readonly likeCount: number;
     readonly viewCount: number;
+    readonly author: {
+        authorName: string;
+        authorImage: string;
+    };
+    readonly user?: GetBlogAuthorResponse;
 
-    readonly user: User;
+    constructor(blog: BlogWithUser | BlogEntity) {
+        this.id = blog.id;
+        this.title = blog.title;
+        this.url = blog.url;
+        this.date = blog.date;
+        this.category = blog.category;
+        this.createdAt = blog.createdAt;
+        this.likeCount = blog.likeCount;
+        this.viewCount = blog.viewCount;
+        this.author = {
+            authorName: blog.author,
+            authorImage: blog.authorImage,
+        };
+        this.user = new GetBlogAuthorResponse(blog.user);
+    }
+}
 
-    constructor(blogEntity: BlogEntity) {
-        this.id = blogEntity.id;
-        this.title = blogEntity.title;
-        this.url = blogEntity.url;
-        this.date = blogEntity.date;
-        this.category = blogEntity.category;
-        this.likeCount = blogEntity.likeCount;
-        this.viewCount = blogEntity.viewCount;
-        this.user = blogEntity.user;
+export class GetBlogAuthorResponse {
+    readonly id: number;
+    readonly name: string;
+    readonly nickname: string;
+    readonly roleId: number;
+    readonly profileImage: string;
+
+    constructor(user: BlogWithUser['user']) {
+        this.id = user.id;
+        this.name = user.name;
+        this.nickname = user.nickname;
+        this.roleId = user.roleId;
+        this.profileImage = user.profileImage;
     }
 }

@@ -5,7 +5,6 @@ import {
     getResumeResponseList,
     getResumeResponse,
     getResumesQueryRequest,
-    getBestResumeResponseList,
     request,
     user,
 } from './mock-data';
@@ -106,12 +105,12 @@ describe('ResumeController', (): void => {
     describe('getBestResumes', (): void => {
         it('should return a list of best resumes based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestResumes').mockResolvedValue(
-                getBestResumeResponseList,
+                getResumeResponseList,
             );
 
             const result = await controller.getBestResumes(paginationQueryDto);
 
-            expect(result).toEqual(getBestResumeResponseList);
+            expect(result).toEqual(getResumeResponseList);
             expect(service.getBestResumes).toHaveBeenCalledWith(
                 paginationQueryDto,
             );

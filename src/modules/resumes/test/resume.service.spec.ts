@@ -1,10 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-    bestResumeEntities,
     resumeEntities,
     resumeEntity,
     createResumeRequest,
-    getBestResumeResponseList,
     getResumeResponse,
     getResumeResponseList,
     getResumesQueryRequest,
@@ -12,7 +10,6 @@ import {
     user,
 } from './mock-data';
 import { GetResumeResponse } from '../dto/response/get.resume.response';
-import { ResumeEntity } from '../entities/resume.entity';
 import { ResumeService } from '../../resumes/resume.service';
 import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
@@ -150,13 +147,13 @@ describe('ResumeService', (): void => {
     describe('getBestResumes', (): void => {
         it('should return a list of GetResumeResponse objects based on pagination query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBestResumes').mockResolvedValue(
-                bestResumeEntities,
+                resumeEntities,
             );
 
             const result: GetResumeResponse[] =
                 await service.getBestResumes(paginationQueryDto);
 
-            expect(result).toEqual(getBestResumeResponseList);
+            expect(result).toEqual(getResumeResponseList);
             expect(
                 result.every(
                     (item: GetResumeResponse): boolean =>
@@ -188,7 +185,7 @@ describe('ResumeService', (): void => {
     describe('getResumeList', (): void => {
         it('should return a list of GetResumeResponse objects based on query', async (): Promise<void> => {
             jest.spyOn(repository, 'getResumeList').mockResolvedValue(
-                resumeEntities,
+                getResumeResponseList,
             );
 
             const result: GetResumeResponse[] = await service.getResumeList(
@@ -212,7 +209,7 @@ describe('ResumeService', (): void => {
     describe('getResumesByUser', (): void => {
         it('should return a list of GetResumeResponse objects for a specific user', async (): Promise<void> => {
             jest.spyOn(repository, 'getResumesByUser').mockResolvedValue(
-                resumeEntities,
+                getResumeResponseList,
             );
 
             const result: GetResumeResponse[] = await service.getResumesByUser(
@@ -226,11 +223,7 @@ describe('ResumeService', (): void => {
             );
             expect(repository.getResumesByUser).toHaveBeenCalledTimes(1);
 
-            expect(result).toEqual(
-                resumeEntities.map(
-                    (resume: ResumeEntity) => new GetResumeResponse(resume),
-                ),
-            );
+            expect(result).toEqual(getResumeResponseList);
             expect(
                 result.every(
                     (item: GetResumeResponse): boolean =>

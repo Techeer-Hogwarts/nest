@@ -1,15 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogController } from '../blog.controller';
 import { BlogService } from '../blog.service';
-import { GetBlogResponse } from '../dto/response/get.blog.response';
 import {
-    blogEntities,
-    getBestBlogResponseList,
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
 } from './mock-data';
-import { BlogEntity } from '../entities/blog.entity';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
@@ -56,12 +52,12 @@ describe('BlogController', (): void => {
     describe('getBestBlogs', (): void => {
         it('should return a list of best blogs based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestBlogs').mockResolvedValue(
-                getBestBlogResponseList,
+                getBlogResponseList,
             );
 
             const result = await controller.getBestBlogs(paginationQueryDto);
 
-            expect(result).toEqual(getBestBlogResponseList);
+            expect(result).toEqual(getBlogResponseList);
             expect(service.getBestBlogs).toHaveBeenCalledWith(
                 paginationQueryDto,
             );
@@ -88,9 +84,7 @@ describe('BlogController', (): void => {
     describe('getBlogsByUser', (): void => {
         it('should return a list of blogs for a specific user', async (): Promise<void> => {
             jest.spyOn(service, 'getBlogsByUser').mockResolvedValue(
-                blogEntities.map(
-                    (blog: BlogEntity) => new GetBlogResponse(blog),
-                ),
+                getBlogResponseList,
             );
 
             const result = await controller.getBlogsByUser(
@@ -104,11 +98,7 @@ describe('BlogController', (): void => {
             );
             expect(service.getBlogsByUser).toHaveBeenCalledTimes(1);
 
-            expect(result).toEqual(
-                blogEntities.map(
-                    (blog: BlogEntity) => new GetBlogResponse(blog),
-                ),
-            );
+            expect(result).toEqual(getBlogResponseList);
         });
     });
 });
