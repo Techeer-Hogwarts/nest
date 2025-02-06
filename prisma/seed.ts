@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { Logger } from '@nestjs/common';
 
 const prisma = new PrismaClient();
@@ -366,9 +366,9 @@ async function main(): Promise<void> {
     // Insert the stacks
     for (const stack of stacks) {
         await prisma.stack.upsert({
-            where: { name: stack.name },
+            where: { name: stack.name } as Prisma.StackWhereUniqueInput,
             update: {},
-            create: stack,
+            create: stack as Prisma.StackCreateInput,
         });
     }
 

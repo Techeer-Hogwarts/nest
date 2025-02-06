@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ProjectTeamRepository } from './repository/projectTeam.repository';
 import { CreateProjectTeamRequest } from './dto/request/create.projectTeam.request';
 import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.request';
@@ -10,6 +10,10 @@ import {
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { PrismaService } from '../prisma/prisma.service';
 import { AwsService } from '../../awsS3/aws.service';
+import {
+    BaseResponse,
+    ProjectTeamDetailResponse,
+} from './dto/response/get.projectTeam.response';
 
 @Injectable()
 export class ProjectTeamService {
@@ -102,7 +106,7 @@ export class ProjectTeamService {
     async createProject(
         createProjectTeamRequest: CreateProjectTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<any> {
+    ): Promise<BaseResponse<ProjectTeamDetailResponse>> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
 
@@ -113,23 +117,39 @@ export class ProjectTeamService {
                 ...projectData
             } = createProjectTeamRequest;
 
-            // 이미지 업로드 처리
-            const uploadedImageUrls = await this.uploadImagesToS3(
-                files,
-                'project-teams',
+            // 이미지 분리 및 업로드 처리
+            const [mainImages, ...resultImages] = files || [];
+
+            // 메인 이미지 필수 체크
+            if (!mainImages) {
+                throw new BadRequestException('메인 이미지는 필수입니다.');
+            }
+
+            // 1. 메인 이미지 업로드
+            const mainImageUrls = await this.uploadImagesToS3(
+                [mainImages],
+                'project-teams/main',
             );
+
+            // 2. 결과 이미지 업로드 (첫 번째 파일 제외)
+            const resultImageUrls = resultImages.length
+                ? await this.uploadImagesToS3(
+                      resultImages,
+                      'project-teams/result',
+                  )
+                : [];
 
             // 이름 기반으로 스택 ID 및 isMain 조회
             const validStacks = await this.prisma.stack.findMany({
                 where: {
-                    name: {
-                        in: teamStacks?.map((stack) => stack.stack) || [],
-                    },
+                    name: { in: teamStacks?.map((stack) => stack.stack) || [] },
                 },
             });
 
             if (validStacks.length !== (teamStacks?.length || 0)) {
-                throw new Error('유효하지 않은 스택 이름이 포함되어 있습니다.');
+                throw new BadRequestException(
+                    '유효하지 않은 스택 이름이 포함되어 있습니다.',
+                );
             }
 
             // `teamStacks` 데이터를 `stackId` 및 `isMain` 값과 매핑
@@ -138,11 +158,13 @@ export class ProjectTeamService {
                     (validStack) => validStack.name === stack.stack,
                 );
                 if (!matchedStack) {
-                    throw new Error(`스택(${stack.stack})을 찾을 수 없습니다.`);
+                    throw new BadRequestException(
+                        `스택(${stack.stack})을 찾을 수 없습니다.`,
+                    );
                 }
                 return {
                     stackId: matchedStack.id,
-                    isMain: stack.isMain || false, // 기본값으로 false 설정
+                    isMain: stack.isMain || false,
                 };
             });
 
@@ -150,42 +172,48 @@ export class ProjectTeamService {
             const createdProject = await this.prisma.projectTeam.create({
                 data: {
                     ...projectData,
-                    recruitExplain, // 기본값 추가
+                    recruitExplain,
                     githubLink: projectData.githubLink || '',
                     notionLink: projectData.notionLink || '',
-                    resultImages: {
-                        create: uploadedImageUrls.map((url) => ({
-                            imageUrl: url,
-                        })),
-                    },
                     mainImages: {
-                        create: uploadedImageUrls.map((url) => ({
+                        create: mainImageUrls.map((url) => ({ imageUrl: url })),
+                    },
+                    resultImages: {
+                        create: resultImageUrls.map((url) => ({
                             imageUrl: url,
                         })),
                     },
-                    teamStacks: {
-                        create: stackData, // stackId와 isMain 값 포함
-                    },
+                    teamStacks: { create: stackData },
                     projectMember: {
                         create: projectMember.map((member) => ({
-                            user: { connect: { id: member.userId } }, // 사용자 연결
+                            user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
                             teamRole: member.teamRole,
-                            summary: '초기 참여 인원입니다', // summary 추가
-                            status: 'APPROVED', // 필수 필드
+                            summary: '초기 참여 인원입니다',
+                            status: 'APPROVED',
                         })),
                     },
                 },
                 include: {
                     resultImages: true,
                     mainImages: true,
-                    teamStacks: { include: { stack: true } }, // 스택 정보 포함
-                    projectMember: true,
+                    teamStacks: { include: { stack: true } },
+                    projectMember: { include: { user: true } },
                 },
             });
 
             this.logger.debug('✅ Project created successfully');
-            return createdProject;
+
+            // DTO 변환
+            const projectResponse = new ProjectTeamDetailResponse(
+                createdProject,
+            );
+
+            return new BaseResponse(
+                201,
+                '프로젝트가 성공적으로 생성되었습니다.',
+                projectResponse,
+            );
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
             throw new Error('프로젝트 생성 중 오류가 발생했습니다.');

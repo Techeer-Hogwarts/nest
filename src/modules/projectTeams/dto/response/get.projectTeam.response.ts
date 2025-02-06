@@ -6,7 +6,17 @@ import {
     ProjectMainImage,
 } from '@prisma/client';
 
-export class GetProjectTeamResponse {
+// 기본 응답 포맷 통합
+export class BaseResponse<T> {
+    constructor(
+        public code: number,
+        public message: string,
+        public data: T,
+    ) {}
+}
+
+// 상세 조회용 DTO
+export class ProjectTeamDetailResponse {
     readonly id: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;
@@ -39,7 +49,6 @@ export class GetProjectTeamResponse {
         projectTeamId: number;
         userId: number;
     }[];
-
     constructor(
         project: ProjectTeam & {
             resultImages: ProjectResultImage[];
@@ -87,5 +96,58 @@ export class GetProjectTeamResponse {
             projectTeamId: member.projectTeamId,
             userId: member.userId,
         }));
+    }
+}
+
+// 목록 조회용 DTO (간소화 버전)
+export class ProjectTeamListResponse {
+    readonly id: number;
+    readonly name: string;
+    readonly isRecruited: boolean;
+    readonly mainImages: { id: number; isDeleted: boolean; imageUrl: string }[];
+    readonly teamStacks: { stackName: string; isMain: boolean }[];
+    readonly projectMember: {
+        id: number;
+        name: string;
+        isDeleted: boolean;
+        isLeader: boolean;
+        teamRole: string;
+        projectTeamId: number;
+        userId: number;
+    }[];
+
+    constructor(
+        project: ProjectTeam & {
+            mainImages: ProjectMainImage[];
+            teamStacks: (TeamStack & { stack: { name: string } })[];
+        },
+    ) {
+        this.id = project.id;
+        this.name = project.name;
+        this.isRecruited = project.isRecruited;
+        this.mainImages = project.mainImages.map((image) => ({
+            id: image.id,
+            isDeleted: image.isDeleted,
+            imageUrl: image.imageUrl,
+        }));
+        this.teamStacks = project.teamStacks.map((stack) => ({
+            isMain: stack.isMain,
+            stackName: stack.stack.name,
+        }));
+    }
+}
+
+// 멤버 조회 DTO
+export class ProjectMemberResponse {
+    id: number;
+    userName: string;
+    isLeader: boolean;
+    teamRole: string;
+
+    constructor(member: ProjectMember & { user: { name: string } }) {
+        this.id = member.id;
+        this.userName = member.user.name;
+        this.isLeader = member.isLeader;
+        this.teamRole = member.teamRole;
     }
 }

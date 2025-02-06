@@ -53,14 +53,36 @@ export class ProjectTeamController {
                     type: 'string',
                     description: '프로젝트 공고 데이터',
                     example: JSON.stringify({
-                        name: 'Project Name',
-                        githubLink: 'https://github.com/example-project',
-                        notionLink: 'https://notion.so/example-project',
+                        name: '프로젝트 이름',
                         projectExplain: '프로젝트에 대한 설명입니다.',
-                        frontendNum: 2,
-                        backendNum: 3,
-                        devopsNum: 1,
-                        teamStacks: [{ name: 'React.js' }, { name: 'Node.js' }],
+                        frontendNum: 1,
+                        backendNum: 1,
+                        devopsNum: 0,
+                        uiuxNum: 0,
+                        dataEngineerNum: 0,
+                        isRecruited: true,
+                        isFinished: false,
+                        recruitExplain:
+                            '시간 약속을 잘 지키는 사람을 원합니다.',
+                        githubLink: 'https://github.com/techeerism',
+                        notionLink: 'https://notion.so/techeerism',
+                        projectMember: [
+                            {
+                                userId: 1,
+                                isLeader: true,
+                                teamRole: 'Frontend',
+                            },
+                        ],
+                        teamStacks: [
+                            {
+                                stack: 'React.js',
+                                isMain: true,
+                            },
+                            {
+                                stack: 'Node.js',
+                                isMain: false,
+                            },
+                        ],
                     }),
                 },
             },
@@ -78,9 +100,16 @@ export class ProjectTeamController {
 
         try {
             const parsedBody = JSON.parse(createProjectTeamRequest);
+            // 파일 분리 로직 추가
+            const mainImages = files?.length > 0 ? files[0] : null;
+            const resultImages = files?.length > 1 ? files.slice(1) : [];
 
             const createdProject = await this.projectTeamService.createProject(
-                parsedBody,
+                {
+                    ...parsedBody,
+                    mainImages,
+                    resultImages,
+                },
                 files, // 파일 배열 전달
             );
 
