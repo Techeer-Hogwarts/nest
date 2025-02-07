@@ -6,15 +6,6 @@ import {
     ProjectMainImage,
 } from '@prisma/client';
 
-// 기본 응답 포맷 통합
-export class BaseResponse<T> {
-    constructor(
-        public code: number,
-        public message: string,
-        public data: T,
-    ) {}
-}
-
 // 상세 조회용 DTO
 export class ProjectTeamDetailResponse {
     readonly id: number;
