@@ -21,6 +21,7 @@ import { NotFoundUserException } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { UpdateApplicantStatusRequest } from './dto/request/update.applicantStatus.request';
 import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
+import { ProjectTeamDetailResponse } from './dto/response/get.projectTeam.response';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
@@ -93,36 +94,54 @@ export class ProjectTeamController {
         @Body('createProjectTeamRequest') createProjectTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
+        this.logger.debug('🔥 [START] createProject 엔드포인트 호출');
         const user = request.user;
-
-        if (!user) throw new NotFoundUserException();
+        if (!user) {
+            this.logger.error('❌ 사용자 정보가 없습니다.');
+            throw new NotFoundUserException();
+        }
+        this.logger.debug(`✅ 사용자 확인됨: ID=${user.id}`);
 
         try {
+            this.logger.debug('📄 요청 본문(JSON) 파싱 시작');
             const parsedBody = JSON.parse(createProjectTeamRequest);
-            // 파일 분리 로직 추가
+            this.logger.debug('📄 요청 본문 파싱 완료');
+            this.logger.debug(`요청 데이터: ${JSON.stringify(parsedBody)}`);
+
             const mainImages = files?.length > 0 ? files[0] : null;
             const resultImages = files?.length > 1 ? files.slice(1) : [];
+            this.logger.debug(`받은 파일 개수: ${files?.length || 0}`);
 
+            if (mainImages) {
+                this.logger.debug('메인 이미지가 존재합니다.');
+            } else {
+                this.logger.error('❌ 메인 이미지가 누락되었습니다.');
+            }
+            this.logger.debug(`결과 이미지 파일 수: ${resultImages.length}`);
+
+            this.logger.debug('🚀 프로젝트 생성 서비스 호출 시작');
             const createdProject = await this.projectTeamService.createProject(
                 {
                     ...parsedBody,
                     mainImages,
                     resultImages,
                 },
-                files, // 파일 배열 전달
+                files,
             );
+            this.logger.debug('🚀 프로젝트 생성 서비스 호출 완료');
+            this.logger.debug(`생성된 프로젝트 ID: ${createdProject.id}`);
 
-            return {
-                code: 201,
-                message: '프로젝트 공고가 생성되었습니다.',
-                data: createdProject,
-            };
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] createProject 에서 예외 발생: ',
-                error,
+            this.logger.debug('🔄 DTO 변환 시작');
+            const projectResponse = new ProjectTeamDetailResponse(
+                createdProject,
             );
+            this.logger.debug('🔄 DTO 변환 완료');
+
+            this.logger.debug('✅ createProject 엔드포인트 성공적으로 완료');
+            return projectResponse;
+        } catch (error) {
+            this.logger.error('❌ [ERROR] createProject에서 예외 발생:', error);
             throw error;
         }
     }

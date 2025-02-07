@@ -4,13 +4,11 @@ import {
     TeamStack,
     ProjectResultImage,
     ProjectMainImage,
+    StatusCategory,
 } from '@prisma/client';
-
 // 상세 조회용 DTO
 export class ProjectTeamDetailResponse {
     readonly id: number;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
     readonly isDeleted: boolean;
     readonly isRecruited: boolean;
     readonly isFinished: boolean;
@@ -29,28 +27,67 @@ export class ProjectTeamDetailResponse {
         isDeleted: boolean;
         imageUrl: string;
     }[];
-    readonly mainImages: { id: number; isDeleted: boolean; imageUrl: string }[];
-    readonly teamStacks: { stackName: string; isMain: boolean }[];
+
+    readonly mainImages: {
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        imageUrl: string;
+        projectTeamId: number;
+    }[];
+    readonly teamStacks: {
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        projectTeamId: number;
+        isMain: boolean;
+        stackId: number;
+        stack: { name: string };
+    }[];
+
     readonly projectMember: {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         isDeleted: boolean;
         isLeader: boolean;
         teamRole: string;
         projectTeamId: number;
         userId: number;
+        summary: string;
+        status: StatusCategory;
+        user: { name: string };
     }[];
     constructor(
         project: ProjectTeam & {
-            resultImages: ProjectResultImage[];
-            mainImages: ProjectMainImage[];
-            teamStacks: (TeamStack & { stack: { name: string } })[];
-            projectMember: (ProjectMember & { user: { name: string } })[];
+            resultImages: (ProjectResultImage & {
+                projectTeamId: number;
+            })[];
+            mainImages: (ProjectMainImage & {
+                projectTeamId: number;
+                createdAt: Date;
+                updatedAt: Date;
+            })[];
+            teamStacks: (TeamStack & {
+                stack: { name: string };
+                projectTeamId: number;
+                createdAt: Date;
+                updatedAt: Date;
+            })[];
+            projectMember: (ProjectMember & {
+                user: { name: string };
+                projectTeamId: number;
+                createdAt: Date;
+                updatedAt: Date;
+                summary: string;
+                status: StatusCategory;
+            })[];
         },
     ) {
         this.id = project.id;
-        this.createdAt = project.createdAt;
-        this.updatedAt = project.updatedAt;
         this.isDeleted = project.isDeleted;
         this.isRecruited = project.isRecruited;
         this.isFinished = project.isFinished;
@@ -71,21 +108,36 @@ export class ProjectTeamDetailResponse {
         }));
         this.mainImages = project.mainImages.map((image) => ({
             id: image.id,
+            createdAt: image.createdAt,
+            updatedAt: image.updatedAt,
             isDeleted: image.isDeleted,
             imageUrl: image.imageUrl,
+            projectTeamId: image.projectTeamId,
         }));
         this.teamStacks = project.teamStacks.map((stack) => ({
-            stackName: stack.stack.name,
+            id: stack.id,
+            createdAt: stack.createdAt,
+            updatedAt: stack.updatedAt,
+            isDeleted: stack.isDeleted,
+            projectTeamId: stack.projectTeamId,
             isMain: stack.isMain,
+            stackId: stack.id,
+            stack: { name: stack.stack.name },
         }));
+
         this.projectMember = project.projectMember.map((member) => ({
             id: member.id,
+            createdAt: member.createdAt,
+            updatedAt: member.updatedAt,
             name: member.user.name,
             isDeleted: member.isDeleted,
             isLeader: member.isLeader,
             teamRole: member.teamRole,
             projectTeamId: member.projectTeamId,
             userId: member.userId,
+            summary: member.summary,
+            status: member.status,
+            user: member.user,
         }));
     }
 }

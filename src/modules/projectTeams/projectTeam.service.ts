@@ -10,10 +10,7 @@ import {
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { PrismaService } from '../prisma/prisma.service';
 import { AwsService } from '../../awsS3/aws.service';
-import {
-    BaseResponse,
-    ProjectTeamDetailResponse,
-} from './dto/response/get.projectTeam.response';
+import { ProjectTeamDetailResponse } from './dto/response/get.projectTeam.response';
 
 @Injectable()
 export class ProjectTeamService {
@@ -106,9 +103,15 @@ export class ProjectTeamService {
     async createProject(
         createProjectTeamRequest: CreateProjectTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<BaseResponse<ProjectTeamDetailResponse>> {
+    ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
+
+            // 요청 데이터 로깅
+            this.logger.debug(
+                '요청 데이터:',
+                JSON.stringify(createProjectTeamRequest),
+            );
 
             const {
                 teamStacks,
@@ -117,47 +120,73 @@ export class ProjectTeamService {
                 ...projectData
             } = createProjectTeamRequest;
 
-            // 이미지 분리 및 업로드 처리
+            // 파일 수 및 상태 로깅
+            if (files && files.length) {
+                this.logger.debug(`받은 파일 개수: ${files.length}`);
+            } else {
+                this.logger.warn('파일이 업로드되지 않았습니다.');
+            }
             const [mainImages, ...resultImages] = files || [];
 
             // 메인 이미지 필수 체크
             if (!mainImages) {
+                this.logger.error('메인 이미지가 누락되었습니다.');
                 throw new BadRequestException('메인 이미지는 필수입니다.');
             }
 
-            // 1. 메인 이미지 업로드
+            // 1. 메인 이미지 업로드 시작
+            this.logger.debug('메인 이미지 업로드 시작');
             const mainImageUrls = await this.uploadImagesToS3(
                 [mainImages],
                 'project-teams/main',
             );
+            this.logger.debug(
+                `메인 이미지 업로드 완료: ${mainImageUrls.length}개 업로드됨`,
+            );
 
             // 2. 결과 이미지 업로드 (첫 번째 파일 제외)
-            const resultImageUrls = resultImages.length
-                ? await this.uploadImagesToS3(
-                      resultImages,
-                      'project-teams/result',
-                  )
-                : [];
+            let resultImageUrls: string[] = [];
+            if (resultImages && resultImages.length) {
+                this.logger.debug(
+                    `결과 이미지 업로드 시작: ${resultImages.length}개 파일`,
+                );
+                resultImageUrls = await this.uploadImagesToS3(
+                    resultImages,
+                    'project-teams/result',
+                );
+                this.logger.debug(
+                    `결과 이미지 업로드 완료: ${resultImageUrls.length}개 업로드됨`,
+                );
+            } else {
+                this.logger.debug(
+                    '결과 이미지 파일이 없습니다. 업로드 건너뜀.',
+                );
+            }
 
-            // 이름 기반으로 스택 ID 및 isMain 조회
+            // 스택 검증: 요청된 스택과 실제 유효한 스택 조회
+            this.logger.debug('유효한 스택 조회 시작');
             const validStacks = await this.prisma.stack.findMany({
                 where: {
                     name: { in: teamStacks?.map((stack) => stack.stack) || [] },
                 },
             });
+            this.logger.debug(`조회된 유효 스택 수: ${validStacks.length}`);
 
             if (validStacks.length !== (teamStacks?.length || 0)) {
+                this.logger.error('유효하지 않은 스택 이름이 포함되어 있음');
                 throw new BadRequestException(
                     '유효하지 않은 스택 이름이 포함되어 있습니다.',
                 );
             }
 
-            // `teamStacks` 데이터를 `stackId` 및 `isMain` 값과 매핑
+            // teamStacks를 stackId 및 isMain 값과 매핑
+            this.logger.debug('teamStacks 매핑 시작');
             const stackData = teamStacks.map((stack) => {
                 const matchedStack = validStacks.find(
                     (validStack) => validStack.name === stack.stack,
                 );
                 if (!matchedStack) {
+                    this.logger.error(`스택(${stack.stack})을 찾을 수 없음`);
                     throw new BadRequestException(
                         `스택(${stack.stack})을 찾을 수 없습니다.`,
                     );
@@ -167,8 +196,12 @@ export class ProjectTeamService {
                     isMain: stack.isMain || false,
                 };
             });
+            this.logger.debug(
+                `teamStacks 매핑 완료: ${stackData.length}개 매핑`,
+            );
 
-            // 프로젝트 생성
+            // 프로젝트 DB 생성 시작
+            this.logger.debug('프로젝트 DB 생성 시작');
             const createdProject = await this.prisma.projectTeam.create({
                 data: {
                     ...projectData,
@@ -202,18 +235,17 @@ export class ProjectTeamService {
                 },
             });
 
-            this.logger.debug('✅ Project created successfully');
+            this.logger.debug(`프로젝트 생성 완료: ID=${createdProject.id}`);
 
-            // DTO 변환
+            // DTO 변환 과정 로깅
+            this.logger.debug('DTO 변환 시작');
             const projectResponse = new ProjectTeamDetailResponse(
                 createdProject,
             );
+            this.logger.debug('DTO 변환 완료');
 
-            return new BaseResponse(
-                201,
-                '프로젝트가 성공적으로 생성되었습니다.',
-                projectResponse,
-            );
+            this.logger.debug('✅ Project created successfully');
+            return projectResponse;
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
             throw new Error('프로젝트 생성 중 오류가 발생했습니다.');
