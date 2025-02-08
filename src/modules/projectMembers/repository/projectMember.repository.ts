@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { StatusCategory } from '@prisma/client';
+import { ProjectMember, StatusCategory } from '@prisma/client';
 import { CreateProjectMemberRequest } from '../dto/request/create.projectMember.request';
 
 @Injectable()
@@ -150,12 +150,17 @@ export class ProjectMemberRepository {
         projectTeamId: number,
         userId: number,
         status: StatusCategory,
-    ): Promise<any> {
+    ): Promise<ProjectMember & { user: { name: string } }> {
         try {
             const member = await this.prisma.projectMember.findFirst({
                 where: {
                     projectTeamId,
                     userId,
+                },
+                include: {
+                    user: {
+                        select: { name: true },
+                    },
                 },
             });
 
@@ -163,12 +168,15 @@ export class ProjectMemberRepository {
                 throw new Error('해당 멤버를 찾을 수 없습니다.');
             }
 
-            const updatedMember = await this.prisma.projectMember.update({
+            return await this.prisma.projectMember.update({
                 where: { id: member.id },
                 data: { status },
+                include: {
+                    user: {
+                        select: { name: true },
+                    },
+                },
             });
-
-            return updatedMember;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] updateApplicantStatus 에서 예외 발생: ',

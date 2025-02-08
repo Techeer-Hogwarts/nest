@@ -30,36 +30,22 @@ export class ProjectTeamDetailResponse {
 
     readonly mainImages: {
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         isDeleted: boolean;
         imageUrl: string;
-        projectTeamId: number;
     }[];
     readonly teamStacks: {
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         isDeleted: boolean;
         projectTeamId: number;
         isMain: boolean;
-        stackId: number;
         stack: { name: string };
     }[];
 
     readonly projectMember: {
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
-        isDeleted: boolean;
         isLeader: boolean;
         teamRole: string;
-        projectTeamId: number;
-        userId: number;
-        summary: string;
-        status: StatusCategory;
-        user: { name: string };
     }[];
     constructor(
         project: ProjectTeam & {
@@ -68,22 +54,14 @@ export class ProjectTeamDetailResponse {
             })[];
             mainImages: (ProjectMainImage & {
                 projectTeamId: number;
-                createdAt: Date;
-                updatedAt: Date;
             })[];
             teamStacks: (TeamStack & {
                 stack: { name: string };
                 projectTeamId: number;
-                createdAt: Date;
-                updatedAt: Date;
             })[];
             projectMember: (ProjectMember & {
                 user: { name: string };
                 projectTeamId: number;
-                createdAt: Date;
-                updatedAt: Date;
-                summary: string;
-                status: StatusCategory;
             })[];
         },
     ) {
@@ -108,56 +86,33 @@ export class ProjectTeamDetailResponse {
         }));
         this.mainImages = project.mainImages.map((image) => ({
             id: image.id,
-            createdAt: image.createdAt,
-            updatedAt: image.updatedAt,
             isDeleted: image.isDeleted,
             imageUrl: image.imageUrl,
-            projectTeamId: image.projectTeamId,
         }));
         this.teamStacks = project.teamStacks.map((stack) => ({
             id: stack.id,
-            createdAt: stack.createdAt,
-            updatedAt: stack.updatedAt,
             isDeleted: stack.isDeleted,
             projectTeamId: stack.projectTeamId,
             isMain: stack.isMain,
-            stackId: stack.id,
             stack: { name: stack.stack.name },
         }));
 
         this.projectMember = project.projectMember.map((member) => ({
             id: member.id,
-            createdAt: member.createdAt,
-            updatedAt: member.updatedAt,
             name: member.user.name,
-            isDeleted: member.isDeleted,
             isLeader: member.isLeader,
             teamRole: member.teamRole,
-            projectTeamId: member.projectTeamId,
-            userId: member.userId,
-            summary: member.summary,
-            status: member.status,
-            user: member.user,
         }));
     }
 }
 
-// 목록 조회용 DTO (간소화 버전)
+// 목록 조회용 DTO
 export class ProjectTeamListResponse {
     readonly id: number;
     readonly name: string;
     readonly isRecruited: boolean;
     readonly mainImages: { id: number; isDeleted: boolean; imageUrl: string }[];
     readonly teamStacks: { stackName: string; isMain: boolean }[];
-    readonly projectMember: {
-        id: number;
-        name: string;
-        isDeleted: boolean;
-        isLeader: boolean;
-        teamRole: string;
-        projectTeamId: number;
-        userId: number;
-    }[];
 
     constructor(
         project: ProjectTeam & {
@@ -192,5 +147,23 @@ export class ProjectMemberResponse {
         this.userName = member.user.name;
         this.isLeader = member.isLeader;
         this.teamRole = member.teamRole;
+    }
+}
+
+export class ProjectApplicantResponse {
+    id: number;
+    userName: string;
+    isLeader: boolean;
+    teamRole: string;
+    summary: string;
+    status: StatusCategory;
+
+    constructor(member: ProjectMember & { user: { name: string } }) {
+        this.id = member.id;
+        this.userName = member.user.name;
+        this.isLeader = member.isLeader;
+        this.teamRole = member.teamRole;
+        this.summary = member.summary;
+        this.status = member.status;
     }
 }
