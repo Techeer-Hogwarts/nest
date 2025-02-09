@@ -33,4 +33,12 @@ export class AddProjectMemberRequest {
         example: 'Backend Developer',
     })
     teamRole: string; // 프로젝트 팀 내 역할
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({
+        description: '사용자 프로필 이미지',
+        example: 'https://example.com/image.png',
+    })
+    profileImage: string;
 }

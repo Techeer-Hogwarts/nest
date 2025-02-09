@@ -20,6 +20,13 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { NotFoundUserException } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { UpdateApplicantStatusRequest } from './dto/request/update.applicantStatus.request';
+import {
+    ProjectApplicantResponse,
+    ProjectMemberResponse,
+    ProjectTeamDetailResponse,
+    ProjectTeamListResponse,
+} from './dto/response/get.projectTeam.response';
+import { PrismaService } from '../prisma/prisma.service';
 import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
 
 @ApiTags('projectTeams')
@@ -27,7 +34,10 @@ import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.proje
 export class ProjectTeamController {
     private readonly logger = new Logger(ProjectTeamController.name);
 
-    constructor(private readonly projectTeamService: ProjectTeamService) {}
+    constructor(
+        private readonly projectTeamService: ProjectTeamService,
+        private readonly prisma: PrismaService,
+    ) {}
 
     @Post()
     @UseGuards(JwtAuthGuard)
@@ -53,14 +63,36 @@ export class ProjectTeamController {
                     type: 'string',
                     description: '프로젝트 공고 데이터',
                     example: JSON.stringify({
-                        name: 'Project Name',
-                        githubLink: 'https://github.com/example-project',
-                        notionLink: 'https://notion.so/example-project',
+                        name: '프로젝트 이름',
                         projectExplain: '프로젝트에 대한 설명입니다.',
-                        frontendNum: 2,
-                        backendNum: 3,
-                        devopsNum: 1,
-                        teamStacks: [{ name: 'React.js' }, { name: 'Node.js' }],
+                        frontendNum: 1,
+                        backendNum: 1,
+                        devopsNum: 0,
+                        uiuxNum: 0,
+                        dataEngineerNum: 0,
+                        isRecruited: true,
+                        isFinished: false,
+                        recruitExplain:
+                            '시간 약속을 잘 지키는 사람을 원합니다.',
+                        githubLink: 'https://github.com/techeerism',
+                        notionLink: 'https://notion.so/techeerism',
+                        projectMember: [
+                            {
+                                userId: 1,
+                                isLeader: true,
+                                teamRole: 'Frontend',
+                            },
+                        ],
+                        teamStacks: [
+                            {
+                                stack: 'React.js',
+                                isMain: true,
+                            },
+                            {
+                                stack: 'Node.js',
+                                isMain: false,
+                            },
+                        ],
                     }),
                 },
             },
@@ -71,29 +103,48 @@ export class ProjectTeamController {
         @Body('createProjectTeamRequest') createProjectTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
+        this.logger.debug('🔥 [START] createProject 엔드포인트 호출');
         const user = request.user;
-
-        if (!user) throw new NotFoundUserException();
+        if (!user) {
+            this.logger.error('❌ 사용자 정보가 없습니다.');
+            throw new NotFoundUserException();
+        }
+        this.logger.debug(`✅ 사용자 확인됨: ID=${user.id}`);
 
         try {
+            this.logger.debug('📄 요청 본문(JSON) 파싱 시작');
             const parsedBody = JSON.parse(createProjectTeamRequest);
+            this.logger.debug('📄 요청 본문 파싱 완료');
+            this.logger.debug(`요청 데이터: ${JSON.stringify(parsedBody)}`);
 
+            const mainImages = files?.length > 0 ? files[0] : null;
+            const resultImages = files?.length > 1 ? files.slice(1) : [];
+            this.logger.debug(`받은 파일 개수: ${files?.length || 0}`);
+
+            if (mainImages) {
+                this.logger.debug('메인 이미지가 존재합니다.');
+            } else {
+                this.logger.error('❌ 메인 이미지가 누락되었습니다.');
+            }
+            this.logger.debug(`결과 이미지 파일 수: ${resultImages.length}`);
+
+            this.logger.debug('🚀 프로젝트 생성 서비스 호출 시작');
             const createdProject = await this.projectTeamService.createProject(
-                parsedBody,
-                files, // 파일 배열 전달
+                {
+                    ...parsedBody,
+                    mainImages,
+                    resultImages,
+                },
+                files,
             );
+            this.logger.debug('🚀 프로젝트 생성 서비스 호출 완료');
+            this.logger.debug(`생성된 프로젝트 ID: ${createdProject.id}`);
 
-            return {
-                code: 201,
-                message: '프로젝트 공고가 생성되었습니다.',
-                data: createdProject,
-            };
+            this.logger.debug('✅ createProject 엔드포인트 성공적으로 완료');
+            return createdProject;
         } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] createProject 에서 예외 발생: ',
-                error,
-            );
+            this.logger.error('❌ [ERROR] createProject에서 예외 발생:', error);
             throw error;
         }
     }
@@ -103,16 +154,10 @@ export class ProjectTeamController {
         summary: '스터디와 프로젝트 공고 조회',
         description: '스터디와 프로젝트 공고를 한눈에 볼 수 있게 반환합니다.',
     })
-    async getAllTeams(): Promise<any> {
+    async getAllTeams(): Promise<ProjectTeamListResponse[]> {
         try {
             // 모든 팀 데이터 조회
-            const allTeams = await this.projectTeamService.getAllTeams();
-
-            return {
-                code: 200,
-                message: '스터디와 프로젝트 공고 조회에 성공했습니다.',
-                data: allTeams,
-            };
+            return await this.projectTeamService.getAllTeams();
         } catch (error) {
             this.logger.error('❌ [ERROR] getAllTeams 에서 예외 발생: ', error);
             throw error;
@@ -126,20 +171,16 @@ export class ProjectTeamController {
         summary: '특정 유저가 참여한 프로젝트 조회',
         description: '로그인된 유저가 참여한 프로젝트 목록을 조회합니다.',
     })
-    async getUserProjects(@Req() request: any): Promise<any> {
+    async getUserProjects(
+        @Req() request: any,
+    ): Promise<ProjectTeamListResponse[]> {
         const user = request.user;
 
         try {
             const userId = user.id;
             this.logger.debug(`🔍 [INFO] 요청한 유저 ID: ${userId}`);
-            const projectData =
-                await this.projectTeamService.getUserProjects(userId);
 
-            return {
-                code: 200,
-                message: '참여한 프로젝트 목록 조회에 성공했습니다.',
-                data: projectData,
-            };
+            return await this.projectTeamService.getUserProjects(userId);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getUserProjects 에서 예외 발생: ',
@@ -184,6 +225,16 @@ export class ProjectTeamController {
                                 teamRole: 'Backend Developer',
                             },
                         ],
+                        teamStacks: [
+                            {
+                                stack: 'React.js',
+                                isMain: true,
+                            },
+                            {
+                                stack: 'Node.js',
+                                isMain: false,
+                            },
+                        ],
                     }),
                 },
             },
@@ -195,7 +246,7 @@ export class ProjectTeamController {
         @Body('updateProjectTeamRequest') updateProjectTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[], // Multer 파일 배열
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
         const user = request.user;
         if (!user) throw new NotFoundUserException();
 
@@ -213,19 +264,12 @@ export class ProjectTeamController {
                 'project-teams',
             );
 
-            // 서비스 호출
-            const updatedData = await this.projectTeamService.updateProjectTeam(
+            return await this.projectTeamService.updateProjectTeam(
                 projectTeamId,
                 user.id,
                 updateProjectTeamDto,
                 fileUrls, // 업로드된 파일 URL 배열 전달
             );
-
-            return {
-                code: 200,
-                message: '프로젝트 공고가 수정되었습니다.',
-                data: updatedData,
-            };
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] updateProjectTeam 에서 예외 발생: ',
@@ -244,20 +288,14 @@ export class ProjectTeamController {
     async closeProject(
         @Param('projectTeamId') projectTeamId: number,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
         const user = request.user;
 
         try {
-            const closedData = await this.projectTeamService.closeProject(
+            return await this.projectTeamService.closeProject(
                 projectTeamId,
                 user.id,
             );
-
-            return {
-                code: 200,
-                message: '프로젝트 공고가 마감되었습니다.',
-                data: closedData,
-            };
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] closeProject 에서 예외 발생: ',
@@ -276,20 +314,14 @@ export class ProjectTeamController {
     async deleteProject(
         @Param('projectTeamId') projectTeamId: number,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
         const user = request.user;
 
         try {
-            const deletedData = await this.projectTeamService.deleteProject(
+            return await this.projectTeamService.deleteProject(
                 projectTeamId,
                 user.id,
             );
-
-            return {
-                code: 200,
-                message: '프로젝트 공고가 삭제되었습니다.',
-                data: deletedData,
-            };
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] deleteProject 에서 예외 발생: ',
@@ -306,16 +338,9 @@ export class ProjectTeamController {
     })
     async getProjectById(
         @Param('projectTeamId') projectTeamId: number,
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
         try {
-            const projectData =
-                await this.projectTeamService.getProjectById(projectTeamId);
-
-            return {
-                code: 200,
-                message: '프로젝트 상세 조회에 성공했습니다.',
-                data: projectData,
-            };
+            return await this.projectTeamService.getProjectById(projectTeamId);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getProjectById 에서 예외 발생: ',
@@ -334,18 +359,11 @@ export class ProjectTeamController {
     })
     async getProjectTeamMembersById(
         @Param('projectTeamId') projectTeamId: number,
-    ): Promise<any> {
+    ): Promise<ProjectMemberResponse[]> {
         try {
-            const projectData =
-                await this.projectTeamService.getProjectTeamMembersById(
-                    projectTeamId,
-                );
-
-            return {
-                code: 200,
-                message: '프로젝트의 모든 인원 조회에 성공했습니다.',
-                data: projectData,
-            };
+            return await this.projectTeamService.getProjectTeamMembersById(
+                projectTeamId,
+            );
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getProjectTeamMembersById 에서 예외 발생: ',
@@ -364,20 +382,14 @@ export class ProjectTeamController {
     async applyToProject(
         @Body() createProjectMemberRequest: CreateProjectMemberRequest,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectApplicantResponse> {
         const user = request.user;
         const userId = user.id;
 
-        const applyData = await this.projectTeamService.applyToProject(
+        return await this.projectTeamService.applyToProject(
             createProjectMemberRequest,
             userId,
         );
-
-        return {
-            code: 201,
-            message: '프로젝트 지원에 성공했습니다.',
-            data: applyData,
-        };
     }
 
     // 프로젝트 지원 취소 : isDeleted = true
@@ -390,19 +402,14 @@ export class ProjectTeamController {
     async cancelApplication(
         @Param('projectTeamId') projectTeamId: number,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectMemberResponse> {
         const user = request.user;
         const userId = user.id;
 
-        const cancelData = await this.projectTeamService.cancelApplication(
+        return await this.projectTeamService.cancelApplication(
             projectTeamId,
             userId,
         );
-        return {
-            code: 200,
-            message: '프로젝트 지원 취소에 성공했습니다.',
-            data: cancelData,
-        };
     }
 
     // 프로젝트 지원자 조회 : status: PENDING인 데이터 조회
@@ -415,17 +422,12 @@ export class ProjectTeamController {
     async getApplicants(
         @Param('projectTeamId') projectTeamId: number,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectApplicantResponse[]> {
         const userId = request.user.id;
-        const applyData = await this.projectTeamService.getApplicants(
+        return await this.projectTeamService.getApplicants(
             projectTeamId,
             userId,
         );
-        return {
-            code: 200,
-            message: '프로젝트 지원자 조회에 성공했습니다.',
-            data: applyData,
-        };
     }
 
     // 프로젝트 지원자 승인
@@ -435,23 +437,25 @@ export class ProjectTeamController {
         summary: '프로젝트 지원 수락',
         description: '프로젝트 지원을 수락합니다.',
     })
-    @ApiBody({ type: UpdateApplicantStatusRequest })
+    @ApiBody({
+        schema: {
+            example: {
+                projectTeamId: 1,
+                applicantId: 1,
+            },
+        },
+    })
     async acceptApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectApplicantResponse> {
         const userId = request.user.id;
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
-        const data = await this.projectTeamService.acceptApplicant(
+        return await this.projectTeamService.acceptApplicant(
             projectTeamId,
             userId,
             applicantId,
         );
-        return {
-            code: 200,
-            message: '프로젝트 지원을 수락했습니다.',
-            data: data,
-        };
     }
 
     // 프로젝트 지원자 거절
@@ -461,23 +465,25 @@ export class ProjectTeamController {
         summary: '프로젝트 지원 거절',
         description: '프로젝트 지원을 거절합니다.',
     })
-    @ApiBody({ type: UpdateApplicantStatusRequest })
+    @ApiBody({
+        schema: {
+            example: {
+                projectTeamId: 1,
+                applicantId: 1,
+            },
+        },
+    })
     async rejectApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
-    ): Promise<any> {
+    ): Promise<ProjectApplicantResponse> {
         const userId = request.user.id;
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
-        const data = await this.projectTeamService.rejectApplicant(
+        return await this.projectTeamService.rejectApplicant(
             projectTeamId,
             userId,
             applicantId,
         );
-        return {
-            code: 200,
-            message: '프로젝트 지원을 거절했습니다.',
-            data: data,
-        };
     }
 
     @Post('/members')
@@ -486,45 +492,59 @@ export class ProjectTeamController {
         summary: '프로젝트 팀원 추가',
         description: '프로젝트 팀에 멤버를 추가합니다.',
     })
+    @ApiBody({
+        type: AddProjectMemberRequest,
+        description: '팀원 추가 요청 데이터',
+        examples: {
+            example1: {
+                value: {
+                    projectTeamId: 1,
+                    memberId: 2,
+                    isLeader: false,
+                    teamRole: 'Backend',
+                    profileImage: 'https://.jpeg',
+                },
+            },
+        },
+    })
     async addMemberToProjectTeam(
         @Body() addProjectMemberRequest: AddProjectMemberRequest,
         @Req() request: any,
-    ): Promise<any> {
-        const userId = request.user.id; // 현재 요청을 보낸 사용자 ID
+    ): Promise<ProjectMemberResponse> {
         const { projectTeamId, memberId, isLeader, teamRole } =
             addProjectMemberRequest;
+        const requesterId = request.user.id;
+
+        await this.projectTeamService.ensureUserIsProjectMember(
+            projectTeamId,
+            requesterId,
+        );
 
         try {
-            // 사용자가 존재하는지 확인
-            const isUserExists =
-                await this.projectTeamService.isUserExists(memberId);
+            this.logger.debug('🔥 팀원 추가 시작');
 
-            if (!isUserExists) {
-                this.logger.warn(
-                    `사용자(ID: ${memberId})는 존재하지 않습니다.`,
-                );
-                throw new Error('추가하려는 사용자가 존재하지 않습니다.');
-            }
+            const newMember = await this.prisma.projectMember.create({
+                data: {
+                    projectTeam: { connect: { id: projectTeamId } },
+                    user: { connect: { id: memberId } },
+                    isLeader,
+                    teamRole,
+                    status: 'APPROVED',
+                    summary: '팀원으로 추가되었습니다',
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
+                },
+            });
 
-            // 멤버 추가
-            const data = await this.projectTeamService.addMemberToProjectTeam(
-                projectTeamId,
-                userId, // 요청한 사용자 (팀에 추가 권한이 있는지 확인)
-                memberId, // 추가하려는 멤버
-                isLeader, // 팀장 여부
-                teamRole, // 역할
-            );
-
-            return {
-                code: 201,
-                message: '프로젝트 팀원 추가에 성공했습니다.',
-                data: data,
-            };
+            return new ProjectMemberResponse(newMember);
         } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] addMemberToProjectTeam 에서 예외 발생: ',
-                error,
-            );
+            this.logger.error('❌ 팀원 추가 중 예외 발생:', error);
             throw error;
         }
     }
