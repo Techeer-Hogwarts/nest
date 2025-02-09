@@ -1,6 +1,6 @@
 import { SessionEntity } from '../../entities/session.entity';
 
-export class GetSessionResponse {
+export class CreateSessionResponse {
     readonly id: number;
     readonly userId: number;
     readonly thumbnail: string;
@@ -13,8 +13,6 @@ export class GetSessionResponse {
     readonly fileUrl: string;
     readonly likeCount: number;
     readonly viewCount: number;
-
-    readonly user: { name: string; nickname: string; profileImage: string };
 
     constructor(sessionEntity: SessionEntity) {
         this.id = sessionEntity.id;
@@ -29,11 +27,5 @@ export class GetSessionResponse {
         this.fileUrl = sessionEntity.fileUrl;
         this.likeCount = sessionEntity.likeCount;
         this.viewCount = sessionEntity.viewCount;
-
-        this.user = {
-            name: sessionEntity.user.name,
-            nickname: sessionEntity.user.nickname,
-            profileImage: sessionEntity.user.profileImage,
-        };
     }
 }

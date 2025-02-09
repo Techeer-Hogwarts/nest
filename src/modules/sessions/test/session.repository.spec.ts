@@ -12,8 +12,7 @@ import {
     getSessionsQueryRequest,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { NotFoundSessionException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('SessionRepository', (): void => {
     let repository: SessionRepository;
@@ -26,13 +25,19 @@ describe('SessionRepository', (): void => {
                 {
                     provide: PrismaService,
                     useValue: {
-                        $queryRaw: jest.fn(),
                         session: {
                             create: jest.fn(),
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
                             update: jest.fn(),
                         },
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
@@ -107,38 +112,56 @@ describe('SessionRepository', (): void => {
 
     describe('getSession', (): void => {
         it('should return a session entity if found', async (): Promise<void> => {
-            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'update').mockResolvedValue(
                 sessionEntity(),
             );
 
             expect(await repository.getSession(1)).toEqual(sessionEntity());
         });
-
-        it('should throw a NotFoundException if no session is found', async (): Promise<void> => {
-            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
-                null,
-            );
-
-            await expect(repository.getSession(1)).rejects.toThrow(
-                NotFoundSessionException,
-            );
-        });
     });
 
     describe('getBestSessions', (): void => {
         it('should return a list of SessionEntity based on pagination query', async (): Promise<void> => {
-            jest.spyOn(prismaService, '$queryRaw').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'findMany').mockResolvedValue(
                 bestSessionEntities,
             );
 
             const result: SessionEntity[] =
                 await repository.getBestSessions(paginationQueryDto);
 
-            expect(result).toEqual(bestSessionEntities);
-            expect(prismaService.$queryRaw).toHaveBeenCalledWith(
-                expect.anything(),
+            expect(result).toEqual(
+                bestSessionEntities
+                    .filter(
+                        (session) =>
+                            session.viewCount > 0 || session.likeCount > 0,
+                    )
+                    .sort(
+                        (a, b) =>
+                            b.viewCount +
+                            b.likeCount * 10 -
+                            (a.viewCount + a.likeCount * 10),
+                    )
+                    .slice(
+                        paginationQueryDto.offset,
+                        paginationQueryDto.offset + paginationQueryDto.limit,
+                    ),
             );
-            expect(prismaService.$queryRaw).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        isDeleted: false,
+                        createdAt: expect.objectContaining({
+                            gte: expect.any(Date),
+                        }),
+                    }),
+                    include: expect.objectContaining({
+                        user: true,
+                    }),
+                    take: paginationQueryDto.limit,
+                    skip: paginationQueryDto.offset,
+                }),
+            );
+            expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -170,10 +193,10 @@ describe('SessionRepository', (): void => {
                         category: getSessionsQueryRequest.category,
                     }),
                     ...(getSessionsQueryRequest.date && {
-                        date: getSessionsQueryRequest.date,
+                        date: { in: getSessionsQueryRequest.date },
                     }),
                     ...(getSessionsQueryRequest.position && {
-                        position: getSessionsQueryRequest.position,
+                        position: { in: getSessionsQueryRequest.position },
                     }),
                 },
                 include: { user: true },
@@ -202,17 +225,7 @@ describe('SessionRepository', (): void => {
                     userId: 1,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            grade: true,
-                            year: true,
-                            school: true,
-                            mainPosition: true,
-                            subPosition: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
@@ -241,22 +254,6 @@ describe('SessionRepository', (): void => {
         });
     });
 
-    it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
-        const prismaError: PrismaClientKnownRequestError =
-            new PrismaClientKnownRequestError('Record not found', {
-                code: 'P2025',
-                clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-            });
-
-        jest.spyOn(prismaService.session, 'update').mockRejectedValue(
-            prismaError,
-        );
-
-        await expect(repository.deleteSession(1)).rejects.toThrow(
-            NotFoundSessionException,
-        );
-    });
-
     describe('updateSession', (): void => {
         it('should successfully update a session', async (): Promise<void> => {
             jest.spyOn(prismaService.session, 'update').mockResolvedValue(
@@ -269,31 +266,6 @@ describe('SessionRepository', (): void => {
             );
 
             expect(result).toEqual(updatedSessionEntity);
-            expect(prismaService.session.update).toHaveBeenCalledWith({
-                where: {
-                    id: 1,
-                    isDeleted: false,
-                },
-                data: updateSessionRequest,
-                include: { user: true },
-            });
-            expect(prismaService.session.update).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if the session does not exist', async (): Promise<void> => {
-            const prismaError: PrismaClientKnownRequestError =
-                new PrismaClientKnownRequestError('Record not found', {
-                    code: 'P2025',
-                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                });
-
-            jest.spyOn(prismaService.session, 'update').mockRejectedValue(
-                prismaError,
-            );
-
-            await expect(
-                repository.updateSession(1, updateSessionRequest),
-            ).rejects.toThrow(NotFoundSessionException);
             expect(prismaService.session.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,

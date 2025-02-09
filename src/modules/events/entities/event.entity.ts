@@ -1,4 +1,4 @@
-import { Event, EventCategory, User } from '@prisma/client';
+import { Event, User } from '@prisma/client';
 
 export class EventEntity implements Event {
     id: number;
@@ -6,7 +6,7 @@ export class EventEntity implements Event {
     updatedAt: Date;
     isDeleted: boolean;
     userId: number;
-    category: EventCategory;
+    category: string;
     title: string;
     startDate: Date;
     endDate: Date;

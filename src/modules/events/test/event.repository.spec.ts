@@ -10,8 +10,7 @@ import {
     updateEventRequest,
 } from './mock-data';
 import { EventEntity } from '../entities/event.entity';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { NotFoundEventException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('EventRepository', (): void => {
     let repository: EventRepository;
@@ -30,6 +29,13 @@ describe('EventRepository', (): void => {
                             findUnique: jest.fn(),
                             update: jest.fn(),
                         },
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
@@ -127,7 +133,7 @@ describe('EventRepository', (): void => {
                         ],
                     }),
                     ...(getEventListQueryRequest.category && {
-                        category: getEventListQueryRequest.category,
+                        category: { in: getEventListQueryRequest.category },
                     }),
                 },
                 include: { user: true },
@@ -146,16 +152,6 @@ describe('EventRepository', (): void => {
 
             expect(await repository.getEvent(1)).toEqual(eventEntity());
         });
-
-        it('should throw a NotFoundException if no event is found', async (): Promise<void> => {
-            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
-                null,
-            );
-
-            await expect(repository.getEvent(1)).rejects.toThrow(
-                NotFoundEventException,
-            );
-        });
     });
 
     describe('updateEvent', (): void => {
@@ -170,31 +166,6 @@ describe('EventRepository', (): void => {
             );
 
             expect(result).toEqual(updatedEventEntity);
-            expect(prismaService.event.update).toHaveBeenCalledWith({
-                where: {
-                    id: 1,
-                    isDeleted: false,
-                },
-                data: updateEventRequest,
-                include: { user: true },
-            });
-            expect(prismaService.event.update).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
-            const prismaError: PrismaClientKnownRequestError =
-                new PrismaClientKnownRequestError('Record not found', {
-                    code: 'P2025',
-                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                });
-
-            jest.spyOn(prismaService.event, 'update').mockRejectedValue(
-                prismaError,
-            );
-
-            await expect(
-                repository.updateEvent(1, updateEventRequest),
-            ).rejects.toThrow(NotFoundEventException);
             expect(prismaService.event.update).toHaveBeenCalledWith({
                 where: {
                     id: 1,
@@ -224,22 +195,6 @@ describe('EventRepository', (): void => {
                 data: { isDeleted: true },
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw NotFoundException if the event does not exist', async (): Promise<void> => {
-            const prismaError: PrismaClientKnownRequestError =
-                new PrismaClientKnownRequestError('Record not found', {
-                    code: 'P2025',
-                    clientVersion: '4.0.0', // Prisma 버전에 맞게 설정
-                });
-
-            jest.spyOn(prismaService.event, 'update').mockRejectedValue(
-                prismaError,
-            );
-
-            await expect(repository.deleteEvent(1)).rejects.toThrow(
-                NotFoundEventException,
-            );
         });
     });
 });

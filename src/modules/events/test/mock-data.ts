@@ -1,5 +1,6 @@
 import { CreateEventRequest } from '../dto/request/create.event.request';
 import { GetEventListQueryRequest } from '../dto/request/get.event.query.request';
+import { CreateEventResponse } from '../dto/response/creare.event.response';
 import { GetEventResponse } from '../dto/response/get.event.response';
 import { EventEntity } from '../entities/event.entity';
 
@@ -53,6 +54,10 @@ export const eventEntity = (overrides?: Partial<EventEntity>): EventEntity => {
     };
 };
 
+export const createEventResponse: CreateEventResponse = new CreateEventResponse(
+    eventEntity(),
+);
+
 export const getEventResponse: GetEventResponse = new GetEventResponse(
     eventEntity(),
 );
@@ -68,7 +73,7 @@ export const getEventListResponse: GetEventResponse[] = eventEntities.map(
 
 export const getEventListQueryRequest: GetEventListQueryRequest = {
     keyword: 'Test',
-    category: 'TECHEER',
+    category: ['TECHEER'],
     offset: 0,
     limit: 10,
 };
