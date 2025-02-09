@@ -141,12 +141,18 @@ export class ProjectMemberResponse {
     userName: string;
     isLeader: boolean;
     teamRole: string;
+    profileImage: string;
 
-    constructor(member: ProjectMember & { user: { name: string } }) {
+    constructor(
+        member: ProjectMember & {
+            user: { name: string; profileImage: string };
+        },
+    ) {
         this.id = member.id;
         this.userName = member.user.name;
         this.isLeader = member.isLeader;
         this.teamRole = member.teamRole;
+        this.profileImage = member.user.profileImage;
     }
 }
 

@@ -26,13 +26,18 @@ import {
     ProjectTeamDetailResponse,
     ProjectTeamListResponse,
 } from './dto/response/get.projectTeam.response';
+import { PrismaService } from '../prisma/prisma.service';
+import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
 export class ProjectTeamController {
     private readonly logger = new Logger(ProjectTeamController.name);
 
-    constructor(private readonly projectTeamService: ProjectTeamService) {}
+    constructor(
+        private readonly projectTeamService: ProjectTeamService,
+        private readonly prisma: PrismaService,
+    ) {}
 
     @Post()
     @UseGuards(JwtAuthGuard)
@@ -218,6 +223,16 @@ export class ProjectTeamController {
                                 userId: 2,
                                 isLeader: false,
                                 teamRole: 'Backend Developer',
+                            },
+                        ],
+                        teamStacks: [
+                            {
+                                stack: 'React.js',
+                                isMain: true,
+                            },
+                            {
+                                stack: 'Node.js',
+                                isMain: false,
                             },
                         ],
                     }),
@@ -422,7 +437,14 @@ export class ProjectTeamController {
         summary: '프로젝트 지원 수락',
         description: '프로젝트 지원을 수락합니다.',
     })
-    @ApiBody({ type: UpdateApplicantStatusRequest })
+    @ApiBody({
+        schema: {
+            example: {
+                projectTeamId: 1,
+                applicantId: 1,
+            },
+        },
+    })
     async acceptApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
@@ -443,7 +465,14 @@ export class ProjectTeamController {
         summary: '프로젝트 지원 거절',
         description: '프로젝트 지원을 거절합니다.',
     })
-    @ApiBody({ type: UpdateApplicantStatusRequest })
+    @ApiBody({
+        schema: {
+            example: {
+                projectTeamId: 1,
+                applicantId: 1,
+            },
+        },
+    })
     async rejectApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
@@ -463,39 +492,56 @@ export class ProjectTeamController {
         summary: '프로젝트 팀원 추가',
         description: '프로젝트 팀에 멤버를 추가합니다.',
     })
+    @ApiBody({
+        type: AddProjectMemberRequest,
+        description: '팀원 추가 요청 데이터',
+        examples: {
+            example1: {
+                value: {
+                    projectTeamId: 1,
+                    memberId: 2,
+                    isLeader: false,
+                    teamRole: 'Backend',
+                    profileImage: 'https://.jpeg',
+                },
+            },
+        },
+    })
     async addMemberToProjectTeam(
-        projectTeamId: number,
-        requesterId: number,
-        memberId: number,
-        isLeader: boolean,
-        teamRole: string,
+        @Body() addProjectMemberRequest: AddProjectMemberRequest,
+        @Req() request: any,
     ): Promise<ProjectMemberResponse> {
+        const { projectTeamId, memberId, isLeader, teamRole } =
+            addProjectMemberRequest;
+        const requesterId = request.user.id;
+
+        await this.projectTeamService.ensureUserIsProjectMember(
+            projectTeamId,
+            requesterId,
+        );
+
         try {
             this.logger.debug('🔥 팀원 추가 시작');
-            const isRequesterExists =
-                await this.projectTeamService.isUserExists(requesterId);
-            if (!isRequesterExists) {
-                throw new Error(
-                    `요청자(ID: ${requesterId})가 존재하지 않습니다.`,
-                );
-            }
 
-            const newMember = await this..projectMember.create({
+            const newMember = await this.prisma.projectMember.create({
                 data: {
                     projectTeam: { connect: { id: projectTeamId } },
                     user: { connect: { id: memberId } },
                     isLeader,
                     teamRole,
                     status: 'APPROVED',
+                    summary: '팀원으로 추가되었습니다',
                 },
                 include: {
                     user: {
-                        select: { name: true },
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
                     },
                 },
             });
 
-            this.logger.debug(`✅ 팀원 추가 완료 (ID: ${memberId})`);
             return new ProjectMemberResponse(newMember);
         } catch (error) {
             this.logger.error('❌ 팀원 추가 중 예외 발생:', error);

@@ -5,6 +5,7 @@ import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.reque
 import { ProjectMemberRepository } from '../projectMembers/repository/projectMember.repository';
 import {
     AlreadyApprovedException,
+    DuplicateProjectNameException,
     NotFoundProjectException,
 } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
@@ -154,6 +155,15 @@ export class ProjectTeamService {
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
+
+            // 프로젝트 이름 중복 확인
+            const isNameExists =
+                await this.projectTeamRepository.findProjectByName(
+                    createProjectTeamRequest.name,
+                );
+            if (isNameExists) {
+                throw new DuplicateProjectNameException();
+            }
 
             // 요청 데이터 로깅
             this.logger.debug(
@@ -311,7 +321,9 @@ export class ProjectTeamService {
                     mainImages: true,
                     projectMember: {
                         where: { isDeleted: false },
-                        include: { user: true },
+                        include: {
+                            user: true,
+                        },
                     },
                     teamStacks: {
                         where: { isMain: true },
@@ -324,7 +336,17 @@ export class ProjectTeamService {
                 throw new Error('프로젝트를 찾을 수 없습니다.');
             }
 
-            return new ProjectTeamDetailResponse(project);
+            // Response DTO에서 status 포함하도록 수정
+            const response = new ProjectTeamDetailResponse({
+                ...project,
+                projectMember: project.projectMember.map((member) => ({
+                    ...member,
+                    name: member.user.name,
+                    status: member.status,
+                })),
+            });
+
+            return response;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getProjectById 에서 예외 발생: ',
@@ -424,7 +446,7 @@ export class ProjectTeamService {
             await this.ensureUserIsProjectMember(id, userId);
             const closedProject = await this.prisma.projectTeam.update({
                 where: { id },
-                data: { isRecruited: true },
+                data: { isRecruited: false },
                 include: {
                     resultImages: true,
                     mainImages: true,
@@ -563,18 +585,28 @@ export class ProjectTeamService {
     ): Promise<ProjectMemberResponse> {
         try {
             this.logger.debug('🔥 프로젝트 지원 취소 시작');
-            this.logger.debug(
-                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
-            );
+            const application = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId,
+                    userId,
+                    isDeleted: false,
+                    status: 'PENDING', // PENDING 상태인 지원만 취소 가능
+                },
+                include: { user: true },
+            });
 
-            await this.ensureUserIsProjectMember(projectTeamId, userId);
-            const data = await this.projectMemberRepository.cancelApplication(
-                projectTeamId,
-                userId,
-            );
+            if (!application) {
+                throw new Error('취소할 수 있는 지원 내역이 없습니다.');
+            }
+
+            const canceledApplication = await this.prisma.projectMember.update({
+                where: { id: application.id },
+                data: { isDeleted: true },
+                include: { user: true },
+            });
 
             this.logger.debug('✅ 프로젝트 지원 취소 완료');
-            return new ProjectMemberResponse(data);
+            return new ProjectMemberResponse(canceledApplication);
         } catch (error) {
             this.logger.error('❌ 프로젝트 지원 취소 중 예외 발생:', error);
             throw error;
