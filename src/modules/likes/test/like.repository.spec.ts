@@ -1,7 +1,7 @@
 import { LikeRepository } from '../repository/like.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContentCategory, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
 import { sessionEntity } from '../../sessions/test/mock-data';
 import {
@@ -10,10 +10,11 @@ import {
     likeEntities,
     likeEntity,
 } from './mock-data';
+import { ContentCategory } from '../../../global/category/content.category';
 
 describe('LikeRepository', (): void => {
     let repository: LikeRepository;
-    let prismaService: PrismaService;
+    let prisma: PrismaService;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
@@ -39,27 +40,19 @@ describe('LikeRepository', (): void => {
                             upsert: jest.fn(),
                             count: jest.fn(),
                             update: jest.fn(),
+                            create: jest.fn(),
                         },
                         $queryRaw: jest.fn(),
                         $transaction: jest.fn(async (callback) => {
-                            return await callback(prismaService);
+                            return await callback(prisma);
                         }),
-                    },
-                },
-                {
-                    provide: 'REDIS_CLIENT',
-                    useValue: {
-                        get: jest.fn(),
-                        set: jest.fn(),
-                        incr: jest.fn(),
-                        decr: jest.fn(),
                     },
                 },
             ],
         }).compile();
 
         repository = module.get<LikeRepository>(LikeRepository);
-        prismaService = module.get<PrismaService>(PrismaService);
+        prisma = module.get<PrismaService>(PrismaService);
     });
 
     it('should be defined', (): void => {
@@ -68,7 +61,7 @@ describe('LikeRepository', (): void => {
 
     describe('isContentExist', (): void => {
         it('해당 콘텐츠가 존재함', async (): Promise<void> => {
-            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+            jest.spyOn(prisma.session, 'findUnique').mockResolvedValue(
                 sessionEntity(),
             );
 
@@ -78,19 +71,17 @@ describe('LikeRepository', (): void => {
             );
 
             expect(result).toEqual(true);
-            expect(prismaService.session.findUnique).toHaveBeenCalledWith({
+            expect(prisma.session.findUnique).toHaveBeenCalledWith({
                 where: {
                     id: 1,
                     isDeleted: false,
                 },
             });
-            expect(prismaService.session.findUnique).toHaveBeenCalledTimes(1);
+            expect(prisma.session.findUnique).toHaveBeenCalledTimes(1);
         });
 
         it('해당 콘텐츠가 존재하지 않음', async (): Promise<void> => {
-            jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
-                null,
-            );
+            jest.spyOn(prisma.blog, 'findUnique').mockResolvedValue(null);
 
             const result: boolean = await repository.isContentExist(
                 1,
@@ -98,44 +89,40 @@ describe('LikeRepository', (): void => {
             );
 
             expect(result).toEqual(false);
-            expect(prismaService.blog.findUnique).toHaveBeenCalledWith({
+            expect(prisma.blog.findUnique).toHaveBeenCalledWith({
                 where: {
                     id: 1,
                     isDeleted: false,
                 },
             });
-            expect(prismaService.blog.findUnique).toHaveBeenCalledTimes(1);
+            expect(prisma.blog.findUnique).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('toggleLike', (): void => {
         it('좋아요 적용 시 트랜잭션이 올바르게 호출됨', async (): Promise<void> => {
             const request: CreateLikeRequest = createLikeRequest();
+            const likeStatus = request.likeStatus;
 
-            // `like` 모의 객체 생성
-            jest.spyOn(prismaService.like, 'upsert').mockResolvedValue(
-                likeEntity(),
-            );
+            jest.spyOn(prisma.like, 'upsert').mockResolvedValue(likeEntity());
+            jest.spyOn(prisma.resume, 'update').mockResolvedValue({} as any);
 
-            // 모든 키 포함하는 `contentTableMap` 모의 객체 생성
-            const mockContentTable = {
-                update: jest.fn().mockResolvedValue({ likeCount: 5 }),
-            };
-            const mockContentTableMap = {
-                RESUME: mockContentTable,
-                SESSION: mockContentTable,
-                BLOG: mockContentTable,
-            };
-
-            // `contentTableMap`에 접근할 수 있도록 설정
-            (repository as any).contentTableMap = mockContentTableMap;
-
-            const transactionSpy = jest.spyOn(prismaService, '$transaction');
+            const transactionSpy = jest
+                .spyOn(prisma, '$transaction')
+                .mockImplementation(async (cb: any) => {
+                    return cb(prisma);
+                });
 
             await repository.toggleLike(1, request);
 
+            // 트랜잭션이 1회 호출되었는지 확인
             expect(transactionSpy).toHaveBeenCalledTimes(1);
-            expect(prismaService.like.upsert).toHaveBeenCalledWith({
+
+            // 트랜잭션이 콜백을 받았는지 확인
+            expect(transactionSpy).toHaveBeenCalledWith(expect.any(Function));
+
+            // upsert 검증
+            expect(prisma.like.upsert).toHaveBeenCalledWith({
                 where: {
                     userId_contentId_category: {
                         userId: 1,
@@ -143,28 +130,47 @@ describe('LikeRepository', (): void => {
                         category: request.category,
                     },
                 },
-                update: { isDeleted: !request.likeStatus },
+                update: { isDeleted: !likeStatus },
                 create: {
                     userId: 1,
                     contentId: request.contentId,
                     category: request.category,
-                    isDeleted: !request.likeStatus,
+                    isDeleted: !likeStatus,
                 },
             });
 
-            // `update`가 올바르게 호출되었는지 확인
-            expect(mockContentTable.update).toHaveBeenCalledWith({
+            // resume.update가 likeStatus에 따라 증가/감소하는지 확인
+            expect(prisma.resume.update).toHaveBeenCalledWith({
                 where: { id: request.contentId },
-                data: { likeCount: { increment: request.likeStatus ? 1 : -1 } },
+                data: { likeCount: { increment: likeStatus ? 1 : -1 } },
             });
+        });
+
+        it('트랜잭션 내에서 에러 발생 시 롤백됨', async () => {
+            const request: CreateLikeRequest = createLikeRequest();
+            jest.spyOn(prisma.like, 'upsert').mockRejectedValue(
+                new Error('DB Error'),
+            );
+
+            const transactionSpy = jest
+                .spyOn(prisma, '$transaction')
+                .mockImplementation(async (cb: any) => {
+                    return cb(prisma);
+                });
+
+            await expect(repository.toggleLike(1, request)).rejects.toThrow(
+                'DB Error',
+            );
+
+            // 트랜잭션이 실행되었는지 확인
+            expect(transactionSpy).toHaveBeenCalledTimes(1);
+            expect(transactionSpy).toHaveBeenCalledWith(expect.any(Function));
         });
     });
 
     describe('getLikeList', (): void => {
         it('유저의 좋아요 목록을 가져옴', async (): Promise<void> => {
-            jest.spyOn(prismaService, '$queryRaw').mockResolvedValue(
-                likeEntities,
-            );
+            jest.spyOn(prisma, '$queryRaw').mockResolvedValue(likeEntities);
 
             const result = await repository.getLikeList(
                 1,
@@ -172,25 +178,25 @@ describe('LikeRepository', (): void => {
             );
 
             expect(result).toEqual(likeEntities);
-            expect(prismaService.$queryRaw).toHaveBeenCalledWith(
+            expect(prisma.$queryRaw).toHaveBeenCalledWith(
                 Prisma.sql`
             SELECT l.*, c.*
             FROM "Like" l
             LEFT JOIN ${Prisma.raw('"Resume"')} c ON l."contentId" = c."id"
             WHERE l."userId" = ${1}
-              AND l."category" = CAST(${'RESUME'} AS "ContentCategory")
+              AND l."category" = ${'RESUME'}
               AND l."isDeleted" = false
             ORDER BY l."createdAt" DESC
             LIMIT ${getLikeListRequest().limit} OFFSET ${getLikeListRequest().offset}
         `,
             );
-            expect(prismaService.$queryRaw).toHaveBeenCalledTimes(1);
+            expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getLikeCount', (): void => {
         it('DB에서 좋아요 개수를 조회함', async (): Promise<void> => {
-            jest.spyOn(prismaService.like, 'count').mockResolvedValue(10);
+            jest.spyOn(prisma.like, 'count').mockResolvedValue(10);
 
             const contentId = 1;
             const category = ContentCategory.SESSION;
@@ -198,14 +204,14 @@ describe('LikeRepository', (): void => {
             const result = await repository.getLikeCount(contentId, category);
 
             expect(result).toEqual(10);
-            expect(prismaService.like.count).toHaveBeenCalledWith({
+            expect(prisma.like.count).toHaveBeenCalledWith({
                 where: {
                     contentId,
                     category,
                     isDeleted: false,
                 },
             });
-            expect(prismaService.like.count).toHaveBeenCalledTimes(1);
+            expect(prisma.like.count).toHaveBeenCalledTimes(1);
         });
     });
 });

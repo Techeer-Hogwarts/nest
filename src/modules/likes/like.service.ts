@@ -9,7 +9,9 @@ import { BlogEntity } from '../blogs/entities/blog.entity';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { ResumeEntity } from '../resumes/entities/resume.entity';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
-import { GetLikeRequest } from './dto/request/get.like.request';
+import { BadRequestCategoryException } from '../../global/exception/custom.exception';
+// import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
+// import { StudyTeamEntity } from '../studyTeams/entities/studyTeam.entity';
 
 @Injectable()
 export class LikeService {
@@ -19,7 +21,7 @@ export class LikeService {
         userId: number,
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
-        const { contentId, category }: CreateLikeRequest = createLikeRequest;
+        const { contentId, category } = createLikeRequest;
         // 각 콘텐츠 유형 별 존재 여부 검증
         const isContentExist: boolean =
             await this.likeRepository.isContentExist(contentId, category);
@@ -32,7 +34,7 @@ export class LikeService {
     async getLikeList(
         userId: number,
         getLikeListRequest: GetLikeListRequest,
-    ): Promise<any> {
+    ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
         const contents = await this.likeRepository.getLikeList(
             userId,
             getLikeListRequest,
@@ -50,13 +52,18 @@ export class LikeService {
                 return contents.map(
                     (content: ResumeEntity) => new GetResumeResponse(content),
                 );
+            // case 'PROJECT':
+            //     return contents.map(
+            //         (content: ProjectTeamEntity) =>
+            //             new GetResumeResponse(content),
+            //     );
+            // case 'STUDY':
+            //     return contents.map(
+            //         (content: StudyTeamEntity) =>
+            //             new GetResumeResponse(content),
+            //     );
+            default:
+                throw new BadRequestCategoryException();
         }
-    }
-
-    async getLikeStatus(
-        userId: number,
-        getLikeRequest: GetLikeRequest,
-    ): Promise<boolean> {
-        return this.likeRepository.getLikeStatus(userId, getLikeRequest);
     }
 }

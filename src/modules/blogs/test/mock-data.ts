@@ -1,8 +1,8 @@
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
-import { BlogCategory } from '@prisma/client';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
+import { BlogCategory } from '../../../global/category/blog.category';
 
 export const blogEntity = (overrides?: Partial<BlogEntity>): BlogEntity => {
     return {

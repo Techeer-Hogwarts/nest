@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { ResumeEntity } from '../entities/resume.entity';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { Prisma } from '@prisma/client';
 

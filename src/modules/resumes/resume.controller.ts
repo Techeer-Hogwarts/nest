@@ -18,7 +18,7 @@ import { CreateResumeRequest } from './dto/request/create.resume.request';
 import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -33,14 +33,10 @@ export class ResumeController {
         summary: '이력서 목록 조회 및 검색',
         description: '이력서를 조회하고 검색합니다.',
     })
-    async getResumeList(@Query() query: GetResumesQueryRequest): Promise<any> {
-        const resumes: GetResumeResponse[] =
-            await this.resumeService.getResumeList(query);
-        return {
-            code: 200,
-            message: '이력서 목록을 조회했습니다.',
-            data: resumes,
-        };
+    async getResumeList(
+        @Query() query: GetResumesQueryRequest,
+    ): Promise<GetResumeResponse[]> {
+        return this.resumeService.getResumeList(query);
     }
 
     @Get('/best')
@@ -49,14 +45,10 @@ export class ResumeController {
         description:
             '(조회수 + 좋아요수*10)을 기준으로 인기 이력서를 조회합니다.',
     })
-    async getBestResumes(@Query() query: PaginationQueryDto): Promise<any> {
-        const resumes: GetResumeResponse[] =
-            await this.resumeService.getBestResumes(query);
-        return {
-            code: 200,
-            message: '인기 이력서를 조회했습니다.',
-            data: resumes,
-        };
+    async getBestResumes(
+        @Query() query: PaginationQueryDto,
+    ): Promise<GetResumeResponse[]> {
+        return this.resumeService.getBestResumes(query);
     }
 
     @UseGuards(JwtAuthGuard)
@@ -65,7 +57,8 @@ export class ResumeController {
     @ApiConsumes('multipart/form-data') // Swagger에서 파일 업로드 지원
     @ApiOperation({
         summary: '이력서 생성',
-        description: '파일과 폼 데이터를 사용해 이력서를 생성합니다.',
+        description:
+            '파일과 폼 데이터를 사용해 이력서를 생성합니다.\n\n카테고리는 RESUME, PORTFOLIO, ICT, OTHER 입니다.',
     })
     @ApiBody({
         schema: {
@@ -104,17 +97,9 @@ export class ResumeController {
         @Req() request: any,
         @UploadedFile() file: Express.Multer.File, // 파일 데이터
         @Body() body: CreateResumeRequest, // 요청 데이터
-    ): Promise<any> {
+    ): Promise<GetResumeResponse> {
         const user = request.user;
-
-        // 파일과 요청 데이터를 서비스로 전달
-        const resume = await this.resumeService.createResume(body, file, user);
-
-        return {
-            code: 201,
-            message: '이력서를 생성했습니다.',
-            data: resume,
-        };
+        return this.resumeService.createResume(body, file, user);
     }
 
     @Get(':resumeId')
@@ -124,14 +109,8 @@ export class ResumeController {
     })
     async getResume(
         @Param('resumeId', ParseIntPipe) resumeId: number,
-    ): Promise<any> {
-        const resume: GetResumeResponse =
-            await this.resumeService.getResume(resumeId);
-        return {
-            code: 200,
-            message: '이력서를 조회했습니다.',
-            data: resume,
-        };
+    ): Promise<GetResumeResponse> {
+        return this.resumeService.getResume(resumeId);
     }
 
     @Get('/user/:userId')
@@ -142,14 +121,8 @@ export class ResumeController {
     async getResumesByUser(
         @Param('userId') userId: number,
         @Query() query: PaginationQueryDto,
-    ): Promise<any> {
-        const resumes: GetResumeResponse[] =
-            await this.resumeService.getResumesByUser(userId, query);
-        return {
-            code: 200,
-            message: '이력서를 조회했습니다.',
-            data: resumes,
-        };
+    ): Promise<GetResumeResponse[]> {
+        return this.resumeService.getResumesByUser(userId, query);
     }
 
     @UseGuards(JwtAuthGuard)
@@ -161,13 +134,9 @@ export class ResumeController {
     async deleteResume(
         @Req() request: Request,
         @Param('resumeId', ParseIntPipe) resumeId: number,
-    ): Promise<any> {
+    ): Promise<void> {
         const user = request.user as any;
         await this.resumeService.deleteResume(user, resumeId);
-        return {
-            code: 200,
-            message: '이력서가 삭제되었습니다.',
-        };
     }
 
     @UseGuards(JwtAuthGuard)
@@ -180,12 +149,8 @@ export class ResumeController {
     async updateMainResume(
         @Req() request: any,
         @Param('resumeId', ParseIntPipe) resumeId: number,
-    ): Promise<any> {
+    ): Promise<void> {
         const user = request.user as any;
         await this.resumeService.updateMainResume(user, resumeId);
-        return {
-            code: 200,
-            message: '메인 이력서를 변경했습니다.',
-        };
     }
 }

@@ -84,11 +84,7 @@ describe('ResumeController', (): void => {
                 createResumeRequest,
             );
 
-            expect(result).toEqual({
-                code: 201,
-                message: '이력서를 생성했습니다.',
-                data: getResumeResponse,
-            });
+            expect(result).toEqual(getResumeResponse);
 
             expect(service.createResume).toHaveBeenCalledWith(
                 createResumeRequest,
@@ -107,11 +103,7 @@ describe('ResumeController', (): void => {
 
             const result = await controller.getBestResumes(paginationQueryDto);
 
-            expect(result).toEqual({
-                code: 200,
-                message: '인기 이력서를 조회했습니다.',
-                data: getBestResumeResponseList,
-            });
+            expect(result).toEqual(getBestResumeResponseList);
             expect(service.getBestResumes).toHaveBeenCalledWith(
                 paginationQueryDto,
             );
@@ -127,11 +119,7 @@ describe('ResumeController', (): void => {
 
             const result = await controller.getResume(1);
 
-            expect(result).toEqual({
-                code: 200,
-                message: '이력서를 조회했습니다.',
-                data: getResumeResponse,
-            });
+            expect(result).toEqual(getResumeResponse);
             expect(service.getResume).toHaveBeenCalledWith(1);
             expect(service.getResume).toHaveBeenCalledTimes(1);
         });
@@ -157,11 +145,7 @@ describe('ResumeController', (): void => {
                 getResumesQueryRequest,
             );
 
-            expect(result).toEqual({
-                code: 200,
-                message: '이력서 목록을 조회했습니다.',
-                data: getResumeResponseList,
-            });
+            expect(result).toEqual(getResumeResponseList);
             expect(service.getResumeList).toHaveBeenCalledWith(
                 getResumesQueryRequest,
             );
@@ -180,11 +164,7 @@ describe('ResumeController', (): void => {
                 paginationQueryDto,
             );
 
-            expect(result).toEqual({
-                code: 200,
-                message: '이력서를 조회했습니다.',
-                data: getResumeResponseList,
-            });
+            expect(result).toEqual(getResumeResponseList);
             expect(service.getResumesByUser).toHaveBeenCalledWith(
                 1,
                 paginationQueryDto,
@@ -197,12 +177,8 @@ describe('ResumeController', (): void => {
         it('should successfully delete a resume', async (): Promise<void> => {
             jest.spyOn(service, 'deleteResume').mockResolvedValue(undefined);
 
-            const result = await controller.deleteResume(request, 1);
+            await controller.deleteResume(request, 1);
 
-            expect(result).toEqual({
-                code: 200,
-                message: '이력서가 삭제되었습니다.',
-            });
             expect(service.deleteResume).toHaveBeenCalledWith(user, 1);
             expect(service.deleteResume).toHaveBeenCalledTimes(1);
         });

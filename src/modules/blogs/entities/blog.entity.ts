@@ -1,4 +1,4 @@
-import { Blog, BlogCategory, User } from '@prisma/client';
+import { Blog, User } from '@prisma/client';
 
 export class BlogEntity implements Blog {
     id: number;
@@ -12,7 +12,7 @@ export class BlogEntity implements Blog {
     author: string | null;
     authorImage: string | null;
     date: Date;
-    category: BlogCategory;
+    category: string;
     tags: string[];
     likeCount: number;
     viewCount: number;

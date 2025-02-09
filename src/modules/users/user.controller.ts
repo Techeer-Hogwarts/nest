@@ -231,7 +231,7 @@ export class UserController {
         @Body('createUserWithResumeRequest', ParseJsonAndValidatePipe)
         createUserWithResumeRequest: CreateUserWithResumeRequest,
         @UploadedFile() file: Express.Multer.File,
-    ): Promise<{ data: User }> {
+    ): Promise<User> {
         const {
             createUserRequest,
             createResumeRequest,
@@ -259,9 +259,7 @@ export class UserController {
             UserController.name,
         );
 
-        return {
-            data: userEntity,
-        };
+        return userEntity;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -277,7 +275,7 @@ export class UserController {
     async updateUser(
         @Body() updateUserRequest: UpdateUserWithExperienceRequest,
         @Req() request: Request,
-    ): Promise<{ data: User }> {
+    ): Promise<User> {
         const user = request.user as any;
         const { updateRequest, experienceRequest } = updateUserRequest;
         this.logger.debug('프로필 업데이트 요청 처리 중', {
@@ -295,9 +293,7 @@ export class UserController {
             UserController.name,
         );
 
-        return {
-            data: updatedUser,
-        };
+        return updatedUser;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -306,7 +302,7 @@ export class UserController {
         summary: '회원 탈퇴',
         description: '회원을 삭제합니다.',
     })
-    async deleteUser(@Req() request: Request): Promise<{ data: User }> {
+    async deleteUser(@Req() request: Request): Promise<User> {
         const user = request.user as any;
         this.logger.debug('회원 탈퇴 요청 처리 중', {
             user,
@@ -317,9 +313,7 @@ export class UserController {
             `회원 탈퇴 완료: ${deleteUser.id}`,
             UserController.name,
         );
-        return {
-            data: deleteUser,
-        };
+        return deleteUser;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -328,9 +322,7 @@ export class UserController {
         summary: '유저 조회',
         description: '토큰으로 유저 정보를 조회합니다.',
     })
-    async getUserInfo(
-        @Req() request: Request,
-    ): Promise<{ data: GetUserResponse }> {
+    async getUserInfo(@Req() request: Request): Promise<GetUserResponse> {
         const user = request.user as any;
         this.logger.debug('유저 정보 조회 요청 처리 중', {
             user,
@@ -343,9 +335,7 @@ export class UserController {
             `유저 정보 조회 완료: ${userInfo}`,
             UserController.name,
         );
-        return {
-            data: userInfo,
-        };
+        return userInfo;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -361,7 +351,7 @@ export class UserController {
     async requestPermission(
         @Req() request: Request,
         @Body() body: CreatePermissionRequest,
-    ): Promise<{ data: PermissionRequest }> {
+    ): Promise<PermissionRequest> {
         const user = request.user as any;
         this.logger.debug('권한 요청 요청 처리 중', {
             user,
@@ -373,9 +363,7 @@ export class UserController {
             body.roleId,
         );
         this.logger.debug('권한 요청 완료', UserController.name);
-        return {
-            data: result,
-        };
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -384,12 +372,10 @@ export class UserController {
         summary: '권한 요청 목록 조회',
         description: '관리자가 권한 요청 목록을 조회합니다.',
     })
-    async getPermissionRequests(): Promise<{ data: PermissionRequest[] }> {
+    async getPermissionRequests(): Promise<PermissionRequest[]> {
         const result = await this.userService.getPermissionRequests();
         this.logger.debug('권한 요청 목록 조회 완료', UserController.name);
-        return {
-            data: result,
-        };
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -405,7 +391,7 @@ export class UserController {
     async approvePermission(
         @Req() request: Request,
         @Body() body: ApprovePermissionRequest,
-    ): Promise<{ data: { updatedRequests: number } }> {
+    ): Promise<{ updatedRequests: number }> {
         const user = request.user as any; // 현재 로그인된 유저 (관리자)
         this.logger.debug('권한 승인 요청 처리 중', {
             user,
@@ -418,9 +404,7 @@ export class UserController {
             user.roleId,
         );
         this.logger.debug('권한 승인 완료', UserController.name);
-        return {
-            data: result,
-        };
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -433,15 +417,13 @@ export class UserController {
         description: '프로필 사진 업데이트에 필요한 정보',
         type: UpdateProfileImageRequest,
     })
-    async getProfileImage(@Req() request: Request): Promise<{ data: User }> {
+    async getProfileImage(@Req() request: Request): Promise<User> {
         this.logger.debug('프로필 사진 동기화 요청 처리 중', {
             UserController: UserController.name,
         });
         const result = await this.userService.updateProfileImage(request);
         this.logger.debug('프로필 사진 동기화 완료', UserController.name);
-        return {
-            data: result,
-        };
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -466,14 +448,12 @@ export class UserController {
     async updateNickname(
         @Req() request: Request,
         @Body('nickname') nickname: string,
-    ): Promise<{ data: User }> {
+    ): Promise<User> {
         const user = request.user;
         this.logger.debug('닉네임 업데이트 요청 처리 중', { nickname });
         const result = await this.userService.updateNickname(user, nickname);
         this.logger.debug('닉네임 업데이트 완료', UserController.name);
-        return {
-            data: result,
-        };
+        return result;
     }
 
     @Get('/profiles')
@@ -483,13 +463,11 @@ export class UserController {
     })
     async getAllProfiles(
         @Query() query: GetUserssQueryRequest,
-    ): Promise<{ data: GetUserResponse[] }> {
+    ): Promise<GetUserResponse[]> {
         this.logger.debug('모든 프로필 조회 요청 처리 중', { query });
         const profiles = await this.userService.getAllProfiles(query);
         this.logger.debug('모든 프로필 조회 완료', UserController.name);
-        return {
-            data: profiles,
-        };
+        return profiles;
     }
 
     @Get('/:userId')
@@ -499,12 +477,10 @@ export class UserController {
     })
     async getProfile(
         @Param('userId') userId: number,
-    ): Promise<{ data: GetUserResponse }> {
+    ): Promise<GetUserResponse> {
         this.logger.debug('특정 프로필 조회 요청 처리 중', { userId });
         const profile = await this.userService.getProfile(userId);
         this.logger.debug('특정 프로필 조회 완료', UserController.name);
-        return {
-            data: profile,
-        };
+        return profile;
     }
 }

@@ -1,6 +1,7 @@
 import { UserEntity } from '../../entities/user.entity';
 
 export class GetUserResponse {
+    readonly id: number;
     readonly profileImage: string;
     readonly name: string;
     readonly nickname: string;
@@ -14,6 +15,8 @@ export class GetUserResponse {
     readonly velogUrl: string;
     readonly tistoryUrl: string;
     readonly isLft: boolean;
+    readonly year: number;
+    readonly stack: string[];
 
     readonly projectTeams: { name: string; resultImages: string[] }[];
     readonly studyTeams: { name: string; resultImages: string[] }[];
@@ -27,6 +30,7 @@ export class GetUserResponse {
     }[];
 
     constructor(userEntity: UserEntity) {
+        this.id = userEntity.id;
         this.profileImage = userEntity.profileImage;
         this.name = userEntity.name;
         this.nickname = userEntity.nickname;
@@ -40,6 +44,8 @@ export class GetUserResponse {
         this.velogUrl = userEntity.velogUrl;
         this.tistoryUrl = userEntity.tistoryUrl;
         this.isLft = userEntity.isLft;
+        this.year = userEntity.year;
+        this.stack = userEntity.stack;
 
         // projectMembers와 studyMembers가 undefined일 경우 빈 배열로 초기화
         this.projectTeams = Array.isArray(userEntity.projectMembers)

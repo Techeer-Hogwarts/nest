@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 
@@ -10,45 +10,57 @@ import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 export class BlogRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    // async getAllUserBlogUrl(): Promise<{ id: number; blogUrl: string }[]> {
+    // async getAllUserBlogUrl(): Promise<
+    //     {
+    //         id: number;
+    //         velogUrl: string;
+    //         mediumUrl: string;
+    //         tistoryUrl: string;
+    //     }[]
+    // > {
     //     return this.prisma.user.findMany({
     //         where: {
     //             isDeleted: false,
     //         },
     //         select: {
     //             id: true,
-    //             blogUrl: true,
+    //             velogUrl: true,
+    //             mediumUrl: true,
+    //             tistoryUrl: true,
     //         },
     //     });
     // }
 
-    // async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {
-    //     return this.prisma.user
-    //         .findMany({
-    //             where: {
-    //                 isDeleted: false,
-    //             },
-    //             select: {
-    //                 id: true,
-    //                 tistoryUrl: true,
-    //                 mediumUrl: true,
-    //                 velogUrl: true,
-    //             },
-    //         })
-    //         .then((users) =>
-    //             users.map((user) => ({
-    //                 id: user.id,
-    //                 blogUrls: [
-    //                     user.tistoryUrl,
-    //                     user.mediumUrl,
-    //                     user.velogUrl,
-    //                 ].filter((url) => url !== null),
-    //             })),
-    //         );
-    // }
+    async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {
+        return this.prisma.user
+            .findMany({
+                where: {
+                    isDeleted: false,
+                },
+                select: {
+                    id: true,
+                    tistoryUrl: true,
+                    mediumUrl: true,
+                    velogUrl: true,
+                },
+            })
+            .then((users) =>
+                users.map((user) => ({
+                    id: user.id,
+                    blogUrls: [
+                        user.tistoryUrl,
+                        user.mediumUrl,
+                        user.velogUrl,
+                    ].filter((url) => url !== null && url.trim() !== ''),
+                })),
+            );
+    }
 
     async createBlog(crawlingBlogDto: CrawlingBlogResponse): Promise<void> {
         const { userId, posts, category } = crawlingBlogDto;
+        Logger.debug(
+            `블로그 데이터 저장 시작: ${JSON.stringify(crawlingBlogDto)}`,
+        );
         const blogPromises = posts.map(async (post) => {
             try {
                 await this.prisma.blog.create({

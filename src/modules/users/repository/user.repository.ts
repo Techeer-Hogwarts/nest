@@ -99,7 +99,10 @@ export class UserRepository {
 
     async findOneByEmail(email: string): Promise<UserEntity | null> {
         return this.prisma.user.findUnique({
-            where: { email },
+            where: {
+                email,
+                isDeleted: false,
+            },
         });
     }
 
@@ -184,7 +187,10 @@ export class UserRepository {
 
     async updatePassword(email: string, newPassword: string): Promise<void> {
         await this.prisma.user.update({
-            where: { email },
+            where: {
+                email,
+                isDeleted: false,
+            },
             data: { password: newPassword },
         });
     }

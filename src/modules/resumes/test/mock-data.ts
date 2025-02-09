@@ -2,7 +2,7 @@ import { ResumeEntity } from '../entities/resume.entity';
 import { CreateResumeRequest } from '../dto/request/create.resume.request';
 import { GetResumeResponse } from '../dto/response/get.resume.response';
 import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { UpdateResumeRequest } from '../dto/request/update.resume.request';
 import { Request } from 'express';
 

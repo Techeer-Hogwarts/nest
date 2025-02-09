@@ -1,13 +1,12 @@
 import { BlogPostDto } from '../request/post.blog.request';
-import { BlogCategory } from '@prisma/client';
 
 export class CrawlingBlogResponse {
     readonly userId: number;
     readonly blogUrl: string;
     posts: BlogPostDto[];
-    readonly category: BlogCategory;
+    readonly category: string;
 
-    constructor(result: any, category: BlogCategory) {
+    constructor(result: any, category: string) {
         this.userId = result.userId;
         this.blogUrl = result.blogURL;
         this.posts = (result.posts || []).map((post) => new BlogPostDto(post));

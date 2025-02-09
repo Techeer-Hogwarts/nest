@@ -1,7 +1,7 @@
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { BlogCategory } from '@prisma/client';
+import { BlogCategory } from '../../../../global/category/blog.category';
 
 export class GetBlogsQueryRequest {
     @ApiPropertyOptional({
@@ -18,8 +18,8 @@ export class GetBlogsQueryRequest {
         example: 'TECHEER',
     })
     @IsOptional()
-    @IsEnum(BlogCategory)
-    readonly category: BlogCategory;
+    @IsEnum(BlogCategory, { message: '존재하지 않는 카테고리입니다.' })
+    readonly category: string;
 
     @ApiPropertyOptional({
         description: '오프셋',

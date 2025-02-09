@@ -15,6 +15,8 @@ export const mockStudyTeam1: StudyTeam = {
     rule: 'Follow best practices',
     recruitNum: 5,
     recruitExplain: 'Looking for dedicated learners',
+    likeCount: 0,
+    viewCount: 0,
 };
 
 export const mockUpdateStudyTeamRequest = {

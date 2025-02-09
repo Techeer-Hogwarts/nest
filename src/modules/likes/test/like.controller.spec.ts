@@ -5,12 +5,12 @@ import {
     createLikeRequest,
     getLikeListRequest,
     getLikeResponse,
-    likeEntities,
     request,
 } from './mock-data';
 import { NotFoundException } from '@nestjs/common';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
+import { getResumeResponseList } from '../../resumes/test/mock-data';
 
 describe('LikeController', (): void => {
     let controller: LikeController;
@@ -54,11 +54,7 @@ describe('LikeController', (): void => {
                 createLikeRequest(),
             );
 
-            expect(result).toEqual({
-                code: 201,
-                message: '좋아요 설정을 변경했습니다.',
-                data: getLikeResponse,
-            });
+            expect(result).toEqual(getLikeResponse);
             expect(service.toggleLike).toHaveBeenCalledWith(
                 1,
                 createLikeRequest(),
@@ -85,18 +81,16 @@ describe('LikeController', (): void => {
 
     describe('getLikeList', (): void => {
         it('유저 별 좋아요 목록을 조회함', async (): Promise<void> => {
-            jest.spyOn(service, 'getLikeList').mockResolvedValue(likeEntities);
+            jest.spyOn(service, 'getLikeList').mockResolvedValue(
+                getResumeResponseList,
+            );
 
             const result = await controller.getLikeList(
-                1,
+                request,
                 getLikeListRequest(),
             );
 
-            expect(result).toEqual({
-                code: 200,
-                message: '좋아요 목록을 조회했습니다.',
-                data: likeEntities,
-            });
+            expect(result).toEqual(getResumeResponseList);
             expect(service.getLikeList).toHaveBeenCalledWith(
                 1,
                 getLikeListRequest(),
