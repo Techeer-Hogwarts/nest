@@ -7,10 +7,14 @@ import { Prisma } from '@prisma/client';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
 import { NotFoundSessionException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 @Injectable()
 export class SessionRepository {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async findById(sessionId: number): Promise<SessionEntity | null> {
         return this.prisma.session.findUnique({
@@ -38,35 +42,60 @@ export class SessionRepository {
     }
 
     async getSession(sessionId: number): Promise<SessionEntity> {
-        const session: SessionEntity = await this.prisma.session.findUnique({
-            where: {
-                id: sessionId,
-                isDeleted: false,
-            },
-            include: {
-                user: true,
-            },
-        });
-
-        if (!session) {
+        try {
+            const session: SessionEntity = await this.prisma.session.update({
+                where: {
+                    id: sessionId,
+                    isDeleted: false,
+                },
+                data: {
+                    viewCount: { increment: 1 }, // 조회수 증가
+                },
+                include: {
+                    user: true,
+                },
+            });
+            return session;
+        } catch (error) {
+            this.logger.error(
+                `세션 게시물을 찾을 수 없음`,
+                SessionRepository.name,
+            );
             throw new NotFoundSessionException();
         }
-        return session;
     }
 
     async getBestSessions(query: PaginationQueryDto): Promise<SessionEntity[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         // 2주 계산
-        const twoWeeksAgo = new Date();
+        const twoWeeksAgo: Date = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
         // SQL 쿼리
-        return this.prisma.$queryRaw<SessionEntity[]>(Prisma.sql`
-            SELECT * FROM "Session"
-            WHERE "isDeleted" = false
-                AND "createdAt" >= ${twoWeeksAgo}
-            ORDER BY ("viewCount" + "likeCount" * 10) DESC
-            LIMIT ${limit} OFFSET ${offset}
-        `);
+        const sessions = await this.prisma.session.findMany({
+            where: {
+                isDeleted: false,
+                createdAt: {
+                    gte: twoWeeksAgo,
+                },
+            },
+            include: {
+                user: true,
+            },
+            take: limit,
+            skip: offset,
+        });
+
+        const sortedSessions = sessions
+            .filter((session) => session.viewCount > 0 || session.likeCount > 0) // 조회수 또는 좋아요가 0보다 큰 세션만 필터링
+            .sort(
+                (a, b) =>
+                    b.viewCount +
+                    b.likeCount * 10 -
+                    (a.viewCount + a.likeCount * 10),
+            )
+            .slice(offset, limit);
+
+        return sortedSessions;
     }
 
     async getSessionList(
@@ -94,8 +123,9 @@ export class SessionRepository {
                     ],
                 }),
                 ...(category && { category }),
-                ...(date && { date }),
-                ...(position && { position }),
+                ...(date && date.length > 0 && { date: { in: date } }),
+                ...(position &&
+                    position.length > 0 && { position: { in: position } }),
             },
             include: {
                 user: true,
@@ -116,17 +146,7 @@ export class SessionRepository {
                 userId: userId,
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        grade: true,
-                        year: true,
-                        school: true,
-                        mainPosition: true,
-                        subPosition: true,
-                    },
-                },
+                user: true,
             },
             skip: offset,
             take: limit,
@@ -147,6 +167,10 @@ export class SessionRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
+                this.logger.error(
+                    `세션 게시물을 찾을 수 없음`,
+                    SessionRepository.name,
+                );
                 throw new NotFoundSessionException();
             }
             throw error;
@@ -193,6 +217,10 @@ export class SessionRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
+                this.logger.error(
+                    `세션 게시물을 찾을 수 없음`,
+                    SessionRepository.name,
+                );
                 throw new NotFoundSessionException();
             }
             throw error;
