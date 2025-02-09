@@ -18,11 +18,16 @@ import { GetEventResponse } from './dto/response/get.event.response';
 import { GetEventListQueryRequest } from './dto/request/get.event.query.request';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
+import { CreateEventResponse } from './dto/response/creare.event.response';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('events')
 @Controller('/events')
 export class EventController {
-    constructor(private readonly eventService: EventService) {}
+    constructor(
+        private readonly eventService: EventService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     @UseGuards(JwtAuthGuard)
     @Post()
@@ -33,17 +38,19 @@ export class EventController {
     async createEvent(
         @Body() createEventRequest: CreateEventRequest,
         @Req() request: Request,
-    ): Promise<any> {
+    ): Promise<CreateEventResponse> {
         const user = request.user as any;
-        const event: GetEventResponse = await this.eventService.createEvent(
+        this.logger.debug(
+            `이벤트 생성 요청 처리 중 - userId: ${user.id}`,
+            EventController.name,
+        );
+
+        const result = await this.eventService.createEvent(
             user.id,
             createEventRequest,
         );
-        return {
-            code: 201,
-            message: '이벤트를 생성했습니다.',
-            data: event,
-        };
+        this.logger.debug(`이벤트 생성 요청 처리 완료`, EventController.name);
+        return result;
     }
 
     @Get()
@@ -51,14 +58,20 @@ export class EventController {
         summary: '이벤트 목록 조회 및 검색',
         description: '이벤트 목록을 조회하고 검색합니다.',
     })
-    async getEventList(@Query() query: GetEventListQueryRequest): Promise<any> {
-        const events: GetEventResponse[] =
-            await this.eventService.getEventList(query);
-        return {
-            code: 200,
-            message: '이벤트 목록을 조회했습니다.',
-            data: events,
-        };
+    async getEventList(
+        @Query() query: GetEventListQueryRequest,
+    ): Promise<GetEventResponse[]> {
+        this.logger.debug(
+            `이벤트 목록 조회 및 검색 처리 중 - query: ${JSON.stringify(query)}`,
+            EventController.name,
+        );
+
+        const result = await this.eventService.getEventList(query);
+        this.logger.debug(
+            `이벤트 목록 조회 및 검색 처리 완료`,
+            EventController.name,
+        );
+        return result;
     }
 
     @Get(':eventId')
@@ -68,14 +81,18 @@ export class EventController {
     })
     async getEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
-    ): Promise<any> {
-        const event: GetEventResponse =
-            await this.eventService.getEvent(eventId);
-        return {
-            code: 200,
-            message: '이벤트를 조회했습니다.',
-            data: event,
-        };
+    ): Promise<GetEventResponse> {
+        this.logger.debug(
+            `단일 이벤트 조회 처리 중 - eventId: ${eventId}`,
+            EventController.name,
+        );
+
+        const result = await this.eventService.getEvent(eventId);
+        this.logger.debug(
+            `단일 이벤트 목록 조회 처리 완료`,
+            EventController.name,
+        );
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -88,18 +105,20 @@ export class EventController {
         @Param('eventId', ParseIntPipe) eventId: number,
         @Body() updateEventRequest: CreateEventRequest,
         @Req() request: Request,
-    ): Promise<any> {
+    ): Promise<CreateEventResponse> {
         const user = request.user as any;
-        const event: GetEventResponse = await this.eventService.updateEvent(
+        this.logger.debug(
+            `이벤트 수정 요청 처리 중 - userId: ${user.id}, eventId: ${eventId}`,
+            EventController.name,
+        );
+
+        const result = await this.eventService.updateEvent(
             user.id,
             eventId,
             updateEventRequest,
         );
-        return {
-            code: 200,
-            message: '이벤트가 수정되었습니다.',
-            data: event,
-        };
+        this.logger.debug(`이벤트 수정 요청 처리 완료`, EventController.name);
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -111,12 +130,14 @@ export class EventController {
     async deleteEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
         @Req() request: Request,
-    ): Promise<any> {
+    ): Promise<void> {
         const user = request.user as any;
+        this.logger.debug(
+            `이벤트 삭제 요청 처리 중 - userId: ${user.id}, eventId: ${eventId}`,
+            EventController.name,
+        );
+
         await this.eventService.deleteEvent(user.id, eventId);
-        return {
-            code: 200,
-            message: '이벤트가 삭제되었습니다.',
-        };
+        this.logger.debug(`이벤트 삭제 요청 처리 완료`, EventController.name);
     }
 }
