@@ -4,6 +4,7 @@ import { GetSessionResponse } from '../dto/response/get.session.response';
 import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../../global/patination/pagination.query.dto';
+import { CreateSessionResponse } from '../dto/response/create.session.response';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
@@ -35,8 +36,8 @@ export const sessionEntity = (
         createdAt: fixedDate,
         updatedAt: fixedDate,
         isDeleted: false,
-        likeCount: 0,
-        viewCount: 0,
+        likeCount: 1,
+        viewCount: 1,
         user: {
             id: 1,
             createdAt: new Date('2024-09-24T08:51:54.000Z'),
@@ -64,6 +65,9 @@ export const sessionEntity = (
         ...overrides,
     };
 };
+
+export const createSessionResponse: CreateSessionResponse =
+    new CreateSessionResponse(sessionEntity());
 
 export const getSessionResponse: GetSessionResponse = new GetSessionResponse(
     sessionEntity(),
@@ -115,8 +119,8 @@ export const getBestSessionsResponse: GetSessionResponse[] =
 export const getSessionsQueryRequest: GetSessionsQueryRequest = {
     keyword: 'Test',
     category: 'BOOTCAMP',
-    date: 'SUMMER_2024',
-    position: 'BACKEND',
+    date: ['SUMMER_2024'],
+    position: ['BACKEND'],
     offset: 0,
     limit: 10,
 };
