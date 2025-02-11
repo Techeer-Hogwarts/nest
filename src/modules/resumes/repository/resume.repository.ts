@@ -6,16 +6,22 @@ import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { Prisma } from '@prisma/client';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { GetResumeResponse } from '../dto/response/get.resume.response';
 
 @Injectable()
 export class ResumeRepository {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async createResume(
         createResumeRequest: CreateResumeRequest,
         userId: number,
         prisma: Prisma.TransactionClient = this.prisma, // 기본값으로 this.prisma 사용
     ): Promise<ResumeEntity> {
+        this.logger.debug(`이력서 생성 처리 중`, ResumeRepository.name);
         return prisma.resume.create({
             data: {
                 ...createResumeRequest,
@@ -38,30 +44,25 @@ export class ResumeRepository {
         });
     }
 
-    async getResume(resumeId: number): Promise<any> {
-        const resume: any = await this.prisma.resume.findUnique({
+    async getResume(resumeId: number): Promise<ResumeEntity> {
+        this.logger.debug(
+            `이력서 상세 조회 - resumeId: ${resumeId}`,
+            ResumeRepository.name,
+        );
+        const resume = await this.prisma.resume.findUnique({
             where: {
                 id: resumeId,
                 isDeleted: false,
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        grade: true,
-                        year: true,
-                        school: true,
-                        mainPosition: true,
-                        subPosition: true,
-                    },
-                },
+                user: true,
             },
         });
-
         if (!resume) {
+            this.logger.error(`이력서를 찾을 수 없음`, ResumeRepository.name);
             throw new NotFoundResumeException();
         }
+        this.logger.debug(`이력서 상세 조회 성공`, ResumeRepository.name);
         return resume;
     }
 
@@ -71,66 +72,51 @@ export class ResumeRepository {
         const twoWeeksAgo: Date = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
         // SQL 쿼리
-        return this.prisma.$queryRaw<ResumeEntity[]>(Prisma.sql`
+        const resumes = await this.prisma.$queryRaw<ResumeEntity[]>(Prisma.sql`
             SELECT * FROM "Resume"
             WHERE "isDeleted" = false
                 AND "createdAt" >= ${twoWeeksAgo}
             ORDER BY ("viewCount" + "likeCount" * 10) DESC
             LIMIT ${limit} OFFSET ${offset}
         `);
+        this.logger.debug(
+            `${resumes.length}개의 인기 이력서 목록 조회 성공`,
+            ResumeRepository.name,
+        );
+        return resumes;
     }
 
     async getResumeList(
         query: GetResumesQueryRequest,
-    ): Promise<ResumeEntity[]> {
+    ): Promise<GetResumeResponse[]> {
         const {
             position,
             year,
             offset = 0,
             limit = 10,
         }: GetResumesQueryRequest = query;
-
-        return this.prisma.resume.findMany({
+        this.logger.debug(
+            `이력서 엔티티 목록 조회 - position: ${position}, year: ${year}, offset: ${offset}, limit: ${limit}`,
+            ResumeRepository.name,
+        );
+        const resumes = await this.prisma.resume.findMany({
             where: {
                 isDeleted: false,
-                ...(position && {
-                    user: { mainPosition: position },
+                ...(position?.length && {
+                    user: { mainPosition: { in: position } },
                 }),
-                ...(year && {
-                    user: { year: year },
+                ...(year?.length && {
+                    user: { year: { in: year } },
                 }),
-            },
-            include: {
-                user: true,
-            },
-            skip: offset,
-            take: limit,
-            orderBy: {
-                createdAt: Prisma.SortOrder.desc,
-            },
-        });
-    }
-
-    async getResumesByUser(
-        userId: number,
-        query: PaginationQueryDto,
-    ): Promise<any> {
-        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
-        return this.prisma.resume.findMany({
-            where: {
-                isDeleted: false,
-                userId: userId,
             },
             include: {
                 user: {
                     select: {
                         id: true,
                         name: true,
-                        grade: true,
-                        year: true,
-                        school: true,
-                        mainPosition: true,
-                        subPosition: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
                     },
                 },
             },
@@ -140,10 +126,57 @@ export class ResumeRepository {
                 createdAt: Prisma.SortOrder.desc,
             },
         });
+        this.logger.debug(
+            `${resumes.length}개의 인기 이력서 목록 조회 성공`,
+            ResumeRepository.name,
+        );
+        return resumes.map((resume) => new GetResumeResponse(resume));
+    }
+
+    async getResumesByUser(
+        userId: number,
+        query: PaginationQueryDto,
+    ): Promise<GetResumeResponse[]> {
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
+        this.logger.debug(
+            `유저 별 이력서 조회 - userId: ${userId}, offset: ${offset}, limit: ${limit}`,
+            ResumeRepository.name,
+        );
+        const resumes = await this.prisma.resume.findMany({
+            where: {
+                isDeleted: false,
+                userId: userId,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                },
+            },
+            skip: offset,
+            take: limit,
+            orderBy: {
+                createdAt: Prisma.SortOrder.desc,
+            },
+        });
+        this.logger.debug(
+            `${resumes.length}개의 유저 별 이력서 목록 조회 성공`,
+            ResumeRepository.name,
+        );
+        return resumes.map((resume) => new GetResumeResponse(resume));
     }
 
     async deleteResume(resumeId: number): Promise<void> {
         try {
+            this.logger.debug(
+                `이력서 삭제 - resumeId: ${resumeId}`,
+                ResumeRepository.name,
+            );
             await this.prisma.resume.update({
                 where: {
                     id: resumeId,
@@ -156,6 +189,10 @@ export class ResumeRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
+                this.logger.error(
+                    `이력서를 찾을 수 없음`,
+                    ResumeRepository.name,
+                );
                 throw new NotFoundResumeException();
             }
             throw error;
@@ -163,6 +200,10 @@ export class ResumeRepository {
     }
 
     async getResumeTitle(resumeId: number): Promise<string> {
+        this.logger.debug(
+            `이력서 제목 조회 - resumeId: ${resumeId}`,
+            ResumeRepository.name,
+        );
         const resume = await this.prisma.resume.findUnique({
             where: {
                 id: resumeId, // 특정 resumeId로 조회
@@ -171,10 +212,11 @@ export class ResumeRepository {
                 title: true, // 제목만 조회
             },
         });
-
         if (!resume) {
+            this.logger.error(`이력서를 찾을 수 없음`, ResumeRepository.name);
             throw new NotFoundResumeException();
         }
+        this.logger.debug(`이력서 제목 조회 성공`, ResumeRepository.name);
         return resume.title;
     }
 
@@ -182,11 +224,16 @@ export class ResumeRepository {
         resumeId: number,
         data: { isMain: boolean },
     ): Promise<void> {
+        this.logger.debug(
+            `이력서 업데이트 처리 중 - resumeId: ${resumeId}, isMain: ${data.isMain}`,
+            ResumeRepository.name,
+        );
         await this.prisma.resume.update({
             where: {
                 id: resumeId,
             },
             data,
         });
+        this.logger.debug(`이력서 업데이트 처리 성공`, ResumeRepository.name);
     }
 }

@@ -5,7 +5,6 @@ import {
     getResumeResponseList,
     getResumeResponse,
     getResumesQueryRequest,
-    getBestResumeResponseList,
     request,
     user,
 } from './mock-data';
@@ -14,6 +13,7 @@ import { ResumeService } from '../resume.service';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ResumeController', (): void => {
     let controller: ResumeController;
@@ -43,6 +43,13 @@ describe('ResumeController', (): void => {
                     useValue: {},
                 },
                 JwtService,
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
@@ -98,12 +105,12 @@ describe('ResumeController', (): void => {
     describe('getBestResumes', (): void => {
         it('should return a list of best resumes based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestResumes').mockResolvedValue(
-                getBestResumeResponseList,
+                getResumeResponseList,
             );
 
             const result = await controller.getBestResumes(paginationQueryDto);
 
-            expect(result).toEqual(getBestResumeResponseList);
+            expect(result).toEqual(getResumeResponseList);
             expect(service.getBestResumes).toHaveBeenCalledWith(
                 paginationQueryDto,
             );

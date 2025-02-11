@@ -1,14 +1,57 @@
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+    Controller,
+    Get,
+    Param,
+    ParseIntPipe,
+    Post,
+    Query,
+    Req,
+    UseGuards,
+} from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('blogs')
 @Controller('/blogs')
 export class BlogController {
-    constructor(private readonly blogService: BlogService) {}
+    constructor(
+        private readonly blogService: BlogService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
+
+    @UseGuards(JwtAuthGuard)
+    @Post()
+    @ApiOperation({
+        summary: '외부 블로그 게시',
+        description: '외부 블로그를 게시합니다.',
+    })
+    @ApiQuery({
+        name: 'url',
+        type: String,
+        description: '게시할 외부 블로그의 URL',
+        required: true,
+    })
+    async createSharedBlog(
+        @Req() request: Request,
+        @Query('url') url: string,
+    ): Promise<void> {
+        const user = request.user as any;
+        this.logger.debug(
+            `외부 블로그 게시 요청 처리 중 - userId: ${user.id}, url: ${url}`,
+            BlogController.name,
+        );
+        await this.blogService.createSharedBlog(user.id, url);
+        this.logger.debug(
+            `외부 블로그 게시 요청 처리 완료`,
+            BlogController.name,
+        );
+    }
 
     @Get('/best')
     @ApiOperation({
@@ -18,7 +61,13 @@ export class BlogController {
     async getBestBlogs(
         @Query() query: PaginationQueryDto,
     ): Promise<GetBlogResponse[]> {
-        return this.blogService.getBestBlogs(query);
+        this.logger.debug(
+            `인기글 목록 조회 처리 중 - query: ${JSON.stringify(query)}`,
+            BlogController.name,
+        );
+        const result = await this.blogService.getBestBlogs(query);
+        this.logger.debug(`인기글 목록 조회 처리 완료`, BlogController.name);
+        return result;
     }
 
     @Get()
@@ -29,7 +78,16 @@ export class BlogController {
     async getBlogList(
         @Query() query: GetBlogsQueryRequest,
     ): Promise<GetBlogResponse[]> {
-        return this.blogService.getBlogList(query);
+        this.logger.debug(
+            `블로그 목록 조회 및 검색 처리 중 - query: ${JSON.stringify(query)}`,
+            BlogController.name,
+        );
+        const result = await this.blogService.getBlogList(query);
+        this.logger.debug(
+            `블로그 목록 조회 및 검색 처리 완료`,
+            BlogController.name,
+        );
+        return result;
     }
 
     @Get('/user/:userId')
@@ -41,6 +99,15 @@ export class BlogController {
         @Param('userId', ParseIntPipe) userId: number,
         @Query() query: PaginationQueryDto,
     ): Promise<GetBlogResponse[]> {
-        return this.blogService.getBlogsByUser(userId, query);
+        this.logger.debug(
+            `유저 별 블로그 게시물 목록 조회 처리 중 - userId: ${userId}, query: ${JSON.stringify(query)}`,
+            BlogController.name,
+        );
+        const result = await this.blogService.getBlogsByUser(userId, query);
+        this.logger.debug(
+            `유저 별 블로그 게시물 목록 조회 처리 완료`,
+            BlogController.name,
+        );
+        return result;
     }
 }

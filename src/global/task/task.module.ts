@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { RabbitMQModule } from '../rabbitmq/rabbitmq.module';
 import { RedisModule } from '../redis/redis.module';
@@ -9,9 +9,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 @Global()
 @Module({
     imports: [
-        RabbitMQModule,
+        forwardRef(() => RabbitMQModule),
+        forwardRef(() => BlogModule),
         RedisModule,
-        BlogModule,
         ScheduleModule.forRoot(),
     ],
     controllers: [TaskController],

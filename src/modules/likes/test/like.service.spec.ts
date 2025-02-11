@@ -18,6 +18,7 @@ import {
 } from '../../resumes/test/mock-data';
 import { blogEntities, getBlogResponseList } from '../../blogs/test/mock-data';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('LikeService', (): void => {
     let service: LikeService;
@@ -33,6 +34,13 @@ describe('LikeService', (): void => {
                         isContentExist: jest.fn(),
                         toggleLike: jest.fn(),
                         getLikeList: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
             ],
