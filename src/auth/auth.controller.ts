@@ -12,7 +12,7 @@ export class AuthController {
     constructor(
         private readonly authService: AuthService,
         private readonly logger: CustomWinstonLogger,
-    ) {}
+    ) { }
 
     @Post('/email')
     @ApiOperation({
@@ -107,14 +107,14 @@ export class AuthController {
             path: '/',
             maxAge: 15 * 60 * 1000, // 15분
             secure: true,
-            sameSite: 'none', // 교차 출처 허용
+            domain: '.techeerzip.cloud',
         });
         response.cookie('refresh_token', refreshToken, {
             httpOnly: true,
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
             secure: true,
-            sameSite: 'none', // 교차 출처 허용
+            domain: '.techeerzip.cloud',
         });
         this.logger.debug('로그인이 완료되었습니다.', AuthController.name);
         return {
