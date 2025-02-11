@@ -1,7 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { SessionCategory, SessionDate, SessionPosition } from '@prisma/client';
-import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class GetSessionsQueryRequest {
     @ApiPropertyOptional({ description: '검색할 키워드' })
@@ -11,18 +10,22 @@ export class GetSessionsQueryRequest {
 
     @ApiPropertyOptional({ description: '카테고리' })
     @IsOptional()
-    @IsEnum(SessionCategory)
-    readonly category?: SessionCategory;
+    @IsString()
+    readonly category?: string;
 
     @ApiPropertyOptional({ description: '기간' })
     @IsOptional()
-    @IsEnum(SessionDate)
-    readonly date?: SessionDate;
+    @IsArray()
+    @IsString({ each: true })
+    @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    readonly date?: string[];
 
     @ApiPropertyOptional({ description: '포지션' })
     @IsOptional()
-    @IsEnum(SessionPosition)
-    readonly position?: SessionPosition;
+    @IsArray()
+    @IsString({ each: true })
+    @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    readonly position?: string[];
 
     @ApiPropertyOptional({
         description: '오프셋',

@@ -266,7 +266,7 @@ model Event {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   isDeleted Boolean       @default(false)
-  category  EventCategory
+  category  String        @db.VarChar(50)
   title     String        @db.VarChar(200)
   startDate DateTime
   endDate   DateTime?
@@ -288,9 +288,9 @@ model Session {
   videoUrl  String          @db.VarChar(200)
   fileUrl   String          @db.VarChar(200)
   presenter String          @db.VarChar(50)
-  date      SessionDate
-  category  SessionCategory
-  position  SessionPosition
+  date      String          @db.VarChar(50)
+  category  String          @db.VarChar(50)
+  position  String          @db.VarChar(50)
   user      User            @relation("UserSessions", fields: [userId], references: [id])
 }
 
@@ -308,36 +308,3 @@ enum StackCategory {
   ETC
 }
 
-enum EventCategory {
-  TECHEER
-  CONFERENCE
-  JOBINFO
-}
-
-enum SessionDate {
-  FIRST
-  SECOND
-  THIRD
-  FOURTH
-  FIFTH
-  SIXTH
-  SEVENTH
-  EIGHTH
-  SUMMER_2022
-  WINTER_2022
-  SUMMER_2023
-  WINTER_2023
-  SUMMER_2024
-}
-
-enum SessionCategory {
-  BOOTCAMP
-  PARTNERS
-}
-
-enum SessionPosition {
-  FRONTEND
-  BACKEND
-  DEVOPS
-  OTHERS
-}

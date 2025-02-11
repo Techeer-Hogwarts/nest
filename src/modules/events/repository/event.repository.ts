@@ -5,10 +5,14 @@ import { EventEntity } from '../entities/event.entity';
 import { GetEventListQueryRequest } from '../dto/request/get.event.query.request';
 import { Prisma } from '@prisma/client';
 import { NotFoundEventException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 @Injectable()
 export class EventRepository {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async findById(eventId: number): Promise<EventEntity | null> {
         return this.prisma.event.findUnique({
@@ -57,7 +61,8 @@ export class EventRepository {
                         },
                     ],
                 }),
-                ...(category && { category }),
+                ...(category &&
+                    category.length > 0 && { category: { in: category } }),
             },
             include: {
                 user: true,
@@ -68,20 +73,21 @@ export class EventRepository {
     }
 
     async getEvent(eventId: number): Promise<EventEntity> {
-        const event: EventEntity = await this.prisma.event.findUnique({
-            where: {
-                id: eventId,
-                isDeleted: false,
-            },
-            include: {
-                user: true,
-            },
-        });
-
-        if (!event) {
+        try {
+            const event: EventEntity = await this.prisma.event.findUnique({
+                where: {
+                    id: eventId,
+                    isDeleted: false,
+                },
+                include: {
+                    user: true,
+                },
+            });
+            return event;
+        } catch (error) {
+            this.logger.error(`이벤트를 찾을 수 없음`, EventRepository.name);
             throw new NotFoundEventException();
         }
-        return event;
     }
 
     async updateEvent(
@@ -113,6 +119,10 @@ export class EventRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
+                this.logger.error(
+                    `이벤트를 찾을 수 없음`,
+                    EventRepository.name,
+                );
                 throw new NotFoundEventException();
             }
             throw error;
@@ -133,6 +143,10 @@ export class EventRepository {
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
+                this.logger.error(
+                    `이벤트를 찾을 수 없음`,
+                    EventRepository.name,
+                );
                 throw new NotFoundEventException();
             }
             throw error;

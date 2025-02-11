@@ -3,6 +3,7 @@ import { EventService } from '../event.service';
 import { EventRepository } from '../repository/event.repository';
 import {
     createEventRequest,
+    createEventResponse,
     eventEntities,
     eventEntity,
     getEventListQueryRequest,
@@ -13,6 +14,8 @@ import {
 import { GetEventResponse } from '../dto/response/get.event.response';
 import { EventEntity } from '../entities/event.entity';
 import { ForbiddenAccessException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { CreateEventResponse } from '../dto/response/creare.event.response';
 
 describe('EventService', (): void => {
     let service: EventService;
@@ -33,6 +36,13 @@ describe('EventService', (): void => {
                         deleteEvent: jest.fn(),
                     },
                 },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
@@ -50,12 +60,12 @@ describe('EventService', (): void => {
                 eventEntity(),
             );
 
-            const result: GetEventResponse = await service.createEvent(
+            const result: CreateEventResponse = await service.createEvent(
                 1,
                 createEventRequest,
             );
 
-            expect(result).toEqual(getEventResponse);
+            expect(result).toEqual(createEventResponse);
             expect(repository.createEvent).toHaveBeenCalledWith(
                 1,
                 createEventRequest,
@@ -113,14 +123,14 @@ describe('EventService', (): void => {
                 updatedEventEntity,
             );
 
-            const result: GetEventResponse = await service.updateEvent(
+            const result: CreateEventResponse = await service.updateEvent(
                 1,
                 100,
                 updateEventRequest,
             );
 
-            expect(result).toEqual(new GetEventResponse(updatedEventEntity));
-            expect(result).toBeInstanceOf(GetEventResponse);
+            expect(result).toEqual(new CreateEventResponse(updatedEventEntity));
+            expect(result).toBeInstanceOf(CreateEventResponse);
 
             expect(repository.updateEvent).toHaveBeenCalledWith(
                 100,

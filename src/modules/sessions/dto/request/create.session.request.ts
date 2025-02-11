@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SessionCategory, SessionDate, SessionPosition } from '@prisma/client';
-import { IsEnum, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateSessionRequest {
     @IsString()
@@ -24,26 +23,26 @@ export class CreateSessionRequest {
     })
     readonly presenter: string;
 
-    @IsEnum(SessionDate)
+    @IsString()
     @ApiProperty({
         example: 'SUMMER_2024',
         description: '세션 기간',
     })
-    readonly date: SessionDate;
+    readonly date: string;
 
-    @IsEnum(SessionPosition)
+    @IsString()
     @ApiProperty({
         example: 'BACKEND',
         description: '포지션',
     })
-    readonly position: SessionPosition;
+    readonly position: string;
 
-    @IsEnum(SessionCategory)
+    @IsString()
     @ApiProperty({
         example: 'BOOTCAMP',
         description: '카테고리',
     })
-    readonly category: SessionCategory;
+    readonly category: string;
 
     @IsString()
     @ApiProperty({
