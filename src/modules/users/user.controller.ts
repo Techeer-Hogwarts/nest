@@ -256,7 +256,7 @@ export class UserController {
 
         this.logger.debug(
             `회원가입 완료: ${userEntity.id}`,
-            UserController.name,
+            JSON.stringify(UserController.name),
         );
 
         return userEntity;
@@ -278,11 +278,14 @@ export class UserController {
     ): Promise<User> {
         const user = request.user as any;
         const { updateRequest, experienceRequest } = updateUserRequest;
-        this.logger.debug('프로필 업데이트 요청 처리 중', {
-            updateRequest,
-            experienceRequest,
-            UserController: UserController.name,
-        });
+        this.logger.debug(
+            '프로필 업데이트 요청 처리 중',
+            JSON.stringify({
+                updateRequest,
+                experienceRequest,
+                UserController: UserController.name,
+            }),
+        );
         const updatedUser = await this.userService.updateUserProfile(
             user.id,
             updateRequest,
@@ -290,7 +293,7 @@ export class UserController {
         );
         this.logger.debug(
             `프로필 업데이트 완료: ${updatedUser.id}`,
-            UserController.name,
+            JSON.stringify(UserController.name),
         );
 
         return updatedUser;
@@ -304,14 +307,17 @@ export class UserController {
     })
     async deleteUser(@Req() request: Request): Promise<User> {
         const user = request.user as any;
-        this.logger.debug('회원 탈퇴 요청 처리 중', {
-            user,
-            UserController: UserController.name,
-        });
+        this.logger.debug(
+            '회원 탈퇴 요청 처리 중',
+            JSON.stringify({
+                user,
+                UserController: UserController.name,
+            }),
+        );
         const deleteUser = await this.userService.deleteUser(user.id);
         this.logger.debug(
             `회원 탈퇴 완료: ${deleteUser.id}`,
-            UserController.name,
+            JSON.stringify(UserController.name),
         );
         return deleteUser;
     }
@@ -324,16 +330,19 @@ export class UserController {
     })
     async getUserInfo(@Req() request: Request): Promise<GetUserResponse> {
         const user = request.user as any;
-        this.logger.debug('유저 정보 조회 요청 처리 중', {
-            user,
-            UserController: UserController.name,
-        });
+        this.logger.debug(
+            '유저 정보 조회 요청 처리 중',
+            JSON.stringify({
+                user,
+                UserController: UserController.name,
+            }),
+        );
         const userInfo: GetUserResponse = await this.userService.getUserInfo(
             user.id,
         );
         this.logger.debug(
             `유저 정보 조회 완료: ${userInfo}`,
-            UserController.name,
+            JSON.stringify(UserController.name),
         );
         return userInfo;
     }
@@ -353,16 +362,22 @@ export class UserController {
         @Body() body: CreatePermissionRequest,
     ): Promise<PermissionRequest> {
         const user = request.user as any;
-        this.logger.debug('권한 요청 요청 처리 중', {
-            user,
-            body,
-            UserController: UserController.name,
-        });
+        this.logger.debug(
+            '권한 요청 요청 처리 중',
+            JSON.stringify({
+                user,
+                body,
+                UserController: UserController.name,
+            }),
+        );
         const result = await this.userService.requestPermission(
             user.id,
             body.roleId,
         );
-        this.logger.debug('권한 요청 완료', UserController.name);
+        this.logger.debug(
+            '권한 요청 완료',
+            JSON.stringify(UserController.name),
+        );
         return result;
     }
 
@@ -374,7 +389,10 @@ export class UserController {
     })
     async getPermissionRequests(): Promise<PermissionRequest[]> {
         const result = await this.userService.getPermissionRequests();
-        this.logger.debug('권한 요청 목록 조회 완료', UserController.name);
+        this.logger.debug(
+            '권한 요청 목록 조회 완료',
+            JSON.stringify(UserController.name),
+        );
         return result;
     }
 
@@ -403,7 +421,10 @@ export class UserController {
             body.newRoleId,
             user.roleId,
         );
-        this.logger.debug('권한 승인 완료', UserController.name);
+        this.logger.debug(
+            '권한 승인 완료',
+            JSON.stringify(UserController.name),
+        );
         return result;
     }
 
@@ -418,11 +439,17 @@ export class UserController {
         type: UpdateProfileImageRequest,
     })
     async getProfileImage(@Req() request: Request): Promise<User> {
-        this.logger.debug('프로필 사진 동기화 요청 처리 중', {
-            UserController: UserController.name,
-        });
+        this.logger.debug(
+            '프로필 사진 동기화 요청 처리 중',
+            JSON.stringify({
+                UserController: UserController.name,
+            }),
+        );
         const result = await this.userService.updateProfileImage(request);
-        this.logger.debug('프로필 사진 동기화 완료', UserController.name);
+        this.logger.debug(
+            '프로필 사진 동기화 완료',
+            JSON.stringify(UserController.name),
+        );
         return result;
     }
 
@@ -450,9 +477,15 @@ export class UserController {
         @Body('nickname') nickname: string,
     ): Promise<User> {
         const user = request.user;
-        this.logger.debug('닉네임 업데이트 요청 처리 중', { nickname });
+        this.logger.debug(
+            '닉네임 업데이트 요청 처리 중',
+            JSON.stringify({ nickname }),
+        );
         const result = await this.userService.updateNickname(user, nickname);
-        this.logger.debug('닉네임 업데이트 완료', UserController.name);
+        this.logger.debug(
+            '닉네임 업데이트 완료',
+            JSON.stringify(UserController.name),
+        );
         return result;
     }
 
@@ -464,9 +497,11 @@ export class UserController {
     async getAllProfiles(
         @Query() query: GetUserssQueryRequest,
     ): Promise<GetUserResponse[]> {
-        this.logger.debug('모든 프로필 조회 요청 처리 중', { query });
         const profiles = await this.userService.getAllProfiles(query);
-        this.logger.debug('모든 프로필 조회 완료', UserController.name);
+        this.logger.debug(
+            '모든 프로필 조회 완료',
+            JSON.stringify(UserController.name),
+        );
         return profiles;
     }
 
@@ -478,9 +513,15 @@ export class UserController {
     async getProfile(
         @Param('userId') userId: number,
     ): Promise<GetUserResponse> {
-        this.logger.debug('특정 프로필 조회 요청 처리 중', { userId });
+        this.logger.debug(
+            '특정 프로필 조회 요청 처리 중',
+            JSON.stringify({ userId }),
+        );
         const profile = await this.userService.getProfile(userId);
-        this.logger.debug('특정 프로필 조회 완료', UserController.name);
+        this.logger.debug(
+            '특정 프로필 조회 완료',
+            JSON.stringify(UserController.name),
+        );
         return profile;
     }
 }

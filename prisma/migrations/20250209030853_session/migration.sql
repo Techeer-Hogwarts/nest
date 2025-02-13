@@ -18,3 +18,13 @@ ALTER COLUMN "date" SET DATA TYPE VARCHAR(50),
 ALTER COLUMN "position" SET NOT NULL,
 ALTER COLUMN "position" DROP DEFAULT,
 ALTER COLUMN "position" SET DATA TYPE VARCHAR(50);
+ALTER TABLE "Stack"
+ADD CONSTRAINT "Stack_name_unique" UNIQUE ("name");
+
+BEGIN;
+CREATE TYPE "StackCategory_new" AS ENUM ('BACKEND', 'FRONTEND', 'DATABASE', 'DEVOPS', 'OTHER');
+ALTER TABLE "Stack" ALTER COLUMN "category" TYPE "StackCategory_new" USING ("category"::text::"StackCategory_new");
+ALTER TYPE "StackCategory" RENAME TO "StackCategory_old";
+ALTER TYPE "StackCategory_new" RENAME TO "StackCategory";
+DROP TYPE "StackCategory_old";
+COMMIT;
