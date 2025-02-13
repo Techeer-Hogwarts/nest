@@ -57,7 +57,10 @@ export class UserService {
             });
             throw new NotVerifiedEmailException();
         }
-        this.logger.debug('이메일 인증 완료', { context: UserService.name });
+        this.logger.debug(
+            '이메일 인증 완료',
+            JSON.stringify({ context: UserService.name }),
+        );
 
         // 슬랙 프로필 이미지 가져오기
         const { image, isTecheer } = await this.getProfileImageUrl(
@@ -76,7 +79,10 @@ export class UserService {
             10,
         );
 
-        this.logger.debug('비밀번호 해싱 완료', { context: UserService.name });
+        this.logger.debug(
+            '비밀번호 해싱 완료',
+            JSON.stringify({ context: UserService.name }),
+        );
 
         // 메서드를 제외한 데이터만 포함한 DTO 생성
         const newUserDTO = {
@@ -93,9 +99,12 @@ export class UserService {
                 prisma,
             );
 
-            this.logger.debug('사용자 생성 완료', {
-                context: UserService.name,
-            });
+            this.logger.debug(
+                '사용자 생성 완료',
+                JSON.stringify({
+                    context: UserService.name,
+                }),
+            );
 
             // 경력 생성
             if (createUserExperienceRequest) {
@@ -106,7 +115,10 @@ export class UserService {
                 );
             }
 
-            this.logger.debug('경력 생성 완료', { context: UserService.name });
+            this.logger.debug(
+                '경력 생성 완료',
+                JSON.stringify({ context: UserService.name }),
+            );
 
             // 이력서 저장
             if (file && resumeData) {
@@ -130,11 +142,17 @@ export class UserService {
             //     );
             // }
 
-            this.logger.debug('블로그 크롤링 요청 완료', {
-                context: UserService.name,
-            });
+            this.logger.debug(
+                '블로그 크롤링 요청 완료',
+                JSON.stringify({
+                    context: UserService.name,
+                }),
+            );
 
-            this.logger.debug('회원가입 완료', { context: UserService.name });
+            this.logger.debug(
+                '회원가입 완료',
+                JSON.stringify({ context: UserService.name }),
+            );
             // 트랜잭션 내에서 생성된 사용자 반환
             return newUser;
         });
@@ -150,11 +168,17 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
 
         if (!user) {
-            this.logger.debug('사용자 없음', { context: UserService.name });
+            this.logger.debug(
+                '사용자 없음',
+                JSON.stringify({ context: UserService.name }),
+            );
             throw new NotFoundUserException();
         }
 
-        this.logger.debug('사용자 존재', { context: UserService.name });
+        this.logger.debug(
+            '사용자 존재',
+            JSON.stringify({ context: UserService.name }),
+        );
 
         return this.prisma.$transaction(async (prisma) => {
             let updatedUser: User | null = null;
@@ -166,9 +190,12 @@ export class UserService {
                     updateUserRequest,
                     prisma,
                 );
-                this.logger.debug('사용자 정보 업데이트 완료', {
-                    context: UserService.name,
-                });
+                this.logger.debug(
+                    '사용자 정보 업데이트 완료',
+                    JSON.stringify({
+                        context: UserService.name,
+                    }),
+                );
             }
 
             if (updateUserExperienceRequest) {
@@ -178,9 +205,12 @@ export class UserService {
                         updateUserExperienceRequest,
                         prisma,
                     );
-                this.logger.debug('경력 정보 업데이트 완료', {
-                    context: UserService.name,
-                });
+                this.logger.debug(
+                    '경력 정보 업데이트 완료',
+                    JSON.stringify({
+                        context: UserService.name,
+                    }),
+                );
             }
 
             return {
@@ -195,11 +225,17 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
 
         if (!user) {
-            this.logger.debug('사용자 없음', { context: UserService.name });
+            this.logger.debug(
+                '사용자 없음',
+                JSON.stringify({ context: UserService.name }),
+            );
             throw new NotFoundUserException();
         }
 
-        this.logger.debug('사용자 존재', { context: UserService.name });
+        this.logger.debug(
+            '사용자 존재',
+            JSON.stringify({ context: UserService.name }),
+        );
         return this.userRepository.softDeleteUser(userId);
     }
 
@@ -207,11 +243,17 @@ export class UserService {
         const userInfo = await this.userRepository.findById(userId);
 
         if (!userInfo) {
-            this.logger.debug('사용자 없음', { context: UserService.name });
+            this.logger.debug(
+                '사용자 없음',
+                JSON.stringify({ context: UserService.name }),
+            );
             throw new NotFoundUserException();
         }
 
-        this.logger.debug('사용자 정보 조회', { context: UserService.name });
+        this.logger.debug(
+            '사용자 정보 조회',
+            JSON.stringify({ context: UserService.name }),
+        );
 
         return new GetUserResponse(userInfo);
     }
@@ -220,12 +262,18 @@ export class UserService {
         userId: number,
         roleId: number,
     ): Promise<PermissionRequest> {
-        this.logger.debug('권한 요청', { context: UserService.name });
+        this.logger.debug(
+            '권한 요청',
+            JSON.stringify({ context: UserService.name }),
+        );
         return this.userRepository.createPermissionRequest(userId, roleId);
     }
 
     async getPermissionRequests(): Promise<PermissionRequest[]> {
-        this.logger.debug('권한 요청 조회', { context: UserService.name });
+        this.logger.debug(
+            '권한 요청 조회',
+            JSON.stringify({ context: UserService.name }),
+        );
         return this.userRepository.getAllPermissionRequests();
     }
 
@@ -235,15 +283,21 @@ export class UserService {
         currentUserRoleId: number,
     ): Promise<{ updatedRequests: number }> {
         if (currentUserRoleId !== 1) {
-            this.logger.error('권한 없음', { context: UserService.name });
+            this.logger.error(
+                '권한 없음',
+                JSON.stringify({ context: UserService.name }),
+            );
             throw new UnauthorizedAdminException();
         }
 
         // 사용자 역할 업데이트
         await this.userRepository.updateUserRole(userId, newRoleId);
-        this.logger.debug('사용자 역할 업데이트 완료', {
-            context: UserService.name,
-        });
+        this.logger.debug(
+            '사용자 역할 업데이트 완료',
+            JSON.stringify({
+                context: UserService.name,
+            }),
+        );
 
         // 권한 요청 상태 업데이트 및 결과 반환
         const result = await this.userRepository.updatePermissionRequestStatus(
@@ -251,9 +305,12 @@ export class UserService {
             'APPROVED',
         );
 
-        this.logger.debug('권한 요청 상태 업데이트 완료', {
-            context: UserService.name,
-        });
+        this.logger.debug(
+            '권한 요청 상태 업데이트 완료',
+            JSON.stringify({
+                context: UserService.name,
+            }),
+        );
 
         return { updatedRequests: result.count };
     }
@@ -271,24 +328,33 @@ export class UserService {
                 secret,
             }),
         );
-        this.logger.debug('프로필 이미지 가져오기', {
-            context: UserService.name,
-        });
+        this.logger.debug(
+            '프로필 이미지 가져오기',
+            JSON.stringify({
+                context: UserService.name,
+            }),
+        );
 
         if (response.status === 200 && response.data) {
             const { image, isTecheer } = response.data;
-            this.logger.debug('프로필 이미지 가져오기 성공', {
-                context: UserService.name,
-            });
+            this.logger.debug(
+                '프로필 이미지 가져오기 성공',
+                JSON.stringify({
+                    context: UserService.name,
+                }),
+            );
             return {
                 image,
                 isTecheer,
             };
         }
 
-        this.logger.error('프로필 이미지 가져오기 실패', {
-            context: UserService.name,
-        });
+        this.logger.error(
+            '프로필 이미지 가져오기 실패',
+            JSON.stringify({
+                context: UserService.name,
+            }),
+        );
         throw new NotFoundProfileImageException();
     }
 
@@ -297,9 +363,12 @@ export class UserService {
         const { image, isTecheer } = await this.getProfileImageUrl(email);
 
         if (isTecheer === true) {
-            this.logger.debug('프로필 이미지 업데이트', {
-                context: UserService.name,
-            });
+            this.logger.debug(
+                '프로필 이미지 업데이트',
+                JSON.stringify({
+                    context: UserService.name,
+                }),
+            );
             return await this.userRepository.updateProfileImageByEmail(
                 email,
                 image,
@@ -312,31 +381,46 @@ export class UserService {
 
     async updateNickname(user: any, nickname: string): Promise<User> {
         if (user.roleId !== 1 && user.roleId !== 2) {
-            this.logger.error('권한 없음', { context: UserService.name });
+            this.logger.error(
+                '권한 없음',
+                JSON.stringify({ context: UserService.name }),
+            );
             throw new UnauthorizedAdminException();
         }
 
-        this.logger.debug('닉네임 업데이트', { context: UserService.name });
+        this.logger.debug(
+            '닉네임 업데이트',
+            JSON.stringify({ context: UserService.name }),
+        );
         return this.userRepository.updateNickname(user.id, nickname);
     }
 
     async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {
-        this.logger.debug('모든 프로필 조회 시작', {
-            query,
-            context: UserService.name,
-        });
+        this.logger.debug(
+            '모든 프로필 조회 시작',
+            JSON.stringify({
+                query,
+                context: UserService.name,
+            }),
+        );
 
         const users = (await this.userRepository.findAllProfiles(query)) || [];
 
-        this.logger.debug('모든 프로필 조회 중', {
-            data: users,
-            context: UserService.name,
-        });
+        this.logger.debug(
+            '모든 프로필 조회 중',
+            JSON.stringify({
+                data: users,
+                context: UserService.name,
+            }),
+        );
 
         if (!Array.isArray(users)) {
-            this.logger.debug('조회된 프로필이 없습니다.', {
-                context: UserService.name,
-            });
+            this.logger.debug(
+                '조회된 프로필이 없습니다.',
+                JSON.stringify({
+                    context: UserService.name,
+                }),
+            );
             return [];
         }
 
@@ -346,7 +430,10 @@ export class UserService {
     }
 
     async getProfile(userId: number): Promise<GetUserResponse> {
-        this.logger.debug('프로필 조회', { context: UserService.name });
+        this.logger.debug(
+            '프로필 조회',
+            JSON.stringify({ context: UserService.name }),
+        );
         const user = await this.userRepository.findById(userId);
         return new GetUserResponse(user);
     }

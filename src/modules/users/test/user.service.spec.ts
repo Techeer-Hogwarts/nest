@@ -161,9 +161,12 @@ describe('UserService', () => {
                 NotFoundUserException,
             );
 
-            expect(logger.debug).toHaveBeenCalledWith('사용자 없음', {
-                context: 'UserService',
-            });
+            expect(logger.debug).toHaveBeenCalledWith(
+                '사용자 없음',
+                JSON.stringify({
+                    context: 'UserService',
+                }),
+            );
         });
 
         it('should update user profile successfully', async () => {
@@ -232,9 +235,12 @@ describe('UserService', () => {
                 NotFoundUserException,
             );
 
-            expect(logger.debug).toHaveBeenCalledWith('사용자 없음', {
-                context: 'UserService',
-            });
+            expect(logger.debug).toHaveBeenCalledWith(
+                '사용자 없음',
+                JSON.stringify({
+                    context: 'UserService',
+                }),
+            );
         });
 
         it('should soft delete user successfully', async () => {
