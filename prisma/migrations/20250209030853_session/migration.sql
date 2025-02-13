@@ -19,4 +19,6 @@ ALTER COLUMN "position" SET NOT NULL,
 ALTER COLUMN "position" DROP DEFAULT,
 ALTER COLUMN "position" SET DATA TYPE VARCHAR(50);
 ALTER TABLE "Stack"
+
 ADD CONSTRAINT "Stack_name_unique" UNIQUE ("name");
+
