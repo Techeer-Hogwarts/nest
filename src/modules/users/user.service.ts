@@ -17,7 +17,7 @@ import {
     NotFoundTecheerException,
     NotFoundUserException,
 } from '../../global/exception/custom.exception';
-// import { TaskService } from '../../global/task/task.service';
+import { TaskService } from '../../global/task/task.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResumeService } from '../resumes/resume.service';
 import { CreateUserExperienceRequest } from '../userExperiences/dto/request/create.userExperience.reqeust';
@@ -33,7 +33,7 @@ export class UserService {
         private readonly resumeService: ResumeService,
         private readonly authService: AuthService,
         private readonly httpService: HttpService,
-        // private readonly taskService: TaskService,
+        private readonly taskService: TaskService,
         private readonly prisma: PrismaService,
         private readonly userExperienceRepository: UserExperienceRepository,
         private readonly logger: CustomWinstonLogger,
@@ -135,13 +135,16 @@ export class UserService {
             });
 
             // 블로그 크롤링 요청
-            // if (newUser.blogUrl) {
-            //     await this.taskService.requestSignUpBlogFetch(
-            //         newUser.id,
-            //         newUser.blogUrl,
-            //     );
-            // }
-
+            const blogUrls = [
+                newUser.velogUrl,
+                newUser.mediumUrl,
+                newUser.tistoryUrl,
+            ].filter((url): url is string => !!url); // null 또는 undefined 제거
+            await Promise.all(
+                blogUrls.map((url) =>
+                    this.taskService.requestSignUpBlogFetch(newUser.id, url),
+                ),
+            );
             this.logger.debug(
                 '블로그 크롤링 요청 완료',
                 JSON.stringify({

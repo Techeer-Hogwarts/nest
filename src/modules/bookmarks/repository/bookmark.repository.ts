@@ -8,7 +8,6 @@ import { CreateContentTableMap } from '../../../global/category/content.category
 import { GetBookmarkResponse } from '../dto/response/get.bookmark.response';
 import { DuplicateStatusException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-import { LikeRepository } from '../../likes/repository/like.repository';
 
 @Injectable()
 export class BookmarkRepository {

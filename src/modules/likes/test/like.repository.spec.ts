@@ -1,15 +1,9 @@
 import { LikeRepository } from '../repository/like.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Prisma } from '@prisma/client';
 import { CreateLikeRequest } from '../dto/request/create.like.request';
 import { sessionEntity } from '../../sessions/test/mock-data';
-import {
-    createLikeRequest,
-    getLikeListRequest,
-    likeEntities,
-    likeEntity,
-} from './mock-data';
+import { createLikeRequest, likeEntity } from './mock-data';
 import { ContentCategory } from '../../../global/category/content.category';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
@@ -173,32 +167,6 @@ describe('LikeRepository', (): void => {
             // 트랜잭션이 실행되었는지 확인
             expect(transactionSpy).toHaveBeenCalledTimes(1);
             expect(transactionSpy).toHaveBeenCalledWith(expect.any(Function));
-        });
-    });
-
-    describe('getLikeList', (): void => {
-        it('유저의 좋아요 목록을 가져옴', async (): Promise<void> => {
-            jest.spyOn(prisma, '$queryRaw').mockResolvedValue(likeEntities);
-
-            const result = await repository.getLikeList(
-                1,
-                getLikeListRequest(),
-            );
-
-            expect(result).toEqual(likeEntities);
-            expect(prisma.$queryRaw).toHaveBeenCalledWith(
-                Prisma.sql`
-            SELECT l.*, c.*
-            FROM "Like" l
-            LEFT JOIN ${Prisma.raw('"Resume"')} c ON l."contentId" = c."id"
-            WHERE l."userId" = ${1}
-              AND l."category" = ${'RESUME'}
-              AND l."isDeleted" = false
-            ORDER BY l."createdAt" DESC
-            LIMIT ${getLikeListRequest().limit} OFFSET ${getLikeListRequest().offset}
-        `,
-            );
-            expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
         });
     });
 
