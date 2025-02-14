@@ -135,6 +135,9 @@ describe('ResumeRepository', (): void => {
                     ...(getResumesQueryRequest.year?.length && {
                         user: { year: { in: getResumesQueryRequest.year } },
                     }),
+                    ...(getResumesQueryRequest.category && {
+                        category: getResumesQueryRequest.category,
+                    }),
                 },
                 include: {
                     user: {

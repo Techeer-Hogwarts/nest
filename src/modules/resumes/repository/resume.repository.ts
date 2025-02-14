@@ -92,11 +92,12 @@ export class ResumeRepository {
         const {
             position,
             year,
+            category,
             offset = 0,
             limit = 10,
         }: GetResumesQueryRequest = query;
         this.logger.debug(
-            `이력서 엔티티 목록 조회 - position: ${position}, year: ${year}, offset: ${offset}, limit: ${limit}`,
+            `이력서 엔티티 목록 조회 - position: ${position}, year: ${year}, category: ${category}, offset: ${offset}, limit: ${limit}`,
             ResumeRepository.name,
         );
         const resumes = await this.prisma.resume.findMany({
@@ -107,6 +108,9 @@ export class ResumeRepository {
                 }),
                 ...(year?.length && {
                     user: { year: { in: year } },
+                }),
+                ...(category?.length && {
+                    category,
                 }),
             },
             include: {
