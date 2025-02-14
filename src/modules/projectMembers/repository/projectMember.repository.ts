@@ -150,7 +150,9 @@ export class ProjectMemberRepository {
         projectTeamId: number,
         userId: number,
         status: StatusCategory,
-    ): Promise<ProjectMember & { user: { name: string } }> {
+    ): Promise<
+        ProjectMember & { user: { name: string; profileImage: string } }
+    > {
         try {
             const member = await this.prisma.projectMember.findFirst({
                 where: {
@@ -159,7 +161,10 @@ export class ProjectMemberRepository {
                 },
                 include: {
                     user: {
-                        select: { name: true },
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
                     },
                 },
             });
@@ -173,7 +178,10 @@ export class ProjectMemberRepository {
                 data: { status },
                 include: {
                     user: {
-                        select: { name: true },
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
                     },
                 },
             });

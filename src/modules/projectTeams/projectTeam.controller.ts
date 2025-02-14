@@ -10,6 +10,8 @@ import {
     Patch,
     Param,
     Get,
+    ValidationPipe,
+    Query,
 } from '@nestjs/common';
 import { ProjectTeamService } from './projectTeam.service';
 import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.request';
@@ -28,6 +30,8 @@ import {
 } from './dto/response/get.projectTeam.response';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
+import { StudyTeamService } from '../studyTeams/studyTeam.service';
+import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
@@ -36,6 +40,7 @@ export class ProjectTeamController {
 
     constructor(
         private readonly projectTeamService: ProjectTeamService,
+        private readonly studyTeamService: StudyTeamService,
         private readonly prisma: PrismaService,
     ) {}
 
@@ -154,10 +159,13 @@ export class ProjectTeamController {
         summary: '스터디와 프로젝트 공고 조회',
         description: '스터디와 프로젝트 공고를 한눈에 볼 수 있게 반환합니다.',
     })
-    async getAllTeams(): Promise<ProjectTeamListResponse[]> {
+    async getAllTeams(
+        @Query(new ValidationPipe({ transform: true }))
+        dto: GetTeamQueryRequest,
+    ): Promise<any> {
         try {
             // 모든 팀 데이터 조회
-            return await this.projectTeamService.getAllTeams();
+            return await this.projectTeamService.getAllTeams(dto);
         } catch (error) {
             this.logger.error('❌ [ERROR] getAllTeams 에서 예외 발생: ', error);
             throw error;

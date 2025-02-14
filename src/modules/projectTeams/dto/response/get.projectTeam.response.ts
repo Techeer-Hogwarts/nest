@@ -142,6 +142,8 @@ export class ProjectMemberResponse {
     isLeader: boolean;
     teamRole: string;
     profileImage: string;
+    status?: StatusCategory;
+    userId?: number;
 
     constructor(
         member: ProjectMember & {
@@ -153,6 +155,8 @@ export class ProjectMemberResponse {
         this.isLeader = member.isLeader;
         this.teamRole = member.teamRole;
         this.profileImage = member.user.profileImage;
+        this.status = member.status;
+        this.userId = member.userId;
     }
 }
 
@@ -163,13 +167,19 @@ export class ProjectApplicantResponse {
     teamRole: string;
     summary: string;
     status: StatusCategory;
+    profileImage: string;
 
-    constructor(member: ProjectMember & { user: { name: string } }) {
+    constructor(
+        member: ProjectMember & {
+            user: { name: string; profileImage: string };
+        },
+    ) {
         this.id = member.id;
         this.userName = member.user.name;
         this.isLeader = member.isLeader;
         this.teamRole = member.teamRole;
         this.summary = member.summary;
         this.status = member.status;
+        this.profileImage = member.user.profileImage;
     }
 }
