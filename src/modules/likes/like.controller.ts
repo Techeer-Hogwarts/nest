@@ -18,6 +18,8 @@ import { GetSessionResponse } from '../sessions/dto/response/get.session.respons
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { GetProjectTeamListResponse } from '../projectTeams/dto/response/get.projectTeamList.response';
+import { GetStudyTeamListResponse } from '../studyTeams/dto/response/get.studyTeamList.response';
 
 @ApiTags('likes')
 @Controller('/likes')
@@ -64,7 +66,13 @@ export class LikeController {
     async getLikeList(
         @Req() request: Request,
         @Query() getLikeListRequest: GetLikeListRequest,
-    ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
+    ): Promise<
+        | GetSessionResponse[]
+        | GetBlogResponse[]
+        | GetResumeResponse[]
+        | GetProjectTeamListResponse[]
+        | GetStudyTeamListResponse[]
+    > {
         const user = request.user as any;
         this.logger.debug(
             `유저 별 좋아요 목록 조회 요청 처리 중 - userId: ${user.id}`,

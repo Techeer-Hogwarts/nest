@@ -10,6 +10,12 @@ import { GetSessionResponse } from '../sessions/dto/response/get.session.respons
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { GetProjectTeamListResponse } from '../projectTeams/dto/response/get.projectTeamList.response';
+import { GetStudyTeamListResponse } from '../studyTeams/dto/response/get.studyTeamList.response';
+import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
+import { StudyTeamEntity } from '../studyTeams/entities/studyTeam.entity';
+import { BadRequestCategoryException } from '../../global/exception/custom.exception';
+import { LikeService } from '../likes/like.service';
 
 @Injectable()
 export class BookmarkService {
@@ -50,7 +56,13 @@ export class BookmarkService {
     async getBookmarkList(
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
-    ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
+    ): Promise<
+        | GetSessionResponse[]
+        | GetBlogResponse[]
+        | GetResumeResponse[]
+        | GetProjectTeamListResponse[]
+        | GetStudyTeamListResponse[]
+    > {
         switch (getBookmarkListRequest.category) {
             case 'SESSION': {
                 const contents: SessionEntity[] =
@@ -94,6 +106,39 @@ export class BookmarkService {
                     (content: ResumeEntity) => new GetResumeResponse(content),
                 );
             }
+            case 'PROJECT': {
+                const contents: ProjectTeamEntity[] =
+                    await this.bookmarkRepository.getBookmarkList<ProjectTeamEntity>(
+                        userId,
+                        getBookmarkListRequest,
+                    );
+                this.logger.debug(
+                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetProjectResponse 변환 중`,
+                    LikeService.name,
+                );
+                return contents.map(
+                    (content: ProjectTeamEntity) =>
+                        new GetProjectTeamListResponse(content),
+                );
+            }
+            case 'STUDY': {
+                const contents: StudyTeamEntity[] =
+                    await this.bookmarkRepository.getBookmarkList<StudyTeamEntity>(
+                        userId,
+                        getBookmarkListRequest,
+                    );
+                this.logger.debug(
+                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetStudyResponse 변환 중`,
+                    LikeService.name,
+                );
+                return contents.map(
+                    (content: StudyTeamEntity) =>
+                        new GetStudyTeamListResponse(content),
+                );
+            }
+            default:
+                this.logger.error(`잘못된 카테고리 요청`, LikeService.name);
+                throw new BadRequestCategoryException();
         }
     }
 }

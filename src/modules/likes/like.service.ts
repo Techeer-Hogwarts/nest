@@ -11,8 +11,10 @@ import { ResumeEntity } from '../resumes/entities/resume.entity';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
 import { BadRequestCategoryException } from '../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-// import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
-// import { StudyTeamEntity } from '../studyTeams/entities/studyTeam.entity';
+import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
+import { GetProjectTeamListResponse } from '../projectTeams/dto/response/get.projectTeamList.response';
+import { GetStudyTeamListResponse } from '../studyTeams/dto/response/get.studyTeamList.response';
+import { StudyTeamEntity } from '../studyTeams/entities/studyTeam.entity';
 
 @Injectable()
 export class LikeService {
@@ -25,7 +27,7 @@ export class LikeService {
         userId: number,
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
-        const { contentId, category } = createLikeRequest;
+        const { contentId, category }: CreateLikeRequest = createLikeRequest;
         this.logger.debug(
             `좋아요 생성 및 설정 변경 요청 처리 중 - userId: ${userId}, contentId: ${contentId}, category: ${category}`,
             LikeService.name,
@@ -47,7 +49,13 @@ export class LikeService {
     async getLikeList(
         userId: number,
         getLikeListRequest: GetLikeListRequest,
-    ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
+    ): Promise<
+        | GetSessionResponse[]
+        | GetBlogResponse[]
+        | GetResumeResponse[]
+        | GetProjectTeamListResponse[]
+        | GetStudyTeamListResponse[]
+    > {
         switch (getLikeListRequest.category) {
             case 'SESSION': {
                 const contents: SessionEntity[] =
@@ -91,32 +99,36 @@ export class LikeService {
                     (content: ResumeEntity) => new GetResumeResponse(content),
                 );
             }
-            // case 'PROJECT': {
-            //     const contents = await this.likeRepository.getLikeList<ProjectTeamEntity>(
-            //         userId,
-            //         getLikeListRequest,
-            //     );
-            // this.logger.debug(
-            //     `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetProjectResponse 변환 중`,
-            //     LikeService.name,
-            // );
-            //     return contents.map(
-            //         (content: ProjectTeamEntity) =>
-            //             new GetProjectResponse(content),
-            //     ); }
-            // case 'STUDY': {
-            //     const contents = await this.likeRepository.getLikeList<StudyTeamEntity>(
-            //         userId,
-            //         getLikeListRequest,
-            //     );
-            // this.logger.debug(
-            //     `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetStudyResponse 변환 중`,
-            //     LikeService.name,
-            // );
-            //     return contents.map(
-            //         (content: StudyTeamEntity) =>
-            //             new GetStudyResponse(content),
-            //     ); }
+            case 'PROJECT': {
+                const contents: ProjectTeamEntity[] =
+                    await this.likeRepository.getLikeList<ProjectTeamEntity>(
+                        userId,
+                        getLikeListRequest,
+                    );
+                this.logger.debug(
+                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetProjectResponse 변환 중`,
+                    LikeService.name,
+                );
+                return contents.map(
+                    (content: ProjectTeamEntity) =>
+                        new GetProjectTeamListResponse(content),
+                );
+            }
+            case 'STUDY': {
+                const contents: StudyTeamEntity[] =
+                    await this.likeRepository.getLikeList<StudyTeamEntity>(
+                        userId,
+                        getLikeListRequest,
+                    );
+                this.logger.debug(
+                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetStudyResponse 변환 중`,
+                    LikeService.name,
+                );
+                return contents.map(
+                    (content: StudyTeamEntity) =>
+                        new GetStudyTeamListResponse(content),
+                );
+            }
             default:
                 this.logger.error(`잘못된 카테고리 요청`, LikeService.name);
                 throw new BadRequestCategoryException();
