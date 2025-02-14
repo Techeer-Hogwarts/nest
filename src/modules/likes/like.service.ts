@@ -64,7 +64,7 @@ export class LikeService {
                         getLikeListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetSessionResponse로 변환 중`,
+                    `${contents.length}개의 세션 좋아요 목록 조회 성공 후 GetSessionResponse로 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
@@ -78,7 +78,7 @@ export class LikeService {
                         getLikeListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetBlogResponse로 변환 중`,
+                    `${contents.length}개의 블로그 좋아요 목록 조회 성공 후 GetBlogResponse로 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
@@ -92,7 +92,7 @@ export class LikeService {
                         getLikeListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetResumeResponse 변환 중`,
+                    `${contents.length}개의 이력서 좋아요 목록 조회 성공 후 GetResumeResponse 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
@@ -106,7 +106,7 @@ export class LikeService {
                         getLikeListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetProjectResponse 변환 중`,
+                    `${contents.length}개의 프로젝트 좋아요 목록 조회 성공 후 GetProjectResponse 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
@@ -121,7 +121,7 @@ export class LikeService {
                         getLikeListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetStudyResponse 변환 중`,
+                    `${contents.length}개의 스터디 좋아요 목록 조회 성공 후 GetStudyResponse 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(

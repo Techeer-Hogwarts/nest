@@ -71,7 +71,7 @@ export class BookmarkService {
                         getBookmarkListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetSessionResponse로 변환 중`,
+                    `${contents.length}개의 세션 북마크 목록 조회 성공 후 GetSessionResponse로 변환 중`,
                     BookmarkService.name,
                 );
                 return contents.map(
@@ -85,7 +85,7 @@ export class BookmarkService {
                         getBookmarkListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetBlogResponse로 변환 중`,
+                    `${contents.length}개의 블로그 북마크 목록 조회 성공 후 GetBlogResponse로 변환 중`,
                     BookmarkService.name,
                 );
                 return contents.map(
@@ -99,7 +99,7 @@ export class BookmarkService {
                         getBookmarkListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetResumeResponse로 변환 중`,
+                    `${contents.length}개의 이력서 북마크 목록 조회 성공 후 GetResumeResponse로 변환 중`,
                     BookmarkService.name,
                 );
                 return contents.map(
@@ -113,7 +113,7 @@ export class BookmarkService {
                         getBookmarkListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetProjectResponse 변환 중`,
+                    `${contents.length}개의 프로젝트 북마크 목록 조회 성공 후 GetProjectResponse 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
@@ -128,7 +128,7 @@ export class BookmarkService {
                         getBookmarkListRequest,
                     );
                 this.logger.debug(
-                    `${contents.length}개의 북마크 콘텐츠 목록 조회 성공 후 GetStudyResponse 변환 중`,
+                    `${contents.length}개의 스터디 북마크 목록 조회 성공 후 GetStudyResponse 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
