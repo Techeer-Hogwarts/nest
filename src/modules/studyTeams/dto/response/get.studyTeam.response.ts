@@ -1,4 +1,9 @@
-import { StudyMember, StudyResultImage, StudyTeam } from '@prisma/client';
+import {
+    StatusCategory,
+    StudyMember,
+    StudyResultImage,
+    StudyTeam,
+} from '@prisma/client';
 
 export class GetStudyTeamResponse {
     readonly id: number;
@@ -9,7 +14,7 @@ export class GetStudyTeamResponse {
     readonly rule: string;
     readonly goal: string;
     readonly studyExplain: string;
-    readonly isRecruited: boolean;
+    isRecruited: boolean;
     readonly isFinished: boolean;
     readonly resultImages: {
         id: number;
@@ -28,7 +33,7 @@ export class GetStudyTeamResponse {
     constructor(
         studyTeam: StudyTeam & {
             resultImages: StudyResultImage[];
-            studytMember: (StudyMember & { user: { name: string } })[];
+            studyMember: (StudyMember & { user: { name: string } })[];
         },
     ) {
         this.id = studyTeam.id;
@@ -46,7 +51,7 @@ export class GetStudyTeamResponse {
             isDeleted: image.isDeleted,
             imageUrl: image.imageUrl,
         }));
-        this.studyMember = studyTeam.studytMember.map((member) => ({
+        this.studyMember = studyTeam.studyMember.map((member) => ({
             id: member.id,
             name: member.user.name,
             isDeleted: member.isDeleted,
@@ -54,5 +59,33 @@ export class GetStudyTeamResponse {
             studyTeamId: member.studyTeamId,
             userId: member.userId,
         }));
+    }
+}
+
+export class StudyMemberResponse {
+    readonly id: number;
+    readonly name: string;
+    readonly isLeader: boolean;
+
+    constructor(member: StudyMember & { user: { name: string } }) {
+        this.id = member.id;
+        this.name = member.user.name;
+        this.isLeader = member.isLeader;
+    }
+}
+
+export class StudyApplicantResponse {
+    readonly id: number;
+    readonly name: string;
+    readonly isLeader: boolean;
+    readonly summary: string;
+    readonly status: StatusCategory;
+
+    constructor(member: StudyMember & { user: { name: string } }) {
+        this.id = member.id;
+        this.name = member.user.name;
+        this.isLeader = member.isLeader;
+        this.summary = member.summary;
+        this.status = member.status;
     }
 }
