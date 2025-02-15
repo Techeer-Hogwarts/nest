@@ -52,4 +52,12 @@ export class BlogService {
         );
         return blogs;
     }
+
+    async increaseBlogViewCount(blogId: number): Promise<void> {
+        await this.blogRepository.increaseBlogViewCount(blogId);
+        this.logger.debug(
+            `블로그 조회수 증가 성공 - blogId: ${blogId}`,
+            BlogService.name,
+        );
+    }
 }

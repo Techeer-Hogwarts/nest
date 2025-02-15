@@ -5,6 +5,7 @@ import {
     Param,
     ParseIntPipe,
     Post,
+    Put,
     Query,
     Req,
     UseGuards,
@@ -51,6 +52,19 @@ export class BlogController {
             `외부 블로그 게시 요청 처리 완료`,
             BlogController.name,
         );
+    }
+
+    @Put('/:blogId')
+    @ApiOperation({
+        summary: '블로그 조회수 증가',
+        description: '블로그 조회수 증가시킵니다.',
+    })
+    async increaseBlogViewCount(
+        @Param('blogId') blogId: number,
+    ): Promise<void> {
+        this.logger.debug(`블로그 조회수 증가 처리 중`, BlogController.name);
+        await this.blogService.increaseBlogViewCount(blogId);
+        this.logger.debug(`블로그 조회수 증가 처리 완료`, BlogController.name);
     }
 
     @Get('/best')
