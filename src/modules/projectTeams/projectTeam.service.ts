@@ -1,26 +1,79 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ProjectTeamRepository } from './repository/projectTeam.repository';
 import { CreateProjectTeamRequest } from './dto/request/create.projectTeam.request';
 import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.request';
 import { ProjectMemberRepository } from '../projectMembers/repository/projectMember.repository';
 import {
     AlreadyApprovedException,
+    DuplicateProjectNameException,
     NotFoundProjectException,
 } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { PrismaService } from '../prisma/prisma.service';
 import { AwsService } from '../../awsS3/aws.service';
+import {
+    ProjectApplicantResponse,
+    ProjectMemberResponse,
+    ProjectTeamDetailResponse,
+    ProjectTeamListResponse,
+} from './dto/response/get.projectTeam.response';
+import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
+import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
+interface Stack {
+    id: number;
+    name: string;
+}
+
+interface TeamStack {
+    stack: string;
+    isMain: boolean;
+}
 
 @Injectable()
 export class ProjectTeamService {
     private readonly logger = new Logger(ProjectTeamService.name);
-
     constructor(
         private readonly projectTeamRepository: ProjectTeamRepository,
         private readonly projectMemberRepository: ProjectMemberRepository,
         private readonly prisma: PrismaService,
         private readonly awsService: AwsService,
     ) {}
+
+    private async validateStacks(teamStacks: TeamStack[]): Promise<Stack[]> {
+        const validStacks = teamStacks.length
+            ? await this.prisma.stack.findMany({
+                  where: {
+                      name: { in: teamStacks.map((stack) => stack.stack) },
+                  },
+              })
+            : [];
+
+        if (teamStacks.length && validStacks.length !== teamStacks.length) {
+            throw new Error('유효하지 않은 스택 이름이 포함되어 있습니다.');
+        }
+
+        return validStacks;
+    }
+
+    private mapStackData(
+        teamStacks: TeamStack[],
+        validStacks: Stack[],
+    ): { stackId: number; isMain: boolean }[] {
+        return teamStacks.map((stack) => {
+            const matchedStack = validStacks.find(
+                (validStack) => validStack.name === stack.stack,
+            );
+            if (!matchedStack) {
+                throw new Error(`스택(${stack.stack})을 찾을 수 없습니다.`);
+            }
+            return {
+                stackId: matchedStack.id,
+                isMain: stack.isMain || false,
+            };
+        });
+    }
 
     // 이미지 업로드 로직 추가
     async uploadImagesToS3(
@@ -102,9 +155,24 @@ export class ProjectTeamService {
     async createProject(
         createProjectTeamRequest: CreateProjectTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
+
+            // 프로젝트 이름 중복 확인
+            const isNameExists =
+                await this.projectTeamRepository.findProjectByName(
+                    createProjectTeamRequest.name,
+                );
+            if (isNameExists) {
+                throw new DuplicateProjectNameException();
+            }
+
+            // 요청 데이터 로깅
+            this.logger.debug(
+                '요청 데이터:',
+                JSON.stringify(createProjectTeamRequest),
+            );
 
             const {
                 teamStacks,
@@ -113,150 +181,192 @@ export class ProjectTeamService {
                 ...projectData
             } = createProjectTeamRequest;
 
-            // 이미지 업로드 처리
-            const uploadedImageUrls = await this.uploadImagesToS3(
-                files,
-                'project-teams',
-            );
+            // 파일 수 및 상태 로깅
+            if (files && files.length) {
+                this.logger.debug(`받은 파일 개수: ${files.length}`);
+            } else {
+                this.logger.warn('파일이 업로드되지 않았습니다.');
+            }
+            const [mainImages, ...resultImages] = files || [];
 
-            // 이름 기반으로 스택 ID 및 isMain 조회
-            const validStacks = await this.prisma.stack.findMany({
-                where: {
-                    name: {
-                        in: teamStacks?.map((stack) => stack.stack) || [],
-                    },
-                },
-            });
-
-            if (validStacks.length !== (teamStacks?.length || 0)) {
-                throw new Error('유효하지 않은 스택 이름이 포함되어 있습니다.');
+            // 메인 이미지 필수 체크
+            if (!mainImages) {
+                this.logger.error('메인 이미지가 누락되었습니다.');
+                throw new BadRequestException('메인 이미지는 필수입니다.');
             }
 
-            // `teamStacks` 데이터를 `stackId` 및 `isMain` 값과 매핑
+            // 1. 메인 이미지 업로드 시작
+            this.logger.debug('메인 이미지 업로드 시작');
+            const mainImageUrls = await this.uploadImagesToS3(
+                [mainImages],
+                'project-teams/main',
+            );
+            this.logger.debug(
+                `메인 이미지 업로드 완료: ${mainImageUrls.length}개 업로드됨`,
+            );
+
+            // 2. 결과 이미지 업로드 (첫 번째 파일 제외)
+            let resultImageUrls: string[] = [];
+            if (resultImages && resultImages.length) {
+                this.logger.debug(
+                    `결과 이미지 업로드 시작: ${resultImages.length}개 파일`,
+                );
+                resultImageUrls = await this.uploadImagesToS3(
+                    resultImages,
+                    'project-teams/result',
+                );
+                this.logger.debug(
+                    `결과 이미지 업로드 완료: ${resultImageUrls.length}개 업로드됨`,
+                );
+            } else {
+                this.logger.debug(
+                    '결과 이미지 파일이 없습니다. 업로드 건너뜀.',
+                );
+            }
+
+            // 스택 검증: 요청된 스택과 실제 유효한 스택 조회
+            this.logger.debug('유효한 스택 조회 시작');
+            const validStacks = await this.prisma.stack.findMany({
+                where: {
+                    name: { in: teamStacks?.map((stack) => stack.stack) || [] },
+                },
+            });
+            this.logger.debug(`조회된 유효 스택 수: ${validStacks.length}`);
+
+            if (validStacks.length !== (teamStacks?.length || 0)) {
+                this.logger.error('유효하지 않은 스택 이름이 포함되어 있음');
+                throw new BadRequestException(
+                    '유효하지 않은 스택 이름이 포함되어 있습니다.',
+                );
+            }
+
+            // teamStacks를 stackId 및 isMain 값과 매핑
+            this.logger.debug('teamStacks 매핑 시작');
             const stackData = teamStacks.map((stack) => {
                 const matchedStack = validStacks.find(
                     (validStack) => validStack.name === stack.stack,
                 );
                 if (!matchedStack) {
-                    throw new Error(`스택(${stack.stack})을 찾을 수 없습니다.`);
+                    this.logger.error(`스택(${stack.stack})을 찾을 수 없음`);
+                    throw new BadRequestException(
+                        `스택(${stack.stack})을 찾을 수 없습니다.`,
+                    );
                 }
                 return {
                     stackId: matchedStack.id,
-                    isMain: stack.isMain || false, // 기본값으로 false 설정
+                    isMain: stack.isMain || false,
                 };
             });
+            this.logger.debug(
+                `teamStacks 매핑 완료: ${stackData.length}개 매핑`,
+            );
 
-            // 프로젝트 생성
+            this.logger.debug('프로젝트 DB 생성 시작');
             const createdProject = await this.prisma.projectTeam.create({
                 data: {
                     ...projectData,
-                    recruitExplain, // 기본값 추가
+                    recruitExplain,
                     githubLink: projectData.githubLink || '',
                     notionLink: projectData.notionLink || '',
+                    mainImages: {
+                        create: mainImageUrls.map((url) => ({ imageUrl: url })),
+                    },
                     resultImages: {
-                        create: uploadedImageUrls.map((url) => ({
+                        create: resultImageUrls.map((url) => ({
                             imageUrl: url,
                         })),
                     },
-                    teamStacks: {
-                        create: stackData, // stackId와 isMain 값 포함
-                    },
+                    teamStacks: { create: stackData },
                     projectMember: {
                         create: projectMember.map((member) => ({
-                            user: { connect: { id: member.userId } }, // 사용자 연결
+                            user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
                             teamRole: member.teamRole,
-                            summary: '초기 참여 인원입니다', // summary 추가
-                            status: 'APPROVED', // 필수 필드
+                            summary: '초기 참여 인원입니다',
+                            status: 'APPROVED',
                         })),
                     },
                 },
                 include: {
                     resultImages: true,
-                    teamStacks: { include: { stack: true } }, // 스택 정보 포함
-                    projectMember: true,
+                    mainImages: true,
+                    teamStacks: { include: { stack: true } },
+                    projectMember: { include: { user: true } },
                 },
             });
 
+            this.logger.debug(`프로젝트 생성 완료: ID=${createdProject.id}`);
+
+            // DTO 변환 과정 로깅
+            this.logger.debug('DTO 변환 시작');
+            const projectResponse = new ProjectTeamDetailResponse(
+                createdProject,
+            );
+            this.logger.debug('DTO 변환 완료');
+
             this.logger.debug('✅ Project created successfully');
-            return createdProject;
+            return projectResponse;
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
             throw new Error('프로젝트 생성 중 오류가 발생했습니다.');
         }
     }
 
-    async getProjectById(projectTeamId: number): Promise<any> {
+    async getProjectById(
+        projectTeamId: number,
+    ): Promise<ProjectTeamDetailResponse> {
         try {
-            const project = await this.prisma.projectTeam.findUnique({
+            const project = await this.prisma.projectTeam.update({
                 where: { id: projectTeamId },
+                data: {
+                    viewCount: {
+                        increment: 1,
+                    },
+                },
                 include: {
-                    resultImages: true, // 프로젝트의 결과 이미지 포함
+                    resultImages: true,
+                    mainImages: true,
                     projectMember: {
-                        where: { isDeleted: false }, // 삭제되지 않은 멤버만
-                        select: {
-                            id: true,
-                            isLeader: true,
-                            teamRole: true,
-                            isDeleted: true,
-                            projectTeamId: true,
-                            userId: true,
-                            user: {
-                                select: {
-                                    name: true, // 멤버 이름
-                                },
-                            },
+                        where: { isDeleted: false },
+                        include: {
+                            user: true,
                         },
+                    },
+                    teamStacks: {
+                        where: { isMain: true },
+                        include: { stack: true },
                     },
                 },
             });
-
             if (!project) {
-                throw new Error('프로젝트를 찾을 수 없습니다.');
+                throw new NotFoundProjectException();
             }
-
-            // 반환값 포맷팅
-            const formattedProject = {
-                id: project.id,
-                createdAt: project.createdAt,
-                updatedAt: project.updatedAt,
-                isDeleted: project.isDeleted,
-                isRecruited: project.isRecruited,
-                isFinished: project.isFinished,
-                name: project.name,
-                githubLink: project.githubLink,
-                notionLink: project.notionLink,
-                projectExplain: project.projectExplain,
-                frontendNum: project.frontendNum,
-                backendNum: project.backendNum,
-                devopsNum: project.devopsNum,
-                uiuxNum: project.uiuxNum,
-                dataEngineerNum: project.dataEngineerNum,
-                recruitExplain: project.recruitExplain,
-                resultImages: project.resultImages.map((image) => ({
-                    id: image.id,
-                    isDeleted: image.isDeleted,
-                    imageUrl: image.imageUrl,
-                })),
+            // Response DTO에서 status 포함하도록 수정
+            const response = new ProjectTeamDetailResponse({
+                ...project,
                 projectMember: project.projectMember.map((member) => ({
-                    id: member.id,
+                    ...member,
                     name: member.user.name,
-                    isDeleted: member.isDeleted,
-                    isLeader: member.isLeader,
-                    teamRole: member.teamRole,
-                    projectTeamId: member.projectTeamId,
-                    userId: member.userId,
+                    status: member.status,
                 })),
-            };
-
-            this.logger.debug('✅ [SUCCESS] 프로젝트 상세 조회 성공');
-            return formattedProject;
+            });
+            return response;
         } catch (error) {
+            if (
+                error instanceof PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.warn(
+                    `프로젝트 조회수 증가 실패 - 존재하지 않는 projectTeamId: ${projectTeamId}`,
+                    ProjectTeamService.name,
+                );
+                throw new NotFoundProjectException();
+            }
             this.logger.error(
-                '❌ [ERROR] getProjectById 에서 예외 발생: ',
-                error,
+                `프로젝트 조회수 증가 중 예기치 않은 오류 발생 - projectTeamId: ${projectTeamId}, error: ${error.message}`,
+                ProjectTeamService.name,
             );
-            throw new Error('데이터베이스 에러가 발생했습니다.');
+            throw error;
         }
     }
 
@@ -265,11 +375,14 @@ export class ProjectTeamService {
         userId: number,
         updateProjectTeamRequest: UpdateProjectTeamRequest,
         fileUrls: string[] = [],
-    ): Promise<any> {
+    ): Promise<ProjectTeamDetailResponse> {
         try {
-            this.logger.debug(`🔥 [START] ID(${id})로 프로젝트 업데이트 시작`);
+            this.logger.debug('🔥 프로젝트 업데이트 시작');
+            this.logger.debug(`Project ID: ${id}, User ID: ${userId}`);
+            this.logger.debug(
+                `요청 데이터: ${JSON.stringify(updateProjectTeamRequest)}`,
+            );
 
-            // 사용자 검증
             await this.ensureUserIsProjectMember(id, userId);
 
             const {
@@ -280,132 +393,110 @@ export class ProjectTeamService {
                 ...updateData
             } = updateProjectTeamRequest;
 
-            // 이름 기반으로 스택 ID 및 isMain 조회
-            const validStacks = teamStacks.length
-                ? await this.prisma.stack.findMany({
-                      where: {
-                          name: {
-                              in: teamStacks.map((stack) => stack.stack),
-                          },
-                      },
-                  })
-                : [];
-
-            if (teamStacks.length && validStacks.length !== teamStacks.length) {
-                throw new Error('유효하지 않은 스택 이름이 포함되어 있습니다.');
-            }
-
-            const stackData = teamStacks.map((stack) => {
-                const matchedStack = validStacks.find(
-                    (validStack) => validStack.name === stack.stack,
-                );
-                if (!matchedStack) {
-                    throw new Error(`스택(${stack.stack})을 찾을 수 없습니다.`);
-                }
-                return {
-                    stackId: matchedStack.id,
-                    isMain: stack.isMain || false,
-                };
+            // 기존 멤버 정보 조회
+            const existingMembers = await this.prisma.projectMember.findMany({
+                where: { projectTeamId: id },
             });
 
-            // Prisma 데이터 업데이트
+            const validStacks = await this.validateStacks(teamStacks);
+            const stackData = this.mapStackData(teamStacks, validStacks);
+
+            // 새로 추가할 멤버 필터링 (기존 멤버와 중복되지 않는 멤버만)
+            const newMembers = projectMember.filter(
+                (member) =>
+                    !existingMembers.some(
+                        (existing) => existing.userId === member.userId,
+                    ),
+            );
+
             const updatedProject = await this.prisma.projectTeam.update({
                 where: { id },
                 data: {
                     ...updateData,
                     resultImages: {
-                        deleteMany: { id: { in: deleteImages } }, // 삭제할 이미지
-                        create: fileUrls.map((url) => ({ imageUrl: url })), // 새로운 이미지 추가
+                        deleteMany: { id: { in: deleteImages } },
+                        create: fileUrls.map((url) => ({ imageUrl: url })),
+                    },
+                    mainImages: {
+                        deleteMany: { id: { in: deleteImages } },
+                        create: fileUrls.map((url) => ({ imageUrl: url })),
                     },
                     teamStacks: {
-                        deleteMany: {}, // 기존 스택 삭제
-                        create: stackData, // 새로운 스택 추가
+                        deleteMany: {},
+                        create: stackData,
                     },
                     projectMember: {
-                        deleteMany: { id: { in: deleteMembers } }, // 삭제할 멤버
-                        create: projectMember.map((member) => ({
+                        deleteMany: { id: { in: deleteMembers } },
+                        create: newMembers.map((member) => ({
                             user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
-                            teamRole: member.teamRole || 'Backend', // 기본값 설정
-                            summary: 'Updated member', // 기본 요약
-                            status: 'APPROVED', // 기본 상태
-                        })), // 새로운 멤버 추가
+                            teamRole: member.teamRole || 'Backend',
+                            summary: 'Updated member',
+                            status: 'APPROVED',
+                        })),
                     },
                 },
                 include: {
                     resultImages: true,
+                    mainImages: true,
                     teamStacks: { include: { stack: true } },
                     projectMember: { include: { user: true } },
                 },
             });
 
-            // 반환 데이터를 포맷팅
-            const formattedProject = {
-                ...updatedProject,
-                projectMember: updatedProject.projectMember.map((member) => ({
-                    id: member.id,
-                    name: member.user.name, // user의 이름만 추출
-                    createdAt: member.createdAt,
-                    updatedAt: member.updatedAt,
-                    isDeleted: member.isDeleted,
-                    isLeader: member.isLeader,
-                    teamRole: member.teamRole,
-                    projectTeamId: member.projectTeamId,
-                    summary: member.summary,
-                    status: member.status,
-                    userId: member.userId,
-                })),
-            };
-
-            this.logger.debug('✅ 프로젝트 업데이트 성공');
-            return formattedProject;
+            this.logger.debug(`✅ 프로젝트 업데이트 완료 (ID: ${id})`);
+            return new ProjectTeamDetailResponse(updatedProject);
         } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] 프로젝트 업데이트 중 예외 발생: ',
-                error,
-            );
-            throw new Error('프로젝트 업데이트 중 오류가 발생했습니다.');
-        }
-    }
-
-    async closeProject(id: number, userId: number): Promise<any> {
-        try {
-            this.logger.debug(`🔥 [START] ID(${id})로 프로젝트 모집 마감 시작`);
-
-            await this.ensureUserIsProjectMember(id, userId);
-
-            const closedProject =
-                await this.projectTeamRepository.closeProject(id);
-
-            this.logger.debug('✅ 프로젝트 모집 마감 성공');
-            return closedProject;
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] 프로젝트 모집 마감 중 예외 발생: ',
-                error,
-            );
+            this.logger.error('❌ 프로젝트 업데이트 중 예외 발생:', error);
             throw error;
         }
     }
 
-    async deleteProject(id: number, userId: number): Promise<any> {
+    async closeProject(
+        id: number,
+        userId: number,
+    ): Promise<ProjectTeamDetailResponse> {
         try {
-            this.logger.debug(`🔥 [START] ID(${id})로 프로젝트 삭제 시작`);
-
             await this.ensureUserIsProjectMember(id, userId);
-
-            const deletedProject =
-                await this.projectTeamRepository.deleteProject(id);
-
-            this.logger.debug('✅ 프로젝트 삭제 성공');
-            return deletedProject;
+            const closedProject = await this.prisma.projectTeam.update({
+                where: { id },
+                data: { isRecruited: false },
+                include: {
+                    resultImages: true,
+                    mainImages: true,
+                    teamStacks: { include: { stack: true } },
+                    projectMember: { include: { user: true } },
+                },
+            });
+            return new ProjectTeamDetailResponse(closedProject);
         } catch (error) {
-            this.logger.error('❌ [ERROR] 프로젝트 삭제 중 예외 발생: ', error);
-            throw error;
+            throw new Error('프로젝트 마감 실패');
         }
     }
 
-    async getUserProjects(userId: number): Promise<any> {
+    async deleteProject(
+        id: number,
+        userId: number,
+    ): Promise<ProjectTeamDetailResponse> {
+        try {
+            await this.ensureUserIsProjectMember(id, userId);
+            const deletedProject = await this.prisma.projectTeam.update({
+                where: { id },
+                data: { isDeleted: true },
+                include: {
+                    resultImages: true,
+                    mainImages: true,
+                    teamStacks: { include: { stack: true } },
+                    projectMember: { include: { user: true } },
+                },
+            });
+            return new ProjectTeamDetailResponse(deletedProject);
+        } catch (error) {
+            throw new Error('프로젝트 삭제 실패');
+        }
+    }
+
+    async getUserProjects(userId: number): Promise<ProjectTeamListResponse[]> {
         try {
             const userProjects = await this.prisma.projectTeam.findMany({
                 where: {
@@ -418,68 +509,17 @@ export class ProjectTeamService {
                         },
                     },
                 },
-                select: {
-                    id: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    isDeleted: true,
-                    isRecruited: true,
-                    isFinished: true,
-                    name: true,
-                    githubLink: true,
-                    notionLink: true,
-                    projectExplain: true,
-                    frontendNum: true,
-                    backendNum: true,
-                    devopsNum: true,
-                    uiuxNum: true,
-                    dataEngineerNum: true,
-                    recruitExplain: true,
-                    resultImages: {
-                        where: { isDeleted: false },
-                        select: { imageUrl: true },
-                    },
-                    projectMember: {
-                        where: { isDeleted: false },
-                        select: {
-                            user: {
-                                select: {
-                                    name: true,
-                                },
-                            },
-                        },
+                include: {
+                    mainImages: true,
+                    teamStacks: {
+                        include: { stack: true },
                     },
                 },
             });
 
-            // 데이터를 반환 형식에 맞게 변환
-            const formattedProjects = userProjects.map((project) => ({
-                id: project.id,
-                createdAt: project.createdAt,
-                updatedAt: project.updatedAt,
-                isDeleted: project.isDeleted,
-                isRecruited: project.isRecruited,
-                isFinished: project.isFinished,
-                name: project.name,
-                githubLink: project.githubLink,
-                notionLink: project.notionLink,
-                projectExplain: project.projectExplain,
-                frontendNum: project.frontendNum,
-                backendNum: project.backendNum,
-                devopsNum: project.devopsNum,
-                uiuxNum: project.uiuxNum,
-                dataEngineerNum: project.dataEngineerNum,
-                recruitExplain: project.recruitExplain,
-                resultImages: project.resultImages.map((image) => ({
-                    imageUrl: image.imageUrl,
-                })),
-                projectMember: project.projectMember.map(
-                    (member) => member.user.name,
-                ),
-            }));
-
-            this.logger.debug('✅ [SUCCESS] 유저 참여 프로젝트 목록 조회 성공');
-            return formattedProjects;
+            return userProjects.map(
+                (project) => new ProjectTeamListResponse(project),
+            );
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getUserProjects 에서 예외 발생: ',
@@ -489,21 +529,25 @@ export class ProjectTeamService {
         }
     }
 
-    async getProjectTeamMembersById(projectTeamId: number): Promise<any> {
+    async getProjectTeamMembersById(
+        projectTeamId: number,
+    ): Promise<ProjectMemberResponse[]> {
         try {
-            const projectData =
-                await this.projectTeamRepository.getProjectTeamMembersById(
+            const projectData = await this.prisma.projectMember.findMany({
+                where: {
                     projectTeamId,
-                );
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
 
             if (!projectData) {
                 throw new NotFoundProjectException();
             }
 
-            this.logger.debug(
-                '✅ [SUCCESS] 특정 프로젝트의 모든 인원 조회 성공',
+            return projectData.map(
+                (member) => new ProjectMemberResponse(member),
             );
-            return projectData;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getProjectTeamMembersById 에서 예외 발생: ',
@@ -516,115 +560,166 @@ export class ProjectTeamService {
     async applyToProject(
         createProjectMemberRequest: CreateProjectMemberRequest,
         userId: number,
-    ): Promise<any> {
-        this.logger.debug('🔥 [START] applyToProject 요청 시작');
-
-        await this.projectMemberRepository.isUserAlreadyInProject(
-            createProjectMemberRequest.projectTeamId,
-            userId,
-        );
-        this.logger.debug('✅ [INFO] 프로젝트 팀원 확인 성공');
-
-        const newApplication =
-            await this.projectMemberRepository.applyToProject(
-                createProjectMemberRequest,
-                userId,
+    ): Promise<ProjectApplicantResponse> {
+        try {
+            this.logger.debug('🔥 프로젝트 지원 시작');
+            this.logger.debug(
+                `요청 데이터: ${JSON.stringify(createProjectMemberRequest)}`,
             );
 
-        this.logger.debug('✅ [SUCCESS] 프로젝트 지원 성공');
-        return newApplication;
+            const newApplication = await this.prisma.projectMember.create({
+                data: {
+                    user: { connect: { id: userId } },
+                    projectTeam: {
+                        connect: {
+                            id: createProjectMemberRequest.projectTeamId,
+                        },
+                    },
+                    teamRole: createProjectMemberRequest.teamRole,
+                    summary: createProjectMemberRequest.summary,
+                    status: 'PENDING',
+                    isLeader: false,
+                },
+                include: { user: true },
+            });
+
+            this.logger.debug(
+                `✅ 프로젝트 지원 완료 (ID: ${newApplication.id})`,
+            );
+            return new ProjectApplicantResponse(newApplication);
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원 중 예외 발생:', error);
+            throw new Error('프로젝트 지원 중 예외가 발생했습니다.');
+        }
     }
 
     async cancelApplication(
         projectTeamId: number,
         userId: number,
-    ): Promise<any> {
+    ): Promise<ProjectMemberResponse> {
         try {
-            this.logger.debug('🔥 [START] cancelApplication 요청 시작');
-            this.logger.debug(userId);
+            this.logger.debug('🔥 프로젝트 지원 취소 시작');
+            const application = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId,
+                    userId,
+                    isDeleted: false,
+                    status: 'PENDING', // PENDING 상태인 지원만 취소 가능
+                },
+                include: { user: true },
+            });
 
-            await this.ensureUserIsProjectMember(projectTeamId, userId);
-            this.logger.debug('✅ [INFO] 프로젝트 팀원 확인 성공');
+            if (!application) {
+                throw new Error('취소할 수 있는 지원 내역이 없습니다.');
+            }
+
+            const canceledApplication = await this.prisma.projectMember.update({
+                where: { id: application.id },
+                data: { isDeleted: true },
+                include: { user: true },
+            });
+
+            this.logger.debug('✅ 프로젝트 지원 취소 완료');
+            return new ProjectMemberResponse(canceledApplication);
         } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] cancelApplication 요청 중 오류 발생: ',
-                error,
-            );
-            throw error;
-        }
-        try {
-            const data = await this.projectMemberRepository.cancelApplication(
-                projectTeamId,
-                userId,
-            );
-            this.logger.debug('✅ [INFO] cancelApplication 실행 결과:', data);
-
-            this.logger.debug('✅ [SUCCESS] 프로젝트 지원 취소 성공');
-
-            return data;
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] cancelApplication 요청 중 오류 발생: ',
-                error,
-            );
+            this.logger.error('❌ 프로젝트 지원 취소 중 예외 발생:', error);
             throw error;
         }
     }
 
-    async getApplicants(projectTeamId: number, userId: number): Promise<any> {
-        this.logger.debug('🔥 [START] getApplicants 요청 시작');
+    async getApplicants(
+        projectTeamId: number,
+        userId: number,
+    ): Promise<ProjectApplicantResponse[]> {
         await this.ensureUserIsProjectMember(projectTeamId, userId);
-        const data =
-            await this.projectMemberRepository.getApplicants(projectTeamId);
-        this.logger.debug('✅ [SUCCESS] 프로젝트 지원자 조회 성공');
-        return data;
+        const applicants = await this.prisma.projectMember.findMany({
+            where: {
+                projectTeamId,
+                isDeleted: false,
+                status: { not: 'APPROVED' },
+            },
+            include: { user: true },
+        });
+
+        return applicants.map(
+            (applicant) => new ProjectApplicantResponse(applicant),
+        );
     }
 
     async acceptApplicant(
         projectTeamId: number,
         memberId: number,
         applicantId: number,
-    ): Promise<any> {
-        await this.ensureUserIsProjectMember(projectTeamId, memberId);
-        const status = await this.projectMemberRepository.getApplicantStatus(
-            projectTeamId,
-            applicantId,
+    ): Promise<ProjectApplicantResponse> {
+        this.logger.debug('🔥 지원자 승인 시작');
+        this.logger.debug(
+            `projectTeamId: ${projectTeamId}, memberId: ${memberId}, applicantId: ${applicantId}`,
         );
 
-        if (status === 'APPROVED') {
-            this.logger.warn(
-                `User (ID: ${applicantId}) is already APPROVED for Project Team (ID: ${projectTeamId})`,
-            );
-            throw new AlreadyApprovedException();
+        try {
+            await this.ensureUserIsProjectMember(projectTeamId, memberId);
+            const status =
+                await this.projectMemberRepository.getApplicantStatus(
+                    projectTeamId,
+                    applicantId,
+                );
+
+            if (status === 'APPROVED') {
+                this.logger.warn(`이미 승인된 지원자 (ID: ${applicantId})`);
+                throw new AlreadyApprovedException();
+            }
+
+            const updatedApplicant =
+                await this.projectMemberRepository.updateApplicantStatus(
+                    projectTeamId,
+                    applicantId,
+                    'APPROVED',
+                );
+
+            this.logger.debug(`✅ 지원자 승인 완료 (ID: ${applicantId})`);
+            return new ProjectApplicantResponse(updatedApplicant);
+        } catch (error) {
+            this.logger.error('❌ 지원자 승인 중 예외 발생:', error);
+            throw error;
         }
-        return await this.projectMemberRepository.updateApplicantStatus(
-            projectTeamId,
-            applicantId,
-            'APPROVED',
-        );
     }
 
     async rejectApplicant(
         projectTeamId: number,
         memberId: number,
         applicantId: number,
-    ): Promise<any> {
-        await this.ensureUserIsProjectMember(projectTeamId, memberId);
-        const status = await this.projectMemberRepository.getApplicantStatus(
-            projectTeamId,
-            applicantId,
+    ): Promise<ProjectApplicantResponse> {
+        this.logger.debug('🔥 지원자 거절 시작');
+        this.logger.debug(
+            `projectTeamId: ${projectTeamId}, memberId: ${memberId}, applicantId: ${applicantId}`,
         );
-        if (status === 'APPROVED') {
-            this.logger.warn(
-                `User (ID: ${applicantId}) is already APPROVED for Project Team (ID: ${projectTeamId})`,
-            );
-            throw new AlreadyApprovedException();
+
+        try {
+            await this.ensureUserIsProjectMember(projectTeamId, memberId);
+            const status =
+                await this.projectMemberRepository.getApplicantStatus(
+                    projectTeamId,
+                    applicantId,
+                );
+
+            if (status === 'APPROVED') {
+                this.logger.warn(`이미 승인된 지원자 (ID: ${applicantId})`);
+                throw new AlreadyApprovedException();
+            }
+
+            const updatedApplicant =
+                await this.projectMemberRepository.updateApplicantStatus(
+                    projectTeamId,
+                    applicantId,
+                    'REJECT',
+                );
+
+            this.logger.debug(`✅ 지원자 거절 완료 (ID: ${applicantId})`);
+            return new ProjectApplicantResponse(updatedApplicant);
+        } catch (error) {
+            this.logger.error('❌ 지원자 거절 중 예외 발생:', error);
+            throw error;
         }
-        return await this.projectMemberRepository.updateApplicantStatus(
-            projectTeamId,
-            applicantId,
-            'REJECT',
-        );
     }
 
     async addMemberToProjectTeam(
@@ -632,95 +727,140 @@ export class ProjectTeamService {
         requesterId: number,
         memberId: number,
         isLeader: boolean,
-        teamRole: string, // teamRole 추가
-    ): Promise<any> {
-        this.logger.debug('🔥 [START] addMemberToProjectTeam 요청 시작');
+        teamRole: string,
+    ): Promise<ProjectMemberResponse> {
+        this.logger.debug('🔥 팀원 추가 시작');
+        this.logger.debug(
+            `projectTeamId: ${projectTeamId}, requesterId: ${requesterId}, memberId: ${memberId}`,
+        );
 
         try {
-            // 요청자가 존재하는지 확인 (프로젝트 멤버 여부는 확인하지 않음)
             const isRequesterExists =
                 await this.projectTeamRepository.isUserExists(requesterId);
-
             if (!isRequesterExists) {
+                this.logger.error(`요청자 없음 (ID: ${requesterId})`);
                 throw new Error(
                     `요청자(ID: ${requesterId})가 존재하지 않습니다.`,
                 );
             }
 
-            // 추가하려는 멤버가 존재하는지 확인
             const isMemberExists =
                 await this.projectTeamRepository.isUserExists(memberId);
-
             if (!isMemberExists) {
+                this.logger.error(`추가할 멤버 없음 (ID: ${memberId})`);
                 throw new Error(
                     `추가하려는 사용자(ID: ${memberId})가 존재하지 않습니다.`,
                 );
             }
 
-            // 프로젝트 멤버 추가
             const data =
                 await this.projectMemberRepository.addMemberToProjectTeam(
                     projectTeamId,
                     memberId,
                     isLeader,
-                    teamRole, // teamRole 전달
+                    teamRole,
                 );
 
-            this.logger.debug('✅ [SUCCESS] 프로젝트 팀원 추가 성공');
-            return data;
+            this.logger.debug(`✅ 팀원 추가 완료 (ID: ${memberId})`);
+            return new ProjectMemberResponse(data);
         } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] addMemberToProjectTeam 에서 예외 발생: ',
-                error,
-            );
+            this.logger.error('❌ 팀원 추가 중 예외 발생:', error);
             throw error;
         }
     }
 
-    async getAllTeams(): Promise<any> {
+    async getAllTeams(dto: GetTeamQueryRequest = {}): Promise<any> {
         try {
-            // 프로젝트 데이터 조회
-            const projectTeams = await this.prisma.projectTeam.findMany({
-                where: { isDeleted: false },
-                select: {
-                    id: true,
-                    isDeleted: true,
-                    isRecruited: true,
-                    isFinished: true,
-                    name: true,
-                    frontendNum: true,
-                    backendNum: true,
-                    devopsNum: true,
-                    uiuxNum: true,
-                    dataEngineerNum: true,
-                    projectExplain: true,
-                    resultImages: {
-                        where: { isDeleted: false },
-                        select: { imageUrl: true },
-                    },
-                    teamStacks: {
-                        where: { isMain: true }, // `isMain`이 true인 데이터만 가져옴
-                        include: { stack: true },
-                    },
-                },
-            });
+            const { teamTypes, isRecruited, isFinished, positions } = dto;
+            const getPositionFilter = (
+                positions?: string[],
+            ): Prisma.ProjectTeamWhereInput => {
+                if (!positions || positions.length === 0) return {};
 
-            // 스터디 데이터 조회
-            const studyTeams = await this.prisma.studyTeam.findMany({
-                where: { isDeleted: false },
-                select: {
-                    id: true,
-                    isDeleted: true,
-                    isRecruited: true,
-                    isFinished: true,
-                    name: true,
-                    recruitNum: true,
-                    studyExplain: true,
-                },
-            });
+                const filters = positions
+                    .map((position) => {
+                        switch (position) {
+                            case 'frontend':
+                                return { frontendNum: { gt: 0 } };
+                            case 'backend':
+                                return { backendNum: { gt: 0 } };
+                            case 'devops':
+                                return { devopsNum: { gt: 0 } };
+                            case 'uiux':
+                                return { uiuxNum: { gt: 0 } };
+                            case 'dataEngineer':
+                                return { dataEngineerNum: { gt: 0 } };
+                            default:
+                                return null;
+                        }
+                    })
+                    .filter(Boolean);
 
-            // 반환 형식 설정
+                return filters.length > 0 ? { OR: filters } : {};
+            };
+
+            let projectTeams = [];
+            const shouldFetchProjects =
+                !teamTypes || teamTypes.includes('project');
+            if (shouldFetchProjects) {
+                projectTeams = await this.prisma.projectTeam.findMany({
+                    where: {
+                        isDeleted: false,
+                        ...(isRecruited !== undefined ? { isRecruited } : {}),
+                        ...(isFinished !== undefined ? { isFinished } : {}),
+                        ...(positions && getPositionFilter(positions)),
+                    },
+                    select: {
+                        id: true,
+                        isDeleted: true,
+                        isRecruited: true,
+                        isFinished: true,
+                        name: true,
+                        createdAt: true,
+                        frontendNum: true,
+                        backendNum: true,
+                        devopsNum: true,
+                        uiuxNum: true,
+                        dataEngineerNum: true,
+                        projectExplain: true,
+                        mainImages: {
+                            where: { isDeleted: false },
+                            select: { imageUrl: true },
+                        },
+                        teamStacks: {
+                            where: { isMain: true },
+                            include: { stack: true },
+                        },
+                    },
+                });
+            }
+
+            let studyTeams = [];
+            const shouldFetchStudies =
+                !teamTypes || teamTypes.includes('study');
+            if (shouldFetchStudies) {
+                studyTeams = await this.prisma.studyTeam.findMany({
+                    where: {
+                        isDeleted: false,
+                        ...(isRecruited !== undefined ? { isRecruited } : {}),
+                        ...(isFinished !== undefined ? { isFinished } : {}),
+                    },
+                    select: {
+                        id: true,
+                        isDeleted: true,
+                        isRecruited: true,
+                        isFinished: true,
+                        name: true,
+                        createdAt: true,
+                        recruitNum: true,
+                        studyExplain: true,
+                    },
+                });
+            }
+
             const formattedProjects = projectTeams.map((project) => ({
+                type: 'project',
+                createdAt: project.createdAt,
                 id: project.id,
                 isDeleted: project.isDeleted,
                 isRecruited: project.isRecruited,
@@ -732,16 +872,16 @@ export class ProjectTeamService {
                 uiuxNum: project.uiuxNum,
                 dataEngineerNum: project.dataEngineerNum,
                 projectExplain: project.projectExplain,
-                resultImages: project.resultImages.map(
-                    (image) => image.imageUrl,
-                ),
+                mainImages: project.mainImages.map((image) => image.imageUrl),
                 teamStacks: project.teamStacks.map((stack) => ({
                     stackName: stack.stack.name,
                     isMain: stack.isMain,
-                })), // `isMain`이 true인 데이터만 포함
+                })),
             }));
 
             const formattedStudies = studyTeams.map((study) => ({
+                type: 'study',
+                createdAt: study.createdAt,
                 id: study.id,
                 isDeleted: study.isDeleted,
                 isRecruited: study.isRecruited,
@@ -751,28 +891,47 @@ export class ProjectTeamService {
                 studyExplain: study.studyExplain,
             }));
 
+            const filteredProjects = formattedProjects.filter(
+                (team) =>
+                    (teamTypes ? teamTypes.includes(team.type) : true) && // teamTypes 조건 체크
+                    (isRecruited === undefined
+                        ? true
+                        : team.isRecruited === isRecruited) &&
+                    (isFinished === undefined
+                        ? true
+                        : team.isFinished === isFinished),
+            );
+
+            const filteredStudies = formattedStudies.filter(
+                (team) =>
+                    (teamTypes ? teamTypes.includes(team.type) : true) && // teamTypes 조건 체크
+                    (isRecruited === undefined
+                        ? true
+                        : team.isRecruited === isRecruited) &&
+                    (isFinished === undefined
+                        ? true
+                        : team.isFinished === isFinished),
+            );
+
+            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환
+            const allTeams = !teamTypes
+                ? [...filteredProjects, ...filteredStudies].sort(
+                      (a, b) =>
+                          new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime(), // 날짜 순으로 정렬
+                  )
+                : [];
+
             return {
-                projectTeams: formattedProjects,
-                studyTeams: formattedStudies,
+                ...(teamTypes
+                    ? {
+                          projectTeams: filteredProjects,
+                          studyTeams: filteredStudies,
+                      }
+                    : { allTeams }),
             };
         } catch (error) {
-            this.logger.error('❌ [ERROR] getAllTeams 에서 예외 발생: ', error);
             throw new Error('팀 데이터를 조회하는 중 오류가 발생했습니다.');
-        }
-    }
-
-    async isUserExists(userId: number): Promise<boolean> {
-        try {
-            const user = await this.prisma.user.findUnique({
-                where: { id: userId },
-            });
-            return !!user; // 사용자가 존재하면 true 반환
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] isUserExists 에서 예외 발생: ',
-                error,
-            );
-            throw new Error('사용자 확인 중 오류가 발생했습니다.');
         }
     }
 }

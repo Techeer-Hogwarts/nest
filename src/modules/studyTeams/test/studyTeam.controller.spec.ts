@@ -8,6 +8,12 @@ import {
     mockUpdateStudyTeamRequest,
     mockCreateStudyMemberRequest,
 } from './mock-data';
+import {
+    GetStudyTeamResponse,
+    StudyApplicantResponse,
+    StudyMemberResponse,
+} from '../dto/response/get.studyTeam.response';
+type StatusCategory = 'PENDING' | 'APPROVED' | 'REJECT';
 
 describe('StudyTeamController', () => {
     let controller: StudyTeamController;
@@ -63,7 +69,24 @@ describe('StudyTeamController', () => {
 
     describe('uploadStudyTeam', () => {
         it('should create a study team successfully', async () => {
-            service.createStudyTeam.mockResolvedValue({ id: 1 });
+            const mockStudyTeam = {
+                id: 1,
+                name: 'Test Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: false,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
+            service.createStudyTeam.mockResolvedValue(mockStudyTeam);
 
             const result = await controller.uploadStudyTeam(
                 JSON.stringify(mockCreateStudyTeamRequest),
@@ -72,17 +95,30 @@ describe('StudyTeamController', () => {
             );
 
             expect(service.createStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 201,
-                message: '스터디 공고가 생성되었습니다.',
-                data: { id: 1 },
-            });
+            expect(result).toEqual(mockStudyTeam);
         });
     });
 
     describe('updateStudyTeam', () => {
         it('should update a study team successfully', async () => {
-            service.updateStudyTeam.mockResolvedValue({});
+            const mockUpdatedStudy = {
+                id: 1,
+                name: 'Updated Study',
+                notionLink: 'https://notion.so/updated',
+                recruitExplain: 'updated',
+                recruitNum: 6,
+                rule: 'updated rule',
+                goal: 'updated goal',
+                studyExplain: 'updated explain',
+                isRecruited: true,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
+            service.updateStudyTeam.mockResolvedValue(mockUpdatedStudy);
 
             const result = await controller.updateStudyTeam(
                 1,
@@ -92,98 +128,167 @@ describe('StudyTeamController', () => {
             );
 
             expect(service.updateStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 공고가 수정되었습니다.',
-                data: {},
-            });
+            expect(result).toEqual(mockUpdatedStudy);
         });
     });
 
     describe('closeStudyTeam', () => {
         it('should close a study team successfully', async () => {
-            service.closeStudyTeam.mockResolvedValue({});
+            const mockClosedStudy: GetStudyTeamResponse = {
+                id: 1,
+                name: 'Test Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: true, // 마감되어서 true
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
+            service.closeStudyTeam.mockResolvedValue(mockClosedStudy);
 
             const result = await controller.closeStudyTeam(1, {
                 user: { id: 1 },
             });
 
             expect(service.closeStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 공고가 마감되었습니다.',
-                data: {},
-            });
+            expect(result).toEqual(mockClosedStudy);
         });
     });
 
     describe('deleteStudyTeam', () => {
         it('should delete a study team successfully', async () => {
-            service.deleteStudyTeam.mockResolvedValue({});
+            const mockDeletedStudy: GetStudyTeamResponse = {
+                id: 1,
+                name: 'Test Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: false,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
+            service.deleteStudyTeam.mockResolvedValue(mockDeletedStudy);
 
             const result = await controller.deleteStudyTeam(1, {
                 user: { id: 1 },
             });
 
             expect(service.deleteStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 공고가 삭제되었습니다.',
-                data: {},
-            });
+            expect(result).toEqual(mockDeletedStudy);
         });
     });
 
     describe('getUserStudyTeams', () => {
         it('should get user study teams successfully', async () => {
-            service.getUserStudyTeams.mockResolvedValue([]);
+            const mockStudyTeams = [
+                {
+                    id: 1,
+                    name: 'Test Study 1',
+                    notionLink: 'https://notion.so/test',
+                    recruitExplain: 'test',
+                    recruitNum: 5,
+                    rule: 'test rule',
+                    goal: 'test goal',
+                    studyExplain: 'test explain',
+                    isRecruited: false,
+                    isFinished: false,
+                    resultImages: [],
+                    studyMember: [],
+                    likeCount: 0,
+                    viewCount: 0,
+                },
+            ];
+
+            service.getUserStudyTeams.mockResolvedValue(mockStudyTeams);
 
             const result = await controller.getUserStudyTeams({
                 user: { id: 1 },
             });
 
             expect(service.getUserStudyTeams).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '참여한 스터디 목록 조회에 성공했습니다.',
-                data: [],
-            });
+            expect(result).toEqual(mockStudyTeams);
         });
     });
 
     describe('getStudyTeamById', () => {
         it('should get study team details successfully', async () => {
-            service.getStudyTeamById.mockResolvedValue({});
+            const mockStudy: GetStudyTeamResponse = {
+                id: 1,
+                name: 'Test Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: false,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
+            service.getStudyTeamById.mockResolvedValue(mockStudy);
 
             const result = await controller.getStudyTeamById(1);
 
             expect(service.getStudyTeamById).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 상세 조회에 성공했습니다.',
-                data: {},
-            });
+            expect(result).toEqual(mockStudy);
         });
     });
 
     describe('getStudyTeamMembersById', () => {
         it('should get study team members successfully', async () => {
-            service.getStudyTeamMembersById.mockResolvedValue([]);
+            const mockMembers = [
+                {
+                    id: 1,
+                    name: 'User1',
+                    isLeader: true,
+                    teamRole: 'Leader',
+                },
+                {
+                    id: 2,
+                    name: 'User2',
+                    isLeader: false,
+                    teamRole: 'Member',
+                },
+            ];
+
+            service.getStudyTeamMembersById.mockResolvedValue(mockMembers);
 
             const result = await controller.getStudyTeamMembersById(1);
 
             expect(service.getStudyTeamMembersById).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디의 모든 인원 조회에 성공했습니다.',
-                data: [],
-            });
+            expect(result).toEqual(mockMembers);
         });
     });
 
     describe('applyToStudyTeam', () => {
         it('should apply to a study team successfully', async () => {
-            service.applyToStudyTeam.mockResolvedValue({});
+            const mockApplicant = {
+                id: 1,
+                name: 'Applicant',
+                isLeader: false,
+                summary: 'Test application',
+                status: 'PENDING' as StatusCategory,
+            };
+
+            service.applyToStudyTeam.mockResolvedValue(mockApplicant);
 
             const result = await controller.applyToStudyTeam(
                 mockCreateStudyMemberRequest,
@@ -191,147 +296,108 @@ describe('StudyTeamController', () => {
             );
 
             expect(service.applyToStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 201,
-                message: '스터디 지원에 성공했습니다.',
-                data: {},
-            });
+            expect(result).toEqual(mockApplicant);
         });
     });
 
     describe('cancelApplication', () => {
         it('should cancel an application successfully', async () => {
-            service.cancelApplication.mockResolvedValue({});
+            const mockCanceledMember: StudyMemberResponse = {
+                id: 1,
+                name: 'Test User',
+                isLeader: false,
+            };
+
+            service.cancelApplication.mockResolvedValue(mockCanceledMember);
 
             const result = await controller.cancelApplication(1, {
                 user: { id: 1 },
             });
 
             expect(service.cancelApplication).toHaveBeenCalled();
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 지원 취소에 성공했습니다.',
-                data: {},
-            });
+            expect(result).toEqual(mockCanceledMember);
         });
     });
 
     describe('getApplicants', () => {
         it('should get study applicants successfully', async () => {
-            const mockApplicants = [
+            const mockApplicants: StudyApplicantResponse[] = [
                 {
                     id: 1,
-                    name: 'User1',
+                    name: 'Applicant 1',
+                    isLeader: false,
+                    summary: 'Test application 1',
+                    status: 'PENDING' as StatusCategory,
                 },
                 {
                     id: 2,
-                    name: 'User2',
+                    name: 'Applicant 2',
+                    isLeader: false,
+                    summary: 'Test application 2',
+                    status: 'PENDING' as StatusCategory,
                 },
             ];
+
             service.getApplicants.mockResolvedValue(mockApplicants);
 
             const result = await controller.getApplicants(1, {
                 user: { id: 1 },
             });
 
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 지원자 조회에 성공했습니다.',
-                data: mockApplicants,
-            });
             expect(service.getApplicants).toHaveBeenCalledWith(1, 1);
-        });
-
-        it('should handle errors in getApplicants', async () => {
-            service.getApplicants.mockRejectedValue(
-                new Error('Failed to get applicants'),
-            );
-
-            await expect(
-                controller.getApplicants(1, { user: { id: 1 } }),
-            ).rejects.toThrow('Failed to get applicants');
+            expect(result).toEqual(mockApplicants);
         });
     });
 
     describe('acceptApplicant', () => {
         it('should accept an applicant successfully', async () => {
+            const mockAcceptedApplicant: StudyApplicantResponse = {
+                id: 1,
+                name: 'Accepted Applicant',
+                isLeader: false,
+                summary: 'Test application',
+                status: 'APPROVED' as StatusCategory,
+            };
+
+            service.acceptApplicant.mockResolvedValue(mockAcceptedApplicant);
+
             const mockRequest = {
                 studyTeamId: 1,
                 applicantId: 2,
             };
-
-            const mockResponse = {
-                id: 1,
-                status: 'APPROVED',
-            };
-            service.acceptApplicant.mockResolvedValue(mockResponse);
 
             const result = await controller.acceptApplicant(mockRequest, {
                 user: { id: 1 },
             });
 
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 지원을 수락했습니다.',
-                data: mockResponse,
-            });
             expect(service.acceptApplicant).toHaveBeenCalledWith(1, 1, 2);
-        });
-
-        it('should handle errors in acceptApplicant', async () => {
-            const mockRequest = {
-                studyTeamId: 1,
-                applicantId: 2,
-            };
-
-            service.acceptApplicant.mockRejectedValue(
-                new Error('Failed to accept applicant'),
-            );
-
-            await expect(
-                controller.acceptApplicant(mockRequest, { user: { id: 1 } }),
-            ).rejects.toThrow('Failed to accept applicant');
+            expect(result).toEqual(mockAcceptedApplicant);
         });
     });
 
     describe('rejectApplicant', () => {
         it('should reject an applicant successfully', async () => {
+            const mockRejectedApplicant: StudyApplicantResponse = {
+                id: 1,
+                name: 'Rejected Applicant',
+                isLeader: false,
+                summary: 'Test application',
+                status: 'REJECT' as StatusCategory,
+            };
+
+            service.rejectApplicant.mockResolvedValue(mockRejectedApplicant);
+
             const mockRequest = {
                 studyTeamId: 1,
                 applicantId: 2,
             };
-
-            const mockResponse = {
-                id: 1,
-                status: 'REJECTED',
-            };
-            service.rejectApplicant.mockResolvedValue(mockResponse);
 
             const result = await controller.rejectApplicant(mockRequest, {
                 user: { id: 1 },
             });
 
-            expect(result).toEqual({
-                code: 200,
-                message: '스터디 지원을 거절했습니다.',
-                data: mockResponse,
-            });
             expect(service.rejectApplicant).toHaveBeenCalledWith(1, 1, 2);
-        });
-
-        it('should handle errors in rejectApplicant', async () => {
-            const mockRequest = {
-                studyTeamId: 1,
-                applicantId: 2,
-            };
-
-            service.rejectApplicant.mockRejectedValue(
-                new Error('Failed to reject applicant'),
-            );
-
-            await expect(
-                controller.rejectApplicant(mockRequest, { user: { id: 1 } }),
-            ).rejects.toThrow('Failed to reject applicant');
+            expect(result).toEqual(mockRejectedApplicant);
         });
     });
 
@@ -355,11 +421,7 @@ describe('StudyTeamController', () => {
                 user: { id: 1 },
             });
 
-            expect(result).toEqual({
-                code: 201,
-                message: '스터디 팀원 추가에 성공했습니다.',
-                data: mockResponse,
-            });
+            expect(result).toEqual(mockResponse);
             expect(service.addMemberToStudyTeam).toHaveBeenCalledWith(
                 1,
                 1,

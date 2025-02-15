@@ -6,8 +6,9 @@ import {
     mockUser1,
     mockUser2,
     mockCreateStudyTeamRequest,
-    mockStudyTeamWithMembers,
 } from './mock-data';
+import { GetStudyTeamResponse } from '../dto/response/get.studyTeam.response';
+import { StatusCategory } from '@prisma/client';
 
 describe('StudyTeamRepository', () => {
     let studyTeamRepository: StudyTeamRepository;
@@ -86,22 +87,93 @@ describe('StudyTeamRepository', () => {
 
     describe('createStudyTeam', () => {
         it('should create a study team successfully', async () => {
+            const mockCreatedStudyTeam = {
+                ...mockStudyTeam1,
+                resultImages: mockCreateStudyTeamRequest.resultImages.map(
+                    (imageUrl) => ({
+                        imageUrl,
+                        id: 1,
+                        createdAt: new Date('2025-02-14T16:20:16.816Z'),
+                        updatedAt: new Date('2025-02-14T16:20:16.816Z'),
+                        isDeleted: false,
+                        studyTeamId: 1,
+                    }),
+                ),
+                studyMember: mockCreateStudyTeamRequest.studyMember.map(
+                    (member) => ({
+                        id: 1,
+                        createdAt: new Date('2025-02-14T16:20:16.816Z'),
+                        updatedAt: new Date('2025-02-14T16:20:16.816Z'),
+                        isDeleted: false,
+                        studyTeamId: 1,
+                        summary: '초기 참여 인원입니다',
+                        status: 'APPROVED' as StatusCategory,
+                        userId: member.userId,
+                        isLeader: member.isLeader,
+                        user: {
+                            id: member.userId,
+                            name: 'Test User',
+                        },
+                    }),
+                ),
+            };
+
             jest.spyOn(prismaService.studyTeam, 'create').mockResolvedValueOnce(
-                mockStudyTeam1,
+                mockCreatedStudyTeam as any,
             );
 
             const result = await studyTeamRepository.createStudyTeam(
                 mockCreateStudyTeamRequest,
             );
 
-            expect(result).toEqual({
-                id: 1,
-                ...mockStudyTeam1,
-            });
+            expect(result).toEqual(
+                new GetStudyTeamResponse(mockCreatedStudyTeam as any),
+            );
             expect(prismaService.studyTeam.create).toHaveBeenCalledWith({
-                data: expect.objectContaining({ name: 'Test Study' }),
+                data: {
+                    name: mockCreateStudyTeamRequest.name,
+                    githubLink: mockCreateStudyTeamRequest.githubLink,
+                    notionLink: mockCreateStudyTeamRequest.notionLink,
+                    studyExplain: mockCreateStudyTeamRequest.studyExplain,
+                    goal: mockCreateStudyTeamRequest.goal,
+                    rule: mockCreateStudyTeamRequest.rule,
+                    recruitNum: mockCreateStudyTeamRequest.recruitNum,
+                    recruitExplain: mockCreateStudyTeamRequest.recruitExplain,
+                    createdAt: expect.any(Date),
+                    updatedAt: expect.any(Date),
+                    isDeleted: false,
+                    isRecruited: true,
+                    isFinished: false,
+                    studyMember: {
+                        create: mockCreateStudyTeamRequest.studyMember.map(
+                            (member) => ({
+                                status: 'APPROVED',
+                                summary: '초기 참여 인원입니다',
+                                user: {
+                                    connect: { id: member.userId },
+                                },
+                                isLeader: member.isLeader,
+                            }),
+                        ),
+                    },
+                    resultImages: {
+                        create: mockCreateStudyTeamRequest.resultImages.map(
+                            (imageUrl) => ({
+                                imageUrl,
+                            }),
+                        ),
+                    },
+                },
                 include: {
-                    studyMember: true,
+                    studyMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
                     resultImages: true,
                 },
             });
@@ -164,50 +236,43 @@ describe('StudyTeamRepository', () => {
 
     describe('updateStudyTeam', () => {
         it('should update the study team successfully', async () => {
+            const mockUpdatedStudyTeam = {
+                ...mockStudyTeam1,
+                name: 'Updated Test Study',
+                resultImages: [],
+                studyMember: [],
+            };
+
             jest.spyOn(prismaService.studyTeam, 'update').mockResolvedValueOnce(
-                {
-                    ...mockStudyTeam1,
-                    name: 'Test Study',
-                },
+                mockUpdatedStudyTeam,
             );
 
-            const result = await studyTeamRepository.updateStudyTeam(1, {
-                name: 'Test Study',
-            });
+            const updateRequest = {
+                name: 'Updated Test Study',
+            };
 
-            // 방법 1: 모든 속성을 명시적으로 검증
-            expect(result).toEqual({
-                id: 1,
-                name: 'Test Study',
-                createdAt: expect.any(Date),
-                updatedAt: expect.any(Date),
-                isDeleted: false,
-                isFinished: false,
-                isRecruited: true,
-                githubLink: 'https://github.com/test',
-                notionLink: 'https://notion.so/test',
-                studyExplain: 'This is a test study',
-                goal: 'Learn TypeScript',
-                rule: 'Follow best practices',
-                recruitNum: 5,
-                recruitExplain: 'Looking for dedicated learners',
-                likeCount: 0,
-                viewCount: 0,
-            });
+            const result = await studyTeamRepository.updateStudyTeam(
+                1,
+                updateRequest,
+            );
 
-            // 방법 2: 부분적 속성만 검증
-            expect(result).toMatchObject({
-                id: 1,
-                name: 'Test Study',
-            });
-
-            // Prisma의 update 호출을 검증
+            expect(result).toEqual(
+                new GetStudyTeamResponse(mockUpdatedStudyTeam),
+            );
             expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
                 where: { id: 1 },
-                data: expect.objectContaining({ name: 'Test Study' }),
+                data: expect.objectContaining(updateRequest),
                 include: {
-                    resultImages: { where: { isDeleted: false } },
-                    studyMember: { where: { isDeleted: false } },
+                    resultImages: true,
+                    studyMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
                 },
             });
         });
@@ -215,19 +280,36 @@ describe('StudyTeamRepository', () => {
 
     describe('closeStudyTeam', () => {
         it('should successfully close the study team', async () => {
+            const mockClosedStudyTeam = {
+                ...mockStudyTeam1,
+                isRecruited: false,
+                resultImages: [],
+                studyMember: [],
+            };
+
             jest.spyOn(prismaService.studyTeam, 'update').mockResolvedValueOnce(
-                mockStudyTeam1,
+                mockClosedStudyTeam,
             );
 
             const result = await studyTeamRepository.closeStudyTeam(1);
 
-            expect(result).toEqual(mockStudyTeam1);
+            expect(result).toEqual(
+                new GetStudyTeamResponse(mockClosedStudyTeam),
+            );
             expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
                 where: { id: 1 },
                 data: { isRecruited: false },
                 include: {
-                    resultImages: { where: { isDeleted: false } },
-                    studyMember: { where: { isDeleted: false } },
+                    resultImages: true,
+                    studyMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
                 },
             });
         });
@@ -235,19 +317,36 @@ describe('StudyTeamRepository', () => {
 
     describe('deleteStudyTeam', () => {
         it('should successfully delete the study team', async () => {
+            const mockDeletedStudyTeam = {
+                ...mockStudyTeam1,
+                isDeleted: true,
+                resultImages: [],
+                studyMember: [],
+            };
+
             jest.spyOn(prismaService.studyTeam, 'update').mockResolvedValueOnce(
-                mockStudyTeam1,
+                mockDeletedStudyTeam,
             );
 
             const result = await studyTeamRepository.deleteStudyTeam(1);
 
-            expect(result).toEqual(mockStudyTeam1);
+            expect(result).toEqual(
+                new GetStudyTeamResponse(mockDeletedStudyTeam),
+            );
             expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
                 where: { id: 1 },
                 data: { isDeleted: true },
                 include: {
-                    resultImages: { where: { isDeleted: false } },
-                    studyMember: { where: { isDeleted: false } },
+                    resultImages: true,
+                    studyMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
+                    },
                 },
             });
         });
@@ -255,20 +354,48 @@ describe('StudyTeamRepository', () => {
 
     describe('getUserStudyTeams', () => {
         it('should return a list of study teams the user is part of', async () => {
+            const mockUserStudyTeams = [
+                {
+                    ...mockStudyTeam1,
+                    resultImages: [
+                        {
+                            id: 1,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            isDeleted: false,
+                            studyTeamId: 1,
+                            imageUrl: 'http://example.com/image.jpg',
+                        },
+                    ],
+                    studyMember: [
+                        {
+                            id: 1,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            isDeleted: false,
+                            isLeader: true,
+                            studyTeamId: 1,
+                            userId: 1,
+                            summary: '',
+                            status: 'APPROVED' as StatusCategory,
+                            user: { name: 'User 1' },
+                        },
+                    ],
+                },
+            ];
+
             jest.spyOn(
                 prismaService.studyTeam,
                 'findMany',
-            ).mockResolvedValueOnce([mockStudyTeam1]);
+            ).mockResolvedValueOnce(mockUserStudyTeams);
 
             const result = await studyTeamRepository.getUserStudyTeams(1);
 
-            expect(result).toEqual([
-                {
-                    ...mockStudyTeam1,
-                    resultImages: [],
-                    studyMember: [],
-                },
-            ]);
+            expect(result).toEqual(
+                mockUserStudyTeams.map(
+                    (team) => new GetStudyTeamResponse(team),
+                ),
+            );
             expect(prismaService.studyTeam.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
@@ -282,14 +409,19 @@ describe('StudyTeamRepository', () => {
                 include: {
                     resultImages: {
                         where: { isDeleted: false },
-                        select: { imageUrl: true },
                     },
                     studyMember: {
                         where: {
                             isDeleted: false,
                             status: 'APPROVED',
                         },
-                        select: { user: { select: { name: true } } },
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                        },
                     },
                 },
             });
@@ -298,42 +430,48 @@ describe('StudyTeamRepository', () => {
 
     describe('getStudyTeamMembersById', () => {
         it('should return the members of a study team by its ID', async () => {
-            jest.spyOn(
-                prismaService.studyTeam,
-                'findUnique',
-            ).mockResolvedValueOnce(mockStudyTeamWithMembers);
-            const result = await studyTeamRepository.getStudyTeamMembersById(1);
-
-            expect(result).toEqual({
-                studyName: 'Test Study',
-                members: [
+            const mockStudyTeam = {
+                name: 'Test Study',
+                studyMember: [
                     {
-                        name: 'User 1',
+                        user: { name: 'User 1' },
                         isLeader: true,
                     },
                     {
-                        name: 'User 2',
+                        user: { name: 'User 2' },
                         isLeader: false,
                     },
                 ],
-            });
+            };
+
+            jest.spyOn(
+                prismaService.studyTeam,
+                'findUnique',
+            ).mockResolvedValueOnce(mockStudyTeam as any);
+
+            const result = await studyTeamRepository.getStudyTeamMembersById(1);
+
+            expect(result).toEqual([
+                {
+                    name: 'User 1',
+                    isLeader: true,
+                },
+                {
+                    name: 'User 2',
+                    isLeader: false,
+                },
+            ]);
 
             expect(prismaService.studyTeam.findUnique).toHaveBeenCalledWith({
                 where: {
                     id: 1,
                     isDeleted: false,
                 },
-                select: {
-                    name: true,
+                include: {
                     studyMember: {
                         where: { isDeleted: false },
-                        select: {
-                            user: {
-                                select: {
-                                    name: true,
-                                },
-                            },
-                            isLeader: true,
+                        include: {
+                            user: true,
                         },
                     },
                 },

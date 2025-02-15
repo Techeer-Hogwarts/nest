@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import {
-    CloseProjectException,
-    DeleteProjectException,
-    DuplicateProjectNameException,
-} from '../../../global/exception/custom.exception';
+import { DuplicateProjectNameException } from '../../../global/exception/custom.exception';
 
 @Injectable()
 export class ProjectTeamRepository {
@@ -51,87 +47,6 @@ export class ProjectTeamRepository {
                 error,
             );
             throw error;
-        }
-    }
-
-    async closeProject(id: number): Promise<any> {
-        try {
-            const closedProject = await this.prisma.projectTeam.update({
-                where: { id },
-                data: { isRecruited: false },
-            });
-
-            this.logger.debug('✅ Project closed successfully');
-            return closedProject;
-        } catch (error) {
-            this.logger.error('❌ Error while closing project', error);
-            throw new CloseProjectException();
-        }
-    }
-
-    async deleteProject(id: number): Promise<any> {
-        try {
-            const deletedProject = await this.prisma.projectTeam.update({
-                where: { id },
-                data: { isDeleted: true },
-            });
-
-            this.logger.debug('✅ Project deleted successfully');
-            return deletedProject;
-        } catch (error) {
-            this.logger.error('❌ Error while deleting project', error);
-            throw new DeleteProjectException();
-        }
-    }
-
-    async getProjectTeamMembersById(id: number): Promise<any> {
-        try {
-            const projectTeam = await this.prisma.projectTeam.findUnique({
-                where: {
-                    id: id,
-                    isDeleted: false,
-                },
-                select: {
-                    name: true,
-                    projectMember: {
-                        where: {
-                            isDeleted: false,
-                            status: 'APPROVED', // 🔥 APPROVED 상태의 멤버만 조회
-                        },
-                        select: {
-                            user: {
-                                select: {
-                                    name: true,
-                                },
-                            },
-                            teamRole: true, // 역할 가져오기
-                            isLeader: true, // 팀장 여부 가져오기
-                        },
-                    },
-                },
-            });
-
-            if (!projectTeam) {
-                return null;
-            }
-
-            const formattedProjectTeam = {
-                projectName: projectTeam.name,
-                members: projectTeam.projectMember.map((member) => ({
-                    name: member.user.name,
-                    role: member.teamRole,
-                    isLeader: member.isLeader, // 팀장 여부 추가
-                })),
-            };
-
-            this.logger.debug('✅ [SUCCESS] 프로젝트의 모든 인원 조회 성공');
-            return formattedProjectTeam;
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] getProjectTeamMembersById 에서 예외 발생: ',
-                error,
-            );
-            throw new Error('데이터베이스 에러가 발생했습니다.');
         }
     }
 

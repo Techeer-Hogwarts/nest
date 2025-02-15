@@ -13,6 +13,11 @@ import {
 import { UpdateStudyTeamRequest } from './dto/request/update.studyTeam.request';
 import { CreateStudyMemberRequest } from '../studyMembers/dto/request/create.studyMember.request';
 import { StudyMemberRepository } from '../studyMembers/repository/studyMember.repository';
+import {
+    GetStudyTeamResponse,
+    StudyApplicantResponse,
+    StudyMemberResponse,
+} from './dto/response/get.studyTeam.response';
 
 @Injectable()
 export class StudyTeamService {
@@ -102,7 +107,7 @@ export class StudyTeamService {
     async createStudyTeam(
         createStudyTeamRequest: CreateStudyTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<any> {
+    ): Promise<GetStudyTeamResponse> {
         const existingStudy = await this.studyTeamRepository.findStudyByName(
             createStudyTeamRequest.name,
         );
@@ -170,7 +175,7 @@ export class StudyTeamService {
         userId: number,
         updateStudyTeamDto: UpdateStudyTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<any> {
+    ): Promise<GetStudyTeamResponse> {
         try {
             this.logger.debug('🔥 [START] updateStudyTeam 요청 시작');
 
@@ -209,14 +214,12 @@ export class StudyTeamService {
             delete updateData.deleteMembers;
             delete updateData.resultImages;
 
-            const studyData = await this.studyTeamRepository.updateStudyTeam(
+            return await this.studyTeamRepository.updateStudyTeam(
                 studyTeamId,
                 updateData,
                 updateStudyTeamDto.resultImages,
                 updateStudyTeamDto.studyMember,
             );
-
-            return studyData;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] updateStudyTeam 에서 예외 발생: ',
@@ -226,7 +229,10 @@ export class StudyTeamService {
         }
     }
 
-    async closeStudyTeam(studyTeamId: number, userId: number): Promise<any> {
+    async closeStudyTeam(
+        studyTeamId: number,
+        userId: number,
+    ): Promise<GetStudyTeamResponse> {
         try {
             await this.ensureUserIsStudyMember(studyTeamId, userId);
 
@@ -236,15 +242,13 @@ export class StudyTeamService {
                 throw new NotFoundStudyTeamException();
             }
 
-            if (study.status === 'CLOSED') {
+            if ((study.isRecruited = false)) {
                 throw new Error(
                     `이미 마감된 스터디 팀입니다 (ID: ${studyTeamId})`,
                 );
             }
 
-            const updatedStudyTeam =
-                await this.studyTeamRepository.closeStudyTeam(studyTeamId);
-            return updatedStudyTeam;
+            return await this.studyTeamRepository.closeStudyTeam(studyTeamId);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] closeStudyTeam 중 예외 발생: ',
@@ -254,7 +258,10 @@ export class StudyTeamService {
         }
     }
 
-    async deleteStudyTeam(studyTeamId: number, userId: number): Promise<any> {
+    async deleteStudyTeam(
+        studyTeamId: number,
+        userId: number,
+    ): Promise<GetStudyTeamResponse> {
         try {
             await this.ensureUserIsStudyMember(studyTeamId, userId);
             const updatedStudyTeam =
@@ -270,7 +277,7 @@ export class StudyTeamService {
         }
     }
 
-    async getUserStudyTeams(userId: number): Promise<any> {
+    async getUserStudyTeams(userId: number): Promise<GetStudyTeamResponse[]> {
         try {
             const studyData =
                 await this.studyTeamRepository.getUserStudyTeams(userId);
@@ -285,7 +292,7 @@ export class StudyTeamService {
         }
     }
 
-    async getStudyTeamById(studyTeamId: number): Promise<any> {
+    async getStudyTeamById(studyTeamId: number): Promise<GetStudyTeamResponse> {
         try {
             const studyData =
                 await this.studyTeamRepository.getStudyTeamById(studyTeamId);
@@ -305,7 +312,9 @@ export class StudyTeamService {
         }
     }
 
-    async getStudyTeamMembersById(studyTeamId: number): Promise<any> {
+    async getStudyTeamMembersById(
+        studyTeamId: number,
+    ): Promise<StudyMemberResponse[]> {
         try {
             const studyData =
                 await this.studyTeamRepository.getStudyTeamMembersById(
@@ -330,7 +339,7 @@ export class StudyTeamService {
     async applyToStudyTeam(
         createStudyMemberRequest: CreateStudyMemberRequest,
         userId: number,
-    ): Promise<any> {
+    ): Promise<StudyApplicantResponse> {
         this.logger.debug('🔥 [START] applyToStudyTeam 요청 시작');
 
         await this.studyMemberRepository.isUserAlreadyInStudy(
@@ -349,7 +358,10 @@ export class StudyTeamService {
         return newApplication;
     }
 
-    async cancelApplication(studyTeamId: number, userId: number): Promise<any> {
+    async cancelApplication(
+        studyTeamId: number,
+        userId: number,
+    ): Promise<StudyMemberResponse> {
         try {
             this.logger.debug('🔥 [START] cancelApplication 요청 시작');
             this.logger.debug(userId);
@@ -383,7 +395,10 @@ export class StudyTeamService {
     }
 
     // 스터디 지원자 조회
-    async getApplicants(studyTeamId: number, userId: number): Promise<any> {
+    async getApplicants(
+        studyTeamId: number,
+        userId: number,
+    ): Promise<StudyApplicantResponse[]> {
         this.logger.debug('🔥 [START] getApplicants 요청 시작');
         await this.ensureUserIsStudyMember(studyTeamId, userId);
         const data =
@@ -397,24 +412,37 @@ export class StudyTeamService {
         studyTeamId: number,
         memberId: number,
         applicantId: number,
-    ): Promise<any> {
+    ): Promise<StudyApplicantResponse> {
+        this.logger.debug(
+            `🔥 [시작] 지원자 수락 처리 - 스터디팀: ${studyTeamId}, 처리자: ${memberId}, 지원자: ${applicantId}`,
+        );
+
         await this.ensureUserIsStudyMember(studyTeamId, memberId);
+        this.logger.debug(`✅ 사용자 ${memberId}의 스터디 멤버 자격 확인 완료`);
+
         const status = await this.studyMemberRepository.getApplicantStatus(
             studyTeamId,
             applicantId,
         );
+        this.logger.debug(`현재 지원자 상태: ${status}`);
 
         if (status === 'APPROVED') {
             this.logger.warn(
-                `User (ID: ${applicantId}) is already APPROVED for Study Team (ID: ${studyTeamId})`,
+                `지원자(ID: ${applicantId})는 이미 스터디팀(ID: ${studyTeamId})에 승인되어 있습니다.`,
             );
             throw new AlreadyApprovedException();
         }
-        return await this.studyMemberRepository.updateApplicantStatus(
+
+        const result = await this.studyMemberRepository.updateApplicantStatus(
             studyTeamId,
             applicantId,
             'APPROVED',
         );
+
+        this.logger.debug(
+            `✅ [완료] 지원자 수락 처리 성공 - 지원자 ${applicantId}, 스터디팀 ${studyTeamId}`,
+        );
+        return result;
     }
 
     // 스터디 지원 거절
@@ -422,23 +450,37 @@ export class StudyTeamService {
         studyTeamId: number,
         memberId: number,
         applicantId: number,
-    ): Promise<any> {
+    ): Promise<StudyApplicantResponse> {
+        this.logger.debug(
+            `🔥 [시작] 지원자 거절 처리 - 스터디팀: ${studyTeamId}, 처리자: ${memberId}, 지원자: ${applicantId}`,
+        );
+
         await this.ensureUserIsStudyMember(studyTeamId, memberId);
+        this.logger.debug(`✅ 사용자 ${memberId}의 스터디 멤버 자격 확인 완료`);
+
         const status = await this.studyMemberRepository.getApplicantStatus(
             studyTeamId,
             applicantId,
         );
+        this.logger.debug(`현재 지원자 상태: ${status}`);
+
         if (status === 'APPROVED') {
             this.logger.warn(
-                `User (ID: ${applicantId}) is already APPROVED for Study Team (ID: ${studyTeamId})`,
+                `지원자(ID: ${applicantId})는 이미 스터디팀(ID: ${studyTeamId})에 승인되어 있습니다.`,
             );
             throw new AlreadyApprovedException();
         }
-        return await this.studyMemberRepository.updateApplicantStatus(
+
+        const result = await this.studyMemberRepository.updateApplicantStatus(
             studyTeamId,
             applicantId,
             'REJECT',
         );
+
+        this.logger.debug(
+            `✅ [완료] 지원자 거절 처리 성공 - 지원자 ${applicantId}, 스터디팀 ${studyTeamId}`,
+        );
+        return result;
     }
 
     async addMemberToStudyTeam(
@@ -446,29 +488,40 @@ export class StudyTeamService {
         requesterId: number,
         memberId: number,
         isLeader: boolean,
-    ): Promise<any> {
-        this.logger.debug('🔥 [START] addMemberToStudyTeam 요청 시작');
+    ): Promise<StudyMemberResponse> {
+        this.logger.debug(
+            `🔥 [시작] 스터디팀 멤버 추가 - 스터디팀: ${studyTeamId}, 요청자: ${requesterId}, 새 멤버: ${memberId}, 리더 여부: ${isLeader}`,
+        );
+
         await this.ensureUserIsStudyMember(studyTeamId, requesterId);
+        this.logger.debug(
+            `✅ 요청자 ${requesterId}의 스터디 멤버 자격 확인 완료`,
+        );
+
         const isMember = await this.studyMemberRepository.isUserMemberOfStudy(
             studyTeamId,
             memberId,
         );
+        this.logger.debug(`사용자가 이미 멤버인지 확인: ${isMember}`);
+
         if (isMember) {
+            this.logger.warn(
+                `사용자(ID: ${memberId})는 이미 스터디팀(ID: ${studyTeamId})의 멤버입니다.`,
+            );
             throw new Error(
                 `사용자(ID: ${memberId})는 이미 스터디(ID: ${studyTeamId})에 속해 있습니다.`,
             );
         }
+
         const data = await this.studyMemberRepository.addMemberToStudyTeam(
             studyTeamId,
             memberId,
             isLeader,
         );
 
-        this.logger.debug('✅ [SUCCESS] 스터디 팀원 추가 성공');
+        this.logger.debug(
+            `✅ [완료] 스터디팀 멤버 추가 성공 - 새 멤버 ${memberId}, 스터디팀 ${studyTeamId}`,
+        );
         return data;
-    }
-
-    async getAllStudyTeams(): Promise<any[]> {
-        return this.studyTeamRepository.getAllActiveStudyTeams();
     }
 }
