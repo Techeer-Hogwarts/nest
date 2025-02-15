@@ -77,8 +77,27 @@ describe('StudyTeamService', () => {
 
     describe('updateStudyTeam', () => {
         it('should call repository to update the study team', async () => {
+            const mockUpdatedStudyTeam = {
+                id: 1,
+                name: 'Updated Study',
+                notionLink: 'https://notion.so/test-updated',
+                recruitExplain: 'updated test',
+                recruitNum: 6,
+                rule: 'updated rule',
+                goal: 'updated goal',
+                studyExplain: 'updated explain',
+                isRecruited: false,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
-            studyTeamRepository.updateStudyTeam.mockResolvedValue({});
+            studyTeamRepository.updateStudyTeam.mockResolvedValue(
+                mockUpdatedStudyTeam,
+            );
 
             await service.updateStudyTeam(1, 1, mockUpdateStudyTeamRequest, []);
             expect(studyTeamRepository.updateStudyTeam).toHaveBeenCalled();
@@ -89,9 +108,37 @@ describe('StudyTeamService', () => {
         it('should call repository to close the study team', async () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyTeamRepository.getStudyTeamById.mockResolvedValue({
-                status: 'OPEN',
+                id: 1,
+                name: 'Test Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: false,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             });
-            studyTeamRepository.closeStudyTeam.mockResolvedValue({});
+            studyTeamRepository.closeStudyTeam.mockResolvedValue({
+                id: 1,
+                name: 'Test Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: true,
+                isFinished: false,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            });
 
             await service.closeStudyTeam(1, 1);
             expect(studyTeamRepository.closeStudyTeam).toHaveBeenCalled();
@@ -100,8 +147,28 @@ describe('StudyTeamService', () => {
 
     describe('deleteStudyTeam', () => {
         it('should call repository to delete the study team', async () => {
+            const mockDeletedStudyTeam = {
+                id: 1,
+                name: 'Deleted Study',
+                notionLink: 'https://notion.so/test',
+                recruitExplain: 'test',
+                recruitNum: 5,
+                rule: 'test rule',
+                goal: 'test goal',
+                studyExplain: 'test explain',
+                isRecruited: false,
+                isFinished: false,
+                isDeleted: true,
+                resultImages: [],
+                studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
+
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
-            studyTeamRepository.deleteStudyTeam.mockResolvedValue({});
+            studyTeamRepository.deleteStudyTeam.mockResolvedValue(
+                mockDeletedStudyTeam,
+            );
 
             await service.deleteStudyTeam(1, 1);
             expect(studyTeamRepository.deleteStudyTeam).toHaveBeenCalled();

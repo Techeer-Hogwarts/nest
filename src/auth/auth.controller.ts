@@ -12,7 +12,7 @@ export class AuthController {
     constructor(
         private readonly authService: AuthService,
         private readonly logger: CustomWinstonLogger,
-    ) { }
+    ) {}
 
     @Post('/email')
     @ApiOperation({
