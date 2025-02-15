@@ -19,6 +19,7 @@ import {
 } from './dto/response/get.projectTeam.response';
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 interface Stack {
     id: number;
@@ -315,8 +316,13 @@ export class ProjectTeamService {
         projectTeamId: number,
     ): Promise<ProjectTeamDetailResponse> {
         try {
-            const project = await this.prisma.projectTeam.findUnique({
+            const project = await this.prisma.projectTeam.update({
                 where: { id: projectTeamId },
+                data: {
+                    viewCount: {
+                        increment: 1,
+                    },
+                },
                 include: {
                     resultImages: true,
                     mainImages: true,
@@ -332,11 +338,9 @@ export class ProjectTeamService {
                     },
                 },
             });
-
             if (!project) {
-                throw new Error('프로젝트를 찾을 수 없습니다.');
+                throw new NotFoundProjectException();
             }
-
             // Response DTO에서 status 포함하도록 수정
             const response = new ProjectTeamDetailResponse({
                 ...project,
@@ -346,14 +350,23 @@ export class ProjectTeamService {
                     status: member.status,
                 })),
             });
-
             return response;
         } catch (error) {
+            if (
+                error instanceof PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.warn(
+                    `프로젝트 조회수 증가 실패 - 존재하지 않는 projectTeamId: ${projectTeamId}`,
+                    ProjectTeamService.name,
+                );
+                throw new NotFoundProjectException();
+            }
             this.logger.error(
-                '❌ [ERROR] getProjectById 에서 예외 발생: ',
-                error,
+                `프로젝트 조회수 증가 중 예기치 않은 오류 발생 - projectTeamId: ${projectTeamId}, error: ${error.message}`,
+                ProjectTeamService.name,
             );
-            throw new Error('데이터베이스 에러가 발생했습니다.');
+            throw error;
         }
     }
 
@@ -758,13 +771,7 @@ export class ProjectTeamService {
 
     async getAllTeams(dto: GetTeamQueryRequest = {}): Promise<any> {
         try {
-            console.log('🔹 DTO:', dto);
-
             const { teamTypes, isRecruited, isFinished, positions } = dto;
-
-            console.log('🔹 isRecruited:', isRecruited);
-            console.log('🔹 isFinished:', isFinished);
-            console.log('🔹 positions:', positions);
             const getPositionFilter = (
                 positions?: string[],
             ): Prisma.ProjectTeamWhereInput => {
@@ -796,7 +803,6 @@ export class ProjectTeamService {
             const shouldFetchProjects =
                 !teamTypes || teamTypes.includes('project');
             if (shouldFetchProjects) {
-                console.log('🔹 Fetching Project Teams...');
                 projectTeams = await this.prisma.projectTeam.findMany({
                     where: {
                         isDeleted: false,
@@ -827,14 +833,12 @@ export class ProjectTeamService {
                         },
                     },
                 });
-                console.log('✅ projectTeams:', projectTeams);
             }
 
             let studyTeams = [];
             const shouldFetchStudies =
                 !teamTypes || teamTypes.includes('study');
             if (shouldFetchStudies) {
-                console.log('🔹 Fetching Study Teams...');
                 studyTeams = await this.prisma.studyTeam.findMany({
                     where: {
                         isDeleted: false,
@@ -852,7 +856,6 @@ export class ProjectTeamService {
                         studyExplain: true,
                     },
                 });
-                console.log('✅ studyTeams:', studyTeams);
             }
 
             const formattedProjects = projectTeams.map((project) => ({
@@ -888,9 +891,6 @@ export class ProjectTeamService {
                 studyExplain: study.studyExplain,
             }));
 
-            console.log('✅ Formatted Projects:', formattedProjects);
-            console.log('✅ Formatted Studies:', formattedStudies);
-
             const filteredProjects = formattedProjects.filter(
                 (team) =>
                     (teamTypes ? teamTypes.includes(team.type) : true) && // teamTypes 조건 체크
@@ -913,9 +913,6 @@ export class ProjectTeamService {
                         : team.isFinished === isFinished),
             );
 
-            console.log('✅ Filtered Projects:', filteredProjects);
-            console.log('✅ Filtered Studies:', filteredStudies);
-
             // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환
             const allTeams = !teamTypes
                 ? [...filteredProjects, ...filteredStudies].sort(
@@ -924,8 +921,6 @@ export class ProjectTeamService {
                           new Date(a.createdAt).getTime(), // 날짜 순으로 정렬
                   )
                 : [];
-
-            console.log('✅ All Teams:', allTeams);
 
             return {
                 ...(teamTypes
@@ -936,7 +931,6 @@ export class ProjectTeamService {
                     : { allTeams }),
             };
         } catch (error) {
-            console.error('❌ [ERROR] getAllTeams 에서 예외 발생:', error);
             throw new Error('팀 데이터를 조회하는 중 오류가 발생했습니다.');
         }
     }

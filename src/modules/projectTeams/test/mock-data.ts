@@ -109,6 +109,8 @@ export const mockProjectTeamResponse = {
             summary: '프론트엔드 개발자입니다.', // 추가
         },
     ],
+    likeCount: 0,
+    viewCount: 0,
 };
 export const mockProjectMemberResponse = {
     id: 1,

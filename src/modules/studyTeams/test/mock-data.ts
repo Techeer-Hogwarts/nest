@@ -140,6 +140,8 @@ export const mockStudyTeamWithMembers = {
             isLeader: false,
         },
     ],
+    likeCount: 0,
+    viewCount: 0,
 };
 
 export const mockCreateStudyMemberRequest = {

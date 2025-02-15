@@ -29,6 +29,8 @@ export class GetStudyTeamResponse {
         studyTeamId: number;
         userId: number;
     }[];
+    readonly likeCount: number;
+    readonly viewCount: number;
 
     constructor(
         studyTeam: StudyTeam & {
@@ -59,6 +61,8 @@ export class GetStudyTeamResponse {
             studyTeamId: member.studyTeamId,
             userId: member.userId,
         }));
+        this.likeCount = studyTeam.likeCount;
+        this.viewCount = studyTeam.viewCount;
     }
 }
 

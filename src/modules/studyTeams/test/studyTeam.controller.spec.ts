@@ -82,6 +82,8 @@ describe('StudyTeamController', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             service.createStudyTeam.mockResolvedValue(mockStudyTeam);
@@ -112,6 +114,8 @@ describe('StudyTeamController', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             service.updateStudyTeam.mockResolvedValue(mockUpdatedStudy);
@@ -143,6 +147,8 @@ describe('StudyTeamController', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             service.closeStudyTeam.mockResolvedValue(mockClosedStudy);
@@ -171,6 +177,8 @@ describe('StudyTeamController', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             service.deleteStudyTeam.mockResolvedValue(mockDeletedStudy);
@@ -200,6 +208,8 @@ describe('StudyTeamController', () => {
                     isFinished: false,
                     resultImages: [],
                     studyMember: [],
+                    likeCount: 0,
+                    viewCount: 0,
                 },
             ];
 
@@ -229,6 +239,8 @@ describe('StudyTeamController', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             service.getStudyTeamById.mockResolvedValue(mockStudy);

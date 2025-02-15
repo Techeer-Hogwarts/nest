@@ -198,6 +198,25 @@ export class ProjectTeamController {
         }
     }
 
+    @Get('/:projectTeamId')
+    @ApiOperation({
+        summary: '프로젝트 상세 조회',
+        description: '프로젝트 아이디로 프로젝트 상세 정보를 조회합니다.',
+    })
+    async getProjectById(
+        @Param('projectTeamId') projectTeamId: number,
+    ): Promise<ProjectTeamDetailResponse> {
+        try {
+            return await this.projectTeamService.getProjectById(projectTeamId);
+        } catch (error) {
+            this.logger.error(
+                '❌ [ERROR] getProjectById 에서 예외 발생: ',
+                error,
+            );
+            throw error;
+        }
+    }
+
     @Patch('/:projectTeamId')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({
@@ -333,25 +352,6 @@ export class ProjectTeamController {
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] deleteProject 에서 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
-    }
-
-    @Get('/:projectTeamId')
-    @ApiOperation({
-        summary: '프로젝트 상세 조회',
-        description: '프로젝트 아이디로 프로젝트 상세 정보를 조회합니다.',
-    })
-    async getProjectById(
-        @Param('projectTeamId') projectTeamId: number,
-    ): Promise<ProjectTeamDetailResponse> {
-        try {
-            return await this.projectTeamService.getProjectById(projectTeamId);
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] getProjectById 에서 예외 발생: ',
                 error,
             );
             throw error;

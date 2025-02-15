@@ -40,13 +40,15 @@ export class ProjectTeamDetailResponse {
         isMain: boolean;
         stack: { name: string };
     }[];
-
     readonly projectMember: {
         id: number;
         name: string;
         isLeader: boolean;
         teamRole: string;
     }[];
+    readonly likeCount: number;
+    readonly viewCount: number;
+
     constructor(
         project: ProjectTeam & {
             resultImages: (ProjectResultImage & {
@@ -103,6 +105,8 @@ export class ProjectTeamDetailResponse {
             isLeader: member.isLeader,
             teamRole: member.teamRole,
         }));
+        this.likeCount = project.likeCount;
+        this.viewCount = project.viewCount;
     }
 }
 

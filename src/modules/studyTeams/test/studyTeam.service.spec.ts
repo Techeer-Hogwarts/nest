@@ -90,6 +90,8 @@ describe('StudyTeamService', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
@@ -118,6 +120,8 @@ describe('StudyTeamService', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             });
             studyTeamRepository.closeStudyTeam.mockResolvedValue({
                 id: 1,
@@ -132,6 +136,8 @@ describe('StudyTeamService', () => {
                 isFinished: false,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             });
 
             await service.closeStudyTeam(1, 1);
@@ -155,6 +161,8 @@ describe('StudyTeamService', () => {
                 isDeleted: true,
                 resultImages: [],
                 studyMember: [],
+                likeCount: 0,
+                viewCount: 0,
             };
 
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);

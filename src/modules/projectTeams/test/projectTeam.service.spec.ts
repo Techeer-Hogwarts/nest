@@ -172,7 +172,8 @@ describe('ProjectTeamService', () => {
                         projectTeamId: 1,
                     }),
                 ),
-
+                likeCount: 0,
+                viewCount: 0,
                 resultImages: [], // 추가된 부분
             };
 
@@ -201,15 +202,14 @@ describe('ProjectTeamService', () => {
                 ],
             };
 
-            jest.spyOn(
-                prismaService.projectTeam,
-                'findUnique',
-            ).mockResolvedValue(mockProjectDetail);
+            jest.spyOn(prismaService.projectTeam, 'update').mockResolvedValue(
+                mockProjectDetail,
+            );
 
             const result = await service.getProjectById(1);
 
             expect(result).toBeDefined();
-            expect(prismaService.projectTeam.findUnique).toHaveBeenCalledWith(
+            expect(prismaService.projectTeam.update).toHaveBeenCalledWith(
                 expect.any(Object),
             );
         });

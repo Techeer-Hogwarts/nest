@@ -157,6 +157,8 @@ model ProjectTeam {
   projectMember   ProjectMember[]
   resultImages    ProjectResultImage[]
   mainImages      ProjectMainImage[]
+  likeCount       Int                  @default(0)
+  viewCount       Int                  @default(0)
 }
 
 model StudyTeam {

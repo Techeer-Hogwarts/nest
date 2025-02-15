@@ -7,6 +7,9 @@ import {
     GetStudyTeamResponse,
     StudyMemberResponse,
 } from '../dto/response/get.studyTeam.response';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { NotFoundStudyTeamException } from '../../../global/exception/custom.exception';
+import { StudyTeamService } from '../studyTeam.service';
 
 @Injectable()
 export class StudyTeamRepository {
@@ -312,10 +315,15 @@ export class StudyTeamRepository {
     // 스터디 아이디로 스터디 상세 조회 (토큰 검사 X)
     async getStudyTeamById(id: number): Promise<GetStudyTeamResponse> {
         try {
-            const studyTeam = await this.prisma.studyTeam.findUnique({
+            const studyTeam = await this.prisma.studyTeam.update({
                 where: {
                     id: id,
                     isDeleted: false,
+                },
+                data: {
+                    viewCount: {
+                        increment: 1,
+                    },
                 },
                 include: {
                     resultImages: {
@@ -334,19 +342,27 @@ export class StudyTeamRepository {
                     },
                 },
             });
-
             if (!studyTeam) {
-                this.logger.warn(`Study Team with ID ${id} not found.`);
-                throw new Error('해당 ID의 스터디 팀을 찾을 수 없습니다.');
+                this.logger.error(`Study Team with ID ${id} not found.`);
+                throw new NotFoundStudyTeamException();
             }
-
             return new GetStudyTeamResponse(studyTeam);
         } catch (error) {
+            if (
+                error instanceof PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.warn(
+                    `스터디 조회수 증가 실패 - 존재하지 않는 id: ${id}`,
+                    StudyTeamService.name,
+                );
+                throw new NotFoundStudyTeamException();
+            }
             this.logger.error(
-                '❌ [ERROR] getStudyTeamById 에서 예외 발생: ',
-                error,
+                `스터디 조회수 증가 중 예기치 않은 오류 발생 - id: ${id}, error: ${error.message}`,
+                StudyTeamService.name,
             );
-            throw new Error('데이터베이스 에러가 발생했습니다.');
+            throw error;
         }
     }
 
