@@ -24,6 +24,7 @@ export class GetBlogResponse {
     readonly createdAt: Date;
     readonly likeCount: number;
     readonly viewCount: number;
+    readonly thumbnail: string;
     readonly author: {
         authorName: string;
         authorImage: string;
@@ -39,6 +40,7 @@ export class GetBlogResponse {
         this.createdAt = blog.createdAt;
         this.likeCount = blog.likeCount;
         this.viewCount = blog.viewCount;
+        this.thumbnail = blog.thumbnail;
         this.author = {
             authorName: blog.author,
             authorImage: blog.authorImage,
