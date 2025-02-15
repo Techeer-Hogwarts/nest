@@ -105,16 +105,16 @@ export class AuthController {
         response.cookie('access_token', accessToken, {
             httpOnly: true,
             path: '/',
-            maxAge: 15 * 60 * 1000, // 15분
-            secure: true,
-            domain: '.techeerzip.cloud',
+            maxAge: 60 * 60 * 1000, // 1시간
+            // secure: true,
+            // domain: '.techeerzip.cloud',
         });
         response.cookie('refresh_token', refreshToken, {
             httpOnly: true,
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
-            secure: true,
-            domain: '.techeerzip.cloud',
+            // secure: true,
+            // domain: '.techeerzip.cloud',
         });
         this.logger.debug('로그인이 완료되었습니다.', AuthController.name);
         return {
