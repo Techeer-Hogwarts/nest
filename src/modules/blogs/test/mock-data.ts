@@ -57,7 +57,6 @@ export const blogEntities: BlogEntity[] = [
 ];
 
 export const getBlogsQueryRequest: GetBlogsQueryRequest = {
-    keyword: 'Test',
     category: BlogCategory.TECHEER,
     offset: 0,
     limit: 10,

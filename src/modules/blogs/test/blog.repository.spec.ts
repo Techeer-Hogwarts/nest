@@ -9,7 +9,6 @@ import {
     paginationQueryDto,
 } from './mock-data';
 import { Prisma } from '@prisma/client';
-import { BlogCategory } from '../../../global/category/blog.category';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('BlogRepository', (): void => {
@@ -82,27 +81,6 @@ describe('BlogRepository', (): void => {
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    ...(getBlogsQueryRequest.keyword && {
-                        OR: [
-                            {
-                                title: {
-                                    contains: getBlogsQueryRequest.keyword,
-                                    mode: 'insensitive',
-                                },
-                            },
-                            {
-                                category: BlogCategory.TECHEER,
-                            },
-                            {
-                                user: {
-                                    name: {
-                                        contains: getBlogsQueryRequest.keyword,
-                                        mode: 'insensitive',
-                                    },
-                                },
-                            },
-                        ],
-                    }),
                     ...(getBlogsQueryRequest.category && {
                         category: getBlogsQueryRequest.category,
                     }),

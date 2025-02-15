@@ -32,6 +32,7 @@ export class ResumeController {
         private readonly logger: CustomWinstonLogger,
     ) {}
 
+    @UseGuards(JwtAuthGuard)
     @Get()
     @ApiOperation({
         summary: '이력서 목록 조회 및 검색',
@@ -52,6 +53,7 @@ export class ResumeController {
         return result;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('/best')
     @ApiOperation({
         summary: '인기 이력서 목록 조회',
@@ -130,6 +132,7 @@ export class ResumeController {
         return result;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get(':resumeId')
     @ApiOperation({
         summary: '단일 이력서 조회',
@@ -150,6 +153,7 @@ export class ResumeController {
         return result;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('/user/:userId')
     @ApiOperation({
         summary: '유저 별 이력서 목록 조회',

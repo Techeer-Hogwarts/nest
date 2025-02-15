@@ -72,6 +72,7 @@ export const resumeEntities: ResumeEntity[] = [
 export const getResumesQueryRequest: GetResumesQueryRequest = {
     position: ['BACKEND', 'FRONTEND'],
     year: [1, 2, 3],
+    category: 'PORTFOLIO',
     offset: 0,
     limit: 10,
 };

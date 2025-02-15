@@ -15,6 +15,7 @@ import { ResumeService } from '../../../modules/resumes/resume.service';
 import { UserRepository } from '../repository/user.repository';
 import { User } from '@prisma/client';
 import { GetUserResponse } from '../dto/response/get.user.response';
+import { TaskService } from '../../../global/task/task.service';
 
 describe('UserService', () => {
     let userService: UserService;
@@ -81,6 +82,10 @@ describe('UserService', () => {
                         debug: jest.fn(),
                         error: jest.fn(),
                     },
+                },
+                {
+                    provide: TaskService,
+                    useValue: {},
                 },
             ],
         }).compile();

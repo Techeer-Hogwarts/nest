@@ -109,7 +109,7 @@ export class LikeRepository {
         );
     }
 
-    async getLikeList<T extends object>(
+    async getLikeList<T extends Record<string, any>>(
         userId: number,
         getLikeListRequest: GetLikeListRequest,
     ): Promise<T[]> {
@@ -133,10 +133,32 @@ export class LikeRepository {
         `,
         );
         this.logger.debug(
-            `좋아요 목록 조회 성공: ${JSON.stringify(result)}`,
+            `${result.length} 개의 좋아요 목록 조회 성공`,
             LikeRepository.name,
         );
-        return result;
+        return await Promise.all(
+            result.map(async (content) => {
+                if ('userId' in content && content.userId) {
+                    // userId가 존재하는 경우만 유저 정보 조회
+                    this.logger.debug(`유저 정보 추가`, LikeRepository.name);
+                    const user = await this.prisma.user.findUnique({
+                        where: { id: content.userId },
+                        select: {
+                            id: true,
+                            name: true,
+                            nickname: true,
+                            roleId: true,
+                            profileImage: true,
+                        },
+                    });
+                    return {
+                        ...content,
+                        user,
+                    };
+                }
+                return content; // userId가 없는 경우 그대로 반환
+            }),
+        );
     }
 
     async getLikeCount(

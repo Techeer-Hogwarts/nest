@@ -49,20 +49,30 @@ export class ResumeRepository {
             `이력서 상세 조회 - resumeId: ${resumeId}`,
             ResumeRepository.name,
         );
-        const resume = await this.prisma.resume.findUnique({
-            where: {
-                id: resumeId,
-                isDeleted: false,
-            },
-            include: {
-                user: true,
-            },
-        });
+        const resume = await this.prisma.resume
+            .update({
+                where: {
+                    id: resumeId,
+                    isDeleted: false,
+                },
+                data: {
+                    viewCount: {
+                        increment: 1, // Prisma의 `increment`를 사용하여 viewCount 증가
+                    },
+                },
+                include: {
+                    user: true,
+                },
+            })
+            .catch(() => null); // 예외 발생 시 null 반환
         if (!resume) {
             this.logger.error(`이력서를 찾을 수 없음`, ResumeRepository.name);
             throw new NotFoundResumeException();
         }
-        this.logger.debug(`이력서 상세 조회 성공`, ResumeRepository.name);
+        this.logger.debug(
+            `이력서 상세 조회 및 viewCount 증가 성공`,
+            ResumeRepository.name,
+        );
         return resume;
     }
 
@@ -92,11 +102,12 @@ export class ResumeRepository {
         const {
             position,
             year,
+            category,
             offset = 0,
             limit = 10,
         }: GetResumesQueryRequest = query;
         this.logger.debug(
-            `이력서 엔티티 목록 조회 - position: ${position}, year: ${year}, offset: ${offset}, limit: ${limit}`,
+            `이력서 엔티티 목록 조회 - position: ${position}, year: ${year}, category: ${category}, offset: ${offset}, limit: ${limit}`,
             ResumeRepository.name,
         );
         const resumes = await this.prisma.resume.findMany({
@@ -107,6 +118,9 @@ export class ResumeRepository {
                 }),
                 ...(year?.length && {
                     user: { year: { in: year } },
+                }),
+                ...(category?.length && {
+                    category,
                 }),
             },
             include: {

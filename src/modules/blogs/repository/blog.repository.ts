@@ -7,6 +7,8 @@ import { Prisma } from '@prisma/client';
 import { CrawlingBlogResponse } from '../dto/response/crawling.blog.response';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
+import { NotFoundBlogException } from '../../../global/exception/custom.exception';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class BlogRepository {
@@ -77,39 +79,17 @@ export class BlogRepository {
 
     async getBlogList(query: GetBlogsQueryRequest): Promise<GetBlogResponse[]> {
         const {
-            keyword,
             category,
             offset = 0,
             limit = 10,
         }: GetBlogsQueryRequest = query;
         this.logger.debug(
-            `query - keyword: ${keyword}, category: ${category}, offset: ${offset}, limit: ${limit}`,
+            `query - category: ${category}, offset: ${offset}, limit: ${limit}`,
             BlogRepository.name,
         );
         const blogs = await this.prisma.blog.findMany({
             where: {
                 isDeleted: false,
-                ...(keyword && {
-                    OR: [
-                        {
-                            title: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
-                        },
-                        {
-                            category: category,
-                        },
-                        {
-                            user: {
-                                name: {
-                                    contains: keyword,
-                                    mode: 'insensitive',
-                                },
-                            },
-                        },
-                    ],
-                }),
                 ...(category && { category }),
             },
             include: {
@@ -212,5 +192,44 @@ export class BlogRepository {
             BlogRepository.name,
         );
         return blogsWithUser.map((blog) => new GetBlogResponse(blog));
+    }
+
+    async increaseBlogViewCount(blogId: number): Promise<void> {
+        this.logger.debug(
+            `블로그 조회수 증가 처리 중 - blogId: ${blogId}`,
+            BlogRepository.name,
+        );
+        try {
+            const result = await this.prisma.blog.update({
+                where: {
+                    id: blogId,
+                },
+                data: {
+                    viewCount: {
+                        increment: 1,
+                    },
+                },
+            });
+            this.logger.debug(
+                `블로그 조회수 증가 성공 - viewCount: ${result.viewCount}`,
+                BlogRepository.name,
+            );
+        } catch (error) {
+            if (
+                error instanceof PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.warn(
+                    `블로그 조회수 증가 실패 - 존재하지 않는 blogId: ${blogId}`,
+                    BlogRepository.name,
+                );
+                throw new NotFoundBlogException();
+            }
+            this.logger.error(
+                `블로그 조회수 증가 중 예기치 않은 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
+                BlogRepository.name,
+            );
+            throw error;
+        }
     }
 }

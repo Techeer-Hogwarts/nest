@@ -93,7 +93,7 @@ describe('ResumeRepository', (): void => {
 
     describe('getResume', (): void => {
         it('should return a resume entity if found', async (): Promise<void> => {
-            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(
+            jest.spyOn(prismaService.resume, 'update').mockResolvedValue(
                 resumeEntity(),
             );
 
@@ -101,9 +101,7 @@ describe('ResumeRepository', (): void => {
         });
 
         it('should throw a NotFoundResumeException if no resume is found', async (): Promise<void> => {
-            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(
-                null,
-            );
+            jest.spyOn(prismaService.resume, 'update').mockResolvedValue(null);
 
             await expect(repository.getResume(1)).rejects.toThrow(
                 NotFoundResumeException,
@@ -134,6 +132,9 @@ describe('ResumeRepository', (): void => {
                     }),
                     ...(getResumesQueryRequest.year?.length && {
                         user: { year: { in: getResumesQueryRequest.year } },
+                    }),
+                    ...(getResumesQueryRequest.category && {
+                        category: getResumesQueryRequest.category,
                     }),
                 },
                 include: {

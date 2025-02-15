@@ -1,4 +1,10 @@
-import { IsArray, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import {
+    IsArray,
+    IsEnum,
+    IsNumber,
+    IsOptional,
+    IsString,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { StackCategory } from '../../../../global/category/stack.category';
@@ -29,6 +35,15 @@ export class GetResumesQueryRequest {
     @Type(() => Number)
     @IsNumber({}, { each: true })
     readonly year?: number[];
+
+    @ApiPropertyOptional({
+        description:
+            '카테고리 - 전체/RESUME/PORTFOLIO/ICT/OTHER (기본값: 전체)',
+        example: 'OTHER',
+    })
+    @IsOptional()
+    @IsString()
+    readonly category?: string;
 
     @ApiPropertyOptional({
         description: '오프셋',

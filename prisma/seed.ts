@@ -39,7 +39,7 @@ async function main(): Promise<void> {
             nickname: 'johnny', // 닉네임 중복 주의!
             year: 7,
             password:
-                '$2b$10$Vq4ph/vfMpY6r6TysJ/qyOtjPJK95NOeph7mVf0i/JFyZ9sB/O7T2',
+                '$2b$12$Rw9jlCjZlBz.YIE/rCKzEu0OoUmsujUwyk8LgTUZaaKGfYP9tvHTO',
             githubUrl: 'https://github.com/johndoe',
             mainPosition: 'BACKEND',
             subPosition: 'FRONTEND',
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
             nickname: 'johnny2', // 중복되지 않는 닉네임 사용
             year: 6,
             password:
-                '$2b$10$Vq4ph/vfMpY6r6TysJ/qyOtjPJK95NOeph7mVf0i/JFyZ9sB/O7T2',
+                '$2b$12$Rw9jlCjZlBz.YIE/rCKzEu0OoUmsujUwyk8LgTUZaaKGfYP9tvHTO',
             githubUrl: 'https://github.com/johndoe',
             mainPosition: 'FRONTEND',
             subPosition: 'BACKEND',
@@ -81,7 +81,7 @@ async function main(): Promise<void> {
             nickname: 'johnny3', // 중복되지 않는 닉네임 사용
             year: 5,
             password:
-                '$2b$10$Vq4ph/vfMpY6r6TysJ/qyOtjPJK95NOeph7mVf0i/JFyZ9sB/O7T2',
+                '$2b$12$Rw9jlCjZlBz.YIE/rCKzEu0OoUmsujUwyk8LgTUZaaKGfYP9tvHTO',
             githubUrl: 'https://github.com/johndoe',
             mainPosition: 'FRONTEND',
             subPosition: 'BACKEND',
@@ -688,7 +688,7 @@ async function main(): Promise<void> {
             date: new Date('2023-03-01'),
             author: 'John Doe',
             authorImage: 'https://example.com/john.jpg',
-            category: 'Backend Development',
+            category: 'SHARED',
             thumbnail: 'https://example.com/blog-thumbnail.jpg',
             tags: ['NestJS', 'TypeScript', 'Backend'],
             likeCount: 15,
@@ -704,7 +704,7 @@ async function main(): Promise<void> {
             date: new Date('2023-03-01'),
             author: 'John Doe',
             authorImage: 'https://example.com/john.jpg',
-            category: 'Backend Development',
+            category: 'SHARED',
             thumbnail: 'https://example.com/blog-thumbnail.jpg',
             tags: ['NestJS', 'TypeScript', 'Backend'],
             likeCount: 15,
@@ -720,7 +720,7 @@ async function main(): Promise<void> {
             date: new Date('2023-03-01'),
             author: 'ganadara',
             authorImage: 'https://example.com/john.jpg',
-            category: 'Backend Development',
+            category: 'SHARED',
             thumbnail: 'https://example.com/blog-thumbnail.jpg',
             tags: ['NestJS', 'TypeScript', 'Backend'],
             likeCount: 15,

@@ -214,45 +214,45 @@ model ProjectMainImage {
 }
 
 model Blog {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isDeleted   Boolean  @default(false)
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isDeleted   Boolean      @default(false)
   userId      Int
-  title       String   @db.VarChar(100)
-  url         String   @db.VarChar(200)
+  title       String       @db.VarChar(100)
+  url         String       @db.VarChar(200)
   date        DateTime
-  author      String?  @db.VarChar(100)
-  authorImage String?  @db.VarChar(200)
-  category    String   @db.VarChar(50)
-  thumbnail   String?  @db.VarChar(200)
-  tags        String[] @default([])
-  user        User     @relation("UserBlogs", fields: [userId], references: [id])
-  likeCount   Int      @default(0)
-  viewCount   Int      @default(0)
+  author      String?      @db.VarChar(100)
+  authorImage String?      @db.VarChar(200)
+  category    String       @db.VarChar(50)
+  thumbnail   String?      @db.VarChar(200)
+  tags        String[]     @default([])
+  user        User         @relation("UserBlogs", fields: [userId], references: [id])
+  likeCount       Int             @default(0)
+  viewCount       Int             @default(0)
 }
 
 model Like {
-  id        Int      @id @default(autoincrement())
+  id        Int             @id @default(autoincrement())
   userId    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
   contentId Int
-  category  String   @db.VarChar(50)
-  user      User     @relation("UserLikes", fields: [userId], references: [id])
+  category  String          @db.VarChar(50)
+  user      User            @relation("UserLikes", fields: [userId], references: [id])
 
   @@unique([userId, contentId, category])
 }
 
 model Bookmark {
-  id        Int      @id @default(autoincrement())
+  id        Int             @id @default(autoincrement())
   userId    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  isDeleted Boolean         @default(false)
   contentId Int
-  category  String   @db.VarChar(50)
+  category  String          @db.VarChar(50)
 
   user User @relation("UserBookmarks", fields: [userId], references: [id])
 
@@ -260,19 +260,19 @@ model Bookmark {
 }
 
 model Resume {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  id        Int            @id @default(autoincrement())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  isDeleted Boolean        @default(false)
   userId    Int
-  title     String   @db.VarChar(100)
-  url       String   @db.VarChar(100)
-  isMain    Boolean  @default(false)
-  category  String   @db.VarChar(50)
-  position  String   @db.VarChar(100)
-  user      User     @relation("UserResumes", fields: [userId], references: [id])
-  likeCount Int      @default(0)
-  viewCount Int      @default(0)
+  title     String         @db.VarChar(100)
+  url       String         @db.VarChar(100)
+  isMain    Boolean        @default(false)
+  category  String         @db.VarChar(50)
+  position  String         @db.VarChar(100)
+  user      User           @relation("UserResumes", fields: [userId], references: [id])
+  likeCount       Int             @default(0)
+  viewCount       Int             @default(0)
 }
 
 model Event {
