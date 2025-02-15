@@ -79,39 +79,17 @@ export class BlogRepository {
 
     async getBlogList(query: GetBlogsQueryRequest): Promise<GetBlogResponse[]> {
         const {
-            keyword,
             category,
             offset = 0,
             limit = 10,
         }: GetBlogsQueryRequest = query;
         this.logger.debug(
-            `query - keyword: ${keyword}, category: ${category}, offset: ${offset}, limit: ${limit}`,
+            `query - category: ${category}, offset: ${offset}, limit: ${limit}`,
             BlogRepository.name,
         );
         const blogs = await this.prisma.blog.findMany({
             where: {
                 isDeleted: false,
-                ...(keyword && {
-                    OR: [
-                        {
-                            title: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
-                        },
-                        {
-                            category: category,
-                        },
-                        {
-                            user: {
-                                name: {
-                                    contains: keyword,
-                                    mode: 'insensitive',
-                                },
-                            },
-                        },
-                    ],
-                }),
                 ...(category && { category }),
             },
             include: {

@@ -1,18 +1,10 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { BlogCategory } from '../../../../global/category/blog.category';
 import { normalizeString } from '../../../../global/category/normalize';
 
 export class GetBlogsQueryRequest {
-    @ApiPropertyOptional({
-        description: '검색할 키워드',
-        example: 'sql',
-    })
-    @IsOptional()
-    @IsString()
-    readonly keyword?: string;
-
     @ApiPropertyOptional({
         description:
             '검색할 카테고리 (TECHEER: 테커인 블로그, SHARED: 외부 블로그)',
