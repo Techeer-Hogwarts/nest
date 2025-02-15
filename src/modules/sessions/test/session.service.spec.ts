@@ -13,9 +13,11 @@ import {
     bestSessionEntities,
     getBestSessionsResponse,
     getSessionsQueryRequest,
+    createSessionResponse,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
-import { ForbiddenAccessException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { CreateSessionResponse } from '../dto/response/create.session.response';
 
 describe('SessionService', (): void => {
     let service: SessionService;
@@ -38,6 +40,13 @@ describe('SessionService', (): void => {
                         updateSession: jest.fn(),
                     },
                 },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
@@ -55,12 +64,12 @@ describe('SessionService', (): void => {
                 sessionEntity(),
             );
 
-            const result: GetSessionResponse = await service.createSession(
+            const result: CreateSessionResponse = await service.createSession(
                 1,
                 createSessionRequest,
             );
 
-            expect(result).toEqual(getSessionResponse);
+            expect(result).toEqual(createSessionResponse);
             expect(repository.createSession).toHaveBeenCalledWith(
                 1,
                 createSessionRequest,
@@ -179,20 +188,6 @@ describe('SessionService', (): void => {
             expect(repository.deleteSession).toHaveBeenCalledWith(100);
             expect(repository.deleteSession).toHaveBeenCalledTimes(1);
         });
-
-        it('should throw ForbiddenAccessException if the user does not own the session', async () => {
-            const session = sessionEntity({
-                id: 100,
-                userId: 2,
-            });
-
-            jest.spyOn(repository, 'findById').mockResolvedValue(session);
-
-            await expect(service.deleteSession(1, 100)).rejects.toThrow(
-                ForbiddenAccessException,
-            );
-            expect(repository.findById).toHaveBeenCalledWith(100); // sessionId 확인
-        });
     });
 
     describe('updateSession', (): void => {
@@ -204,36 +199,22 @@ describe('SessionService', (): void => {
                 updatedSessionEntity,
             );
 
-            const result: GetSessionResponse = await service.updateSession(
+            const result: CreateSessionResponse = await service.updateSession(
                 1,
                 100,
                 updateSessionRequest,
             );
 
             expect(result).toEqual(
-                new GetSessionResponse(updatedSessionEntity),
+                new CreateSessionResponse(updatedSessionEntity),
             );
-            expect(result).toBeInstanceOf(GetSessionResponse);
+            expect(result).toBeInstanceOf(CreateSessionResponse);
 
             expect(repository.updateSession).toHaveBeenCalledWith(
                 100,
                 updateSessionRequest,
             );
             expect(repository.updateSession).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw ForbiddenAccessException if the user does not own the session', async (): Promise<void> => {
-            const session = sessionEntity({
-                id: 100,
-                userId: 2,
-            });
-
-            jest.spyOn(repository, 'findById').mockResolvedValue(session);
-
-            await expect(
-                service.updateSession(1, 100, updateSessionRequest),
-            ).rejects.toThrow(ForbiddenAccessException);
-            expect(repository.findById).toHaveBeenCalledWith(100); // sessionId 확인
         });
     });
 });

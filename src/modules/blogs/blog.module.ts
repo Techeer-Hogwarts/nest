@@ -1,11 +1,19 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { BlogController } from './blog.controller';
 import { BlogService } from './blog.service';
 import { BlogRepository } from './repository/blog.repository';
+import { UserModule } from '../users/user.module';
+import { AuthModule } from '../../auth/auth.module';
+import { RabbitMQModule } from '../../global/rabbitmq/rabbitmq.module';
 
 @Module({
-    imports: [PrismaModule],
+    imports: [
+        PrismaModule,
+        UserModule,
+        AuthModule,
+        forwardRef(() => RabbitMQModule),
+    ],
     controllers: [BlogController],
     providers: [BlogService, BlogRepository],
     exports: [BlogService, BlogRepository],

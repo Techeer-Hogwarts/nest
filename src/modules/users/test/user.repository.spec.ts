@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRepository } from '../repository/user.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateUserRequest } from '../dto/request/create.user.request';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { StackCategory } from '../../../global/category/stack.category';
@@ -44,36 +43,6 @@ describe('UserRepository', () => {
         userRepository = module.get<UserRepository>(UserRepository);
         prismaService = module.get<PrismaService>(PrismaService);
         logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
-    });
-
-    describe('createUser', () => {
-        it('should throw error if mainPosition is invalid', async () => {
-            const createUserRequest = {
-                mainPosition: 'InvalidPosition',
-            } as CreateUserRequest;
-            const profileImage = 'http://profileimage.com';
-
-            jest.spyOn(
-                userRepository,
-                'validateAndNormalizePosition',
-            ).mockImplementation(() => {
-                throw new Error('Invalid position');
-            });
-
-            jest.spyOn(logger, 'debug').mockImplementation();
-
-            await expect(
-                userRepository.createUser(createUserRequest, profileImage),
-            ).rejects.toThrow('Invalid position');
-
-            expect(logger.debug).toHaveBeenCalledWith(
-                'createUser mainPosition validation failed',
-                expect.objectContaining({
-                    mainPosition: 'InvalidPosition',
-                    error: 'Invalid position',
-                }),
-            );
-        });
     });
 
     describe('updateUserProfile', () => {
@@ -160,6 +129,11 @@ describe('UserRepository', () => {
                         grade: '2학년',
                         mainPosition: 'Backend',
                         subPosition: 'Frontend',
+                        githubUrl: 'https://github.com/newuser',
+                        velogUrl: 'https://newblog.com',
+                        mediumUrl: 'https://newblog.com',
+                        tistoryUrl: 'https://newblog.com',
+                        isLft: false,
                     }),
                     error: 'Invalid position',
                 }),

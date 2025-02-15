@@ -63,14 +63,20 @@ export class UserRepository {
             normalizedMainPosition = this.validateAndNormalizePosition(
                 createUserRequest.mainPosition,
             );
-            this.logger.debug('createUser mainPosition', {
-                normalizedMainPosition,
-            });
+            this.logger.debug(
+                'createUser mainPosition',
+                JSON.stringify({
+                    normalizedMainPosition,
+                }),
+            );
         } catch (error) {
-            this.logger.debug('createUser mainPosition validation failed', {
-                mainPosition: createUserRequest.mainPosition,
-                error: error.message,
-            });
+            this.logger.debug(
+                'createUser mainPosition validation failed',
+                JSON.stringify({
+                    mainPosition: createUserRequest.mainPosition,
+                    error: error.message,
+                }),
+            );
             throw error;
         }
 
@@ -78,11 +84,17 @@ export class UserRepository {
             ? this.validateAndNormalizePosition(createUserRequest.subPosition)
             : null;
 
-        this.logger.debug('createUser subPosition', { normalizedSubPosition });
+        this.logger.debug(
+            'createUser subPosition',
+            JSON.stringify({ normalizedSubPosition }),
+        );
 
         const validatedGrade = this.validateGrade(createUserRequest.grade);
 
-        this.logger.debug('createUser grade', { validatedGrade });
+        this.logger.debug(
+            'createUser grade',
+            JSON.stringify({ validatedGrade }),
+        );
 
         return prisma.user.create({
             data: {
@@ -141,21 +153,30 @@ export class UserRepository {
                     updateUserRequest.mainPosition,
                 );
             }
-            this.logger.debug('updateUserProfile mainPosition', {
-                updatedData,
-            });
+            this.logger.debug(
+                'updateUserProfile mainPosition',
+                JSON.stringify({
+                    updatedData,
+                }),
+            );
 
             if (updateUserRequest.subPosition) {
                 updatedData.subPosition = this.validateAndNormalizePosition(
                     updateUserRequest.subPosition,
                 );
             }
-            this.logger.debug('updateUserProfile subPosition', { updatedData });
+            this.logger.debug(
+                'updateUserProfile subPosition',
+                JSON.stringify({ updatedData }),
+            );
 
             if (updateUserRequest.grade) {
                 updatedData.grade = this.validateGrade(updateUserRequest.grade);
             }
-            this.logger.debug('updateUserProfile grade', { updatedData });
+            this.logger.debug(
+                'updateUserProfile grade',
+                JSON.stringify({ updatedData }),
+            );
         } catch (error) {
             this.logger.debug('updateUserProfile validation failed', {
                 updatedData,
@@ -170,7 +191,10 @@ export class UserRepository {
             ),
         );
 
-        this.logger.debug('updateUserProfile filteredData', { filteredData });
+        this.logger.debug(
+            'updateUserProfile filteredData',
+            JSON.stringify({ filteredData }),
+        );
 
         return prisma.user.update({
             where: { id: userId },
@@ -258,14 +282,25 @@ export class UserRepository {
         const { position, year, university, grade, offset, limit } = query;
 
         const filters: Record<string, any> = {};
-        if (position) filters.mainPosition = position;
+        if (position) {
+            filters.mainPosition = {
+                in: Array.isArray(position) ? position : [position],
+            };
+        }
         if (year && year.length > 0) filters.year = { in: year };
-        if (university) filters.school = university;
-        if (grade) filters.grade = grade;
+        if (university) {
+            filters.school = {
+                in: Array.isArray(university) ? university : [university],
+            };
+        }
+        if (grade) {
+            filters.grade = { in: Array.isArray(grade) ? grade : [grade] };
+        }
 
-        this.logger.debug('findAllProfiles 쿼리 조건', {
-            filters,
-        });
+        this.logger.debug(
+            'findAllProfiles 쿼리 조건',
+            JSON.stringify(filters, null, 2),
+        );
 
         try {
             const result =
@@ -288,16 +323,25 @@ export class UserRepository {
                     },
                 })) || []; // undefined일 경우 빈 배열로 초기화
 
-            this.logger.debug('findAllProfiles 결과', {
-                count: result.length,
-                data: result,
-            });
+            this.logger.debug(
+                'findAllProfiles 결과',
+                JSON.stringify(
+                    {
+                        count: result.length,
+                        data: result,
+                    },
+                    null,
+                    2,
+                ),
+            );
 
             return result;
         } catch (error) {
-            this.logger.error('findAllProfiles 쿼리 실패', {
-                error: error.message,
-            });
+            this.logger.error(
+                'findAllProfiles 쿼리 실패',
+                JSON.stringify(error, null, 2),
+            );
+
             return [];
         }
     }

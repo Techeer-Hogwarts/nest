@@ -17,11 +17,15 @@ import { GetLikeResponse } from './dto/response/get.like.response';
 import { GetSessionResponse } from '../sessions/dto/response/get.session.response';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('likes')
 @Controller('/likes')
 export class LikeController {
-    constructor(private readonly likeService: LikeService) {}
+    constructor(
+        private readonly likeService: LikeService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     @UseGuards(JwtAuthGuard)
     @Post('')
@@ -35,7 +39,19 @@ export class LikeController {
         @Body() createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
         const user = request.user as any;
-        return this.likeService.toggleLike(user.id, createLikeRequest);
+        this.logger.debug(
+            `좋아요 생성 및 설정 변경 요청 처리 중 - userId: ${user.id}`,
+            LikeController.name,
+        );
+        const result = await this.likeService.toggleLike(
+            user.id,
+            createLikeRequest,
+        );
+        this.logger.debug(
+            `좋아요 생성 및 설정 변경 요청 처리 완료`,
+            LikeController.name,
+        );
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -50,6 +66,18 @@ export class LikeController {
         @Query() getLikeListRequest: GetLikeListRequest,
     ): Promise<GetSessionResponse[] | GetBlogResponse[] | GetResumeResponse[]> {
         const user = request.user as any;
-        return this.likeService.getLikeList(user.id, getLikeListRequest);
+        this.logger.debug(
+            `유저 별 좋아요 목록 조회 요청 처리 중 - userId: ${user.id}`,
+            LikeController.name,
+        );
+        const result = await this.likeService.getLikeList(
+            user.id,
+            getLikeListRequest,
+        );
+        this.logger.debug(
+            `유저 별 좋아요 목록 조회 요청 처리 완료`,
+            LikeController.name,
+        );
+        return result;
     }
 }

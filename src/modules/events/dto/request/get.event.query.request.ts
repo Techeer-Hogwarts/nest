@@ -1,7 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { EventCategory } from '@prisma/client';
-import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class GetEventListQueryRequest {
     @ApiPropertyOptional({ description: '검색할 키워드' })
@@ -11,8 +10,10 @@ export class GetEventListQueryRequest {
 
     @ApiPropertyOptional({ description: '카테고리' })
     @IsOptional()
-    @IsEnum(EventCategory)
-    readonly category?: EventCategory;
+    @IsArray()
+    @IsString({ each: true })
+    @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    readonly category?: string[];
 
     @ApiPropertyOptional({
         description: '오프셋',

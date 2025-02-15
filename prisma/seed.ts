@@ -4,13 +4,11 @@ import { Logger } from '@nestjs/common';
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
-    // Roles
+    // Role 데이터 생성 (upsert 그대로)
     const adminRole = await prisma.role.upsert({
         where: { name: 'admin' },
         update: {},
-        create: {
-            name: 'admin',
-        },
+        create: { name: 'admin' },
     });
 
     const mentorRole = await prisma.role.upsert({
@@ -18,7 +16,7 @@ async function main(): Promise<void> {
         update: {},
         create: {
             name: 'mentor',
-            parent: { connect: { id: adminRole.id } }, // admin과 연결
+            parent: { connect: { id: adminRole.id } },
         },
     });
 
@@ -27,11 +25,75 @@ async function main(): Promise<void> {
         update: {},
         create: {
             name: 'user',
-            parent: { connect: { id: mentorRole.id } }, // mentor와 연결
+            parent: { connect: { id: mentorRole.id } },
         },
     });
 
-    // Stack Seeding
+    // User 더미 데이터 생성 (upsert 사용, 고유 식별자로 email 사용)
+    const user1 = await prisma.user.upsert({
+        where: { email: 'test1@example.com' },
+        update: {},
+        create: {
+            name: '테커짱',
+            email: 'test1@example.com',
+            nickname: 'johnny', // 닉네임 중복 주의!
+            year: 7,
+            password:
+                '$2b$10$Vq4ph/vfMpY6r6TysJ/qyOtjPJK95NOeph7mVf0i/JFyZ9sB/O7T2',
+            githubUrl: 'https://github.com/johndoe',
+            mainPosition: 'BACKEND',
+            subPosition: 'FRONTEND',
+            school: '성결대학교',
+            profileImage: 'https://example.com/profile.jpg',
+            stack: ['Node.js', 'TypeScript', 'Docker'],
+            grade: '1학년',
+            roleId: userRole.id,
+        },
+    });
+
+    const user2 = await prisma.user.upsert({
+        where: { email: 'test2@example.com' },
+        update: {},
+        create: {
+            name: '테커짱2',
+            email: 'test2@example.com',
+            nickname: 'johnny2', // 중복되지 않는 닉네임 사용
+            year: 6,
+            password:
+                '$2b$10$Vq4ph/vfMpY6r6TysJ/qyOtjPJK95NOeph7mVf0i/JFyZ9sB/O7T2',
+            githubUrl: 'https://github.com/johndoe',
+            mainPosition: 'FRONTEND',
+            subPosition: 'BACKEND',
+            school: '한국공학대학교',
+            profileImage: 'https://example.com/profile.jpg',
+            stack: ['Node.js', 'TypeScript', 'Docker'],
+            grade: '1학년',
+            roleId: userRole.id,
+        },
+    });
+
+    const user3 = await prisma.user.upsert({
+        where: { email: 'test3@example.com' },
+        update: {},
+        create: {
+            name: '테커짱3',
+            email: 'test3@example.com',
+            nickname: 'johnny3', // 중복되지 않는 닉네임 사용
+            year: 5,
+            password:
+                '$2b$10$Vq4ph/vfMpY6r6TysJ/qyOtjPJK95NOeph7mVf0i/JFyZ9sB/O7T2',
+            githubUrl: 'https://github.com/johndoe',
+            mainPosition: 'FRONTEND',
+            subPosition: 'BACKEND',
+            school: '한국공학대학교',
+            profileImage: 'https://example.com/profile.jpg',
+            stack: ['Node.js', 'TypeScript', 'Docker'],
+            grade: '1학년',
+            roleId: userRole.id,
+        },
+    });
+
+    // Stack 데이터 생성
     const stacks = [
         {
             name: 'React.js',
@@ -363,7 +425,6 @@ async function main(): Promise<void> {
         },
     ];
 
-    // Insert the stacks
     for (const stack of stacks) {
         await prisma.stack.upsert({
             where: { name: stack.name } as Prisma.StackWhereUniqueInput,
@@ -372,11 +433,302 @@ async function main(): Promise<void> {
         });
     }
 
-    Logger.log('Roles and Stacks have been seeded:', {
-        adminRole,
-        mentorRole,
-        userRole,
+    Logger.log('Stacks have been seeded successfully!');
+
+    // UserExperience 데이터 생성
+    await prisma.userExperience.create({
+        data: {
+            userId: user1.id,
+            position: 'BACKEND',
+            companyName: 'Tech Corp',
+            startDate: new Date('2021-06-01'),
+            endDate: new Date('2023-06-01'),
+            category: 'INTERN',
+            isFinished: true,
+        },
     });
+
+    await prisma.userExperience.create({
+        data: {
+            userId: user2.id,
+            position: 'DATA_ENGINEER',
+            companyName: 'Palo Alto Networks',
+            startDate: new Date('2022-06-01'),
+            endDate: new Date('2023-06-01'),
+            category: 'FULL_TIME',
+            isFinished: true,
+        },
+    });
+
+    await prisma.userExperience.create({
+        data: {
+            userId: user3.id,
+            position: 'DEVOPS',
+            companyName: 'CrowdStrike',
+            startDate: new Date('2021-06-01'),
+            endDate: new Date('2023-12-01'),
+            category: 'FULL_TIME',
+            isFinished: true,
+        },
+    });
+
+    // Session 데이터 생성
+    await prisma.session.create({
+        data: {
+            userId: user1.id,
+            title: 'NestJS Best Practices',
+            likeCount: 10,
+            viewCount: 100,
+            thumbnail: 'https://example.com/session.jpg',
+            videoUrl: 'https://youtube.com/example',
+            fileUrl: 'https://example.com/file.pdf',
+            presenter: 'John Doe',
+            date: '2023-02-01',
+            category: 'BOOTCAMP',
+            position: 'BACKEND',
+        },
+    });
+
+    await prisma.session.create({
+        data: {
+            userId: user2.id,
+            title: 'Grafana Dashboard Tutorial',
+            likeCount: 10,
+            viewCount: 1,
+            thumbnail: 'https://example.com/session.jpg',
+            videoUrl: 'https://youtube.com/example',
+            fileUrl: 'https://example.com/file.pdf',
+            presenter: 'test123',
+            date: '2023-02-01',
+            category: 'BOOTCAMP',
+            position: 'BACKEND',
+        },
+    });
+
+    await prisma.session.create({
+        data: {
+            userId: user3.id,
+            title: 'NestJS Best Practices',
+            likeCount: 10,
+            viewCount: 100,
+            thumbnail: 'https://example.com/session.jpg',
+            videoUrl: 'https://youtube.com/example',
+            fileUrl: 'https://example.com/file.pdf',
+            presenter: 'Harry Potter',
+            date: '2023-02-01',
+            category: 'BOOTCAMP',
+            position: 'FRONTEND',
+        },
+    });
+
+    // Resume 데이터 생성
+    await prisma.resume.create({
+        data: {
+            userId: user1.id,
+            title: 'John Doe Resume',
+            url: 'https://example.com/resume.pdf',
+            isMain: true,
+            category: 'PORTFOLIO',
+            position: 'BACKEND',
+            likeCount: 5,
+            viewCount: 500,
+        },
+    });
+
+    await prisma.resume.create({
+        data: {
+            userId: user2.id,
+            title: 'John Doe Resume',
+            url: 'https://example.com/resume.pdf',
+            isMain: true,
+            category: 'ICT',
+            position: 'FRONTEND',
+            likeCount: 5,
+            viewCount: 50,
+        },
+    });
+
+    await prisma.resume.create({
+        data: {
+            userId: user3.id,
+            title: 'John Doe Resume',
+            url: 'https://example.com/resume.pdf',
+            isMain: true,
+            category: 'PORTFOLIO',
+            position: 'FRONTEND',
+            likeCount: 50000,
+            viewCount: 50000,
+        },
+    });
+
+    // Event 데이터 생성
+    await prisma.event.create({
+        data: {
+            userId: user1.id,
+            title: 'Tech Conference 2024',
+            category: 'Technology',
+            startDate: new Date('2024-05-01'),
+            endDate: new Date('2024-05-03'),
+            url: 'https://techconference.com',
+        },
+    });
+
+    await prisma.event.create({
+        data: {
+            userId: user2.id,
+            title: '테커 파티',
+            category: 'Technology',
+            startDate: new Date('2024-09-08'),
+            endDate: new Date('2024-09-08'),
+            url: 'https://techconference.com',
+        },
+    });
+
+    // 생성한 유저 가져오기
+    const allUsers = await prisma.user.findMany();
+
+    // 프로젝트 팀 3개씩 생성
+    for (const user of allUsers) {
+        for (let i = 1; i <= 3; i++) {
+            await prisma.projectTeam.create({
+                data: {
+                    name: `${user.name}'s Project ${i}`,
+                    githubLink: `https://github.com/${user.name.toLowerCase()}-project-${i}`,
+                    notionLink: `https://notion.so/${user.name.toLowerCase()}-project-${i}`,
+                    projectExplain: `This is a project created by ${user.name}.`,
+                    frontendNum: 2,
+                    backendNum: 2,
+                    devopsNum: 1,
+                    uiuxNum: 1,
+                    dataEngineerNum: 1,
+                    recruitExplain: `We are looking for contributors for ${user.name}'s project ${i}!`,
+                },
+            });
+        }
+    }
+
+    // 스터디 팀 3개씩 생성
+    for (const user of allUsers) {
+        for (let i = 1; i <= 3; i++) {
+            await prisma.studyTeam.create({
+                data: {
+                    name: `${user.name}'s Study ${i}`,
+                    githubLink: `https://github.com/${user.name.toLowerCase()}-study-${i}`,
+                    notionLink: `https://notion.so/${user.name.toLowerCase()}-study-${i}`,
+                    studyExplain: `This is a study group organized by ${user.name}.`,
+                    goal: `The goal of this study is to improve skills for ${user.name}.`,
+                    rule: `Each member must contribute to ${user.name}'s study ${i}.`,
+                    recruitNum: 5,
+                    recruitExplain: `Looking for members to join ${user.name}'s study ${i}.`,
+                },
+            });
+        }
+    }
+
+    const allProjects = await prisma.projectTeam.findMany();
+    const allStudies = await prisma.studyTeam.findMany();
+
+    // 각 프로젝트에 모든 유저를 멤버로 추가
+    for (const project of allProjects) {
+        for (const user of allUsers) {
+            await prisma.projectMember.create({
+                data: {
+                    userId: user.id,
+                    projectTeamId: project.id,
+                    isLeader: Math.random() > 0.5,
+                    teamRole: 'Developer',
+                    summary: `${user.name} is working on ${project.name}`,
+                    status: 'APPROVED',
+                },
+            });
+        }
+    }
+
+    // 각 프로젝트당 결과 이미지는 한 번만 생성
+    for (const project of allProjects) {
+        await prisma.projectResultImage.create({
+            data: {
+                projectTeamId: project.id,
+                imageUrl: `https://example.com/project-${project.id}-image.jpg`,
+            },
+        });
+    }
+
+    // 각 스터디에 모든 유저를 멤버로 추가
+    for (const study of allStudies) {
+        for (const user of allUsers) {
+            await prisma.studyMember.create({
+                data: {
+                    userId: user.id,
+                    studyTeamId: study.id,
+                    isLeader: Math.random() > 0.5,
+                    summary: `${user.name} is studying in ${study.name}`,
+                    status: 'APPROVED',
+                },
+            });
+        }
+    }
+
+    // 각 스터디당 결과 이미지는 한 번만 생성
+    for (const study of allStudies) {
+        await prisma.studyResultImage.create({
+            data: {
+                studyTeamId: study.id,
+                imageUrl: `https://example.com/study-${study.id}-image.jpg`,
+            },
+        });
+    }
+
+    // Blog 데이터 생성
+    await prisma.blog.create({
+        data: {
+            userId: user1.id,
+            title: 'My Journey with NestJS',
+            url: 'https://blog.example.com/nestjs-journey',
+            date: new Date('2023-03-01'),
+            author: 'John Doe',
+            authorImage: 'https://example.com/john.jpg',
+            category: 'Backend Development',
+            thumbnail: 'https://example.com/blog-thumbnail.jpg',
+            tags: ['NestJS', 'TypeScript', 'Backend'],
+            likeCount: 15,
+            viewCount: 10,
+        },
+    });
+
+    await prisma.blog.create({
+        data: {
+            userId: user2.id,
+            title: '목데이터 생성하는 방법 101',
+            url: 'https://blog.example.com/nestjs-journey',
+            date: new Date('2023-03-01'),
+            author: 'John Doe',
+            authorImage: 'https://example.com/john.jpg',
+            category: 'Backend Development',
+            thumbnail: 'https://example.com/blog-thumbnail.jpg',
+            tags: ['NestJS', 'TypeScript', 'Backend'],
+            likeCount: 15,
+            viewCount: 100,
+        },
+    });
+
+    await prisma.blog.create({
+        data: {
+            userId: user3.id,
+            title: '프리즈마를 써보자',
+            url: 'https://blog.example.com/prisma',
+            date: new Date('2023-03-01'),
+            author: 'ganadara',
+            authorImage: 'https://example.com/john.jpg',
+            category: 'Backend Development',
+            thumbnail: 'https://example.com/blog-thumbnail.jpg',
+            tags: ['NestJS', 'TypeScript', 'Backend'],
+            likeCount: 15,
+            viewCount: 200000000,
+        },
+    });
+
+    Logger.log('All mock data has been seeded successfully!');
 }
 
 main()
