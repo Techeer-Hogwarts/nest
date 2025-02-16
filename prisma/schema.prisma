@@ -111,7 +111,7 @@ model StudyMember {
   studyTeam   StudyTeam      @relation(fields: [studyTeamId], references: [id])
   user        User           @relation(fields: [userId], references: [id])
 
-  @@unique([studyTeamId, userId])
+   @@unique([studyTeamId, userId])
 }
 
 model Stack {
@@ -320,4 +320,9 @@ enum StackCategory {
   DATABASE
   DEVOPS
   OTHER
+}
+
+model SyncDb {
+  id             Int      @id @default(autoincrement())
+  lastSyncedAt   DateTime @default(dbgenerated("'2000-01-01 00:00:00'"))
 }
