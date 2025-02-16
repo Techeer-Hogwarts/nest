@@ -333,17 +333,13 @@ export class UserController {
         this.logger.debug(
             '유저 정보 조회 요청 처리 중',
             JSON.stringify({
-                user,
                 UserController: UserController.name,
             }),
         );
         const userInfo: GetUserResponse = await this.userService.getUserInfo(
             user.id,
         );
-        this.logger.debug(
-            `유저 정보 조회 완료: ${userInfo}`,
-            JSON.stringify(UserController.name),
-        );
+        this.logger.debug('유저 정보 조회 완료');
         return userInfo;
     }
 

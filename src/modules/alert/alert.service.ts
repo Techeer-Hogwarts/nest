@@ -2,7 +2,7 @@ import axios from 'axios';
 import { CreateProjectAlertRequest } from './dto/request/create.project.alert.request';
 import { CreateStudyAlertRequest } from './dto/request/create.study.alert.request';
 import { Injectable } from '@nestjs/common';
-import { CustomWinstonLogger } from 'src/global/logger/winston.logger';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 const SLACKBOT_URL = process.env.SLACKBOT_URL;
 
