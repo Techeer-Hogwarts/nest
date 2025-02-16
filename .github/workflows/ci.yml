@@ -89,22 +89,22 @@ jobs:
 
             - name: Build and push Docker image
               env:
-                DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+                  DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
               run: |
-                docker buildx create --use
-                docker buildx build \
-                  --platform linux/amd64,linux/arm64 \
-                  --push \
-                  -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG .
-                  
+                  docker buildx create --use
+                  docker buildx build \
+                    --platform linux/amd64,linux/arm64 \
+                    --push \
+                    -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG .
+
             - name: Also latest tag depending on branch
               if: github.ref == 'refs/heads/main'
               run: |
-                docker buildx create --use
-                docker buildx build \
-                  --platform linux/amd64,linux/arm64 \
-                  --push \
-                  -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:latest .
+                  docker buildx create --use
+                  docker buildx build \
+                    --platform linux/amd64,linux/arm64 \
+                    --push \
+                    -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:latest .
 
             - name: Send Image and Version to Slack
               if: github.ref == 'refs/heads/main' # main 브랜치에 머지 시에만 실행
