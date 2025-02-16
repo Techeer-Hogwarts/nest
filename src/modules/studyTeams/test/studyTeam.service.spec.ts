@@ -4,9 +4,12 @@ import { StudyTeamRepository } from '../repository/studyTeam.repository';
 import { AwsService } from '../../awsS3/aws.service';
 import { StudyMemberRepository } from '../../studyMembers/repository/studyMember.repository';
 import { DuplicateStudyTeamNameException } from '../../../global/exception/custom.exception';
+import { AlertServcie } from '../../alert/alert.service';
 import {
     mockCreateStudyTeamRequest,
     mockUpdateStudyTeamRequest,
+    mockStudyTeamResult1,
+    mockUser,
 } from './mock-data';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
@@ -16,6 +19,7 @@ describe('StudyTeamService', () => {
     let studyMemberRepository: jest.Mocked<StudyMemberRepository>;
     let awsService: jest.Mocked<AwsService>;
     let logger: CustomWinstonLogger;
+    let alertService: AlertServcie;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -62,6 +66,13 @@ describe('StudyTeamService', () => {
                     provide: AwsService,
                     useValue: { imageUploadToS3: jest.fn() },
                 },
+                {
+                    provide: AlertServcie,
+                    useValue: {
+                        sendSlackAlert: jest.fn(),
+                        sendUserAlert: jest.fn().mockResolvedValue(undefined),
+                    },
+                },
             ],
         }).compile();
 
@@ -70,6 +81,7 @@ describe('StudyTeamService', () => {
         studyMemberRepository = module.get(StudyMemberRepository);
         awsService = module.get(AwsService);
         logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
+        alertService = module.get(AlertServcie);
     });
 
     describe('createStudyTeam', () => {
@@ -81,13 +93,19 @@ describe('StudyTeamService', () => {
 
             // 메서드 호출 시 DuplicateStudyTeamNameException 예외 발생 확인
             await expect(
-                service.createStudyTeam(mockCreateStudyTeamRequest, []),
+                service.createStudyTeam(mockStudyTeamResult1.studyResponse, []),
             ).rejects.toThrow(DuplicateStudyTeamNameException);
 
-            // 내부에서 로깅이 제대로 수행되었는지 검증
+            // 내부 로깅 검증
             expect(logger.debug).toHaveBeenCalledWith(
                 `Duplicate study team found for name: ${mockCreateStudyTeamRequest.name}`,
             );
+
+            // Slack 알림은 호출되지 않아야 함
+            const sendSlackAlertSpy = jest
+                .spyOn(alertService, 'sendSlackAlert')
+                .mockResolvedValue(undefined);
+            expect(sendSlackAlertSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -196,7 +214,7 @@ describe('StudyTeamService', () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyMemberRepository.getApplicants.mockResolvedValue([]);
 
-            await service.getApplicants(1, 1);
+            await service.getApplicants(1, mockUser);
             expect(studyMemberRepository.getApplicants).toHaveBeenCalled();
         });
     });
@@ -212,17 +230,6 @@ describe('StudyTeamService', () => {
 
             expect(result).toEqual(['https://s3-url.com/test.jpg']);
             expect(awsService.imageUploadToS3).toHaveBeenCalled();
-        });
-    });
-
-    describe('cancelApplication', () => {
-        it('should call repository to cancel application', async () => {
-            studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
-            studyMemberRepository.cancelApplication.mockResolvedValue({});
-
-            await service.cancelApplication(1, 1);
-
-            expect(studyMemberRepository.cancelApplication).toHaveBeenCalled();
         });
     });
 

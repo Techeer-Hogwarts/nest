@@ -32,7 +32,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
 import { StudyTeamService } from '../studyTeams/studyTeam.service';
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
-import { AlertServcie } from '../alert/alert.service';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
@@ -43,7 +42,6 @@ export class ProjectTeamController {
         private readonly projectTeamService: ProjectTeamService,
         private readonly studyTeamService: StudyTeamService,
         private readonly prisma: PrismaService,
-        private readonly alertService: AlertServcie,
     ) {}
 
     @Post()
@@ -145,13 +143,9 @@ export class ProjectTeamController {
                 files,
             );
             this.logger.debug('🚀 프로젝트 생성 서비스 호출 완료');
-            this.logger.debug(
-                `슬랙봇 요청 데이터 : ${JSON.stringify(createdProject.slackPayload)}`,
-            );
-            await this.alertService.sendSlackAlert(createdProject.slackPayload);
 
             this.logger.debug('✅ createProject 엔드포인트 성공적으로 완료');
-            return createdProject.projectResponse;
+            return createdProject;
         } catch (error) {
             this.logger.error('❌ [ERROR] createProject에서 예외 발생:', error);
             throw error;

@@ -135,7 +135,11 @@ export class UserRepository {
                             select: {
                                 id: true,
                                 name: true,
-                                resultImages: true,
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                    },
+                                },
                             },
                         },
                     },
@@ -147,13 +151,26 @@ export class UserRepository {
                             select: {
                                 id: true,
                                 name: true,
-                                resultImages: true,
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                    },
+                                },
                             },
                         },
                     },
                 },
                 experiences: {
                     where: { isDeleted: false },
+                    select: {
+                        id: true,
+                        position: true,
+                        companyName: true,
+                        category: true,
+                        isFinished: true,
+                        startDate: true,
+                        endDate: true,
+                    },
                 },
             },
         }) as Promise<UserEntity | null>;
@@ -340,7 +357,11 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
-                                        resultImages: true,
+                                        resultImages: {
+                                            select: {
+                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                            },
+                                        },
                                     },
                                 },
                             },
@@ -352,13 +373,29 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
-                                        resultImages: true,
+                                        resultImages: {
+                                            select: {
+                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                            },
+                                        },
                                     },
                                 },
                             },
                         },
+                        experiences: {
+                            where: { isDeleted: false },
+                            select: {
+                                id: true,
+                                position: true,
+                                companyName: true,
+                                category: true,
+                                isFinished: true,
+                                startDate: true,
+                                endDate: true,
+                            },
+                        },
                     },
-                })) || []; // undefined일 경우 빈 배열로 초기화
+                })) || [];
 
             this.logger.debug('조회 성공');
 

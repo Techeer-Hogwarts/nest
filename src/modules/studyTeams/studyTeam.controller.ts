@@ -27,15 +27,13 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-import { CreateStudyResult } from './dto/request/create.study.alert.request';
-import { AlertServcie } from '../alert/alert.service';
+
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
 export class StudyTeamController {
     constructor(
         private readonly studyTeamService: StudyTeamService,
         private readonly logger: CustomWinstonLogger,
-        private readonly alertService: AlertServcie,
     ) {}
 
     @Post() // 슬랙봇 연동 추가될 예정
@@ -100,16 +98,13 @@ export class StudyTeamController {
                 CreateStudyTeamRequest,
                 parsedBody,
             );
-            const result: CreateStudyResult =
+            const result: GetStudyTeamResponse =
                 await this.studyTeamService.createStudyTeam(
                     createStudyTeamDto,
                     files,
                 );
             this.logger.debug(`생성된 스터디 정보: ${JSON.stringify(result)}`);
-            this.logger.debug('🔥 [DEBUG] 공고 생성 완료');
-            await this.alertService.sendSlackAlert(result.slackPayload);
-            this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
-            return result.studyResponse;
+            return result;
         } catch (error) {
             throw error;
         }
@@ -342,11 +337,10 @@ export class StudyTeamController {
         @Req() request: any,
     ): Promise<StudyApplicantResponse> {
         const user = request.user;
-        const userId = user.id;
 
         return await this.studyTeamService.applyToStudyTeam(
             createStudyMemberRequest, // 첫 번째 파라미터: 클라이언트가 요청한 데이터
-            userId, // 두 번째 파라미터: 서버에서 추가된 사용자 ID
+            user, // 두 번째 파라미터: 서버에서 추가된 사용자 ID
         );
     }
 
@@ -362,12 +356,8 @@ export class StudyTeamController {
         @Req() request: any,
     ): Promise<StudyMemberResponse> {
         const user = request.user;
-        const userId = user.id;
 
-        return await this.studyTeamService.cancelApplication(
-            studyTeamId,
-            userId,
-        );
+        return await this.studyTeamService.cancelApplication(studyTeamId, user);
     }
 
     // 스터디 지원자 조회 : status: PENDING인 데이터 조회(스터디팀에 속한 멤버만 조회 가능 멤버가 아니면 확인할 수 없습니다 )
@@ -381,8 +371,8 @@ export class StudyTeamController {
         @Param('studyTeamId') studyTeamId: number,
         @Req() request: any,
     ): Promise<StudyApplicantResponse[]> {
-        const userId = request.user.id;
-        return await this.studyTeamService.getApplicants(studyTeamId, userId);
+        const user = request.user;
+        return await this.studyTeamService.getApplicants(studyTeamId, user);
     }
 
     // 🔥 스터디 지원자 승인 API
@@ -397,11 +387,11 @@ export class StudyTeamController {
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
     ): Promise<StudyApplicantResponse> {
-        const userId = request.user.id; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
+        const user = request.user; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
         return await this.studyTeamService.acceptApplicant(
             studyTeamId,
-            userId,
+            user,
             applicantId,
         );
     }
@@ -418,11 +408,11 @@ export class StudyTeamController {
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
     ): Promise<StudyApplicantResponse> {
-        const userId = request.user.id; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
+        const user = request.user; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
         return await this.studyTeamService.rejectApplicant(
             studyTeamId,
-            userId,
+            user,
             applicantId,
         );
     }

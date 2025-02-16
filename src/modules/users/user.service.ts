@@ -254,7 +254,6 @@ export class UserService {
         }
 
         this.logger.debug('유저 서비스에서 사용자 정보 조회');
-
         return new GetUserResponse(userInfo);
     }
 

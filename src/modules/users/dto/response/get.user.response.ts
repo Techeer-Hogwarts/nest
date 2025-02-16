@@ -29,6 +29,7 @@ export class GetUserResponse {
         resultImages: string[];
     }[];
     readonly experiences: {
+        id: number;
         position: string;
         companyName: string;
         startDate: string;
@@ -78,6 +79,7 @@ export class GetUserResponse {
 
         this.experiences = Array.isArray(userEntity.experiences)
             ? userEntity.experiences.map((exp) => ({
+                  id: exp.id,
                   position: exp.position,
                   companyName: exp.companyName,
                   startDate: exp.startDate,

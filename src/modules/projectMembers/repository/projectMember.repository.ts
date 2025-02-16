@@ -151,7 +151,9 @@ export class ProjectMemberRepository {
         userId: number,
         status: StatusCategory,
     ): Promise<
-        ProjectMember & { user: { name: string; profileImage: string } }
+        ProjectMember & {
+            user: { name: string; profileImage: string; email: string };
+        }
     > {
         try {
             const member = await this.prisma.projectMember.findFirst({
@@ -164,6 +166,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            email: true,
                         },
                     },
                 },
@@ -181,6 +184,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            email: true,
                         },
                     },
                 },
