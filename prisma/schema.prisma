@@ -322,7 +322,9 @@ enum StackCategory {
   OTHER
 }
 
+
 model SyncDb {
   id             Int      @id @default(autoincrement())
   lastSyncedAt   DateTime @default(dbgenerated("'2000-01-01 00:00:00'"))
 }
+

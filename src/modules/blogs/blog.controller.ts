@@ -124,4 +124,24 @@ export class BlogController {
         );
         return result;
     }
+    @Get('/:blogId')
+    @ApiOperation({
+        summary: '블로그 단일 조회',
+        description: '블로그 ID를 기반으로 단일 블로그 게시물을 조회합니다.',
+    })
+    async getBlog(
+        @Param('blogId', ParseIntPipe) blogId: number,
+    ): Promise<GetBlogResponse> {
+        this.logger.debug(
+            `단일 블로그 게시물 조회 처리 중 - blogId: ${blogId}`,
+            BlogController.name,
+        );
+        const result = await this.blogService.getBlog(blogId);
+        this.logger.debug(
+            `단일 블로그 게시물 조회 처리 완료`,
+            BlogController.name,
+        );
+
+        return result;
+    }
 }

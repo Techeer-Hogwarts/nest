@@ -5,6 +5,7 @@ import {
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
+    singleBlogResponse,
 } from './mock-data';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { TaskService } from '../../../global/task/task.service';
@@ -26,6 +27,7 @@ describe('BlogService', (): void => {
                         getBestBlogs: jest.fn(),
                         getBlogList: jest.fn(),
                         getBlogsByUser: jest.fn(),
+                        getBlog: jest.fn(),
                     },
                 },
                 TaskService,
@@ -127,6 +129,19 @@ describe('BlogService', (): void => {
                         item instanceof GetBlogResponse,
                 ),
             ).toBe(true);
+        });
+    });
+    describe('getBlog', (): void => {
+        it('should return a only blog based on query ', async (): Promise<void> => {
+            jest.spyOn(repository, 'getBlog').mockResolvedValue(
+                singleBlogResponse,
+            );
+            const result: GetBlogResponse = await service.getBlog(1);
+            expect(repository.getBlog).toHaveBeenCalledWith(1);
+            expect(repository.getBlog).toHaveBeenCalledTimes(1);
+
+            expect(result).toEqual(singleBlogResponse);
+            expect(result instanceof GetBlogResponse).toBe(true);
         });
     });
 });

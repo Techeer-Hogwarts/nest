@@ -70,3 +70,4 @@ export const paginationQueryDto: PaginationQueryDto = {
     offset: 0,
     limit: 10,
 };
+export const singleBlogResponse: GetBlogResponse = getBlogResponseList[0];

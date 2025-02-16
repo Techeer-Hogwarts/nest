@@ -5,6 +5,7 @@ import {
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
+    singleBlogResponse,
 } from './mock-data';
 import { UserRepository } from '../../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
@@ -24,6 +25,7 @@ describe('BlogController', (): void => {
                         getBestBlogs: jest.fn(),
                         getBlogList: jest.fn(),
                         getBlogsByUser: jest.fn(),
+                        getBlog: jest.fn(),
                     },
                 },
                 {
@@ -99,6 +101,19 @@ describe('BlogController', (): void => {
             expect(service.getBlogsByUser).toHaveBeenCalledTimes(1);
 
             expect(result).toEqual(getBlogResponseList);
+        });
+    });
+    describe('getBlog', (): void => {
+        it('should return a choice blog based on query', async (): Promise<void> => {
+            jest.spyOn(service, 'getBlog').mockResolvedValue(
+                singleBlogResponse,
+            );
+
+            const result = await controller.getBlog(1);
+            expect(service.getBlog).toHaveBeenCalledWith(1);
+            expect(service.getBlog).toHaveBeenCalledTimes(1);
+
+            expect(result).toEqual(singleBlogResponse);
         });
     });
 });

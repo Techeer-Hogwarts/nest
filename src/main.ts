@@ -38,7 +38,6 @@ async function bootstrap(): Promise<void> {
                 credentials: true,
             },
         });
-
         // CustomWinstonLogger 인스턴스 가져오기
         const customLogger = app.get(CustomWinstonLogger);
 

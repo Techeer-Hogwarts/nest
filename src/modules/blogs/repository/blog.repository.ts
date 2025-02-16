@@ -232,4 +232,26 @@ export class BlogRepository {
             throw error;
         }
     }
+    async getBlog(blogId: number): Promise<GetBlogResponse> {
+        this.logger.debug(`블로그 ID ${blogId} 조회 요청`, BlogRepository.name);
+        const blog = await this.prisma.blog.findUnique({
+            where: {
+                id: blogId,
+                isDeleted: false, // 삭제된 블로그 제외
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        nickname: true,
+                        roleId: true,
+                        profileImage: true,
+                    },
+                },
+            },
+        });
+        this.logger.debug(`블로그 ID ${blogId} 조회 성공`, BlogRepository.name);
+        return new GetBlogResponse(blog);
+    }
 }
