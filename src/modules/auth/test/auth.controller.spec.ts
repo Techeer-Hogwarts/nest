@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
 import { BadRequestException } from '@nestjs/common';
-import { UserRepository } from '../../modules/users/repository/user.repository';
-import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { UserRepository } from '../../users/repository/user.repository';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('AuthController', () => {
     let authController: AuthController;

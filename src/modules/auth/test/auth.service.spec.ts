@@ -6,9 +6,9 @@ import * as nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
-import { UserRepository } from '../../modules/users/repository/user.repository';
-import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-import { InvalidCodeException } from '../../global/exception/custom.exception';
+import { UserRepository } from '../../users/repository/user.repository';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { InvalidCodeException } from '../../../global/exception/custom.exception';
 
 describe('AuthService', () => {
     let authService: AuthService;

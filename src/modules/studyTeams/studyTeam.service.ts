@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { StudyTeamRepository } from './repository/studyTeam.repository';
 import { CreateStudyTeamRequest } from './dto/request/create.studyTeam.request';
-import { AwsService } from '../../awsS3/aws.service';
+import { AwsService } from '../awsS3/aws.service';
 import {
     NotFoundUserException,
     NotFoundStudyTeamException,
@@ -18,15 +18,15 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @Injectable()
 export class StudyTeamService {
-    private readonly logger = new Logger(StudyTeamService.name);
-
     constructor(
         private readonly studyTeamRepository: StudyTeamRepository,
         private readonly studyMemberRepository: StudyMemberRepository,
         private readonly awsService: AwsService,
+        private readonly logger: CustomWinstonLogger,
     ) {}
 
     async ensureUserIsStudyMember(
@@ -112,6 +112,9 @@ export class StudyTeamService {
             createStudyTeamRequest.name,
         );
         if (existingStudy) {
+            this.logger.debug(
+                `Duplicate study team found for name: ${createStudyTeamRequest.name}`,
+            );
             throw new DuplicateStudyTeamNameException();
         }
 

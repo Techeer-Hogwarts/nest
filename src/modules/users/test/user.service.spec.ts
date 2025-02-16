@@ -6,7 +6,7 @@ import {
     NotFoundUserException,
     NotVerifiedEmailException,
 } from '../../../global/exception/custom.exception';
-import { AuthService } from '../../../auth/auth.service';
+import { AuthService } from '../../auth/auth.service';
 import { UserExperienceRepository } from '../../../modules/userExperiences/repository/userExperience.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserService } from '../user.service';

@@ -10,7 +10,7 @@ import {
 } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { PrismaService } from '../prisma/prisma.service';
-import { AwsService } from '../../awsS3/aws.service';
+import { AwsService } from '../awsS3/aws.service';
 import {
     ProjectApplicantResponse,
     ProjectMemberResponse,

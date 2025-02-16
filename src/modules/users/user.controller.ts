@@ -17,7 +17,7 @@ import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreateUserWithResumeRequest } from './dto/request/create.user.with.resume.request';
 import { UpdateUserWithExperienceRequest } from './dto/request/update.user.with.experience.request';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { CreatePermissionRequest } from './dto/request/create.permission.request';
 import { ApprovePermissionRequest } from './dto/request/approve.permission.request';
 import { UpdateProfileImageRequest } from './dto/request/update.profile.image.request';

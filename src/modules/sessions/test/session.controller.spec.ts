@@ -15,7 +15,7 @@ import {
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { CreateSessionResponse } from '../dto/response/create.session.response';
 

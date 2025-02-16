@@ -19,7 +19,7 @@ import { GetResumeResponse } from './dto/response/get.resume.response';
 import { ResumeService } from './resume.service';
 import { GetResumesQueryRequest } from './dto/request/get.resumes.query.request';
 import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';

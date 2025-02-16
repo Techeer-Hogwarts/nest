@@ -18,7 +18,7 @@ import { GetSessionResponse } from './dto/response/get.session.response';
 import { UpdateSessionRequest } from './dto/request/update.session.request';
 import { GetSessionsQueryRequest } from './dto/request/get.session.query.request';
 import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { CreateSessionResponse } from './dto/response/create.session.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';

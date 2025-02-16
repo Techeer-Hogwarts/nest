@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { ProjectTeamService } from './projectTeam.service';
 import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.request';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { FilesInterceptor } from '@nestjs/platform-express';

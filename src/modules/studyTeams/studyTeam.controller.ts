@@ -6,7 +6,6 @@ import {
     UseInterceptors,
     UseGuards,
     Req,
-    Logger,
     Patch,
     Param,
     Get,
@@ -14,7 +13,7 @@ import {
 import { StudyTeamService } from './studyTeam.service';
 import { CreateStudyTeamRequest } from './dto/request/create.studyTeam.request';
 import { UpdateStudyTeamRequest } from './dto/request/update.studyTeam.request';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -27,13 +26,15 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
 export class StudyTeamController {
-    private readonly logger = new Logger(StudyTeamController.name);
-
-    constructor(private readonly studyTeamService: StudyTeamService) {}
+    constructor(
+        private readonly studyTeamService: StudyTeamService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     @Post() // 슬랙봇 연동 추가될 예정
     @UseGuards(JwtAuthGuard)
@@ -166,6 +167,9 @@ export class StudyTeamController {
     ): Promise<GetStudyTeamResponse> {
         const user = request.user;
         if (!user) throw new NotFoundUserException();
+        this.logger.debug(
+            `Starting updateStudyTeam for studyTeamId: ${studyTeamId}, userId: ${user.id}`,
+        );
 
         try {
             let parsedBody = {};

@@ -9,15 +9,24 @@ import {
 } from './mock-data';
 import { GetStudyTeamResponse } from '../dto/response/get.studyTeam.response';
 import { StatusCategory } from '@prisma/client';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('StudyTeamRepository', () => {
     let studyTeamRepository: StudyTeamRepository;
     let prismaService: PrismaService;
+    let logger: CustomWinstonLogger;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 StudyTeamRepository,
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
                 {
                     provide: PrismaService,
                     useValue: {
@@ -47,6 +56,7 @@ describe('StudyTeamRepository', () => {
         studyTeamRepository =
             module.get<StudyTeamRepository>(StudyTeamRepository);
         prismaService = module.get<PrismaService>(PrismaService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
     afterEach(() => {
@@ -59,6 +69,7 @@ describe('StudyTeamRepository', () => {
                 prismaService.studyTeam,
                 'findUnique',
             ).mockResolvedValueOnce(mockStudyTeam1);
+            expect(logger.debug).toBeCalledTimes(0);
 
             const result =
                 await studyTeamRepository.findStudyByName('Test Study');

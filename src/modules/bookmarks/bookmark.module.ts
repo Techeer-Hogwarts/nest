@@ -3,7 +3,7 @@ import { BookmarkController } from './bookmark.controller';
 import { BookmarkService } from './bookmark.service';
 import { BookmarkRepository } from './repository/bookmark.repository';
 import { PrismaModule } from '../prisma/prisma.module';
-import { AuthModule } from '../../auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '../users/user.module';
 
 @Module({

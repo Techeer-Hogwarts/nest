@@ -3,8 +3,8 @@ import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt.guard';
 import { Response } from 'express';
-import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
-import { CustomWinstonLogger } from '../global/logger/winston.logger';
+import { UpdateUserPswRequest } from '../users/dto/request/update.user.psw.request';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('auth')
 @Controller('/auth')

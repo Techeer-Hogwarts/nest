@@ -2,15 +2,14 @@ import { Injectable, Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { UserRepository } from '../modules/users/repository/user.repository';
+import { UserRepository } from '../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { UpdateUserPswRequest } from '../modules/users/dto/request/update.user.psw.request';
+import { UpdateUserPswRequest } from '../users/dto/request/update.user.psw.request';
 import {
     NotFoundUserException,
     InvalidException,
     NotVerifiedEmailException,
-    InvalidTokenException,
     InternalServerErrorException,
     NotFoundCodeException,
     InvalidCodeException,
@@ -18,12 +17,13 @@ import {
     EmailVerificationFailedException,
     NotFoundTecheerException,
     NotFoundProfileImageException,
-} from '../global/exception/custom.exception';
+} from '../../global/exception/custom.exception';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { CustomWinstonLogger } from '../global/logger/winston.logger';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { LoginResponse } from './dto/response/login.reponse';
 import { User } from '@prisma/client';
+
 @Injectable()
 export class AuthService {
     private transporter: nodemailer.Transporter;
@@ -57,7 +57,7 @@ export class AuthService {
         // 액세스 토큰과 리프레시 토큰 생성
         const accessToken = this.jwtService.sign(
             { id: user.id },
-            { expiresIn: '15m' }, // 15분
+            { expiresIn: '60m' }, // 1시간
         );
         const refreshToken = this.jwtService.sign(
             { id: user.id },
@@ -112,33 +112,6 @@ export class AuthService {
             updateUserPswRequest.email,
             hashedPassword,
         ); // 비밀번호 업데이트
-    }
-
-    // 리프레시 토큰을 사용해 새로운 액세스 토큰 발급
-    async refresh(refreshToken: string): Promise<string> {
-        try {
-            const decoded = this.jwtService.verify(refreshToken);
-            const user = await this.userRepository.findById(decoded.id);
-
-            if (!user) {
-                this.logger.error(
-                    '사용자를 찾을 수 없습니다.',
-                    AuthService.name,
-                );
-                throw new NotFoundUserException();
-            }
-
-            // 새로운 액세스 토큰 발급
-            const newAccessToken = this.jwtService.sign(
-                { id: user.id },
-                { expiresIn: '15m' },
-            );
-            this.logger.debug('액세스 토큰 재발급', AuthService.name);
-            return newAccessToken;
-        } catch (error) {
-            this.logger.error('토큰 재발급 실패', AuthService.name);
-            throw new InvalidTokenException();
-        }
     }
 
     async getProfileImageUrl(

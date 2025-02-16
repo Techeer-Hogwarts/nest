@@ -3,7 +3,7 @@ import { ProjectTeamService } from '../projectTeam.service';
 import { ProjectTeamRepository } from '../repository/projectTeam.repository';
 import { ProjectMemberRepository } from '../../projectMembers/repository/projectMember.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AwsService } from '../../../awsS3/aws.service';
+import { AwsService } from '../../awsS3/aws.service';
 import {
     mockCreateProjectTeamRequest,
     mockUpdateProjectTeamRequest,
