@@ -52,6 +52,14 @@ export class BlogService {
         );
         return blogs;
     }
+    async getBlog(blogId: number): Promise<GetBlogResponse> {
+        const blog = await this.blogRepository.getBlog(blogId);
+        this.logger.debug(
+            `단일 블로그 엔티티 목록 조회 성공 후 GetBlogResponse로 변환 중`,
+            BlogService.name,
+        );
+        return blog;
+    }
 
     async increaseBlogViewCount(blogId: number): Promise<void> {
         await this.blogRepository.increaseBlogViewCount(blogId);
