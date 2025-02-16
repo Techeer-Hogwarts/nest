@@ -7,6 +7,7 @@ import {
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
+    singleBlogResponse,
 } from './mock-data';
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
@@ -26,6 +27,7 @@ describe('BlogRepository', (): void => {
                         blog: {
                             findMany: jest.fn(),
                             update: jest.fn(),
+                            findUnique: jest.fn(),
                         },
                         user: {
                             findUnique: jest.fn(),
@@ -141,6 +143,34 @@ describe('BlogRepository', (): void => {
                 },
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
+        });
+    });
+    describe('getBlog', (): void => {
+        it('should return a blog entity for the given blog ID', async (): Promise<void> => {
+            jest.spyOn(prismaService.blog, 'findUnique').mockResolvedValue(
+                blogEntities[0],
+            );
+
+            const result = await repository.getBlog(1);
+            expect(result).toEqual(singleBlogResponse);
+            expect(prismaService.blog.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 1,
+                    isDeleted: false,
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            nickname: true,
+                            roleId: true,
+                            profileImage: true,
+                        },
+                    },
+                },
+            });
+            expect(prismaService.blog.findUnique).toHaveBeenCalledTimes(1);
         });
     });
 });
