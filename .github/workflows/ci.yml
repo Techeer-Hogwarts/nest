@@ -75,17 +75,37 @@ jobs:
                   fi
                   echo "Docker Image Tag: $DOCKER_IMAGE_TAG"
                   echo "DOCKER_IMAGE_TAG"="${DOCKER_IMAGE_TAG}" >> $GITHUB_OUTPUT
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
               with:
                   username: ${{ secrets.DOCKER_HUB_USERNAME }}
                   password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
             - name: Build and push Docker image
               env:
-                  DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+                DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
               run: |
-                  docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG .
-                  docker push ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG
+                docker buildx create --use
+                docker buildx build \
+                  --platform linux/amd64,linux/arm64 \
+                  --push \
+                  -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG .
+                  
+            - name: Also latest tag depending on branch
+              if: github.ref == 'refs/heads/main'
+              run: |
+                docker buildx create --use
+                docker buildx build \
+                  --platform linux/amd64,linux/arm64 \
+                  --push \
+                  -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:latest .
+
             - name: Send Image and Version to Slack
               if: github.ref == 'refs/heads/main' # main 브랜치에 머지 시에만 실행
               env:
