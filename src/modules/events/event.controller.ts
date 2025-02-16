@@ -16,7 +16,7 @@ import { EventService } from './event.service';
 import { CreateEventRequest } from './dto/request/create.event.request';
 import { GetEventResponse } from './dto/response/get.event.response';
 import { GetEventListQueryRequest } from './dto/request/get.event.query.request';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { CreateEventResponse } from './dto/response/creare.event.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';

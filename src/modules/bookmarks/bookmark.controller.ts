@@ -13,7 +13,7 @@ import { CreateBookmarkRequest } from './dto/request/create.bookmark.request';
 import { GetBookmarkResponse } from './dto/response/get.bookmark.response';
 import { GetBookmarkListRequest } from './dto/request/get.bookmark-list.request';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { GetSessionResponse } from '../sessions/dto/response/get.session.response';
 import { GetBlogResponse } from '../blogs/dto/response/get.blog.response';
 import { GetResumeResponse } from '../resumes/dto/response/get.resume.response';

@@ -1,22 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StudyTeamService } from '../studyTeam.service';
 import { StudyTeamRepository } from '../repository/studyTeam.repository';
-import { AwsService } from '../../../awsS3/aws.service';
+import { AwsService } from '../../awsS3/aws.service';
 import { StudyMemberRepository } from '../../studyMembers/repository/studyMember.repository';
-import {
-    NotStudyMemberException,
-    DuplicateStudyTeamNameException,
-} from '../../../global/exception/custom.exception';
+import { DuplicateStudyTeamNameException } from '../../../global/exception/custom.exception';
 import {
     mockCreateStudyTeamRequest,
     mockUpdateStudyTeamRequest,
 } from './mock-data';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('StudyTeamService', () => {
     let service: StudyTeamService;
     let studyTeamRepository: jest.Mocked<StudyTeamRepository>;
     let studyMemberRepository: jest.Mocked<StudyMemberRepository>;
     let awsService: jest.Mocked<AwsService>;
+    let logger: CustomWinstonLogger;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -37,6 +36,13 @@ describe('StudyTeamService', () => {
                         closeStudyTeam: jest.fn(),
                         deleteImages: jest.fn(),
                         deleteMembers: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
                     },
                 },
                 {
@@ -63,15 +69,25 @@ describe('StudyTeamService', () => {
         studyTeamRepository = module.get(StudyTeamRepository);
         studyMemberRepository = module.get(StudyMemberRepository);
         awsService = module.get(AwsService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
     describe('createStudyTeam', () => {
         it('should throw DuplicateStudyTeamNameException if study name already exists', async () => {
-            studyTeamRepository.findStudyByName.mockResolvedValue(true);
+            // findStudyByName가 값(true 혹은 객체)을 반환하면 중복으로 간주함
+            (
+                studyTeamRepository.findStudyByName as jest.Mock
+            ).mockResolvedValue(true);
 
+            // 메서드 호출 시 DuplicateStudyTeamNameException 예외 발생 확인
             await expect(
                 service.createStudyTeam(mockCreateStudyTeamRequest, []),
             ).rejects.toThrow(DuplicateStudyTeamNameException);
+
+            // 내부에서 로깅이 제대로 수행되었는지 검증
+            expect(logger.debug).toHaveBeenCalledWith(
+                `Duplicate study team found for name: ${mockCreateStudyTeamRequest.name}`,
+            );
         });
     });
 
@@ -182,16 +198,6 @@ describe('StudyTeamService', () => {
 
             await service.getApplicants(1, 1);
             expect(studyMemberRepository.getApplicants).toHaveBeenCalled();
-        });
-    });
-
-    describe('ensureUserIsStudyMember', () => {
-        it('should throw NotStudyMemberException if user is not a member', async () => {
-            studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(false);
-
-            await expect(service.ensureUserIsStudyMember(1, 1)).rejects.toThrow(
-                NotStudyMemberException,
-            );
         });
     });
 

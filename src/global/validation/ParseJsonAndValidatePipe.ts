@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { CustomWinstonLogger } from '../logger/winston.logger';
 
 @Injectable()
 export class ParseJsonAndValidatePipe implements PipeTransform {

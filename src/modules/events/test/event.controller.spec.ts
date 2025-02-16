@@ -10,7 +10,7 @@ import {
     updatedEventEntity,
     updateEventRequest,
 } from './mock-data';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Request } from 'express';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { CreateEventResponse } from '../dto/response/creare.event.response';

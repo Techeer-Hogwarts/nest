@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { UserRepository } from './repository/user.repository';
 import { CreateUserRequest } from './dto/request/create.user.request';
 import { CreateResumeRequest } from '../resumes/dto/request/create.resume.request';
-import { AuthService } from '../../auth/auth.service';
+import { AuthService } from '../auth/auth.service';
 import * as bcrypt from 'bcryptjs';
 import { UpdateUserRequest } from './dto/request/update.user.request';
 import { PermissionRequest, User } from '@prisma/client';
@@ -23,7 +23,7 @@ import { ResumeService } from '../resumes/resume.service';
 import { CreateUserExperienceRequest } from '../userExperiences/dto/request/create.userExperience.reqeust';
 import { UserExperienceRepository } from '../userExperiences/repository/userExperience.repository';
 import { UpdateUserExperienceRequest } from '../userExperiences/dto/request/update.userExperience.request';
-import { CustomWinstonLogger } from '../..//global/logger/winston.logger';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @Injectable()
 export class UserService {

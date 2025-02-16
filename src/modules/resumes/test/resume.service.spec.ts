@@ -13,7 +13,7 @@ import { GetResumeResponse } from '../dto/response/get.resume.response';
 import { ResumeService } from '../../resumes/resume.service';
 import { ResumeRepository } from '../../resumes/repository/resume.repository';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
-import { GoogleDriveService } from '../../../googleDrive/google.drive.service';
+import { GoogleDriveService } from '../../googleDrive/google.drive.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 

@@ -10,7 +10,7 @@ import {
     ForbiddenException,
     NotFoundResumeException,
 } from '../../global/exception/custom.exception';
-import { GoogleDriveService } from '../../googleDrive/google.drive.service';
+import { GoogleDriveService } from '../googleDrive/google.drive.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 

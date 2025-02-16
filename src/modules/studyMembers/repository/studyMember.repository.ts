@@ -1,14 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StatusCategory } from '@prisma/client';
 import { CreateStudyMemberRequest } from '../dto/request/create.studyMember.request';
 import { Prisma } from '@prisma/client';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 @Injectable()
 export class StudyMemberRepository {
-    private readonly logger = new Logger(StudyMemberRepository.name);
-
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async checkExistingMember(
         studyTeamId: number,

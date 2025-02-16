@@ -3,7 +3,7 @@ import { ProjectTeamController } from '../projectTeam.controller';
 import { ProjectTeamService } from '../projectTeam.service';
 import { StudyTeamService } from '../../studyTeams/studyTeam.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { CreateProjectMemberRequest } from '../../projectMembers/dto/request/create.projectMember.request';
 import { AddProjectMemberRequest } from '../../projectMembers/dto/request/add.projectMember.request';
 import { UpdateApplicantStatusRequest } from '../dto/request/update.applicantStatus.request';

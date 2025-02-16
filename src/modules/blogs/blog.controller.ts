@@ -14,7 +14,7 @@ import { BlogService } from './blog.service';
 import { GetBlogResponse } from './dto/response/get.blog.response';
 import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 

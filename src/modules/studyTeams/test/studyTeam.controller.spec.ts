@@ -2,10 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StudyTeamController } from '../studyTeam.controller';
 import { StudyTeamService } from '../studyTeam.service';
 import { UserRepository } from '../../users/repository/user.repository';
-import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
 import {
     mockCreateStudyTeamRequest,
-    mockUpdateStudyTeamRequest,
     mockCreateStudyMemberRequest,
 } from './mock-data';
 import {
@@ -13,11 +12,41 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from '../dto/response/get.studyTeam.response';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 type StatusCategory = 'PENDING' | 'APPROVED' | 'REJECT';
 
 describe('StudyTeamController', () => {
     let controller: StudyTeamController;
     let service: jest.Mocked<StudyTeamService>;
+    let logger: CustomWinstonLogger;
+
+    // 최소한의 요청 데이터 (JSON 문자열로 넘어온 요청 본문)
+    const mockUpdateStudyTeamRequest = {
+        name: 'New Study Name',
+        notionLink: 'https://notion.so/new',
+        recruitExplain: 'new explanation',
+        recruitNum: 5,
+        rule: 'new rule',
+        goal: 'new goal',
+        studyExplain: 'new study explain',
+    };
+
+    const mockUpdatedStudy = {
+        id: 1,
+        name: 'Updated Study',
+        notionLink: 'https://notion.so/updated',
+        recruitExplain: 'updated',
+        recruitNum: 6,
+        rule: 'updated rule',
+        goal: 'updated goal',
+        studyExplain: 'updated explain',
+        isRecruited: true,
+        isFinished: false,
+        resultImages: [],
+        studyMember: [],
+        likeCount: 0,
+        viewCount: 0,
+    };
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +71,14 @@ describe('StudyTeamController', () => {
                     },
                 },
                 {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                        warn: jest.fn(),
+                    },
+                },
+                {
                     provide: JwtAuthGuard,
                     useValue: {
                         canActivate: jest.fn().mockReturnValue(true),
@@ -61,6 +98,7 @@ describe('StudyTeamController', () => {
 
         controller = module.get<StudyTeamController>(StudyTeamController);
         service = module.get(StudyTeamService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
     it('should be defined', () => {
@@ -101,34 +139,31 @@ describe('StudyTeamController', () => {
 
     describe('updateStudyTeam', () => {
         it('should update a study team successfully', async () => {
-            const mockUpdatedStudy = {
-                id: 1,
-                name: 'Updated Study',
-                notionLink: 'https://notion.so/updated',
-                recruitExplain: 'updated',
-                recruitNum: 6,
-                rule: 'updated rule',
-                goal: 'updated goal',
-                studyExplain: 'updated explain',
-                isRecruited: true,
-                isFinished: false,
-                resultImages: [],
-                studyMember: [],
-                likeCount: 0,
-                viewCount: 0,
-            };
-
-            service.updateStudyTeam.mockResolvedValue(mockUpdatedStudy);
-
-            const result = await controller.updateStudyTeam(
-                1,
-                JSON.stringify(mockUpdateStudyTeamRequest),
-                [],
-                { user: { id: 1 } },
+            // 서비스 메서드가 성공적으로 업데이트된 결과를 반환하도록 모킹
+            (service.updateStudyTeam as jest.Mock).mockResolvedValue(
+                mockUpdatedStudy,
             );
 
-            expect(service.updateStudyTeam).toHaveBeenCalled();
+            const result = await controller.updateStudyTeam(
+                1, // studyTeamId
+                JSON.stringify(mockUpdateStudyTeamRequest), // updateStudyTeamRequest (문자열)
+                [], // files 배열 (빈 배열)
+                { user: { id: 1 } }, // request 객체 (user가 존재)
+            );
+
+            // 서비스의 updateStudyTeam 메서드가 호출되었는지 확인
+            expect(service.updateStudyTeam).toHaveBeenCalledWith(
+                1,
+                1,
+                expect.objectContaining({ ...mockUpdateStudyTeamRequest }), // plainToInstance를 통해 변환된 DTO (일부 속성만 검증)
+                [], // files 배열
+            );
+            // 반환 결과가 올바른지 확인
             expect(result).toEqual(mockUpdatedStudy);
+            // debug 로그가 호출되었는지 확인
+            expect(logger.debug).toHaveBeenCalledWith(
+                `Starting updateStudyTeam for studyTeamId: 1, userId: 1`,
+            );
         });
     });
 
