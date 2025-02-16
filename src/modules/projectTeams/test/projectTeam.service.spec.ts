@@ -13,6 +13,7 @@ import { NotFoundProjectException } from '../../../global/exception/custom.excep
 import { StatusCategory } from '@prisma/client';
 import { StackCategory } from '@prisma/client';
 import { ProjectTeamDetailResponse } from '../dto/response/get.projectTeam.response';
+import { CreateProjectResult } from '../dto/request/create.project.alert.request';
 
 describe('ProjectTeamService', () => {
     let service: ProjectTeamService;
@@ -125,56 +126,79 @@ describe('ProjectTeamService', () => {
                 'https://test.com/image.jpg',
             );
 
-            const mockCreatedProject: ProjectTeamDetailResponse = {
-                id: 1,
-                name: mockCreateProjectTeamRequest.name,
-                isDeleted: false,
-                isRecruited: true,
-                isFinished: false,
-                githubLink: mockCreateProjectTeamRequest.githubLink || '',
-                notionLink: mockCreateProjectTeamRequest.notionLink || '',
-                projectExplain: mockCreateProjectTeamRequest.projectExplain,
-                frontendNum: mockCreateProjectTeamRequest.frontendNum,
-                backendNum: mockCreateProjectTeamRequest.backendNum,
-                devopsNum: mockCreateProjectTeamRequest.devopsNum || 0,
-                uiuxNum: mockCreateProjectTeamRequest.uiuxNum || 0,
-                dataEngineerNum:
-                    mockCreateProjectTeamRequest.dataEngineerNum || 0,
-                recruitExplain: mockCreateProjectTeamRequest.recruitExplain,
-                mainImages: [
-                    {
-                        id: 1,
-                        isDeleted: false,
-                        imageUrl: 'https://test.com/image.jpg',
-                    },
-                ],
-                teamStacks: mockCreateProjectTeamRequest.teamStacks.map(
-                    (stack, index) => ({
-                        id: index + 1,
-                        stack: { name: stack.stack },
-                        isMain: stack.isMain,
-                        isDeleted: false,
-                        projectTeamId: 1,
-                    }),
-                ),
-                projectMember: mockCreateProjectTeamRequest.projectMember.map(
-                    (member) => ({
-                        id: 1,
-                        name: member.name,
-                        userId: member.userId,
-                        isLeader: member.isLeader,
-                        teamRole: member.teamRole,
-                        status: 'APPROVED' as StatusCategory,
-                        summary: '초기 참여 인원',
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                        isDeleted: false,
-                        projectTeamId: 1,
-                    }),
-                ),
-                likeCount: 0,
-                viewCount: 0,
-                resultImages: [], // 추가된 부분
+            const mockCreatedProject: CreateProjectResult = {
+                projectResponse: {
+                    id: 1,
+                    isDeleted: false,
+                    isRecruited: true,
+                    isFinished: false,
+                    name: mockCreateProjectTeamRequest.name,
+                    githubLink: mockCreateProjectTeamRequest.githubLink || '',
+                    notionLink: mockCreateProjectTeamRequest.notionLink || '',
+                    projectExplain: mockCreateProjectTeamRequest.projectExplain,
+                    frontendNum: mockCreateProjectTeamRequest.frontendNum,
+                    backendNum: mockCreateProjectTeamRequest.backendNum,
+                    devopsNum: mockCreateProjectTeamRequest.devopsNum || 0,
+                    uiuxNum: mockCreateProjectTeamRequest.uiuxNum || 0,
+                    dataEngineerNum:
+                        mockCreateProjectTeamRequest.dataEngineerNum || 0,
+                    recruitExplain: mockCreateProjectTeamRequest.recruitExplain,
+                    mainImages: [
+                        {
+                            id: 1,
+                            isDeleted: false,
+                            imageUrl: 'https://test.com/image.jpg',
+                        },
+                    ],
+                    teamStacks: mockCreateProjectTeamRequest.teamStacks.map(
+                        (stack, index) => ({
+                            id: index + 1,
+                            stack: { name: stack.stack },
+                            isMain: stack.isMain,
+                            isDeleted: false,
+                            projectTeamId: 1,
+                        }),
+                    ),
+                    projectMember:
+                        mockCreateProjectTeamRequest.projectMember.map(
+                            (member) => ({
+                                id: 1,
+                                name: member.name,
+                                email: 'test@example.com',
+                                userId: member.userId,
+                                isLeader: member.isLeader,
+                                teamRole: member.teamRole,
+                                status: 'APPROVED' as StatusCategory,
+                                summary: '초기 참여 인원',
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                                isDeleted: false,
+                                projectTeamId: 1,
+                            }),
+                        ),
+                    likeCount: 0,
+                    viewCount: 0,
+                    resultImages: [], // 빈 배열 또는 필요한 데이터를 추가
+                },
+                slackPayload: {
+                    id: 1,
+                    name: mockCreateProjectTeamRequest.name,
+                    projectExplain: mockCreateProjectTeamRequest.projectExplain,
+                    frontNum: mockCreateProjectTeamRequest.frontendNum,
+                    backNum: mockCreateProjectTeamRequest.backendNum,
+                    dataEngNum:
+                        mockCreateProjectTeamRequest.dataEngineerNum || 0,
+                    devOpsNum: mockCreateProjectTeamRequest.devopsNum || 0,
+                    uiUxNum: mockCreateProjectTeamRequest.uiuxNum || 0,
+                    leader: 'Test Leader',
+                    email: 'test@example.com',
+                    recruitExplain: mockCreateProjectTeamRequest.recruitExplain,
+                    notionLink: mockCreateProjectTeamRequest.notionLink || '',
+                    stack: mockCreateProjectTeamRequest.teamStacks.map(
+                        (stack) => stack.stack,
+                    ),
+                    type: 'project',
+                },
             };
 
             jest.spyOn(service, 'createProject').mockResolvedValue(

@@ -7,9 +7,10 @@ import { StudyTeamRepository } from './repository/studyTeam.repository';
 import { UserRepository } from '../users/repository/user.repository';
 import { AwsService } from '../../modules/awsS3/aws.service';
 import { StudyMemberModule } from '../studyMembers/studyMember.module';
+import { AlertModule } from '../alert/alert.module';
 
 @Module({
-    imports: [AuthModule, forwardRef(() => StudyMemberModule)], // forwardRef 사용
+    imports: [AuthModule, forwardRef(() => StudyMemberModule), AlertModule],
     controllers: [StudyTeamController],
     providers: [
         StudyTeamService,

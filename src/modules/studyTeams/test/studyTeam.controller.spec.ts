@@ -13,12 +13,15 @@ import {
     StudyMemberResponse,
 } from '../dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { CreateStudyResult } from '../dto/request/create.study.alert.request';
+import { AlertServcie } from '../../alert/alert.service';
 type StatusCategory = 'PENDING' | 'APPROVED' | 'REJECT';
 
 describe('StudyTeamController', () => {
     let controller: StudyTeamController;
     let service: jest.Mocked<StudyTeamService>;
     let logger: CustomWinstonLogger;
+    let alertService: AlertServcie;
 
     // 최소한의 요청 데이터 (JSON 문자열로 넘어온 요청 본문)
     const mockUpdateStudyTeamRequest = {
@@ -93,12 +96,19 @@ describe('StudyTeamController', () => {
                         }),
                     },
                 },
+                {
+                    provide: AlertServcie,
+                    useValue: {
+                        sendSlackAlert: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
         controller = module.get<StudyTeamController>(StudyTeamController);
         service = module.get(StudyTeamService);
         logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
+        alertService = module.get(AlertServcie);
     });
 
     it('should be defined', () => {
@@ -106,25 +116,47 @@ describe('StudyTeamController', () => {
     });
 
     describe('uploadStudyTeam', () => {
-        it('should create a study team successfully', async () => {
-            const mockStudyTeam = {
-                id: 1,
-                name: 'Test Study',
-                notionLink: 'https://notion.so/test',
-                recruitExplain: 'test',
-                recruitNum: 5,
-                rule: 'test rule',
-                goal: 'test goal',
-                studyExplain: 'test explain',
-                isRecruited: false,
-                isFinished: false,
-                resultImages: [],
-                studyMember: [],
-                likeCount: 0,
-                viewCount: 0,
+        it('should create a study team successfully and send a slack alert', async () => {
+            const mockStudyTeamResult: CreateStudyResult = {
+                studyResponse: {
+                    id: 1,
+                    name: 'Test Study',
+                    notionLink: 'https://notion.so/test',
+                    recruitExplain: 'test',
+                    recruitNum: 5,
+                    rule: 'test rule',
+                    goal: 'test goal',
+                    studyExplain: 'test explain',
+                    isRecruited: false,
+                    isFinished: false,
+                    resultImages: [],
+                    studyMember: [],
+                    likeCount: 0,
+                    viewCount: 0,
+                },
+                slackPayload: {
+                    id: 1,
+                    name: 'Test Study',
+                    studyExplain: 'test explain',
+                    recruitNum: 5,
+                    leader: 'Test Leader',
+                    email: 'test@example.com',
+                    recruitExplain: 'test recruit explain',
+                    notionLink: 'https://notion.so/test',
+                    goal: 'test goal',
+                    rule: 'test rule',
+                    type: 'study',
+                },
             };
 
-            service.createStudyTeam.mockResolvedValue(mockStudyTeam);
+            // service.createStudyTeam가 CreateStudyResult를 반환하도록 목업
+            jest.spyOn(service, 'createStudyTeam').mockResolvedValue(
+                mockStudyTeamResult,
+            );
+            // alertService.sendSlackAlert도 목업하여 호출되는지 검증
+            const sendSlackAlertSpy = jest
+                .spyOn(alertService, 'sendSlackAlert')
+                .mockResolvedValue(undefined);
 
             const result = await controller.uploadStudyTeam(
                 JSON.stringify(mockCreateStudyTeamRequest),
@@ -133,7 +165,10 @@ describe('StudyTeamController', () => {
             );
 
             expect(service.createStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual(mockStudyTeam);
+            expect(sendSlackAlertSpy).toHaveBeenCalledWith(
+                mockStudyTeamResult.slackPayload,
+            );
+            expect(result).toEqual(mockStudyTeamResult.studyResponse);
         });
     });
 

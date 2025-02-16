@@ -75,6 +75,7 @@ export class StudyTeamRepository {
                             user: {
                                 select: {
                                     name: true,
+                                    email: true,
                                 },
                             },
                         },
@@ -197,7 +198,10 @@ export class StudyTeamRepository {
                     studyMember: {
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -225,7 +229,10 @@ export class StudyTeamRepository {
                     studyMember: {
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -253,7 +260,10 @@ export class StudyTeamRepository {
                     studyMember: {
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -293,7 +303,10 @@ export class StudyTeamRepository {
                         },
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -336,7 +349,10 @@ export class StudyTeamRepository {
                         },
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },

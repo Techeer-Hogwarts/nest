@@ -28,6 +28,7 @@ export class GetStudyTeamResponse {
         isLeader: boolean;
         studyTeamId: number;
         userId: number;
+        email: string;
     }[];
     readonly likeCount: number;
     readonly viewCount: number;
@@ -35,7 +36,9 @@ export class GetStudyTeamResponse {
     constructor(
         studyTeam: StudyTeam & {
             resultImages: StudyResultImage[];
-            studyMember: (StudyMember & { user: { name: string } })[];
+            studyMember: (StudyMember & {
+                user: { name: string; email: string };
+            })[];
         },
     ) {
         this.id = studyTeam.id;
@@ -60,6 +63,7 @@ export class GetStudyTeamResponse {
             isLeader: member.isLeader,
             studyTeamId: member.studyTeamId,
             userId: member.userId,
+            email: member.user.email,
         }));
         this.likeCount = studyTeam.likeCount;
         this.viewCount = studyTeam.viewCount;

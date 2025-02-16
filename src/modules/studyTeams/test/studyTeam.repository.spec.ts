@@ -96,101 +96,6 @@ describe('StudyTeamRepository', () => {
         });
     });
 
-    describe('createStudyTeam', () => {
-        it('should create a study team successfully', async () => {
-            const mockCreatedStudyTeam = {
-                ...mockStudyTeam1,
-                resultImages: mockCreateStudyTeamRequest.resultImages.map(
-                    (imageUrl) => ({
-                        imageUrl,
-                        id: 1,
-                        createdAt: new Date('2025-02-14T16:20:16.816Z'),
-                        updatedAt: new Date('2025-02-14T16:20:16.816Z'),
-                        isDeleted: false,
-                        studyTeamId: 1,
-                    }),
-                ),
-                studyMember: mockCreateStudyTeamRequest.studyMember.map(
-                    (member) => ({
-                        id: 1,
-                        createdAt: new Date('2025-02-14T16:20:16.816Z'),
-                        updatedAt: new Date('2025-02-14T16:20:16.816Z'),
-                        isDeleted: false,
-                        studyTeamId: 1,
-                        summary: '초기 참여 인원입니다',
-                        status: 'APPROVED' as StatusCategory,
-                        userId: member.userId,
-                        isLeader: member.isLeader,
-                        user: {
-                            id: member.userId,
-                            name: 'Test User',
-                        },
-                    }),
-                ),
-            };
-
-            jest.spyOn(prismaService.studyTeam, 'create').mockResolvedValueOnce(
-                mockCreatedStudyTeam as any,
-            );
-
-            const result = await studyTeamRepository.createStudyTeam(
-                mockCreateStudyTeamRequest,
-            );
-
-            expect(result).toEqual(
-                new GetStudyTeamResponse(mockCreatedStudyTeam as any),
-            );
-            expect(prismaService.studyTeam.create).toHaveBeenCalledWith({
-                data: {
-                    name: mockCreateStudyTeamRequest.name,
-                    githubLink: mockCreateStudyTeamRequest.githubLink,
-                    notionLink: mockCreateStudyTeamRequest.notionLink,
-                    studyExplain: mockCreateStudyTeamRequest.studyExplain,
-                    goal: mockCreateStudyTeamRequest.goal,
-                    rule: mockCreateStudyTeamRequest.rule,
-                    recruitNum: mockCreateStudyTeamRequest.recruitNum,
-                    recruitExplain: mockCreateStudyTeamRequest.recruitExplain,
-                    createdAt: expect.any(Date),
-                    updatedAt: expect.any(Date),
-                    isDeleted: false,
-                    isRecruited: true,
-                    isFinished: false,
-                    studyMember: {
-                        create: mockCreateStudyTeamRequest.studyMember.map(
-                            (member) => ({
-                                status: 'APPROVED',
-                                summary: '초기 참여 인원입니다',
-                                user: {
-                                    connect: { id: member.userId },
-                                },
-                                isLeader: member.isLeader,
-                            }),
-                        ),
-                    },
-                    resultImages: {
-                        create: mockCreateStudyTeamRequest.resultImages.map(
-                            (imageUrl) => ({
-                                imageUrl,
-                            }),
-                        ),
-                    },
-                },
-                include: {
-                    studyMember: {
-                        include: {
-                            user: {
-                                select: {
-                                    name: true,
-                                },
-                            },
-                        },
-                    },
-                    resultImages: true,
-                },
-            });
-        });
-    });
-
     describe('checkExistUsers', () => {
         it('should return a list of existing user IDs', async () => {
             jest.spyOn(prismaService.user, 'findMany').mockResolvedValueOnce([
@@ -244,6 +149,104 @@ describe('StudyTeamRepository', () => {
             });
         });
     });
+    describe('createStudyTeam', () => {
+        it('should create a study team successfully', async () => {
+            const mockCreatedStudyTeam = {
+                ...mockStudyTeam1,
+                resultImages: mockCreateStudyTeamRequest.resultImages.map(
+                    (imageUrl) => ({
+                        imageUrl,
+                        id: 1,
+                        createdAt: new Date('2025-02-14T16:20:16.816Z'),
+                        updatedAt: new Date('2025-02-14T16:20:16.816Z'),
+                        isDeleted: false,
+                        studyTeamId: 1,
+                    }),
+                ),
+                studyMember: mockCreateStudyTeamRequest.studyMember.map(
+                    (member) => ({
+                        id: 1,
+                        createdAt: new Date('2025-02-14T16:20:16.816Z'),
+                        updatedAt: new Date('2025-02-14T16:20:16.816Z'),
+                        isDeleted: false,
+                        studyTeamId: 1,
+                        summary: '초기 참여 인원입니다',
+                        status: 'APPROVED' as StatusCategory,
+                        userId: member.userId,
+                        isLeader: member.isLeader,
+                        user: {
+                            id: member.userId,
+                            name: 'Test User',
+                        },
+                    }),
+                ),
+            };
+
+            jest.spyOn(prismaService.studyTeam, 'create').mockResolvedValueOnce(
+                mockCreatedStudyTeam as any,
+            );
+
+            const result = await studyTeamRepository.createStudyTeam(
+                mockCreateStudyTeamRequest,
+            );
+
+            expect(result).toEqual(
+                new GetStudyTeamResponse(mockCreatedStudyTeam as any),
+            );
+            expect(prismaService.studyTeam.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        name: mockCreateStudyTeamRequest.name,
+                        githubLink: mockCreateStudyTeamRequest.githubLink,
+                        notionLink: mockCreateStudyTeamRequest.notionLink,
+                        studyExplain: mockCreateStudyTeamRequest.studyExplain,
+                        goal: mockCreateStudyTeamRequest.goal,
+                        rule: mockCreateStudyTeamRequest.rule,
+                        recruitNum: mockCreateStudyTeamRequest.recruitNum,
+                        recruitExplain:
+                            mockCreateStudyTeamRequest.recruitExplain,
+                        isDeleted: false,
+                        isRecruited: true,
+                        isFinished: false,
+                        createdAt: expect.any(Date),
+                        updatedAt: expect.any(Date),
+                        studyMember: {
+                            create: mockCreateStudyTeamRequest.studyMember.map(
+                                (member) => ({
+                                    status: 'APPROVED',
+                                    summary: '초기 참여 인원입니다',
+                                    user: {
+                                        connect: { id: member.userId },
+                                    },
+                                    isLeader: member.isLeader,
+                                }),
+                            ),
+                        },
+                        resultImages: {
+                            create: mockCreateStudyTeamRequest.resultImages.map(
+                                (imageUrl) => ({
+                                    imageUrl,
+                                }),
+                            ),
+                        },
+                    }),
+                    include: {
+                        resultImages: true,
+                        studyMember: {
+                            include: {
+                                user: {
+                                    select: {
+                                        name: true,
+                                        email: true, // email 필드 추가
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }),
+            );
+        });
+    });
 
     describe('updateStudyTeam', () => {
         it('should update the study team successfully', async () => {
@@ -270,22 +273,25 @@ describe('StudyTeamRepository', () => {
             expect(result).toEqual(
                 new GetStudyTeamResponse(mockUpdatedStudyTeam),
             );
-            expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
-                where: { id: 1 },
-                data: expect.objectContaining(updateRequest),
-                include: {
-                    resultImages: true,
-                    studyMember: {
-                        include: {
-                            user: {
-                                select: {
-                                    name: true,
+            expect(prismaService.studyTeam.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: 1 },
+                    data: expect.objectContaining(updateRequest),
+                    include: {
+                        resultImages: true,
+                        studyMember: {
+                            include: {
+                                user: {
+                                    select: {
+                                        name: true,
+                                        email: true, // email 필드 추가
+                                    },
                                 },
                             },
                         },
                     },
-                },
-            });
+                }),
+            );
         });
     });
 
@@ -307,22 +313,25 @@ describe('StudyTeamRepository', () => {
             expect(result).toEqual(
                 new GetStudyTeamResponse(mockClosedStudyTeam),
             );
-            expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
-                where: { id: 1 },
-                data: { isRecruited: false },
-                include: {
-                    resultImages: true,
-                    studyMember: {
-                        include: {
-                            user: {
-                                select: {
-                                    name: true,
+            expect(prismaService.studyTeam.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: 1 },
+                    data: { isRecruited: false },
+                    include: {
+                        resultImages: true,
+                        studyMember: {
+                            include: {
+                                user: {
+                                    select: {
+                                        name: true,
+                                        email: true, // email 필드 추가
+                                    },
                                 },
                             },
                         },
                     },
-                },
-            });
+                }),
+            );
         });
     });
 
@@ -344,22 +353,25 @@ describe('StudyTeamRepository', () => {
             expect(result).toEqual(
                 new GetStudyTeamResponse(mockDeletedStudyTeam),
             );
-            expect(prismaService.studyTeam.update).toHaveBeenCalledWith({
-                where: { id: 1 },
-                data: { isDeleted: true },
-                include: {
-                    resultImages: true,
-                    studyMember: {
-                        include: {
-                            user: {
-                                select: {
-                                    name: true,
+            expect(prismaService.studyTeam.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: 1 },
+                    data: { isDeleted: true },
+                    include: {
+                        resultImages: true,
+                        studyMember: {
+                            include: {
+                                user: {
+                                    select: {
+                                        name: true,
+                                        email: true, // email 필드 추가
+                                    },
                                 },
                             },
                         },
                     },
-                },
-            });
+                }),
+            );
         });
     });
 
@@ -387,9 +399,13 @@ describe('StudyTeamRepository', () => {
                             isLeader: true,
                             studyTeamId: 1,
                             userId: 1,
+                            email: 'test@example.com',
                             summary: '',
                             status: 'APPROVED' as StatusCategory,
-                            user: { name: 'User 1' },
+                            user: {
+                                name: 'User 1',
+                                email: 'user1@example.com',
+                            },
                         },
                     ],
                 },
@@ -430,6 +446,7 @@ describe('StudyTeamRepository', () => {
                             user: {
                                 select: {
                                     name: true,
+                                    email: true,
                                 },
                             },
                         },

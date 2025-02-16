@@ -27,13 +27,15 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-
+import { CreateStudyResult } from './dto/request/create.study.alert.request';
+import { AlertServcie } from '../alert/alert.service';
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
 export class StudyTeamController {
     constructor(
         private readonly studyTeamService: StudyTeamService,
         private readonly logger: CustomWinstonLogger,
+        private readonly alertService: AlertServcie,
     ) {}
 
     @Post() // 슬랙봇 연동 추가될 예정
@@ -83,7 +85,7 @@ export class StudyTeamController {
             },
         },
     })
-    @UseInterceptors(FilesInterceptor('files', 10)) // 파일 최대 업로드 10개
+    @UseInterceptors(FilesInterceptor('files', 10))
     async uploadStudyTeam(
         @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
@@ -98,11 +100,16 @@ export class StudyTeamController {
                 CreateStudyTeamRequest,
                 parsedBody,
             );
-
-            return await this.studyTeamService.createStudyTeam(
-                createStudyTeamDto,
-                files,
-            );
+            const result: CreateStudyResult =
+                await this.studyTeamService.createStudyTeam(
+                    createStudyTeamDto,
+                    files,
+                );
+            this.logger.debug(`생성된 스터디 정보: ${JSON.stringify(result)}`);
+            this.logger.debug('🔥 [DEBUG] 공고 생성 완료');
+            await this.alertService.sendSlackAlert(result.slackPayload);
+            this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
+            return result.studyResponse;
         } catch (error) {
             throw error;
         }

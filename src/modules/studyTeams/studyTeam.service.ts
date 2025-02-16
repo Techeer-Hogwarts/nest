@@ -19,6 +19,8 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { CreateStudyResult } from './dto/request/create.study.alert.request';
+import { CreateStudyAlertRequest } from '../alert/dto/request/create.study.alert.request';
 
 @Injectable()
 export class StudyTeamService {
@@ -107,7 +109,7 @@ export class StudyTeamService {
     async createStudyTeam(
         createStudyTeamRequest: CreateStudyTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<GetStudyTeamResponse> {
+    ): Promise<CreateStudyResult> {
         const existingStudy = await this.studyTeamRepository.findStudyByName(
             createStudyTeamRequest.name,
         );
@@ -163,7 +165,35 @@ export class StudyTeamService {
                 '✅ [SUCCESS] StudyTeamRepository에 데이터 저장 성공',
             );
 
-            return studyData;
+            // Slack 알림에 사용할 DTO 매핑
+            const leaderMember = studyData.studyMember.find(
+                (member) => member.isLeader,
+            );
+            const leaderName = leaderMember
+                ? leaderMember.name
+                : 'Unknown Leader';
+            const leaderEmail = leaderMember ? leaderMember.email : 'No Email';
+
+            const slackPayload: CreateStudyAlertRequest = {
+                id: studyData.id,
+                type: 'study',
+                name: studyData.name,
+                studyExplain: studyData.studyExplain,
+                recruitNum: studyData.recruitNum,
+                leader: leaderName,
+                email: leaderEmail,
+                recruitExplain: studyData.recruitExplain,
+                notionLink: studyData.notionLink,
+                goal: studyData.goal,
+                rule: studyData.rule,
+            };
+
+            const studyResponse = studyData;
+
+            return {
+                studyResponse,
+                slackPayload,
+            };
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] createStudyTeam 에서 예외 발생: ',

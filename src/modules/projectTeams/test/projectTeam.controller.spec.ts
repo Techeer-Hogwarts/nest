@@ -15,6 +15,8 @@ import {
     mockProjectMemberResponse,
 } from './mock-data';
 import { NotFoundUserException } from '../../../global/exception/custom.exception';
+import { CreateProjectResult } from '../dto/request/create.project.alert.request';
+import { AlertServcie } from '../../alert/alert.service';
 
 describe('ProjectTeamController', () => {
     let controller: ProjectTeamController;
@@ -22,6 +24,7 @@ describe('ProjectTeamController', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let studyTeamService: StudyTeamService;
     let prismaService: PrismaService;
+    let alertService: AlertServcie;
 
     const mockUser = {
         id: 1,
@@ -54,6 +57,12 @@ describe('ProjectTeamController', () => {
                     },
                 },
                 {
+                    provide: AlertServcie,
+                    useValue: {
+                        sendSlackAlert: jest.fn(),
+                    },
+                },
+                {
                     provide: StudyTeamService,
                     useValue: {
                         getAllTeams: jest.fn(),
@@ -77,6 +86,7 @@ describe('ProjectTeamController', () => {
         projectTeamService = module.get<ProjectTeamService>(ProjectTeamService);
         studyTeamService = module.get<StudyTeamService>(StudyTeamService);
         prismaService = module.get<PrismaService>(PrismaService);
+        alertService = module.get(AlertServcie);
     });
 
     it('should be defined', () => {
@@ -89,10 +99,55 @@ describe('ProjectTeamController', () => {
             const createProjectTeamRequest = JSON.stringify(
                 mockCreateProjectTeamRequest,
             );
+            const mockProjectTeamResult1: CreateProjectResult = {
+                projectResponse: {
+                    id: 1,
+                    isDeleted: false,
+                    isRecruited: false,
+                    isFinished: false,
+                    name: 'Test Project',
+                    githubLink: 'https://github.com/test',
+                    notionLink: 'https://notion.so/test',
+                    projectExplain: 'Test explanation',
+                    frontendNum: 1,
+                    backendNum: 2,
+                    devopsNum: 3,
+                    uiuxNum: 4,
+                    dataEngineerNum: 5,
+                    recruitExplain: 'Test recruit explain',
+                    resultImages: [], // 필요한 경우 데이터를 추가
+                    mainImages: [],
+                    teamStacks: [],
+                    projectMember: [],
+                    likeCount: 0,
+                    viewCount: 0,
+                },
+                slackPayload: {
+                    id: 1,
+                    name: 'Test Project',
+                    projectExplain: 'Test explanation',
+                    frontNum: 1,
+                    backNum: 2,
+                    dataEngNum: 5,
+                    devOpsNum: 3,
+                    uiUxNum: 4,
+                    leader: 'Test Leader',
+                    email: 'test@example.com',
+                    recruitExplain: 'Test recruit explain',
+                    notionLink: 'https://notion.so/test',
+                    stack: [],
+                    type: 'project',
+                },
+            };
 
+            // projectTeamService.createProject를 목업하여 CreateProjectResult를 반환하도록 설정
             jest.spyOn(projectTeamService, 'createProject').mockResolvedValue(
-                mockProjectTeamResponse,
+                mockProjectTeamResult1,
             );
+            // alertService.sendSlackAlert도 jest.fn()으로 목업
+            const sendSlackAlertSpy = jest
+                .spyOn(alertService, 'sendSlackAlert')
+                .mockResolvedValue(undefined);
 
             const result = await controller.createProject(
                 createProjectTeamRequest,
@@ -100,8 +155,13 @@ describe('ProjectTeamController', () => {
                 mockRequest,
             );
 
-            expect(result).toEqual(mockProjectTeamResponse);
+            // 컨트롤러는 projectResponse만 반환함
+            expect(result).toEqual(mockProjectTeamResult1.projectResponse);
             expect(projectTeamService.createProject).toHaveBeenCalled();
+            // alertService.sendSlackAlert가 slackPayload로 호출되었는지 검증
+            expect(sendSlackAlertSpy).toHaveBeenCalledWith(
+                mockProjectTeamResult1.slackPayload,
+            );
         });
 
         it('should throw NotFoundUserException if no user', async () => {

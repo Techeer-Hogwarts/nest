@@ -20,6 +20,8 @@ import {
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CreateProjectAlertRequest } from '../alert/dto/request/create.project.alert.request';
+import { CreateProjectResult } from './dto/request/create.project.alert.request';
 
 interface Stack {
     id: number;
@@ -155,7 +157,7 @@ export class ProjectTeamService {
     async createProject(
         createProjectTeamRequest: CreateProjectTeamRequest,
         files: Express.Multer.File[],
-    ): Promise<ProjectTeamDetailResponse> {
+    ): Promise<CreateProjectResult> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
 
@@ -291,7 +293,16 @@ export class ProjectTeamService {
                     resultImages: true,
                     mainImages: true,
                     teamStacks: { include: { stack: true } },
-                    projectMember: { include: { user: true } },
+                    projectMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
+                            },
+                        },
+                    },
                 },
             });
 
@@ -302,10 +313,41 @@ export class ProjectTeamService {
             const projectResponse = new ProjectTeamDetailResponse(
                 createdProject,
             );
-            this.logger.debug('DTO 변환 완료');
+            // 리더 정보를 추출합니다.
+            const leaderMember = createdProject.projectMember.find(
+                (member) => member.isLeader,
+            );
+            const leaderName = leaderMember
+                ? leaderMember.user.name
+                : 'Unknown Leader';
+            const leaderEmail = leaderMember
+                ? leaderMember.user.email
+                : 'No Email';
 
-            this.logger.debug('✅ Project created successfully');
-            return projectResponse;
+            // Slack 알림에 사용할 DTO 매핑 (서비스에서 처리)
+            const slackPayload: CreateProjectAlertRequest = {
+                id: createdProject.id,
+                type: 'project',
+                name: createdProject.name,
+                projectExplain: createdProject.projectExplain,
+                frontNum: createdProject.frontendNum,
+                backNum: createdProject.backendNum,
+                dataEngNum: createdProject.dataEngineerNum,
+                devOpsNum: createdProject.devopsNum,
+                uiUxNum: createdProject.uiuxNum,
+                leader: leaderName,
+                email: leaderEmail,
+                recruitExplain: createdProject.recruitExplain,
+                notionLink: createdProject.notionLink,
+                stack: createdProject.teamStacks.map(
+                    (teamStack) => teamStack.stack.name,
+                ),
+            };
+
+            return {
+                projectResponse,
+                slackPayload,
+            };
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
             throw new Error('프로젝트 생성 중 오류가 발생했습니다.');
