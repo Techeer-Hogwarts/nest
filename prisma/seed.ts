@@ -435,9 +435,17 @@ async function main(): Promise<void> {
 
     Logger.log('Stacks have been seeded successfully!');
 
-    // UserExperience 데이터 생성
-    await prisma.userExperience.create({
-        data: {
+    await prisma.userExperience.upsert({
+        where: {
+            userId_position_companyName_startDate: {
+                userId: user1.id,
+                position: 'BACKEND',
+                companyName: 'Tech Corp',
+                startDate: new Date('2021-06-01'),
+            },
+        },
+        update: {}, // 이미 데이터가 존재하면 여기에 업데이트할 내용을 추가하세요.
+        create: {
             userId: user1.id,
             position: 'BACKEND',
             companyName: 'Tech Corp',
@@ -448,8 +456,17 @@ async function main(): Promise<void> {
         },
     });
 
-    await prisma.userExperience.create({
-        data: {
+    await prisma.userExperience.upsert({
+        where: {
+            userId_position_companyName_startDate: {
+                userId: user2.id,
+                position: 'DATA_ENGINEER',
+                companyName: 'Palo Alto Networks',
+                startDate: new Date('2022-06-01'),
+            },
+        },
+        update: {},
+        create: {
             userId: user2.id,
             position: 'DATA_ENGINEER',
             companyName: 'Palo Alto Networks',
@@ -460,8 +477,17 @@ async function main(): Promise<void> {
         },
     });
 
-    await prisma.userExperience.create({
-        data: {
+    await prisma.userExperience.upsert({
+        where: {
+            userId_position_companyName_startDate: {
+                userId: user3.id,
+                position: 'DEVOPS',
+                companyName: 'CrowdStrike',
+                startDate: new Date('2021-06-01'),
+            },
+        },
+        update: {},
+        create: {
             userId: user3.id,
             position: 'DEVOPS',
             companyName: 'CrowdStrike',
@@ -590,8 +616,15 @@ async function main(): Promise<void> {
     // 프로젝트 팀 3개씩 생성
     for (const user of allUsers) {
         for (let i = 1; i <= 3; i++) {
-            await prisma.projectTeam.create({
-                data: {
+            await prisma.projectTeam.upsert({
+                where: {
+                    name: `${user.name}'s Project ${i}`,
+                },
+                update: {
+                    // 이미 존재할 경우 업데이트할 필드를 지정할 수 있습니다.
+                    // 만약 업데이트할 필요가 없다면 빈 객체 {}를 사용하세요.
+                },
+                create: {
                     name: `${user.name}'s Project ${i}`,
                     githubLink: `https://github.com/${user.name.toLowerCase()}-project-${i}`,
                     notionLink: `https://notion.so/${user.name.toLowerCase()}-project-${i}`,
@@ -610,8 +643,10 @@ async function main(): Promise<void> {
     // 스터디 팀 3개씩 생성
     for (const user of allUsers) {
         for (let i = 1; i <= 3; i++) {
-            await prisma.studyTeam.create({
-                data: {
+            await prisma.studyTeam.upsert({
+                where: { name: `${user.name}'s Study ${i}` },
+                update: {}, // 이미 존재하는 경우 업데이트할 내용
+                create: {
                     name: `${user.name}'s Study ${i}`,
                     githubLink: `https://github.com/${user.name.toLowerCase()}-study-${i}`,
                     notionLink: `https://notion.so/${user.name.toLowerCase()}-study-${i}`,
@@ -629,10 +664,21 @@ async function main(): Promise<void> {
     const allStudies = await prisma.studyTeam.findMany();
 
     // 각 프로젝트에 모든 유저를 멤버로 추가
+    // 각 프로젝트에 모든 유저를 멤버로 추가 (ProjectMember)
     for (const project of allProjects) {
         for (const user of allUsers) {
-            await prisma.projectMember.create({
-                data: {
+            await prisma.projectMember.upsert({
+                where: {
+                    projectTeamId_userId_unique: {
+                        projectTeamId: project.id,
+                        userId: user.id,
+                    },
+                },
+                update: {
+                    // 이미 존재하는 경우 업데이트할 내용을 넣으세요.
+                    // 만약 업데이트가 필요 없다면 빈 객체 {}를 사용하세요.
+                },
+                create: {
                     userId: user.id,
                     projectTeamId: project.id,
                     isLeader: Math.random() > 0.5,
@@ -642,93 +688,100 @@ async function main(): Promise<void> {
                 },
             });
         }
-    }
 
-    // 각 프로젝트당 결과 이미지는 한 번만 생성
-    for (const project of allProjects) {
-        await prisma.projectResultImage.create({
-            data: {
-                projectTeamId: project.id,
-                imageUrl: `https://example.com/project-${project.id}-image.jpg`,
-            },
-        });
-    }
-
-    // 각 스터디에 모든 유저를 멤버로 추가
-    for (const study of allStudies) {
-        for (const user of allUsers) {
-            await prisma.studyMember.create({
+        // 각 프로젝트당 결과 이미지는 한 번만 생성
+        for (const project of allProjects) {
+            await prisma.projectResultImage.create({
                 data: {
-                    userId: user.id,
-                    studyTeamId: study.id,
-                    isLeader: Math.random() > 0.5,
-                    summary: `${user.name} is studying in ${study.name}`,
-                    status: 'APPROVED',
+                    projectTeamId: project.id,
+                    imageUrl: `https://example.com/project-${project.id}-image.jpg`,
                 },
             });
         }
-    }
 
-    // 각 스터디당 결과 이미지는 한 번만 생성
-    for (const study of allStudies) {
-        await prisma.studyResultImage.create({
+        // 각 스터디에 모든 유저를 멤버로 추가
+        for (const study of allStudies) {
+            for (const user of allUsers) {
+                await prisma.studyMember.upsert({
+                    where: {
+                        studyTeamId_userId: {
+                            studyTeamId: study.id,
+                            userId: user.id,
+                        },
+                    },
+                    update: {},
+                    create: {
+                        userId: user.id,
+                        studyTeamId: study.id,
+                        isLeader: Math.random() > 0.5,
+                        summary: `${user.name} is studying in ${study.name}`,
+                        status: 'APPROVED',
+                    },
+                });
+            }
+        }
+
+        // 각 스터디당 결과 이미지는 한 번만 생성
+        for (const study of allStudies) {
+            await prisma.studyResultImage.create({
+                data: {
+                    studyTeamId: study.id,
+                    imageUrl: `https://example.com/study-${study.id}-image.jpg`,
+                },
+            });
+        }
+
+        // Blog 데이터 생성
+        await prisma.blog.create({
             data: {
-                studyTeamId: study.id,
-                imageUrl: `https://example.com/study-${study.id}-image.jpg`,
+                userId: user1.id,
+                title: 'My Journey with NestJS',
+                url: 'https://blog.example.com/nestjs-journey',
+                date: new Date('2023-03-01'),
+                author: 'John Doe',
+                authorImage: 'https://example.com/john.jpg',
+                category: 'SHARED',
+                thumbnail: 'https://example.com/blog-thumbnail.jpg',
+                tags: ['NestJS', 'TypeScript', 'Backend'],
+                likeCount: 15,
+                viewCount: 10,
             },
         });
+
+        await prisma.blog.create({
+            data: {
+                userId: user2.id,
+                title: '목데이터 생성하는 방법 101',
+                url: 'https://blog.example.com/nestjs-journey',
+                date: new Date('2023-03-01'),
+                author: 'John Doe',
+                authorImage: 'https://example.com/john.jpg',
+                category: 'SHARED',
+                thumbnail: 'https://example.com/blog-thumbnail.jpg',
+                tags: ['NestJS', 'TypeScript', 'Backend'],
+                likeCount: 15,
+                viewCount: 100,
+            },
+        });
+
+        await prisma.blog.create({
+            data: {
+                userId: user3.id,
+                title: '프리즈마를 써보자',
+                url: 'https://blog.example.com/prisma',
+                date: new Date('2023-03-01'),
+                author: 'ganadara',
+                authorImage: 'https://example.com/john.jpg',
+                category: 'SHARED',
+                thumbnail: 'https://example.com/blog-thumbnail.jpg',
+                tags: ['NestJS', 'TypeScript', 'Backend'],
+                likeCount: 15,
+                viewCount: 200000000,
+            },
+        });
+
+        Logger.log('All mock data has been seeded successfully!');
     }
-
-    // Blog 데이터 생성
-    await prisma.blog.create({
-        data: {
-            userId: user1.id,
-            title: 'My Journey with NestJS',
-            url: 'https://blog.example.com/nestjs-journey',
-            date: new Date('2023-03-01'),
-            author: 'John Doe',
-            authorImage: 'https://example.com/john.jpg',
-            category: 'SHARED',
-            thumbnail: 'https://example.com/blog-thumbnail.jpg',
-            tags: ['NestJS', 'TypeScript', 'Backend'],
-            likeCount: 15,
-            viewCount: 10,
-        },
-    });
-
-    await prisma.blog.create({
-        data: {
-            userId: user2.id,
-            title: '목데이터 생성하는 방법 101',
-            url: 'https://blog.example.com/nestjs-journey',
-            date: new Date('2023-03-01'),
-            author: 'John Doe',
-            authorImage: 'https://example.com/john.jpg',
-            category: 'SHARED',
-            thumbnail: 'https://example.com/blog-thumbnail.jpg',
-            tags: ['NestJS', 'TypeScript', 'Backend'],
-            likeCount: 15,
-            viewCount: 100,
-        },
-    });
-
-    await prisma.blog.create({
-        data: {
-            userId: user3.id,
-            title: '프리즈마를 써보자',
-            url: 'https://blog.example.com/prisma',
-            date: new Date('2023-03-01'),
-            author: 'ganadara',
-            authorImage: 'https://example.com/john.jpg',
-            category: 'SHARED',
-            thumbnail: 'https://example.com/blog-thumbnail.jpg',
-            tags: ['NestJS', 'TypeScript', 'Backend'],
-            likeCount: 15,
-            viewCount: 200000000,
-        },
-    });
-
-    Logger.log('All mock data has been seeded successfully!');
 }
 
 main()

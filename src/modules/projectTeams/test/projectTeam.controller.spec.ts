@@ -15,6 +15,7 @@ import {
     mockProjectMemberResponse,
 } from './mock-data';
 import { NotFoundUserException } from '../../../global/exception/custom.exception';
+import { ProjectTeamDetailResponse } from '../dto/response/get.projectTeam.response';
 
 describe('ProjectTeamController', () => {
     let controller: ProjectTeamController;
@@ -89,9 +90,32 @@ describe('ProjectTeamController', () => {
             const createProjectTeamRequest = JSON.stringify(
                 mockCreateProjectTeamRequest,
             );
+            const mockProjectTeamResult1: ProjectTeamDetailResponse = {
+                id: 1,
+                isDeleted: false,
+                isRecruited: false,
+                isFinished: false,
+                name: 'Test Project',
+                githubLink: 'https://github.com/test',
+                notionLink: 'https://notion.so/test',
+                projectExplain: 'Test explanation',
+                frontendNum: 1,
+                backendNum: 2,
+                devopsNum: 3,
+                uiuxNum: 4,
+                dataEngineerNum: 5,
+                recruitExplain: 'Test recruit explain',
+                resultImages: [], // 필요한 경우 데이터를 추가
+                mainImages: [],
+                teamStacks: [],
+                projectMember: [],
+                likeCount: 0,
+                viewCount: 0,
+            };
 
+            // projectTeamService.createProject를 목업하여 CreateProjectResult를 반환하도록 설정
             jest.spyOn(projectTeamService, 'createProject').mockResolvedValue(
-                mockProjectTeamResponse,
+                mockProjectTeamResult1,
             );
 
             const result = await controller.createProject(
@@ -100,7 +124,8 @@ describe('ProjectTeamController', () => {
                 mockRequest,
             );
 
-            expect(result).toEqual(mockProjectTeamResponse);
+            // 컨트롤러는 projectResponse만 반환함
+            expect(result).toEqual(mockProjectTeamResult1);
             expect(projectTeamService.createProject).toHaveBeenCalled();
         });
 

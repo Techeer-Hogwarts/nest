@@ -253,11 +253,7 @@ export class UserService {
             throw new NotFoundUserException();
         }
 
-        this.logger.debug(
-            '사용자 정보 조회',
-            JSON.stringify({ context: UserService.name }),
-        );
-
+        this.logger.debug('유저 서비스에서 사용자 정보 조회');
         return new GetUserResponse(userInfo);
     }
 
@@ -412,7 +408,6 @@ export class UserService {
         this.logger.debug(
             '모든 프로필 조회 중',
             JSON.stringify({
-                data: users,
                 context: UserService.name,
             }),
         );

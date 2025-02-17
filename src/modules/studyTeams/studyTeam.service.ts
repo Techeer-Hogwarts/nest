@@ -19,6 +19,9 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { CreateStudyAlertRequest } from '../alert/dto/request/create.study.alert.request';
+import { AlertServcie } from '../alert/alert.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class StudyTeamService {
@@ -27,6 +30,7 @@ export class StudyTeamService {
         private readonly studyMemberRepository: StudyMemberRepository,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
+        private readonly alertService: AlertServcie,
     ) {}
 
     async ensureUserIsStudyMember(
@@ -108,6 +112,7 @@ export class StudyTeamService {
         createStudyTeamRequest: CreateStudyTeamRequest,
         files: Express.Multer.File[],
     ): Promise<GetStudyTeamResponse> {
+        // 스터디 이름 중복 체크
         const existingStudy = await this.studyTeamRepository.findStudyByName(
             createStudyTeamRequest.name,
         );
@@ -121,6 +126,7 @@ export class StudyTeamService {
         try {
             this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
 
+            // 파일 업로드 처리
             if (files && files.length > 0) {
                 this.logger.debug(
                     `📂 [INFO] 총 ${files.length}개의 파일이 업로드 대기 중입니다.`,
@@ -135,12 +141,12 @@ export class StudyTeamService {
                 createStudyTeamRequest.resultImages = [];
             }
 
+            // 스터디 멤버에 해당하는 사용자 존재 여부 체크
             const userIds = createStudyTeamRequest.studyMember.map(
                 (member) => member.userId,
             );
             const existingUserIds =
                 await this.studyTeamRepository.checkExistUsers(userIds);
-
             const nonExistentUsers = userIds.filter(
                 (id) => !existingUserIds.includes(id),
             );
@@ -156,12 +162,43 @@ export class StudyTeamService {
                     JSON.stringify(createStudyTeamRequest),
             );
 
+            // 스터디 생성
             const studyData = await this.studyTeamRepository.createStudyTeam(
                 createStudyTeamRequest,
             );
             this.logger.debug(
                 '✅ [SUCCESS] StudyTeamRepository에 데이터 저장 성공',
             );
+
+            // Slack 알림에 사용할 DTO 매핑
+            const leaderMember = studyData.studyMember.find(
+                (member) => member.isLeader,
+            );
+            const leaderName = leaderMember
+                ? leaderMember.name
+                : 'Unknown Leader';
+            const leaderEmail = leaderMember ? leaderMember.email : 'No Email';
+
+            const slackPayload: CreateStudyAlertRequest = {
+                id: studyData.id,
+                type: 'study',
+                name: studyData.name,
+                studyExplain: studyData.studyExplain,
+                recruitNum: studyData.recruitNum,
+                leader: leaderName,
+                email: leaderEmail,
+                recruitExplain: studyData.recruitExplain,
+                notionLink: studyData.notionLink,
+                goal: studyData.goal,
+                rule: studyData.rule,
+            };
+
+            // 서비스 단에서 Slack 알림 전송
+            this.logger.debug(
+                `슬랙봇 요청 데이터 : ${JSON.stringify(slackPayload)}`,
+            );
+            await this.alertService.sendSlackAlert(slackPayload);
+            this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
 
             return studyData;
         } catch (error) {
@@ -341,21 +378,31 @@ export class StudyTeamService {
 
     async applyToStudyTeam(
         createStudyMemberRequest: CreateStudyMemberRequest,
-        userId: number,
+        user: User,
     ): Promise<StudyApplicantResponse> {
         this.logger.debug('🔥 [START] applyToStudyTeam 요청 시작');
 
         await this.studyMemberRepository.isUserAlreadyInStudy(
             createStudyMemberRequest.studyTeamId,
-            userId,
+            user.id,
         );
         this.logger.debug('✅ [INFO] 스터디 팀원 확인 성공');
 
         const newApplication =
             await this.studyMemberRepository.applyToStudyTeam(
                 createStudyMemberRequest,
-                userId,
+                user.id,
             );
+
+        // 지원 생성 후, 지원 알림 전송 (지원 상태: PENDING)
+        const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+            createStudyMemberRequest.studyTeamId,
+            user.email,
+            'PENDING',
+        );
+
+        await this.alertService.sendUserAlert(alertData);
+        this.logger.debug('AlertData : ' + JSON.stringify(alertData));
 
         this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
         return newApplication;
@@ -363,13 +410,13 @@ export class StudyTeamService {
 
     async cancelApplication(
         studyTeamId: number,
-        userId: number,
+        user: User,
     ): Promise<StudyMemberResponse> {
         try {
             this.logger.debug('🔥 [START] cancelApplication 요청 시작');
-            this.logger.debug(userId);
+            this.logger.debug(user.id);
 
-            await this.ensureUserIsStudyMember(studyTeamId, userId);
+            await this.ensureUserIsStudyMember(studyTeamId, user.id);
             this.logger.debug('✅ [INFO] 스터디 팀원 확인 성공');
         } catch (error) {
             this.logger.error(
@@ -381,12 +428,21 @@ export class StudyTeamService {
         try {
             const data = await this.studyMemberRepository.cancelApplication(
                 studyTeamId,
-                userId,
+                user.id,
             );
             this.logger.debug('✅ [INFO] cancelApplication 실행 결과:', data);
 
-            this.logger.debug('✅ [SUCCESS] 스터디 지원 취소 성공');
+            // 취소된 경우 알림 전송 (결과: CANCELLED)
+            const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+                studyTeamId,
+                user.email,
+                'CANCELLED',
+            );
 
+            await this.alertService.sendUserAlert(alertData);
+            this.logger.debug('AlertData : ' + JSON.stringify(alertData));
+
+            this.logger.debug('✅ [SUCCESS] 스터디 지원 취소 성공');
             return data;
         } catch (error) {
             this.logger.error(
@@ -400,10 +456,10 @@ export class StudyTeamService {
     // 스터디 지원자 조회
     async getApplicants(
         studyTeamId: number,
-        userId: number,
+        user: User,
     ): Promise<StudyApplicantResponse[]> {
         this.logger.debug('🔥 [START] getApplicants 요청 시작');
-        await this.ensureUserIsStudyMember(studyTeamId, userId);
+        await this.ensureUserIsStudyMember(studyTeamId, user.id);
         const data =
             await this.studyMemberRepository.getApplicants(studyTeamId);
         this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');
@@ -413,15 +469,15 @@ export class StudyTeamService {
     // 스터디 지원 수락
     async acceptApplicant(
         studyTeamId: number,
-        memberId: number,
+        user: User,
         applicantId: number,
     ): Promise<StudyApplicantResponse> {
         this.logger.debug(
-            `🔥 [시작] 지원자 수락 처리 - 스터디팀: ${studyTeamId}, 처리자: ${memberId}, 지원자: ${applicantId}`,
+            `🔥 [시작] 지원자 수락 처리 - 스터디팀: ${studyTeamId}, 처리자: ${user.id}, 지원자: ${applicantId}`,
         );
 
-        await this.ensureUserIsStudyMember(studyTeamId, memberId);
-        this.logger.debug(`✅ 사용자 ${memberId}의 스터디 멤버 자격 확인 완료`);
+        await this.ensureUserIsStudyMember(studyTeamId, user.id);
+        this.logger.debug(`✅ 사용자 ${user.id}의 스터디 멤버 자격 확인 완료`);
 
         const status = await this.studyMemberRepository.getApplicantStatus(
             studyTeamId,
@@ -442,6 +498,16 @@ export class StudyTeamService {
             'APPROVED',
         );
 
+        // 수락된 경우 알림 전송 (결과: APPROVED)
+        const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+            studyTeamId,
+            user.email,
+            'APPROVED',
+        );
+
+        await this.alertService.sendUserAlert(alertData);
+        this.logger.debug('AlertData : ' + JSON.stringify(alertData));
+
         this.logger.debug(
             `✅ [완료] 지원자 수락 처리 성공 - 지원자 ${applicantId}, 스터디팀 ${studyTeamId}`,
         );
@@ -451,15 +517,15 @@ export class StudyTeamService {
     // 스터디 지원 거절
     async rejectApplicant(
         studyTeamId: number,
-        memberId: number,
+        user: User,
         applicantId: number,
     ): Promise<StudyApplicantResponse> {
         this.logger.debug(
-            `🔥 [시작] 지원자 거절 처리 - 스터디팀: ${studyTeamId}, 처리자: ${memberId}, 지원자: ${applicantId}`,
+            `🔥 [시작] 지원자 거절 처리 - 스터디팀: ${studyTeamId}, 처리자: ${user.id}, 지원자: ${applicantId}`,
         );
 
-        await this.ensureUserIsStudyMember(studyTeamId, memberId);
-        this.logger.debug(`✅ 사용자 ${memberId}의 스터디 멤버 자격 확인 완료`);
+        await this.ensureUserIsStudyMember(studyTeamId, user.id);
+        this.logger.debug(`✅ 사용자 ${user.id}의 스터디 멤버 자격 확인 완료`);
 
         const status = await this.studyMemberRepository.getApplicantStatus(
             studyTeamId,
@@ -479,6 +545,15 @@ export class StudyTeamService {
             applicantId,
             'REJECT',
         );
+
+        // 거절된 경우 알림 전송 (결과: REJECT)
+        const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+            studyTeamId,
+            user.email,
+            'REJECT',
+        );
+        await this.alertService.sendUserAlert(alertData);
+        this.logger.debug('AlertData : ' + JSON.stringify(alertData));
 
         this.logger.debug(
             `✅ [완료] 지원자 거절 처리 성공 - 지원자 ${applicantId}, 스터디팀 ${studyTeamId}`,

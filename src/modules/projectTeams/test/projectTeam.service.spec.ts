@@ -13,6 +13,8 @@ import { NotFoundProjectException } from '../../../global/exception/custom.excep
 import { StatusCategory } from '@prisma/client';
 import { StackCategory } from '@prisma/client';
 import { ProjectTeamDetailResponse } from '../dto/response/get.projectTeam.response';
+import { AlertServcie } from '../../alert/alert.service';
+import { AlreadyApprovedException } from '../../../global/exception/custom.exception';
 
 describe('ProjectTeamService', () => {
     let service: ProjectTeamService;
@@ -20,10 +22,12 @@ describe('ProjectTeamService', () => {
     let projectTeamRepository: ProjectTeamRepository;
     let projectMemberRepository: ProjectMemberRepository;
     let awsService: AwsService;
+    let alertService: AlertServcie;
 
     const mockUser = {
         id: 1,
         name: 'Test User',
+        email: 'test@example.com',
     };
     const mockFile: Express.Multer.File = {
         fieldname: 'file',
@@ -82,6 +86,13 @@ describe('ProjectTeamService', () => {
                     },
                 },
                 {
+                    provide: AlertServcie,
+                    useValue: {
+                        sendSlackAlert: jest.fn(),
+                        sendUserAlert: jest.fn(),
+                    },
+                },
+                {
                     provide: AwsService,
                     useValue: {
                         imageUploadToS3: jest.fn(),
@@ -99,6 +110,16 @@ describe('ProjectTeamService', () => {
             ProjectMemberRepository,
         );
         awsService = module.get<AwsService>(AwsService);
+        alertService = module.get(AlertServcie);
+
+        // ensureUserIsProjectMember는 실제 호출하도록 설정(또는 필요한 경우 spy로 오버라이딩)
+        service.ensureUserIsProjectMember = jest
+            .fn()
+            .mockResolvedValue(undefined);
+        // private 메서드 sendProjectUserAlert는 (service as any)로 오버라이드하여 접근 가능하게 함
+        (service as any).sendProjectUserAlert = jest
+            .fn()
+            .mockResolvedValue(undefined);
     });
 
     describe('createProject', () => {
@@ -114,6 +135,7 @@ describe('ProjectTeamService', () => {
                 }),
             );
 
+            // 의존성 목 설정
             jest.spyOn(
                 projectTeamRepository,
                 'findProjectByName',
@@ -125,12 +147,18 @@ describe('ProjectTeamService', () => {
                 'https://test.com/image.jpg',
             );
 
-            const mockCreatedProject: ProjectTeamDetailResponse = {
+            // uploadImagesToS3 목 처리: mainImages와 resultImages 각각 반환
+            jest.spyOn(service, 'uploadImagesToS3')
+                .mockResolvedValueOnce(['https://test.com/image.jpg']) // main 이미지
+                .mockResolvedValueOnce(['https://test.com/result2.jpg']); // 결과 이미지
+
+            // 예상 projectResponse 객체 (prisma.projectTeam.create가 반환할 값)
+            const expectedProjectResponse = {
                 id: 1,
-                name: mockCreateProjectTeamRequest.name,
                 isDeleted: false,
                 isRecruited: true,
                 isFinished: false,
+                name: mockCreateProjectTeamRequest.name,
                 githubLink: mockCreateProjectTeamRequest.githubLink || '',
                 notionLink: mockCreateProjectTeamRequest.notionLink || '',
                 projectExplain: mockCreateProjectTeamRequest.projectExplain,
@@ -141,52 +169,111 @@ describe('ProjectTeamService', () => {
                 dataEngineerNum:
                     mockCreateProjectTeamRequest.dataEngineerNum || 0,
                 recruitExplain: mockCreateProjectTeamRequest.recruitExplain,
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date),
                 mainImages: [
                     {
                         id: 1,
                         isDeleted: false,
                         imageUrl: 'https://test.com/image.jpg',
+                        createdAt: expect.any(Date),
+                        updatedAt: expect.any(Date),
+                        projectTeamId: 1,
                     },
                 ],
                 teamStacks: mockCreateProjectTeamRequest.teamStacks.map(
                     (stack, index) => ({
                         id: index + 1,
-                        stack: { name: stack.stack },
-                        isMain: stack.isMain,
+                        stackId: index + 1, // 추가: 고유 stack id
                         isDeleted: false,
                         projectTeamId: 1,
+                        isMain: stack.isMain,
+                        stack: { name: stack.stack },
+                        createdAt: expect.any(Date),
+                        updatedAt: expect.any(Date),
                     }),
                 ),
                 projectMember: mockCreateProjectTeamRequest.projectMember.map(
                     (member) => ({
                         id: 1,
-                        name: member.name,
+                        // 기존 프로퍼티 대신 user 객체를 포함
+                        user: {
+                            name: member.name,
+                            email: 'test@example.com',
+                        },
                         userId: member.userId,
                         isLeader: member.isLeader,
                         teamRole: member.teamRole,
                         status: 'APPROVED' as StatusCategory,
                         summary: '초기 참여 인원',
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
+                        createdAt: expect.any(Date),
+                        updatedAt: expect.any(Date),
                         isDeleted: false,
                         projectTeamId: 1,
                     }),
                 ),
                 likeCount: 0,
                 viewCount: 0,
-                resultImages: [], // 추가된 부분
+                resultImages: [
+                    {
+                        id: 2,
+                        isDeleted: false,
+                        imageUrl: 'https://test.com/result2.jpg',
+                        createdAt: expect.any(Date),
+                        updatedAt: expect.any(Date),
+                        projectTeamId: 1,
+                    },
+                ],
             };
 
-            jest.spyOn(service, 'createProject').mockResolvedValue(
-                mockCreatedProject,
+            jest.spyOn(prismaService.projectTeam, 'create').mockResolvedValue(
+                expectedProjectResponse,
             );
 
+            // slack alert spy
+            const sendSlackAlertSpy = jest
+                .spyOn(alertService, 'sendSlackAlert')
+                .mockResolvedValue(undefined);
+
+            // 실제 createProject 메서드 호출
             const result = await service.createProject(
                 mockCreateProjectTeamRequest,
                 [mockFile, mockFile],
             );
 
-            expect(result).toEqual(mockCreatedProject);
+            // 반환값은 ProjectTeamDetailResponse 인스턴스로 생성되어야 함
+            expect(result).toEqual(
+                new ProjectTeamDetailResponse(expectedProjectResponse),
+            );
+
+            // 예상 Slack payload (내부 로직에 따라 생성됨)
+            const leaderMember = expectedProjectResponse.projectMember.find(
+                (member) => member.isLeader,
+            );
+            const expectedSlackPayload = {
+                id: expectedProjectResponse.id,
+                name: expectedProjectResponse.name,
+                projectExplain: expectedProjectResponse.projectExplain,
+                frontNum: expectedProjectResponse.frontendNum,
+                backNum: expectedProjectResponse.backendNum,
+                dataEngNum: expectedProjectResponse.dataEngineerNum,
+                devOpsNum: expectedProjectResponse.devopsNum,
+                uiUxNum: expectedProjectResponse.uiuxNum,
+                leader: leaderMember
+                    ? leaderMember.user.name
+                    : 'Unknown Leader',
+                email: leaderMember ? leaderMember.user.email : 'No Email',
+                recruitExplain: expectedProjectResponse.recruitExplain,
+                notionLink: expectedProjectResponse.notionLink,
+                stack: expectedProjectResponse.teamStacks.map(
+                    (ts) => ts.stack.name,
+                ),
+                type: 'project',
+            };
+
+            expect(sendSlackAlertSpy).toHaveBeenCalledWith(
+                expectedSlackPayload,
+            );
         });
     });
 
@@ -487,19 +574,26 @@ describe('ProjectTeamService', () => {
 
     describe('acceptApplicant', () => {
         it('should accept project applicant successfully', async () => {
-            const mockApplicant = {
+            // 1. 지원자 상태가 PENDING 임을 mock 설정
+            (
+                projectMemberRepository.getApplicantStatus as jest.Mock
+            ).mockResolvedValue('PENDING');
+
+            // 2. 승인 처리 후 반환될 지원자 객체 mock 생성
+            const updatedApplicant = {
                 id: 1,
                 projectTeamId: 1,
                 userId: mockUser.id,
                 isDeleted: false,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                status: 'APPROVED' as StatusCategory,
+                status: 'APPROVED',
                 isLeader: false,
                 teamRole: 'Frontend',
                 summary: 'Test application',
                 user: {
                     id: mockUser.id,
+                    email: mockUser.email,
                     name: 'Test User',
                     profileImage: 'https://example.com/profile.jpg',
                     createdAt: new Date(),
@@ -507,26 +601,60 @@ describe('ProjectTeamService', () => {
                 },
             };
 
-            jest.spyOn(
-                service,
-                'ensureUserIsProjectMember',
-            ).mockResolvedValue();
-            jest.spyOn(
-                projectMemberRepository,
-                'getApplicantStatus',
-            ).mockResolvedValue('PENDING');
-            jest.spyOn(
-                projectMemberRepository,
-                'updateApplicantStatus',
-            ).mockResolvedValue(mockApplicant);
+            // 3. updateApplicantStatus 메서드가 승인된 지원자 객체를 반환하도록 mock 설정
+            (
+                projectMemberRepository.updateApplicantStatus as jest.Mock
+            ).mockResolvedValue(updatedApplicant);
 
+            // 4. 테스트 실행: projectTeamId: 1, memberId: mockUser.id, applicantId: 2
             const result = await service.acceptApplicant(1, mockUser.id, 2);
 
+            // 5. 결과 검증
             expect(result).toBeDefined();
             expect(result.status).toBe('APPROVED');
+            expect(service.ensureUserIsProjectMember).toHaveBeenCalledWith(
+                1,
+                mockUser.id,
+            );
+            expect(
+                projectMemberRepository.getApplicantStatus as jest.Mock,
+            ).toHaveBeenCalledWith(1, 2);
+            expect(
+                projectMemberRepository.updateApplicantStatus as jest.Mock,
+            ).toHaveBeenCalledWith(1, 2, 'APPROVED');
+            // private 메서드 접근은 (service as any)로
+            expect((service as any).sendProjectUserAlert).toHaveBeenCalledWith(
+                1,
+                updatedApplicant.user.email,
+                'APPROVED',
+            );
+        });
+
+        it('should throw AlreadyApprovedException if applicant already approved', async () => {
+            // 지원자 상태가 이미 APPROVED인 경우
+            (
+                projectMemberRepository.getApplicantStatus as jest.Mock
+            ).mockResolvedValue('APPROVED');
+
+            await expect(
+                service.acceptApplicant(1, mockUser.id, 2),
+            ).rejects.toBeInstanceOf(AlreadyApprovedException);
+            expect(service.ensureUserIsProjectMember).toHaveBeenCalledWith(
+                1,
+                mockUser.id,
+            );
+            expect(
+                projectMemberRepository.getApplicantStatus as jest.Mock,
+            ).toHaveBeenCalledWith(1, 2);
+            // updateApplicantStatus와 sendProjectUserAlert는 호출되지 않아야 함
+            expect(
+                projectMemberRepository.updateApplicantStatus as jest.Mock,
+            ).not.toHaveBeenCalled();
+            expect(
+                (service as any).sendProjectUserAlert,
+            ).not.toHaveBeenCalled();
         });
     });
-
     describe('rejectApplicant', () => {
         it('should reject project applicant successfully', async () => {
             const mockApplicant = {
@@ -549,17 +677,14 @@ describe('ProjectTeamService', () => {
                 },
             };
 
-            jest.spyOn(
-                service,
-                'ensureUserIsProjectMember',
-            ).mockResolvedValue();
-            jest.spyOn(
-                projectMemberRepository,
-                'getApplicantStatus',
+            jest.spyOn(service, 'ensureUserIsProjectMember').mockResolvedValue(
+                undefined,
+            );
+            (
+                projectMemberRepository.getApplicantStatus as jest.Mock
             ).mockResolvedValue('PENDING');
-            jest.spyOn(
-                projectMemberRepository,
-                'updateApplicantStatus',
+            (
+                projectMemberRepository.updateApplicantStatus as jest.Mock
             ).mockResolvedValue(mockApplicant);
 
             const result = await service.rejectApplicant(1, mockUser.id, 2);

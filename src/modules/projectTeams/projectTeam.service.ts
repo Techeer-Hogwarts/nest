@@ -20,6 +20,9 @@ import {
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CreateProjectAlertRequest } from '../alert/dto/request/create.project.alert.request';
+import { AlertServcie } from '../alert/alert.service';
+import { CreatePersonalAlertRequest } from '../alert/dto/request/create.personal.alert.request';
 
 interface Stack {
     id: number;
@@ -39,6 +42,7 @@ export class ProjectTeamService {
         private readonly projectMemberRepository: ProjectMemberRepository,
         private readonly prisma: PrismaService,
         private readonly awsService: AwsService,
+        private readonly alertService: AlertServcie,
     ) {}
 
     private async validateStacks(teamStacks: TeamStack[]): Promise<Stack[]> {
@@ -169,6 +173,7 @@ export class ProjectTeamService {
             }
 
             // 요청 데이터 로깅
+            // this.logger.debug('요청 데이터 로깅 시작');
             this.logger.debug(
                 '요청 데이터:',
                 JSON.stringify(createProjectTeamRequest),
@@ -291,7 +296,16 @@ export class ProjectTeamService {
                     resultImages: true,
                     mainImages: true,
                     teamStacks: { include: { stack: true } },
-                    projectMember: { include: { user: true } },
+                    projectMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
+                            },
+                        },
+                    },
                 },
             });
 
@@ -302,9 +316,43 @@ export class ProjectTeamService {
             const projectResponse = new ProjectTeamDetailResponse(
                 createdProject,
             );
-            this.logger.debug('DTO 변환 완료');
+            // 리더 정보를 추출합니다.
+            const leaderMember = createdProject.projectMember.find(
+                (member) => member.isLeader,
+            );
+            const leaderName = leaderMember
+                ? leaderMember.user.name
+                : 'Unknown Leader';
+            const leaderEmail = leaderMember
+                ? leaderMember.user.email
+                : 'No Email';
 
-            this.logger.debug('✅ Project created successfully');
+            // Slack 알림에 사용할 DTO 매핑 (서비스에서 처리)
+            const slackPayload: CreateProjectAlertRequest = {
+                id: createdProject.id,
+                type: 'project',
+                name: createdProject.name,
+                projectExplain: createdProject.projectExplain,
+                frontNum: createdProject.frontendNum,
+                backNum: createdProject.backendNum,
+                dataEngNum: createdProject.dataEngineerNum,
+                devOpsNum: createdProject.devopsNum,
+                uiUxNum: createdProject.uiuxNum,
+                leader: leaderName,
+                email: leaderEmail,
+                recruitExplain: createdProject.recruitExplain,
+                notionLink: createdProject.notionLink,
+                stack: createdProject.teamStacks.map(
+                    (teamStack) => teamStack.stack.name,
+                ),
+            };
+
+            // 서비스 단에서 슬랙 채널 알림 전송
+            this.logger.debug(
+                `슬랙봇 요청 데이터 : ${JSON.stringify(slackPayload)}`,
+            );
+            await this.alertService.sendSlackAlert(slackPayload);
+
             return projectResponse;
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
@@ -557,6 +605,43 @@ export class ProjectTeamService {
         }
     }
 
+    private async sendProjectUserAlert(
+        projectTeamId: number,
+        applicantEmail: string,
+        result: 'PENDING' | 'CANCELLED' | 'APPROVED' | 'REJECT',
+    ): Promise<void> {
+        // 팀 리더 정보 조회
+        const teamLeader = await this.prisma.projectMember.findFirst({
+            where: {
+                projectTeamId,
+                isLeader: true,
+                isDeleted: false,
+            },
+            include: { user: true },
+        });
+
+        // 실제 프로젝트 이름 조회
+        const projectTeam = await this.prisma.projectTeam.findUnique({
+            where: { id: projectTeamId },
+            select: { name: true },
+        });
+
+        // 팀 리더와 프로젝트 정보가 존재할 경우 알림 전송
+        if (teamLeader && projectTeam) {
+            const userAlertPayload: CreatePersonalAlertRequest = {
+                teamId: projectTeamId,
+                teamName: projectTeam.name,
+                type: 'project',
+                leaderEmail: teamLeader.user.email,
+                applicantEmail,
+                result,
+            };
+
+            await this.alertService.sendUserAlert(userAlertPayload);
+            this.logger.debug('AlterData : ', JSON.stringify(userAlertPayload));
+        }
+    }
+
     async applyToProject(
         createProjectMemberRequest: CreateProjectMemberRequest,
         userId: number,
@@ -567,6 +652,7 @@ export class ProjectTeamService {
                 `요청 데이터: ${JSON.stringify(createProjectMemberRequest)}`,
             );
 
+            // 지원 생성
             const newApplication = await this.prisma.projectMember.create({
                 data: {
                     user: { connect: { id: userId } },
@@ -582,6 +668,13 @@ export class ProjectTeamService {
                 },
                 include: { user: true },
             });
+
+            // 팀 리더 및 팀 이름 조회 후 사용자 알림 전송 (지원 신청)
+            await this.sendProjectUserAlert(
+                createProjectMemberRequest.projectTeamId,
+                newApplication.user.email,
+                'PENDING',
+            );
 
             this.logger.debug(
                 `✅ 프로젝트 지원 완료 (ID: ${newApplication.id})`,
@@ -618,6 +711,13 @@ export class ProjectTeamService {
                 data: { isDeleted: true },
                 include: { user: true },
             });
+
+            // 팀 리더 및 팀 이름 조회 후 사용자 알림 전송 (지원 취소)
+            await this.sendProjectUserAlert(
+                projectTeamId,
+                application.user.email,
+                'CANCELLED',
+            );
 
             this.logger.debug('✅ 프로젝트 지원 취소 완료');
             return new ProjectMemberResponse(canceledApplication);
@@ -676,6 +776,13 @@ export class ProjectTeamService {
                     'APPROVED',
                 );
 
+            // 승인된 경우 사용자 알림 전송 (결과: APPROVED)
+            await this.sendProjectUserAlert(
+                projectTeamId,
+                updatedApplicant.user.email,
+                'APPROVED',
+            );
+
             this.logger.debug(`✅ 지원자 승인 완료 (ID: ${applicantId})`);
             return new ProjectApplicantResponse(updatedApplicant);
         } catch (error) {
@@ -713,6 +820,13 @@ export class ProjectTeamService {
                     applicantId,
                     'REJECT',
                 );
+
+            // 거절된 경우 사용자 알림 전송 (결과: REJECT)
+            await this.sendProjectUserAlert(
+                projectTeamId,
+                updatedApplicant.user.email,
+                'REJECT',
+            );
 
             this.logger.debug(`✅ 지원자 거절 완료 (ID: ${applicantId})`);
             return new ProjectApplicantResponse(updatedApplicant);

@@ -106,8 +106,8 @@ describe('StudyTeamController', () => {
     });
 
     describe('uploadStudyTeam', () => {
-        it('should create a study team successfully', async () => {
-            const mockStudyTeam = {
+        it('should create a study team successfully and send a slack alert', async () => {
+            const CreateStudyMockData = {
                 id: 1,
                 name: 'Test Study',
                 notionLink: 'https://notion.so/test',
@@ -124,7 +124,10 @@ describe('StudyTeamController', () => {
                 viewCount: 0,
             };
 
-            service.createStudyTeam.mockResolvedValue(mockStudyTeam);
+            // service.createStudyTeam가 CreateStudyResult를 반환하도록 목업
+            jest.spyOn(service, 'createStudyTeam').mockResolvedValue(
+                CreateStudyMockData,
+            );
 
             const result = await controller.uploadStudyTeam(
                 JSON.stringify(mockCreateStudyTeamRequest),
@@ -133,7 +136,7 @@ describe('StudyTeamController', () => {
             );
 
             expect(service.createStudyTeam).toHaveBeenCalled();
-            expect(result).toEqual(mockStudyTeam);
+            expect(result).toEqual(CreateStudyMockData);
         });
     });
 
@@ -379,7 +382,8 @@ describe('StudyTeamController', () => {
                 user: { id: 1 },
             });
 
-            expect(service.getApplicants).toHaveBeenCalledWith(1, 1);
+            // 수정: 두 번째 인자로 숫자 대신 사용자 객체({ id: 1 })가 전달됨
+            expect(service.getApplicants).toHaveBeenCalledWith(1, { id: 1 });
             expect(result).toEqual(mockApplicants);
         });
     });
@@ -405,7 +409,12 @@ describe('StudyTeamController', () => {
                 user: { id: 1 },
             });
 
-            expect(service.acceptApplicant).toHaveBeenCalledWith(1, 1, 2);
+            // 수정: 두 번째 인자로 사용자 객체({ id: 1 })가 전달됨
+            expect(service.acceptApplicant).toHaveBeenCalledWith(
+                1,
+                { id: 1 },
+                2,
+            );
             expect(result).toEqual(mockAcceptedApplicant);
         });
     });
@@ -431,7 +440,12 @@ describe('StudyTeamController', () => {
                 user: { id: 1 },
             });
 
-            expect(service.rejectApplicant).toHaveBeenCalledWith(1, 1, 2);
+            // 수정: 두 번째 인자로 사용자 객체({ id: 1 })가 전달됨
+            expect(service.rejectApplicant).toHaveBeenCalledWith(
+                1,
+                { id: 1 },
+                2,
+            );
             expect(result).toEqual(mockRejectedApplicant);
         });
     });

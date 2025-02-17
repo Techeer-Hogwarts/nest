@@ -19,6 +19,7 @@ import { TaskModule } from './global/task/task.module';
 import { CustomWinstonLogger } from './global/logger/winston.logger';
 import { LoggerModule } from './global/logger/logger.module';
 import { UserExperienceModule } from './modules/userExperiences/userExperience.module';
+import { AlertModule } from './modules/alert/alert.module';
 
 @Module({
     imports: [
@@ -44,6 +45,7 @@ import { UserExperienceModule } from './modules/userExperiences/userExperience.m
         LoggerModule,
         UserExperienceModule,
         TaskModule,
+        AlertModule,
     ],
     providers: [
         {

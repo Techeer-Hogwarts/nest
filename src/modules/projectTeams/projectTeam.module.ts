@@ -8,9 +8,10 @@ import { UserRepository } from '../users/repository/user.repository';
 import { ProjectMemberRepository } from '../projectMembers/repository/projectMember.repository';
 import { StudyTeamModule } from '../studyTeams/studyTeam.module';
 import { AwsService } from '../awsS3/aws.service';
+import { AlertModule } from '../alert/alert.module';
 
 @Module({
-    imports: [PrismaModule, AuthModule, StudyTeamModule],
+    imports: [PrismaModule, AuthModule, StudyTeamModule, AlertModule],
     controllers: [ProjectTeamController],
     providers: [
         ProjectTeamService,

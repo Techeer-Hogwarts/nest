@@ -45,6 +45,7 @@ export class ProjectTeamDetailResponse {
         name: string;
         isLeader: boolean;
         teamRole: string;
+        email: string;
     }[];
     readonly likeCount: number;
     readonly viewCount: number;
@@ -62,7 +63,7 @@ export class ProjectTeamDetailResponse {
                 projectTeamId: number;
             })[];
             projectMember: (ProjectMember & {
-                user: { name: string };
+                user: { name: string; email: string };
                 projectTeamId: number;
             })[];
         },
@@ -104,6 +105,7 @@ export class ProjectTeamDetailResponse {
             name: member.user.name,
             isLeader: member.isLeader,
             teamRole: member.teamRole,
+            email: member.user.email,
         }));
         this.likeCount = project.likeCount;
         this.viewCount = project.viewCount;

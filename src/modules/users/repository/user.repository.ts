@@ -15,6 +15,9 @@ import { StackCategory } from '../../../global/category/stack.category';
 import { GradeCategory } from '../category/grade.category';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
+type Mutable<T> = {
+    -readonly [P in keyof T]: T[P];
+};
 @Injectable()
 export class UserRepository {
     constructor(
@@ -127,14 +130,47 @@ export class UserRepository {
             include: {
                 projectMembers: {
                     where: { isDeleted: false },
-                    include: { projectTeam: true },
+                    include: {
+                        projectTeam: {
+                            select: {
+                                id: true,
+                                name: true,
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
                 studyMembers: {
                     where: { isDeleted: false },
-                    include: { studyTeam: true },
+                    include: {
+                        studyTeam: {
+                            select: {
+                                id: true,
+                                name: true,
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
                 experiences: {
                     where: { isDeleted: false },
+                    select: {
+                        id: true,
+                        position: true,
+                        companyName: true,
+                        category: true,
+                        isFinished: true,
+                        startDate: true,
+                        endDate: true,
+                    },
                 },
             },
         }) as Promise<UserEntity | null>;
@@ -145,7 +181,9 @@ export class UserRepository {
         updateUserRequest: UpdateUserRequest,
         prisma: Prisma.TransactionClient = this.prisma,
     ): Promise<UserEntity> {
-        const updatedData = { ...updateUserRequest };
+        const updatedData = {
+            ...updateUserRequest,
+        } as Mutable<UpdateUserRequest>;
 
         try {
             if (updateUserRequest.mainPosition) {
@@ -314,26 +352,52 @@ export class UserRepository {
                     include: {
                         projectMembers: {
                             where: { isDeleted: false },
-                            include: { projectTeam: true },
+                            include: {
+                                projectTeam: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        resultImages: {
+                                            select: {
+                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                            },
+                                        },
+                                    },
+                                },
+                            },
                         },
                         studyMembers: {
                             where: { isDeleted: false },
-                            include: { studyTeam: true },
+                            include: {
+                                studyTeam: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        resultImages: {
+                                            select: {
+                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        experiences: {
+                            where: { isDeleted: false },
+                            select: {
+                                id: true,
+                                position: true,
+                                companyName: true,
+                                category: true,
+                                isFinished: true,
+                                startDate: true,
+                                endDate: true,
+                            },
                         },
                     },
-                })) || []; // undefined일 경우 빈 배열로 초기화
+                })) || [];
 
-            this.logger.debug(
-                'findAllProfiles 결과',
-                JSON.stringify(
-                    {
-                        count: result.length,
-                        data: result,
-                    },
-                    null,
-                    2,
-                ),
-            );
+            this.logger.debug('조회 성공');
 
             return result;
         } catch (error) {
