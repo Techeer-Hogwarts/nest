@@ -9,6 +9,7 @@ export class UpdateExperienceDto {
         description: '경력 정보 리스트',
         example: [
             {
+                experienceId: 1,
                 position: 'Backend',
                 companyName: 'CrowdStrike',
                 startDate: '2021-01-01',
