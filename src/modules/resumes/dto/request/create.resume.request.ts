@@ -7,7 +7,7 @@ import {
     IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ResumeCategory } from '../../../../global/category/resume.category';
+import { ResumeCategory } from '../../category/resume.category';
 import { normalizeString } from '../../../../global/category/normalize';
 
 export class CreateResumeRequest {

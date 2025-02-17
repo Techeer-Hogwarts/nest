@@ -7,6 +7,9 @@ type ResumeWithUser = Prisma.ResumeGetPayload<{
                 id: true;
                 name: true;
                 nickname: true;
+                year: true;
+                mainPosition: true;
+                subPosition: true;
                 roleId: true;
                 profileImage: true;
             };
@@ -20,9 +23,11 @@ export class GetResumeResponse {
     readonly updatedAt: Date;
     readonly title: string;
     readonly url: string;
+    readonly isMain: boolean;
+    readonly category: string;
+    readonly position: string;
     readonly likeCount: number;
     readonly viewCount: number;
-    readonly category: string;
 
     readonly user: GetResumeAuthorResponse;
 
@@ -32,9 +37,11 @@ export class GetResumeResponse {
         this.updatedAt = resume.updatedAt;
         this.title = resume.title;
         this.url = resume.url;
+        this.isMain = resume.isMain;
+        this.category = resume.category;
+        this.position = resume.position;
         this.likeCount = resume.likeCount;
         this.viewCount = resume.viewCount;
-        this.category = resume.category;
         this.user = new GetResumeAuthorResponse(resume.user);
     }
 }
@@ -43,6 +50,9 @@ export class GetResumeAuthorResponse {
     readonly id: number;
     readonly name: string;
     readonly nickname: string;
+    readonly year: number;
+    readonly mainPosition: string;
+    readonly subPosition: string;
     readonly roleId: number;
     readonly profileImage: string;
 
@@ -50,6 +60,9 @@ export class GetResumeAuthorResponse {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;
+        this.year = user.year;
+        this.mainPosition = user.mainPosition;
+        this.subPosition = user.subPosition;
         this.roleId = user.roleId;
         this.profileImage = user.profileImage;
     }
