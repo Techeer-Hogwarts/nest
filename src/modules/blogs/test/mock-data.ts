@@ -2,7 +2,7 @@ import { BlogEntity } from '../entities/blog.entity';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
-import { BlogCategory } from '../../../global/category/blog.category';
+import { BlogCategory } from '../category/blog.category';
 
 export const authorUserMock = {
     id: 1,

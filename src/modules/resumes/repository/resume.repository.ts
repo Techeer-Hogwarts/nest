@@ -76,7 +76,9 @@ export class ResumeRepository {
         return resume;
     }
 
-    async getBestResumes(query: PaginationQueryDto): Promise<ResumeEntity[]> {
+    async getBestResumes(
+        query: PaginationQueryDto,
+    ): Promise<GetResumeResponse[]> {
         const { offset = 0, limit = 10 }: PaginationQueryDto = query;
         // 2주 계산
         const twoWeeksAgo: Date = new Date();
@@ -89,11 +91,22 @@ export class ResumeRepository {
             ORDER BY ("viewCount" + "likeCount" * 10) DESC
             LIMIT ${limit} OFFSET ${offset}
         `);
+        const resumesWithUser = await Promise.all(
+            resumes.map(async (resume) => {
+                const user = await this.prisma.user.findUnique({
+                    where: { id: resume.userId },
+                });
+                return {
+                    ...resume,
+                    user,
+                };
+            }),
+        );
         this.logger.debug(
-            `${resumes.length}개의 인기 이력서 목록 조회 성공`,
+            `${resumesWithUser.length}개의 인기 이력서 목록 조회 성공`,
             ResumeRepository.name,
         );
-        return resumes;
+        return resumesWithUser.map((resume) => new GetResumeResponse(resume));
     }
 
     async getResumeList(
@@ -124,15 +137,7 @@ export class ResumeRepository {
                 }),
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        roleId: true,
-                        profileImage: true,
-                    },
-                },
+                user: true,
             },
             skip: offset,
             take: limit,
@@ -162,15 +167,7 @@ export class ResumeRepository {
                 userId: userId,
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        roleId: true,
-                        profileImage: true,
-                    },
-                },
+                user: true,
             },
             skip: offset,
             take: limit,

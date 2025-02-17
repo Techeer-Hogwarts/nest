@@ -26,15 +26,13 @@ export class ResumeService {
     async getBestResumes(
         query: PaginationQueryDto,
     ): Promise<GetResumeResponse[]> {
-        const resumes: ResumeEntity[] =
+        const resumes: GetResumeResponse[] =
             await this.resumeRepository.getBestResumes(query);
         this.logger.debug(
             `인기 이력서 목록 조회 후 GetResumeResponse 변환 중`,
             ResumeService.name,
         );
-        return resumes.map(
-            (resume: ResumeEntity) => new GetResumeResponse(resume),
-        );
+        return resumes;
     }
 
     async createResume(

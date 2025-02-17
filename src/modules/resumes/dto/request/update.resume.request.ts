@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsString, IsUrl } from 'class-validator';
-import { ResumeCategory } from '../../../../global/category/resume.category';
+import { ResumeCategory } from '../../category/resume.category';
 
 export class UpdateResumeRequest {
     @IsString()

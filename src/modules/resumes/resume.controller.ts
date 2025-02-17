@@ -58,7 +58,7 @@ export class ResumeController {
     @ApiOperation({
         summary: '인기 이력서 목록 조회',
         description:
-            '(조회수 + 좋아요수*10)을 기준으로 인기 이력서를 조회합니다.',
+            '2주간의 (조회수 + 좋아요수*10)을 기준으로 인기 이력서를 조회합니다.',
     })
     async getBestResumes(
         @Query() query: PaginationQueryDto,

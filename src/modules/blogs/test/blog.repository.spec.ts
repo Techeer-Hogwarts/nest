@@ -88,15 +88,7 @@ describe('BlogRepository', (): void => {
                     }),
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            roleId: true,
-                            profileImage: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: getBlogsQueryRequest.offset,
                 take: getBlogsQueryRequest.limit,
@@ -126,15 +118,7 @@ describe('BlogRepository', (): void => {
                     userId: 1,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            roleId: true,
-                            profileImage: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
@@ -159,15 +143,7 @@ describe('BlogRepository', (): void => {
                     isDeleted: false,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            roleId: true,
-                            profileImage: true,
-                        },
-                    },
+                    user: true,
                 },
             });
             expect(prismaService.blog.findUnique).toHaveBeenCalledTimes(1);

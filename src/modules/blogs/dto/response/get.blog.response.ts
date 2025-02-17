@@ -1,19 +1,5 @@
-import { Prisma } from '@prisma/client';
 import { BlogEntity } from '../../entities/blog.entity';
-
-type BlogWithUser = Prisma.BlogGetPayload<{
-    include: {
-        user: {
-            select: {
-                id: true;
-                name: true;
-                nickname: true;
-                roleId: true;
-                profileImage: true;
-            };
-        };
-    };
-}>;
+import { UserEntity } from '../../../users/entities/user.entity';
 
 export class GetBlogResponse {
     readonly id: number;
@@ -31,7 +17,7 @@ export class GetBlogResponse {
     };
     readonly user?: GetBlogAuthorResponse;
 
-    constructor(blog: BlogWithUser | BlogEntity) {
+    constructor(blog: BlogEntity) {
         this.id = blog.id;
         this.title = blog.title;
         this.url = blog.url;
@@ -56,7 +42,7 @@ export class GetBlogAuthorResponse {
     readonly roleId: number;
     readonly profileImage: string;
 
-    constructor(user: BlogWithUser['user']) {
+    constructor(user: UserEntity) {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;
