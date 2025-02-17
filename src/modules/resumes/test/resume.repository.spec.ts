@@ -13,6 +13,7 @@ import { ResumeEntity } from '../entities/resume.entity';
 import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { authorUserMock } from '../../blogs/test/mock-data';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -31,6 +32,9 @@ describe('ResumeRepository', (): void => {
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
                             update: jest.fn(),
+                        },
+                        user: {
+                            findUnique: jest.fn(),
                         },
                     },
                 },
@@ -80,10 +84,13 @@ describe('ResumeRepository', (): void => {
             jest.spyOn(prismaService, '$queryRaw').mockResolvedValue(
                 resumeEntities,
             );
+            jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(
+                authorUserMock,
+            );
 
             const result = await repository.getBestResumes(paginationQueryDto);
 
-            expect(result).toEqual(resumeEntities);
+            expect(result).toEqual(getResumeResponseList);
             expect(prismaService.$queryRaw).toHaveBeenCalledWith(
                 expect.anything(),
             );
@@ -138,18 +145,7 @@ describe('ResumeRepository', (): void => {
                     }),
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            year: true,
-                            mainPosition: true,
-                            subPosition: true,
-                            roleId: true,
-                            profileImage: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: getResumesQueryRequest.offset,
                 take: getResumesQueryRequest.limit,
@@ -179,18 +175,7 @@ describe('ResumeRepository', (): void => {
                     userId: 1,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            year: true,
-                            mainPosition: true,
-                            subPosition: true,
-                            roleId: true,
-                            profileImage: true,
-                        },
-                    },
+                    user: true,
                 },
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,

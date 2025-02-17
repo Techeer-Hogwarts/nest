@@ -70,7 +70,8 @@ export class BlogController {
     @Get('/best')
     @ApiOperation({
         summary: '블로그 게시물의 인기글 목록 조회',
-        description: '(조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
+        description:
+            '2주간의 글 중 (조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
     })
     async getBestBlogs(
         @Query() query: PaginationQueryDto,

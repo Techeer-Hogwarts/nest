@@ -1,21 +1,5 @@
-import { Prisma } from '@prisma/client';
-
-type ResumeWithUser = Prisma.ResumeGetPayload<{
-    include: {
-        user: {
-            select: {
-                id: true;
-                name: true;
-                nickname: true;
-                year: true;
-                mainPosition: true;
-                subPosition: true;
-                roleId: true;
-                profileImage: true;
-            };
-        };
-    };
-}>;
+import { ResumeEntity } from '../../entities/resume.entity';
+import { User } from '@prisma/client';
 
 export class GetResumeResponse {
     readonly id: number;
@@ -31,7 +15,7 @@ export class GetResumeResponse {
 
     readonly user: GetResumeAuthorResponse;
 
-    constructor(resume: ResumeWithUser) {
+    constructor(resume: ResumeEntity) {
         this.id = resume.id;
         this.createdAt = resume.createdAt;
         this.updatedAt = resume.updatedAt;
@@ -50,20 +34,20 @@ export class GetResumeAuthorResponse {
     readonly id: number;
     readonly name: string;
     readonly nickname: string;
+    readonly profileImage: string;
     readonly year: number;
     readonly mainPosition: string;
     readonly subPosition: string;
     readonly roleId: number;
-    readonly profileImage: string;
 
-    constructor(user: ResumeWithUser['user']) {
+    constructor(user: User) {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;
+        this.profileImage = user.profileImage;
         this.year = user.year;
         this.mainPosition = user.mainPosition;
         this.subPosition = user.subPosition;
         this.roleId = user.roleId;
-        this.profileImage = user.profileImage;
     }
 }
