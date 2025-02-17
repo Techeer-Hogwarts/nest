@@ -93,15 +93,7 @@ export class BlogRepository {
                 ...(category && { category }),
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        roleId: true,
-                        profileImage: true,
-                    },
-                },
+                user: true,
             },
             skip: offset,
             take: limit,
@@ -131,15 +123,7 @@ export class BlogRepository {
                 userId: userId,
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        roleId: true,
-                        profileImage: true,
-                    },
-                },
+                user: true,
             },
             skip: offset,
             take: limit,
@@ -173,13 +157,6 @@ export class BlogRepository {
             blogs.map(async (blog) => {
                 const user = await this.prisma.user.findUnique({
                     where: { id: blog.userId },
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        roleId: true,
-                        profileImage: true,
-                    },
                 });
                 return {
                     ...blog,
@@ -240,15 +217,7 @@ export class BlogRepository {
                 isDeleted: false, // 삭제된 블로그 제외
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        roleId: true,
-                        profileImage: true,
-                    },
-                },
+                user: true,
             },
         });
         this.logger.debug(`블로그 ID ${blogId} 조회 성공`, BlogRepository.name);

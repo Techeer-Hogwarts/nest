@@ -1,5 +1,5 @@
 import { ResumeEntity } from '../../entities/resume.entity';
-import { User } from '@prisma/client';
+import { UserEntity } from '../../../users/entities/user.entity';
 
 export class GetResumeResponse {
     readonly id: number;
@@ -40,7 +40,7 @@ export class GetResumeAuthorResponse {
     readonly subPosition: string;
     readonly roleId: number;
 
-    constructor(user: User) {
+    constructor(user: UserEntity) {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;
