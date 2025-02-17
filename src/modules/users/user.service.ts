@@ -435,4 +435,27 @@ export class UserService {
         const user = await this.userRepository.findById(userId);
         return new GetUserResponse(user);
     }
+
+    async deleteUserExperience(
+        userId: number,
+        experienceId: number,
+    ): Promise<void> {
+        const userInfo = await this.userRepository.findById(userId);
+
+        if (!userInfo) {
+            this.logger.debug(
+                '사용자 없음',
+                JSON.stringify({ context: UserService.name }),
+            );
+            throw new NotFoundUserException();
+        }
+        this.logger.debug(
+            '경력 삭제',
+            JSON.stringify({ context: UserService.name }),
+        );
+        await this.userExperienceRepository.deleteUserExperience(
+            userId,
+            experienceId,
+        );
+    }
 }

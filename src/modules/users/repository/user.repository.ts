@@ -259,7 +259,10 @@ export class UserRepository {
 
     async updateUserRole(userId: number, newRoleId: number): Promise<User> {
         return this.prisma.user.update({
-            where: { id: userId },
+            where: {
+                id: userId,
+                isDeleted: false,
+            },
             data: { roleId: newRoleId },
         });
     }
@@ -311,7 +314,10 @@ export class UserRepository {
 
     async updateNickname(userId: number, nickname: string): Promise<User> {
         return this.prisma.user.update({
-            where: { id: userId },
+            where: {
+                id: userId,
+                isDeleted: false,
+            },
             data: { nickname: nickname },
         });
     }

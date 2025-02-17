@@ -257,3 +257,12 @@ export class BadRequestCategoryException extends HttpException {
         super('존재하지 않는 카테고리입니다.', HttpStatus.BAD_REQUEST);
     }
 }
+
+export class NotFoundExperienceException extends HttpException {
+    constructor() {
+        super(
+            '경력을 생성한 사용자만 삭제할 수 있습니다.',
+            HttpStatus.NOT_FOUND,
+        );
+    }
+}
