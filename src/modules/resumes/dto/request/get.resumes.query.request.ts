@@ -20,7 +20,9 @@ export class GetResumesQueryRequest {
     @IsOptional()
     @IsArray()
     @Transform(({ value }) =>
-        Array.isArray(value) ? value.map(normalizeString) : value,
+        Array.isArray(value)
+            ? value.map(normalizeString)
+            : [normalizeString(value)],
     )
     @IsEnum(StackCategory, { each: true })
     readonly position?: string[];
@@ -33,6 +35,9 @@ export class GetResumesQueryRequest {
     @IsOptional()
     @IsArray()
     @Type(() => Number)
+    @Transform(({ value }) =>
+        Array.isArray(value) ? value.map(Number) : [Number(value)],
+    )
     @IsNumber({}, { each: true })
     readonly year?: number[];
 
