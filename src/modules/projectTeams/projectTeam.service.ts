@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ProjectTeamRepository } from './repository/projectTeam.repository';
 import { CreateProjectTeamRequest } from './dto/request/create.projectTeam.request';
 import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.request';
@@ -20,6 +20,7 @@ import {
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 interface Stack {
     id: number;
@@ -33,12 +34,12 @@ interface TeamStack {
 
 @Injectable()
 export class ProjectTeamService {
-    private readonly logger = new Logger(ProjectTeamService.name);
     constructor(
         private readonly projectTeamRepository: ProjectTeamRepository,
         private readonly projectMemberRepository: ProjectMemberRepository,
         private readonly prisma: PrismaService,
         private readonly awsService: AwsService,
+        private readonly logger: CustomWinstonLogger,
     ) {}
 
     private async validateStacks(teamStacks: TeamStack[]): Promise<Stack[]> {
@@ -457,6 +458,7 @@ export class ProjectTeamService {
         userId: number,
     ): Promise<ProjectTeamDetailResponse> {
         try {
+            this.logger.debug('🔥 프로젝트 마감 시작');
             await this.ensureUserIsProjectMember(id, userId);
             const closedProject = await this.prisma.projectTeam.update({
                 where: { id },
@@ -468,8 +470,10 @@ export class ProjectTeamService {
                     projectMember: { include: { user: true } },
                 },
             });
+            this.logger.debug(`✅ 프로젝트 마감 완료 (ID: ${id})`);
             return new ProjectTeamDetailResponse(closedProject);
         } catch (error) {
+            this.logger.error('프로젝트 마감 중 예외 발생:', error);
             throw new Error('프로젝트 마감 실패');
         }
     }
@@ -479,6 +483,7 @@ export class ProjectTeamService {
         userId: number,
     ): Promise<ProjectTeamDetailResponse> {
         try {
+            this.logger.debug('🔥 프로젝트 삭제 시작');
             await this.ensureUserIsProjectMember(id, userId);
             const deletedProject = await this.prisma.projectTeam.update({
                 where: { id },
@@ -490,8 +495,10 @@ export class ProjectTeamService {
                     projectMember: { include: { user: true } },
                 },
             });
+            this.logger.debug(`✅ 프로젝트 삭제 완료 (ID: ${id})`);
             return new ProjectTeamDetailResponse(deletedProject);
         } catch (error) {
+            this.logger.error('프로젝트 삭제 중 예외 발생:', error);
             throw new Error('프로젝트 삭제 실패');
         }
     }
@@ -931,6 +938,10 @@ export class ProjectTeamService {
                     : { allTeams }),
             };
         } catch (error) {
+            this.logger.error(
+                '팀 데이터를 조회하는 중 오류가 발생했습니다.',
+                error,
+            );
             throw new Error('팀 데이터를 조회하는 중 오류가 발생했습니다.');
         }
     }

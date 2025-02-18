@@ -27,6 +27,7 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { JwtUser } from '../../global/interfaces/jwt-user.interface';
 
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
@@ -87,11 +88,15 @@ export class StudyTeamController {
     async uploadStudyTeam(
         @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
-        if (!user) throw new NotFoundUserException();
-
+        this.logger.debug('🔥 스터디 팀 생성 시작');
+        const user = req.user;
+        if (!user) {
+            this.logger.error('❌ 사용자 정보가 없습니다.');
+            throw new NotFoundUserException();
+        }
+        this.logger.debug(`✅ 사용자 확인됨: ID=${user.id}`);
         try {
             const parsedBody = JSON.parse(createStudyTeamRequest);
             const createStudyTeamDto = plainToInstance(
@@ -99,11 +104,13 @@ export class StudyTeamController {
                 parsedBody,
             );
 
+            this.logger.debug('✅ 스터디 팀 생성 완료');
             return await this.studyTeamService.createStudyTeam(
                 createStudyTeamDto,
                 files,
             );
         } catch (error) {
+            this.logger.error('❌ 스터디 팀 생성 중 오류 발생:', error);
             throw error;
         }
     }
@@ -163,9 +170,9 @@ export class StudyTeamController {
         @Body('updateStudyTeamRequest')
         updateStudyTeamRequest: string | undefined,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
+        const user = req.user;
         if (!user) throw new NotFoundUserException();
         this.logger.debug(
             `Starting updateStudyTeam for studyTeamId: ${studyTeamId}, userId: ${user.id}`,
@@ -214,9 +221,9 @@ export class StudyTeamController {
     })
     async closeStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
+        const user = req.user;
 
         try {
             return await this.studyTeamService.closeStudyTeam(
@@ -241,9 +248,9 @@ export class StudyTeamController {
     })
     async deleteStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
+        const user = req.user;
         try {
             return await this.studyTeamService.deleteStudyTeam(
                 studyTeamId,
@@ -266,9 +273,9 @@ export class StudyTeamController {
         description: '로그인된 유저가 참여한 스터디 목록을 조회합니다.',
     })
     async getUserStudyTeams(
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<GetStudyTeamResponse[]> {
-        const user = request.user;
+        const user = req.user;
 
         try {
             const userId = user.id;
@@ -332,15 +339,25 @@ export class StudyTeamController {
     })
     async applyToStudyTeam(
         @Body() createStudyMemberRequest: CreateStudyMemberRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<StudyApplicantResponse> {
-        const user = request.user;
-        const userId = user.id;
+        try {
+            this.logger.debug('🔥 스터디 지원 시작');
+            const user = req.user;
+            const userId = user.id;
+            this.logger.debug(`요청 데이터: userId=${userId}`);
 
-        return await this.studyTeamService.applyToStudyTeam(
-            createStudyMemberRequest, // 첫 번째 파라미터: 클라이언트가 요청한 데이터
-            userId, // 두 번째 파라미터: 서버에서 추가된 사용자 ID
-        );
+            const result = await this.studyTeamService.applyToStudyTeam(
+                createStudyMemberRequest,
+                userId,
+            );
+
+            this.logger.debug('✅ 스터디 지원 완료');
+            return result;
+        } catch (error) {
+            this.logger.error('❌ 스터디 지원 중 오류 발생:', error);
+            throw error;
+        }
     }
 
     // 스터디 지원 취소 : isDeleted = true(지원한 사람만 가능)
@@ -352,9 +369,9 @@ export class StudyTeamController {
     })
     async cancelApplication(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<StudyMemberResponse> {
-        const user = request.user;
+        const user = req.user;
         const userId = user.id;
 
         return await this.studyTeamService.cancelApplication(
@@ -372,10 +389,27 @@ export class StudyTeamController {
     })
     async getApplicants(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<StudyApplicantResponse[]> {
-        const userId = request.user.id;
-        return await this.studyTeamService.getApplicants(studyTeamId, userId);
+        this.logger.debug(
+            `🔥 스터디 지원자 조회 시작 - studyTeamId: ${studyTeamId}, userId: ${req.user.id}`,
+        );
+        try {
+            const userId = req.user.id;
+            const applicants = await this.studyTeamService.getApplicants(
+                studyTeamId,
+                userId,
+            );
+            this.logger.debug(
+                `✅ 스터디 지원자 조회 완료 - studyTeamId: ${studyTeamId}, applicantsCount: ${applicants.length}`,
+            );
+            return applicants;
+        } catch (error) {
+            this.logger.error(
+                `❌ 스터디 지원자 조회 실패 - studyTeamId: ${studyTeamId}, error: ${error.message}`,
+            );
+            throw error;
+        }
     }
 
     // 🔥 스터디 지원자 승인 API
@@ -388,15 +422,29 @@ export class StudyTeamController {
     @ApiBody({ type: UpdateApplicantStatusRequest })
     async acceptApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<StudyApplicantResponse> {
-        const userId = request.user.id; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
+        const userId = req.user.id;
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
-        return await this.studyTeamService.acceptApplicant(
-            studyTeamId,
-            userId,
-            applicantId,
+        this.logger.debug(
+            `🔥 스터디 지원 수락 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, applicantId: ${applicantId}`,
         );
+        try {
+            const result = await this.studyTeamService.acceptApplicant(
+                studyTeamId,
+                userId,
+                applicantId,
+            );
+            this.logger.debug(
+                `✅ 스터디 지원 수락 완료 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}`,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `❌ 스터디 지원 수락 실패 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}, error: ${error.message}`,
+            );
+            throw error;
+        }
     }
 
     // 🔥 스터디 지원자 거절 API
@@ -409,15 +457,29 @@ export class StudyTeamController {
     @ApiBody({ type: UpdateApplicantStatusRequest })
     async rejectApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<StudyApplicantResponse> {
-        const userId = request.user.id; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
+        const userId = req.user.id;
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
-        return await this.studyTeamService.rejectApplicant(
-            studyTeamId,
-            userId,
-            applicantId,
+        this.logger.debug(
+            `🔥 스터디 지원 거절 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, applicantId: ${applicantId}`,
         );
+        try {
+            const result = await this.studyTeamService.rejectApplicant(
+                studyTeamId,
+                userId,
+                applicantId,
+            );
+            this.logger.debug(
+                `✅ 스터디 지원 거절 완료 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}`,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `❌ 스터디 지원 거절 실패 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}, error: ${error.message}`,
+            );
+            throw error;
+        }
     }
 
     // 스터디 팀원 추가 기능 : status: APPROVED인 데이터 추가(스터디팀에 속한 멤버만 가능)
@@ -429,15 +491,29 @@ export class StudyTeamController {
     })
     async addMemberToStudyTeam(
         @Body() addMemberToStudyTeamRequest: AddMemberToStudyTeamRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<StudyMemberResponse> {
-        const userId = request.user.id;
+        const userId = req.user.id;
         const { studyTeamId, memberId, isLeader } = addMemberToStudyTeamRequest;
-        return await this.studyTeamService.addMemberToStudyTeam(
-            studyTeamId,
-            userId,
-            memberId,
-            isLeader,
+        this.logger.debug(
+            `🔥 스터디 팀원 추가 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, memberId: ${memberId}, isLeader: ${isLeader}`,
         );
+        try {
+            const result = await this.studyTeamService.addMemberToStudyTeam(
+                studyTeamId,
+                userId,
+                memberId,
+                isLeader,
+            );
+            this.logger.debug(
+                `✅ 스터디 팀원 추가 완료 - studyTeamId: ${studyTeamId}, memberId: ${memberId}, isLeader: ${isLeader}`,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `❌ 스터디 팀원 추가 실패 - studyTeamId: ${studyTeamId}, memberId: ${memberId}, error: ${error.message}`,
+            );
+            throw error;
+        }
     }
 }

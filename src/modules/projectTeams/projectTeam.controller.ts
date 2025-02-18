@@ -6,7 +6,6 @@ import {
     UseInterceptors,
     UseGuards,
     Req,
-    Logger,
     Patch,
     Param,
     Get,
@@ -32,16 +31,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
 import { StudyTeamService } from '../studyTeams/studyTeam.service';
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { JwtUser } from '../../global/interfaces/jwt-user.interface';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
 export class ProjectTeamController {
-    private readonly logger = new Logger(ProjectTeamController.name);
-
     constructor(
         private readonly projectTeamService: ProjectTeamService,
         private readonly studyTeamService: StudyTeamService,
         private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
     ) {}
 
     @Post()
@@ -107,10 +107,10 @@ export class ProjectTeamController {
     async createProject(
         @Body('createProjectTeamRequest') createProjectTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectTeamDetailResponse> {
         this.logger.debug('🔥 [START] createProject 엔드포인트 호출');
-        const user = request.user;
+        const user = req.user;
         if (!user) {
             this.logger.error('❌ 사용자 정보가 없습니다.');
             throw new NotFoundUserException();
@@ -180,9 +180,9 @@ export class ProjectTeamController {
         description: '로그인된 유저가 참여한 프로젝트 목록을 조회합니다.',
     })
     async getUserProjects(
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectTeamListResponse[]> {
-        const user = request.user;
+        const user = req.user;
 
         try {
             const userId = user.id;
@@ -272,9 +272,9 @@ export class ProjectTeamController {
         @Param('projectTeamId') projectTeamId: number,
         @Body('updateProjectTeamRequest') updateProjectTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[], // Multer 파일 배열
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectTeamDetailResponse> {
-        const user = request.user;
+        const user = req.user;
         if (!user) throw new NotFoundUserException();
 
         try {
@@ -314,9 +314,9 @@ export class ProjectTeamController {
     })
     async closeProject(
         @Param('projectTeamId') projectTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectTeamDetailResponse> {
-        const user = request.user;
+        const user = req.user;
 
         try {
             return await this.projectTeamService.closeProject(
@@ -340,9 +340,9 @@ export class ProjectTeamController {
     })
     async deleteProject(
         @Param('projectTeamId') projectTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectTeamDetailResponse> {
-        const user = request.user;
+        const user = req.user;
 
         try {
             return await this.projectTeamService.deleteProject(
@@ -389,15 +389,22 @@ export class ProjectTeamController {
     })
     async applyToProject(
         @Body() createProjectMemberRequest: CreateProjectMemberRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectApplicantResponse> {
-        const user = request.user;
-        const userId = user.id;
+        try {
+            const user = req.user;
+            const userId = user.id;
+            this.logger.debug('🔥 프로젝트 지원 시작');
+            this.logger.debug(`사용자 ID: ${userId}`);
 
-        return await this.projectTeamService.applyToProject(
-            createProjectMemberRequest,
-            userId,
-        );
+            return await this.projectTeamService.applyToProject(
+                createProjectMemberRequest,
+                userId,
+            );
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원 중 예외 발생:', error);
+            throw error;
+        }
     }
 
     // 프로젝트 지원 취소 : isDeleted = true
@@ -409,15 +416,24 @@ export class ProjectTeamController {
     })
     async cancelApplication(
         @Param('projectTeamId') projectTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectMemberResponse> {
-        const user = request.user;
-        const userId = user.id;
+        try {
+            const user = req.user;
+            const userId = user.id;
+            this.logger.debug('🔥 프로젝트 지원 취소 시작');
+            this.logger.debug(
+                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            );
 
-        return await this.projectTeamService.cancelApplication(
-            projectTeamId,
-            userId,
-        );
+            return await this.projectTeamService.cancelApplication(
+                projectTeamId,
+                userId,
+            );
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원 취소 중 예외 발생:', error);
+            throw error;
+        }
     }
 
     // 프로젝트 지원자 조회 : status: PENDING인 데이터 조회
@@ -429,13 +445,23 @@ export class ProjectTeamController {
     })
     async getApplicants(
         @Param('projectTeamId') projectTeamId: number,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectApplicantResponse[]> {
-        const userId = request.user.id;
-        return await this.projectTeamService.getApplicants(
-            projectTeamId,
-            userId,
-        );
+        try {
+            const userId = req.user.id;
+            this.logger.debug('🔥 프로젝트 지원자 조회 시작');
+            this.logger.debug(
+                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            );
+
+            return await this.projectTeamService.getApplicants(
+                projectTeamId,
+                userId,
+            );
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원자 조회 중 예외 발생:', error);
+            throw error;
+        }
     }
 
     // 프로젝트 지원자 승인
@@ -455,9 +481,9 @@ export class ProjectTeamController {
     })
     async acceptApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectApplicantResponse> {
-        const userId = request.user.id;
+        const userId = req.user.id;
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
         return await this.projectTeamService.acceptApplicant(
             projectTeamId,
@@ -483,9 +509,9 @@ export class ProjectTeamController {
     })
     async rejectApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectApplicantResponse> {
-        const userId = request.user.id;
+        const userId = req.user.id;
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
         return await this.projectTeamService.rejectApplicant(
             projectTeamId,
@@ -517,11 +543,11 @@ export class ProjectTeamController {
     })
     async addMemberToProjectTeam(
         @Body() addProjectMemberRequest: AddProjectMemberRequest,
-        @Req() request: any,
+        @Req() req: Request & { user: JwtUser },
     ): Promise<ProjectMemberResponse> {
         const { projectTeamId, memberId, isLeader, teamRole } =
             addProjectMemberRequest;
-        const requesterId = request.user.id;
+        const requesterId = req.user.id;
 
         await this.projectTeamService.ensureUserIsProjectMember(
             projectTeamId,

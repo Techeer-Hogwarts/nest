@@ -1,25 +1,43 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProjectMember, StatusCategory } from '@prisma/client';
 import { CreateProjectMemberRequest } from '../dto/request/create.projectMember.request';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import {
+    ProjectApplicantResponse,
+    ProjectMemberResponse,
+} from '../../projectTeams/dto/response/get.projectTeam.response';
 
 @Injectable()
 export class ProjectMemberRepository {
-    private readonly logger = new Logger(ProjectMemberRepository.name);
-
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async checkExistingMember(
         projectTeamId: number,
         userId: number,
     ): Promise<boolean> {
-        const existingMember = await this.prisma.projectMember.findFirst({
-            where: {
-                projectTeamId,
-                userId,
-            },
-        });
-        return !!existingMember;
+        try {
+            this.logger.debug('🔍 멤버 존재 여부 확인 시작');
+            this.logger.debug(
+                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            );
+
+            const existingMember = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId,
+                    userId,
+                },
+            });
+
+            this.logger.debug(`✅ 멤버 존재 여부: ${!!existingMember}`);
+            return !!existingMember;
+        } catch (error) {
+            this.logger.error('❌ 멤버 존재 여부 확인 중 에러 발생:', error);
+            throw error;
+        }
     }
 
     async isUserAlreadyInProject(
@@ -57,7 +75,7 @@ export class ProjectMemberRepository {
     async applyToProject(
         createProjectMemberRequest: CreateProjectMemberRequest,
         userId: number,
-    ): Promise<any> {
+    ): Promise<ProjectMemberResponse> {
         try {
             const newApplication = await this.prisma.projectMember.create({
                 data: {
@@ -68,9 +86,18 @@ export class ProjectMemberRepository {
                     teamRole: createProjectMemberRequest.teamRole,
                     isLeader: false,
                 },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
+                },
             });
+
             this.logger.debug('✅ [SUCCESS] 프로젝트 지원 성공');
-            return newApplication;
+            return new ProjectMemberResponse(newApplication);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] applyToProject 에서 예외 발생: ',
@@ -83,12 +110,20 @@ export class ProjectMemberRepository {
     async cancelApplication(
         projectTeamId: number,
         userId: number,
-    ): Promise<any> {
+    ): Promise<ProjectMemberResponse> {
         try {
             const existingData = await this.prisma.projectMember.findFirst({
                 where: {
                     projectTeamId: projectTeamId,
                     userId: userId,
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
                 },
             });
 
@@ -103,11 +138,19 @@ export class ProjectMemberRepository {
                 data: {
                     isDeleted: true,
                 },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
+                },
             });
 
             this.logger.debug('✅ [INFO] update 실행 결과:', updatedData);
 
-            return updatedData;
+            return new ProjectMemberResponse(updatedData);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] cancelApplication 에서 예외 발생: ',
@@ -117,7 +160,9 @@ export class ProjectMemberRepository {
         }
     }
 
-    async getApplicants(projectTeamId: number): Promise<any> {
+    async getApplicants(
+        projectTeamId: number,
+    ): Promise<ProjectApplicantResponse[]> {
         try {
             const applicants = await this.prisma.projectMember.findMany({
                 where: {
@@ -129,14 +174,14 @@ export class ProjectMemberRepository {
                     user: {
                         select: {
                             name: true,
-                            email: true,
-                            mainPosition: true,
                             profileImage: true,
                         },
                     },
                 },
             });
-            return applicants;
+            return applicants.map(
+                (applicant) => new ProjectApplicantResponse(applicant),
+            );
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getApplicants 에서 예외 발생: ',
@@ -201,17 +246,26 @@ export class ProjectMemberRepository {
         memberId: number,
         isLeader: boolean,
         teamRole: string,
-    ): Promise<any> {
+    ): Promise<
+        ProjectMember & { user: { name: string; profileImage: string } }
+    > {
         try {
-            // 프로젝트 팀원 추가
             const newMember = await this.prisma.projectMember.create({
                 data: {
-                    projectTeamId: projectTeamId, // projectTeamId 연결
-                    userId: memberId, // userId 연결
+                    projectTeamId: projectTeamId,
+                    userId: memberId,
                     isLeader: isLeader,
                     teamRole: teamRole,
                     summary: '프로젝트 팀에 추가된 멤버',
-                    status: 'APPROVED', // 승인 상태로 추가
+                    status: 'APPROVED',
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
                 },
             });
 
