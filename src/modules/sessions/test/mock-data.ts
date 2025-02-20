@@ -117,7 +117,6 @@ export const getBestSessionsResponse: GetSessionResponse[] =
     );
 
 export const getSessionsQueryRequest: GetSessionsQueryRequest = {
-    keyword: 'Test',
     category: 'BOOTCAMP',
     date: ['SUMMER_2024'],
     position: ['BACKEND'],

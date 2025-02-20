@@ -102,7 +102,6 @@ export class SessionRepository {
         query: GetSessionsQueryRequest,
     ): Promise<SessionEntity[]> {
         const {
-            keyword,
             category,
             date,
             position,
@@ -112,16 +111,6 @@ export class SessionRepository {
         return this.prisma.session.findMany({
             where: {
                 isDeleted: false,
-                ...(keyword && {
-                    OR: [
-                        {
-                            title: {
-                                contains: keyword,
-                                mode: 'insensitive',
-                            },
-                        },
-                    ],
-                }),
                 ...(category && { category }),
                 ...(date && date.length > 0 && { date: { in: date } }),
                 ...(position &&

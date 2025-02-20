@@ -3,10 +3,19 @@ import {
     IsString,
     ValidateIf,
     IsOptional,
+    IsInt,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserExperienceRequest {
+    @IsInt()
+    @IsOptional()
+    @ApiProperty({
+        example: 1,
+        description: '경력 ID',
+    })
+    readonly experienceId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty({

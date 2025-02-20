@@ -289,7 +289,9 @@ export class UserController {
         const updatedUser = await this.userService.updateUserProfile(
             user.id,
             updateRequest,
-            experienceRequest,
+            experienceRequest
+                ? { experiences: experienceRequest.experiences }
+                : undefined, // 변경
         );
         this.logger.debug(
             `프로필 업데이트 완료: ${updatedUser.id}`,
@@ -333,17 +335,13 @@ export class UserController {
         this.logger.debug(
             '유저 정보 조회 요청 처리 중',
             JSON.stringify({
-                user,
                 UserController: UserController.name,
             }),
         );
         const userInfo: GetUserResponse = await this.userService.getUserInfo(
             user.id,
         );
-        this.logger.debug(
-            `유저 정보 조회 완료: ${userInfo}`,
-            JSON.stringify(UserController.name),
-        );
+        this.logger.debug('유저 정보 조회 완료');
         return userInfo;
     }
 
@@ -523,5 +521,27 @@ export class UserController {
             JSON.stringify(UserController.name),
         );
         return profile;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete('/experience/:experienceId')
+    @ApiOperation({
+        summary: '경력 삭제',
+        description: '경력 정보를 삭제합니다.',
+    })
+    async deleteUserExperience(
+        @Req() request: Request,
+        @Param('experienceId') experienceId: number,
+    ): Promise<void> {
+        const user = request.user as any;
+        this.logger.debug(
+            '경력 삭제 요청 처리 중',
+            JSON.stringify({ experienceId }),
+        );
+        await this.userService.deleteUserExperience(user.id, experienceId);
+        this.logger.debug(
+            '경력 삭제 완료',
+            JSON.stringify(UserController.name),
+        );
     }
 }

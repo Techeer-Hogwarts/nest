@@ -70,7 +70,8 @@ export class BlogController {
     @Get('/best')
     @ApiOperation({
         summary: '블로그 게시물의 인기글 목록 조회',
-        description: '(조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
+        description:
+            '2주간의 글 중 (조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
     })
     async getBestBlogs(
         @Query() query: PaginationQueryDto,
@@ -122,6 +123,26 @@ export class BlogController {
             `유저 별 블로그 게시물 목록 조회 처리 완료`,
             BlogController.name,
         );
+        return result;
+    }
+    @Get('/:blogId')
+    @ApiOperation({
+        summary: '블로그 단일 조회',
+        description: '블로그 ID를 기반으로 단일 블로그 게시물을 조회합니다.',
+    })
+    async getBlog(
+        @Param('blogId', ParseIntPipe) blogId: number,
+    ): Promise<GetBlogResponse> {
+        this.logger.debug(
+            `단일 블로그 게시물 조회 처리 중 - blogId: ${blogId}`,
+            BlogController.name,
+        );
+        const result = await this.blogService.getBlog(blogId);
+        this.logger.debug(
+            `단일 블로그 게시물 조회 처리 완료`,
+            BlogController.name,
+        );
+
         return result;
     }
 }

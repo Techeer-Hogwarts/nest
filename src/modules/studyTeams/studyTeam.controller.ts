@@ -83,6 +83,7 @@ export class StudyTeamController {
             },
         },
     })
+    @UseInterceptors(FilesInterceptor('files', 10))
     async uploadStudyTeam(
         @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
@@ -107,6 +108,13 @@ export class StudyTeamController {
                 createStudyTeamDto,
                 files,
             );
+            const result: GetStudyTeamResponse =
+                await this.studyTeamService.createStudyTeam(
+                    createStudyTeamDto,
+                    files,
+                );
+            this.logger.debug(`생성된 스터디 정보: ${JSON.stringify(result)}`);
+            return result;
         } catch (error) {
             this.logger.error('❌ 스터디 팀 생성 중 오류 발생:', error);
             throw error;
@@ -370,12 +378,8 @@ export class StudyTeamController {
         @Req() request: any,
     ): Promise<StudyMemberResponse> {
         const user = request.user;
-        const userId = user.id;
 
-        return await this.studyTeamService.cancelApplication(
-            studyTeamId,
-            userId,
-        );
+        return await this.studyTeamService.cancelApplication(studyTeamId, user);
     }
 
     // 스터디 지원자 조회 : status: PENDING인 데이터 조회(스터디팀에 속한 멤버만 조회 가능 멤버가 아니면 확인할 수 없습니다 )
@@ -422,10 +426,12 @@ export class StudyTeamController {
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
         @Req() request: any,
     ): Promise<StudyApplicantResponse> {
-        const userId = request.user.id;
+        const user = request.user; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
-        this.logger.debug(
-            `🔥 스터디 지원 수락 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, applicantId: ${applicantId}`,
+        return await this.studyTeamService.acceptApplicant(
+            studyTeamId,
+            user,
+            applicantId,
         );
         try {
             const result = await this.studyTeamService.acceptApplicant(

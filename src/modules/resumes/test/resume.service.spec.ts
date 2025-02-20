@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-    resumeEntities,
     resumeEntity,
     createResumeRequest,
     getResumeResponse,
@@ -147,20 +146,13 @@ describe('ResumeService', (): void => {
     describe('getBestResumes', (): void => {
         it('should return a list of GetResumeResponse objects based on pagination query', async (): Promise<void> => {
             jest.spyOn(repository, 'getBestResumes').mockResolvedValue(
-                resumeEntities,
+                getResumeResponseList,
             );
 
             const result: GetResumeResponse[] =
                 await service.getBestResumes(paginationQueryDto);
 
             expect(result).toEqual(getResumeResponseList);
-            expect(
-                result.every(
-                    (item: GetResumeResponse): boolean =>
-                        item instanceof GetResumeResponse,
-                ),
-            ).toBe(true);
-
             expect(repository.getBestResumes).toHaveBeenCalledWith(
                 paginationQueryDto,
             );

@@ -11,6 +11,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NotFoundStudyTeamException } from '../../../global/exception/custom.exception';
 import { StudyTeamService } from '../studyTeam.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { CreatePersonalAlertRequest } from '../../alert/dto/request/create.personal.alert.request';
 
 @Injectable()
 export class StudyTeamRepository {
@@ -18,6 +19,45 @@ export class StudyTeamRepository {
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
     ) {}
+
+    async sendStudyUserAlert(
+        studyTeamId: number,
+        applicantEmail: string,
+        result: 'PENDING' | 'CANCELLED' | 'APPROVED' | 'REJECT',
+    ): Promise<CreatePersonalAlertRequest> {
+        // 팀 리더 정보 조회 (스터디 멤버 테이블 사용)
+        const teamLeader = await this.prisma.studyMember.findFirst({
+            where: {
+                studyTeamId,
+                isLeader: true,
+                isDeleted: false,
+            },
+            include: { user: true },
+        });
+
+        // 실제 스터디 팀 이름 조회
+        const studyTeam = await this.prisma.studyTeam.findUnique({
+            where: { id: studyTeamId },
+            select: { name: true },
+        });
+
+        const leader = await this.prisma.user.findUnique({
+            where: { id: teamLeader.userId },
+        });
+
+        // 팀 리더와 스터디 팀 정보가 모두 조회되면 알림 전송
+        if (teamLeader && studyTeam) {
+            const userAlertPayload: CreatePersonalAlertRequest = {
+                teamId: studyTeamId,
+                teamName: studyTeam.name,
+                type: 'study',
+                leaderEmail: leader.email,
+                applicantEmail,
+                result,
+            };
+            return userAlertPayload;
+        }
+    }
 
     async findStudyByName(name: string): Promise<boolean> {
         try {
@@ -77,6 +117,7 @@ export class StudyTeamRepository {
                             user: {
                                 select: {
                                     name: true,
+                                    email: true,
                                 },
                             },
                         },
@@ -207,7 +248,10 @@ export class StudyTeamRepository {
                     studyMember: {
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -235,7 +279,10 @@ export class StudyTeamRepository {
                     studyMember: {
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -263,7 +310,10 @@ export class StudyTeamRepository {
                     studyMember: {
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -303,7 +353,10 @@ export class StudyTeamRepository {
                         },
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },
@@ -346,7 +399,10 @@ export class StudyTeamRepository {
                         },
                         include: {
                             user: {
-                                select: { name: true },
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
                             },
                         },
                     },

@@ -105,6 +105,82 @@ export const mockCreateStudyTeamRequest = {
     ],
 };
 
+export const mockUser = {
+    id: 1,
+    name: 'Test User',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isDeleted: false,
+    email: 'test@example.com',
+    stack: ['React', 'TypeScript'],
+    nickname: 'testuser',
+    year: 2024,
+    password: 'hashedpassword',
+    isLft: false,
+    githubUrl: 'https://github.com/testuser',
+    mainPosition: 'FRONTEND',
+    subPosition: 'BACKEND',
+    school: '테스트 대학교',
+    profileImage: 'https://example.com/profile.jpg',
+    velogUrl: 'https://velog.io/@testuser',
+    blogUrl: 'https://blog.example.com',
+    introduction: '안녕하세요, 개발자입니다.',
+    region: 'SEOUL',
+    detailRegion: '강남구',
+    careerYear: 3,
+    isPublic: true,
+    isAuth: true, // 추가
+    roleId: 1, // 추가
+    grade: 'JUNIOR', // 추가
+    mediumUrl: 'https://medium.com/@testuser', // 추가
+    tistoryUrl: 'https://testuser.tistory.com', // 추가
+};
+
+export const mockStudyTeamResult1 = {
+    studyResponse: {
+        name: 'Test Study',
+        githubLink: 'https://github.com/test',
+        notionLink: 'https://notion.so/test',
+        studyExplain: 'This is a test study',
+        goal: 'Learn TypeScript',
+        rule: 'Follow best practices',
+        recruitNum: 5,
+        recruitExplain: 'Looking for dedicated learners',
+        isFinished: false,
+        isRecruited: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+        studyMember: [
+            {
+                userId: 1,
+                isLeader: true,
+            },
+            {
+                userId: 2,
+                isLeader: false,
+            },
+        ],
+        resultImages: [
+            'https://example.com/image1.jpg',
+            'https://example.com/image2.jpg',
+        ],
+    },
+    slackPayload: {
+        id: 1,
+        name: 'Test Study',
+        studyExplain: 'test explain',
+        recruitNum: 5,
+        leader: 'Test Leader',
+        email: 'test@example.com',
+        recruitExplain: 'test recruit explain',
+        notionLink: 'https://notion.so/test',
+        goal: 'test goal',
+        rule: 'test rule',
+        type: 'study',
+    },
+};
+
 export const mockUser1: User = {
     id: 1,
     email: 'test1@test.com',

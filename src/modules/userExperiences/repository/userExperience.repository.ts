@@ -6,7 +6,7 @@ import { UpdateUserExperienceRequest } from '../dto/request/update.userExperienc
 import { StackCategory } from '../../../global/category/stack.category';
 import { normalizeString } from '../../../global/category/normalize';
 import { Category } from '../category/category.category';
-
+import { NotFoundExperienceException } from '../../../global/exception/custom.exception';
 @Injectable()
 export class UserExperienceRepository {
     constructor(private readonly prisma: PrismaService) {}
@@ -92,12 +92,6 @@ export class UserExperienceRepository {
         });
     }
 
-    /**
-     * 사용자 경험 업데이트
-     * @param userId 사용자 ID
-     * @param updateUserExperienceRequest 업데이트 요청
-     * @param prisma 트랜잭션 클라이언트
-     */
     async updateUserExperience(
         userId: number,
         updateUserExperienceRequest?: {
@@ -118,38 +112,65 @@ export class UserExperienceRepository {
             userId,
         );
 
-        // 데이터 upsert 처리 (배치로 처리)
-        const operations = data.map((experience) =>
-            prisma.userExperience.upsert({
-                where: {
-                    userId_position_companyName_startDate: {
-                        userId,
+        // 각 경험 데이터를 순회하며 update 혹은 create 작업 준비
+        const operations = data.map((experience) => {
+            // experience 객체에 id가 있다면 업데이트 처리
+            if (experience.experienceId) {
+                return prisma.userExperience.update({
+                    where: { id: experience.experienceId },
+                    data: {
                         position: experience.position,
                         companyName: experience.companyName,
                         startDate: experience.startDate,
+                        endDate: experience.endDate,
+                        isFinished: experience.isFinished,
+                        category: experience.category,
                     },
-                },
-                update: {
-                    position: experience.position,
-                    companyName: experience.companyName,
-                    startDate: experience.startDate,
-                    endDate: experience.endDate,
-                    isFinished: experience.isFinished,
-                    category: experience.category,
-                },
-                create: {
-                    user: { connect: { id: userId } },
-                    position: experience.position,
-                    companyName: experience.companyName,
-                    startDate: experience.startDate,
-                    endDate: experience.endDate,
-                    isFinished: experience.isFinished,
-                    category: experience.category,
-                },
-            }),
-        );
+                });
+            } else {
+                // id가 없으면 새 레코드 생성 처리
+                return prisma.userExperience.create({
+                    data: {
+                        user: { connect: { id: userId } },
+                        position: experience.position,
+                        companyName: experience.companyName,
+                        startDate: experience.startDate,
+                        endDate: experience.endDate,
+                        isFinished: experience.isFinished,
+                        category: experience.category,
+                    },
+                });
+            }
+        });
 
-        // 모든 작업 실행
-        await this.prisma.$transaction(operations);
+        await Promise.all(operations);
+    }
+
+    /**
+     * 사용자 경험 삭제
+     * @param deleteUserExperienceRequest 삭제할 경험 항목들의 ID 목록을 담은 객체
+     * @param prisma 트랜잭션 클라이언트
+     */
+    async deleteUserExperience(
+        userId: number,
+        experienceId: number,
+        prisma: Prisma.TransactionClient = this.prisma,
+    ): Promise<void> {
+        // 해당 경력 데이터가 실제 존재하고 userId가 일치하는지 확인
+        const experience = await prisma.userExperience.findUnique({
+            where: { id: experienceId },
+            select: { userId: true },
+        });
+
+        if (!experience || experience.userId !== userId) {
+            // 경력이 존재하지 않거나, 사용자가 소유한 경력이 아니라면 예외 발생
+            throw new NotFoundExperienceException();
+        }
+
+        // 소프트 딜리트: isDeleted를 true로 업데이트
+        await prisma.userExperience.update({
+            where: { id: experienceId },
+            data: { isDeleted: true },
+        });
     }
 }

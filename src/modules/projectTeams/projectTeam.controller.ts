@@ -120,7 +120,6 @@ export class ProjectTeamController {
             this.logger.debug('📄 요청 본문(JSON) 파싱 시작');
             const parsedBody = JSON.parse(createProjectTeamRequest);
             this.logger.debug('📄 요청 본문 파싱 완료');
-            this.logger.debug(`요청 데이터: ${JSON.stringify(parsedBody)}`);
 
             const mainImages = files?.length > 0 ? files[0] : null;
             const resultImages = files?.length > 1 ? files.slice(1) : [];
@@ -143,7 +142,6 @@ export class ProjectTeamController {
                 files,
             );
             this.logger.debug('🚀 프로젝트 생성 서비스 호출 완료');
-            this.logger.debug(`생성된 프로젝트 ID: ${createdProject.id}`);
 
             this.logger.debug('✅ createProject 엔드포인트 성공적으로 완료');
             return createdProject;

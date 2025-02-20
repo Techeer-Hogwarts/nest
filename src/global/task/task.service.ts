@@ -4,7 +4,7 @@ import { RedisService } from '../redis/redis.service';
 import { BlogRepository } from '../../modules/blogs/repository/blog.repository';
 import { CrawlingBlogResponse } from '../../modules/blogs/dto/response/crawling.blog.response';
 import { BlogPostDto } from '../../modules/blogs/dto/request/post.blog.request';
-import { BlogCategory } from '../category/blog.category';
+import { BlogCategory } from '../../modules/blogs/category/blog.category';
 import { Cron } from '@nestjs/schedule';
 import { CustomWinstonLogger } from '../logger/winston.logger';
 
