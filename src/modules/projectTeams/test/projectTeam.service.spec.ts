@@ -15,6 +15,7 @@ import { StackCategory } from '@prisma/client';
 import { ProjectTeamDetailResponse } from '../dto/response/get.projectTeam.response';
 import { AlertServcie } from '../../alert/alert.service';
 import { AlreadyApprovedException } from '../../../global/exception/custom.exception';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('ProjectTeamService', () => {
     let service: ProjectTeamService;
@@ -96,6 +97,13 @@ describe('ProjectTeamService', () => {
                     provide: AwsService,
                     useValue: {
                         imageUploadToS3: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
