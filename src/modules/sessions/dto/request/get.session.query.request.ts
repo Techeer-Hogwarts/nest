@@ -3,11 +3,6 @@ import { Transform, Type } from 'class-transformer';
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class GetSessionsQueryRequest {
-    @ApiPropertyOptional({ description: '검색할 키워드' })
-    @IsOptional()
-    @IsString()
-    readonly keyword?: string;
-
     @ApiPropertyOptional({ description: '카테고리' })
     @IsOptional()
     @IsString()
