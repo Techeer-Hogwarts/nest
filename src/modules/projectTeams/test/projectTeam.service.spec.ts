@@ -14,6 +14,7 @@ import { StackCategory } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { AlertServcie } from '../../alert/alert.service';
 // import { AlreadyApprovedException } from '../../../global/exception/custom.exception';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('ProjectTeamService', () => {
     let service: ProjectTeamService;
@@ -102,6 +103,13 @@ describe('ProjectTeamService', () => {
                     useValue: {
                         debug: jest.fn(),
                         error: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],

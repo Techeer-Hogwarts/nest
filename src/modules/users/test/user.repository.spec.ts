@@ -4,6 +4,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserRequest } from '../dto/request/update.user.request';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { StackCategory } from '../../../global/category/stack.category';
+import { IndexService } from '../../../global/index/index.service';
+import { UserEntity } from '../entities/user.entity';
 
 describe('UserRepository', () => {
     let userRepository: UserRepository;
@@ -37,6 +39,13 @@ describe('UserRepository', () => {
                         error: jest.fn(),
                     },
                 },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
@@ -59,7 +68,30 @@ describe('UserRepository', () => {
                 tistoryUrl: 'https://newblog.com',
                 isLft: false,
             };
-
+            const mockUser: UserEntity = {
+                id: 1,
+                createdAt: new Date('2024-09-24T08:51:54.000Z'),
+                updatedAt: new Date('2024-09-24T08:51:54.000Z'),
+                isDeleted: false,
+                name: '홍길동',
+                email: 'hong@test.com',
+                nickname: 'hong123', // 예시 데이터 추가
+                year: 2024,
+                password: '1234',
+                isLft: false,
+                githubUrl: 'github',
+                mediumUrl: 'blog',
+                velogUrl: 'blog',
+                tistoryUrl: 'blog',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: 'New Hogwarts',
+                grade: '2학년',
+                profileImage: 'profile-image-url',
+                stack: [], // 빈 배열 기본값
+                isAuth: true,
+                roleId: 1,
+            };
             jest.spyOn(
                 userRepository,
                 'validateAndNormalizePosition',
@@ -68,6 +100,9 @@ describe('UserRepository', () => {
                 userRepository,
                 'validateAndNormalizePosition',
             ).mockReturnValueOnce(StackCategory.FRONTEND);
+            jest.spyOn(prismaService.user, 'update').mockResolvedValue(
+                mockUser,
+            );
 
             await userRepository.updateUserProfile(userId, updateUserRequest);
 

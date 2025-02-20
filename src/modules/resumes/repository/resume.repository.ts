@@ -8,12 +8,15 @@ import { NotFoundResumeException } from '../../../global/exception/custom.except
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { GetResumeResponse } from '../dto/response/get.resume.response';
+import { IndexService } from '../../../global/index/index.service';
+import { IndexResumeRequest } from '../dto/request/index.resume.request';
 
 @Injectable()
 export class ResumeRepository {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {}
 
     async createResume(
@@ -22,7 +25,7 @@ export class ResumeRepository {
         prisma: Prisma.TransactionClient = this.prisma, // 기본값으로 this.prisma 사용
     ): Promise<ResumeEntity> {
         this.logger.debug(`이력서 생성 처리 중`, ResumeRepository.name);
-        return prisma.resume.create({
+        const resume: ResumeEntity = await prisma.resume.create({
             data: {
                 ...createResumeRequest,
                 title: createResumeRequest.title,
@@ -30,6 +33,18 @@ export class ResumeRepository {
             },
             include: { user: true },
         });
+
+        // 인덱스 업데이트
+        const indexResume = new IndexResumeRequest(resume);
+        this.logger.debug(
+            `이력서 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexResume)}`,
+            ResumeRepository.name,
+        );
+        await this.indexService.createIndex<IndexResumeRequest>(
+            'resume',
+            indexResume,
+        );
+        return resume;
     }
 
     async unsetMainResumeForUser(userId: number): Promise<void> {
@@ -195,6 +210,11 @@ export class ResumeRepository {
                 },
                 data: { isDeleted: true },
             });
+            this.logger.debug(
+                `이력서 삭제 후 인덱스 삭제 요청 - resumeId: ${resumeId}`,
+                ResumeRepository.name,
+            );
+            await this.indexService.deleteIndex('resume', String(resumeId));
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -244,6 +264,9 @@ export class ResumeRepository {
                 id: resumeId,
             },
             data,
+            include: {
+                user: true,
+            },
         });
         this.logger.debug(`이력서 업데이트 처리 성공`, ResumeRepository.name);
     }

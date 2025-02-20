@@ -11,6 +11,7 @@ import {
 } from './mock-data';
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('BlogRepository', (): void => {
     let repository: BlogRepository;
@@ -40,6 +41,10 @@ describe('BlogRepository', (): void => {
                         debug: jest.fn(),
                         error: jest.fn(),
                     },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {},
                 },
             ],
         }).compile();

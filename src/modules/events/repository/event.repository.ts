@@ -6,12 +6,15 @@ import { GetEventListQueryRequest } from '../dto/request/get.event.query.request
 import { Prisma } from '@prisma/client';
 import { NotFoundEventException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexEventRequest } from '../dto/request/index.event.request';
+import { IndexService } from '../../../global/index/index.service';
 
 @Injectable()
 export class EventRepository {
     constructor(
         private prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {}
 
     async findById(eventId: number): Promise<EventEntity | null> {
@@ -30,13 +33,23 @@ export class EventRepository {
         userId: number,
         createEventRequest: CreateEventRequest,
     ): Promise<EventEntity> {
-        return this.prisma.event.create({
+        const event: EventEntity = await this.prisma.event.create({
             data: {
                 userId,
                 ...createEventRequest,
             },
             include: { user: true },
         });
+        const indexEvent = new IndexEventRequest(event);
+        this.logger.debug(
+            `이벤트 생성 완료 후 인덱스 업데이트 요청 - ${JSON.stringify(indexEvent)}`,
+            EventRepository.name,
+        );
+        await this.indexService.createIndex<IndexEventRequest>(
+            'event',
+            indexEvent,
+        );
+        return event;
     }
 
     async getEventList(
@@ -98,7 +111,7 @@ export class EventRepository {
             updateEventRequest;
 
         try {
-            return await this.prisma.event.update({
+            const event = await this.prisma.event.update({
                 where: {
                     id: eventId,
                     isDeleted: false,
@@ -114,6 +127,16 @@ export class EventRepository {
                     user: true,
                 },
             });
+            const indexEvent = new IndexEventRequest(event);
+            this.logger.debug(
+                `이벤트 수정 완료 후 인덱스 업데이트 요청 - ${JSON.stringify(indexEvent)}`,
+                EventRepository.name,
+            );
+            await this.indexService.createIndex<IndexEventRequest>(
+                'event',
+                indexEvent,
+            );
+            return event;
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -131,13 +154,14 @@ export class EventRepository {
 
     async deleteEvent(eventId: number): Promise<void> {
         try {
-            await this.prisma.event.update({
+            const event = await this.prisma.event.update({
                 where: {
                     id: eventId,
                     isDeleted: false,
                 },
                 data: { isDeleted: true },
             });
+            await this.indexService.deleteIndex('event', String(event.id));
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&

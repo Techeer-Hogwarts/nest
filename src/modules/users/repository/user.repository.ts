@@ -14,6 +14,8 @@ import { normalizeString } from '../../../global/category/normalize';
 import { StackCategory } from '../../../global/category/stack.category';
 import { GradeCategory } from '../category/grade.category';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexUserRequest } from '../dto/request/index.user.request';
+import { IndexService } from '../../../global/index/index.service';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -23,6 +25,7 @@ export class UserRepository {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {}
 
     /**
@@ -99,7 +102,7 @@ export class UserRepository {
             JSON.stringify({ validatedGrade }),
         );
 
-        return prisma.user.create({
+        const user: UserEntity = await prisma.user.create({
             data: {
                 ...createUserRequest,
                 mainPosition: normalizedMainPosition,
@@ -110,6 +113,15 @@ export class UserRepository {
                 isAuth: true,
             },
         });
+
+        // 인덱스 업데이트
+        const indexUser = new IndexUserRequest(user);
+        this.logger.debug(
+            `유저 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexUser)}`,
+            UserRepository.name,
+        );
+        await this.indexService.createIndex('user', indexUser);
+        return user;
     }
 
     async findOneByEmail(email: string): Promise<UserEntity | null> {
@@ -234,17 +246,33 @@ export class UserRepository {
             JSON.stringify({ filteredData }),
         );
 
-        return prisma.user.update({
+        const user: UserEntity = await prisma.user.update({
             where: { id: userId },
             data: filteredData,
         });
+
+        // 인덱스 업데이트
+        const indexUser = new IndexUserRequest(user);
+        this.logger.debug(
+            `유저 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexUser)}`,
+            UserRepository.name,
+        );
+        await this.indexService.createIndex('user', indexUser);
+        return user;
     }
 
     async softDeleteUser(userId: number): Promise<UserEntity> {
-        return this.prisma.user.update({
+        const user = await this.prisma.user.update({
             where: { id: userId },
             data: { isDeleted: true },
         });
+        // 인덱스 업데이트
+        this.logger.debug(
+            `유저 삭제 후 인덱스 삭제 요청 - userId: ${userId}`,
+            UserRepository.name,
+        );
+        await this.indexService.deleteIndex('user', String(userId));
+        return user;
     }
 
     async updatePassword(email: string, newPassword: string): Promise<void> {

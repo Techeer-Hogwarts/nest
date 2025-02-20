@@ -13,6 +13,7 @@ import {
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('SessionRepository', (): void => {
     let repository: SessionRepository;
@@ -38,6 +39,13 @@ describe('SessionRepository', (): void => {
                     useValue: {
                         debug: jest.fn(),
                         error: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],

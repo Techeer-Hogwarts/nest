@@ -12,6 +12,7 @@ import {
     mockUser,
 } from './mock-data';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 import { PrismaService } from '../../../modules/prisma/prisma.service';
 
 describe('StudyTeamService', () => {
@@ -86,6 +87,13 @@ describe('StudyTeamService', () => {
                                 update: jest.fn(),
                             },
                         },
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
