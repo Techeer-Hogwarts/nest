@@ -84,7 +84,6 @@ export class StudyTeamController {
             },
         },
     })
-    @UseInterceptors(FilesInterceptor('files', 10)) // 파일 최대 업로드 10개
     async uploadStudyTeam(
         @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
@@ -108,6 +107,7 @@ export class StudyTeamController {
             return await this.studyTeamService.createStudyTeam(
                 createStudyTeamDto,
                 files,
+                user,
             );
         } catch (error) {
             this.logger.error('❌ 스터디 팀 생성 중 오류 발생:', error);

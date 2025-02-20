@@ -32,32 +32,29 @@ export class StudyMemberRepository {
     async isUserAlreadyInStudy(
         studyTeamId: number,
         userId: number,
-    ): Promise<boolean> {
+    ): Promise<void> {
         try {
             const existingMember = await this.prisma.studyMember.findFirst({
                 where: {
                     studyTeamId: studyTeamId,
                     userId: userId,
-                    isDeleted: false, // 삭제되지 않은 멤버만 조회
+                    isDeleted: false,
+                    status: { not: 'REJECT' }, // 거절된 상태 제외
                 },
             });
 
-            const isMember = !!existingMember;
-            if (isMember) {
+            if (existingMember) {
                 this.logger.warn(
                     `User (ID: ${userId}) is already a member of Study Team (ID: ${studyTeamId})`,
                 );
+                throw new Error('이미 해당 스터디에 지원했거나 멤버입니다.');
             }
-
-            return isMember;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] isUserAlreadyInStudy 에서 예외 발생: ',
                 error,
             );
-            throw new Error(
-                '사용자가 스터디에 가입되어 있는지 확인하는 중 오류가 발생했습니다.',
-            );
+            throw error;
         }
     }
 
