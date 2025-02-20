@@ -9,12 +9,15 @@ import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { NotFoundBlogException } from '../../../global/exception/custom.exception';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { IndexBlogRequest } from '../dto/request/index.blog.request';
+import { IndexService } from '../../../global/index/index.service';
 
 @Injectable()
 export class BlogRepository {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {}
 
     async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {
@@ -59,14 +62,26 @@ export class BlogRepository {
         );
         const blogPromises = posts.map(async (post) => {
             try {
-                await this.prisma.blog.create({
+                const blog: BlogEntity = await this.prisma.blog.create({
                     data: {
                         userId,
                         ...post,
                         date: new Date(post.date),
                         category,
                     },
+                    include: {
+                        user: true,
+                    },
                 });
+                const indexBlog = new IndexBlogRequest(blog);
+                this.logger.debug(
+                    `블로그 데이터 저장 후 인덱스 업데이트 요청 - ${JSON.stringify(indexBlog)}`,
+                    BlogRepository.name,
+                );
+                await this.indexService.createIndex<IndexBlogRequest>(
+                    'blog',
+                    indexBlog,
+                );
             } catch (error) {
                 this.logger.error(
                     `블로그 데이터 저장 실패: ${post.title}, Error: ${error.message} error stack: ${error.stack}`,
