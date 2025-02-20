@@ -27,7 +27,6 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-import { JwtUser } from '../../global/interfaces/jwt-user.interface';
 
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
@@ -87,10 +86,10 @@ export class StudyTeamController {
     async uploadStudyTeam(
         @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<GetStudyTeamResponse> {
         this.logger.debug('🔥 스터디 팀 생성 시작');
-        const user = req.user;
+        const user = request.user;
         if (!user) {
             this.logger.error('❌ 사용자 정보가 없습니다.');
             throw new NotFoundUserException();
@@ -107,7 +106,6 @@ export class StudyTeamController {
             return await this.studyTeamService.createStudyTeam(
                 createStudyTeamDto,
                 files,
-                user,
             );
         } catch (error) {
             this.logger.error('❌ 스터디 팀 생성 중 오류 발생:', error);
@@ -170,9 +168,9 @@ export class StudyTeamController {
         @Body('updateStudyTeamRequest')
         updateStudyTeamRequest: string | undefined,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<GetStudyTeamResponse> {
-        const user = req.user;
+        const user = request.user;
         if (!user) throw new NotFoundUserException();
         this.logger.debug(
             `Starting updateStudyTeam for studyTeamId: ${studyTeamId}, userId: ${user.id}`,
@@ -221,9 +219,9 @@ export class StudyTeamController {
     })
     async closeStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<GetStudyTeamResponse> {
-        const user = req.user;
+        const user = request.user;
 
         try {
             return await this.studyTeamService.closeStudyTeam(
@@ -248,9 +246,9 @@ export class StudyTeamController {
     })
     async deleteStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<GetStudyTeamResponse> {
-        const user = req.user;
+        const user = request.user;
         try {
             return await this.studyTeamService.deleteStudyTeam(
                 studyTeamId,
@@ -273,9 +271,9 @@ export class StudyTeamController {
         description: '로그인된 유저가 참여한 스터디 목록을 조회합니다.',
     })
     async getUserStudyTeams(
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<GetStudyTeamResponse[]> {
-        const user = req.user;
+        const user = request.user;
 
         try {
             const userId = user.id;
@@ -339,11 +337,11 @@ export class StudyTeamController {
     })
     async applyToStudyTeam(
         @Body() createStudyMemberRequest: CreateStudyMemberRequest,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<StudyApplicantResponse> {
         try {
             this.logger.debug('🔥 스터디 지원 시작');
-            const user = req.user;
+            const user = request.user;
             const userId = user.id;
             this.logger.debug(`요청 데이터: userId=${userId}`);
 
@@ -369,9 +367,9 @@ export class StudyTeamController {
     })
     async cancelApplication(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<StudyMemberResponse> {
-        const user = req.user;
+        const user = request.user;
         const userId = user.id;
 
         return await this.studyTeamService.cancelApplication(
@@ -389,13 +387,13 @@ export class StudyTeamController {
     })
     async getApplicants(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<StudyApplicantResponse[]> {
         this.logger.debug(
-            `🔥 스터디 지원자 조회 시작 - studyTeamId: ${studyTeamId}, userId: ${req.user.id}`,
+            `🔥 스터디 지원자 조회 시작 - studyTeamId: ${studyTeamId}, userId: ${request.user.id}`,
         );
         try {
-            const userId = req.user.id;
+            const userId = request.user.id;
             const applicants = await this.studyTeamService.getApplicants(
                 studyTeamId,
                 userId,
@@ -422,9 +420,9 @@ export class StudyTeamController {
     @ApiBody({ type: UpdateApplicantStatusRequest })
     async acceptApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<StudyApplicantResponse> {
-        const userId = req.user.id;
+        const userId = request.user.id;
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
         this.logger.debug(
             `🔥 스터디 지원 수락 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, applicantId: ${applicantId}`,
@@ -457,9 +455,9 @@ export class StudyTeamController {
     @ApiBody({ type: UpdateApplicantStatusRequest })
     async rejectApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<StudyApplicantResponse> {
-        const userId = req.user.id;
+        const userId = request.user.id;
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
         this.logger.debug(
             `🔥 스터디 지원 거절 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, applicantId: ${applicantId}`,
@@ -491,9 +489,9 @@ export class StudyTeamController {
     })
     async addMemberToStudyTeam(
         @Body() addMemberToStudyTeamRequest: AddMemberToStudyTeamRequest,
-        @Req() req: Request & { user: JwtUser },
+        @Req() request: any,
     ): Promise<StudyMemberResponse> {
-        const userId = req.user.id;
+        const userId = request.user.id;
         const { studyTeamId, memberId, isLeader } = addMemberToStudyTeamRequest;
         this.logger.debug(
             `🔥 스터디 팀원 추가 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, memberId: ${memberId}, isLeader: ${isLeader}`,

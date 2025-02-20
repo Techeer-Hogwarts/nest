@@ -7,6 +7,7 @@ import { DuplicateStudyTeamNameException } from '../../../global/exception/custo
 import {
     mockCreateStudyTeamRequest,
     mockUpdateStudyTeamRequest,
+    mockUser,
 } from './mock-data';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
@@ -196,7 +197,7 @@ describe('StudyTeamService', () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
             studyMemberRepository.getApplicants.mockResolvedValue([]);
 
-            await service.getApplicants(1, 1);
+            await service.getApplicants(1, mockUser);
             expect(studyMemberRepository.getApplicants).toHaveBeenCalled();
         });
     });
@@ -215,21 +216,9 @@ describe('StudyTeamService', () => {
         });
     });
 
-    describe('cancelApplication', () => {
-        it('should call repository to cancel application', async () => {
-            studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
-            studyMemberRepository.cancelApplication.mockResolvedValue({});
-
-            await service.cancelApplication(1, 1);
-
-            expect(studyMemberRepository.cancelApplication).toHaveBeenCalled();
-        });
-    });
-
     describe('addMemberToStudyTeam', () => {
         it('should add a new member to the study team', async () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
-            studyMemberRepository.addMemberToStudyTeam.mockResolvedValue({});
             studyMemberRepository.isUserMemberOfStudy.mockResolvedValue(false);
 
             await service.addMemberToStudyTeam(1, 1, 2, true);

@@ -21,7 +21,6 @@ import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-import { JwtUser } from 'src/global/interfaces/jwt-user.interface';
 
 interface Stack {
     id: number;
@@ -157,7 +156,6 @@ export class ProjectTeamService {
     async createProject(
         createProjectTeamRequest: CreateProjectTeamRequest,
         files: Express.Multer.File[],
-        user: JwtUser, // 사용자 정보 추가
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
@@ -179,37 +177,17 @@ export class ProjectTeamService {
 
             const {
                 teamStacks,
-                projectMember,
+                projectMember, // 요청 데이터에서는 여전히 projectMember로 들어옴
                 recruitExplain = '기본 모집 설명입니다',
                 ...projectData
             } = createProjectTeamRequest;
 
-            // 요청된 멤버와 토큰으로 추출한 사용자 병합
-            const existingMembers = projectMember || [];
-
-            // 이미 리더가 있는지 확인
-            const hasLeader = existingMembers.some((member) => member.isLeader);
-
-            // 토큰 사용자를 리더로 추가 (기존 리더가 없는 경우)
-            const mergedMembers = hasLeader
-                ? existingMembers
-                : [
-                      ...existingMembers,
-                      {
-                          userId: user.id,
-                          isLeader: true,
-                          teamRole: 'Leader', // 기본 역할 추가
-                      },
-                  ];
-
-            // 중복 멤버 제거 (userId 기준)
-            const uniqueMembers = Array.from(
-                new Map(
-                    mergedMembers.map((member) => [member.userId, member]),
-                ).values(),
-            );
-
-            // 파일 업로드 및 기존 로직 유지 (이전 코드와 동일)
+            // 파일 수 및 상태 로깅
+            if (files && files.length) {
+                this.logger.debug(`받은 파일 개수: ${files.length}`);
+            } else {
+                this.logger.warn('파일이 업로드되지 않았습니다.');
+            }
             const [mainImages, ...resultImages] = files || [];
 
             // 메인 이미지 필수 체크
@@ -218,40 +196,59 @@ export class ProjectTeamService {
                 throw new BadRequestException('메인 이미지는 필수입니다.');
             }
 
-            // 메인 이미지 업로드
+            // 1. 메인 이미지 업로드 시작
+            this.logger.debug('메인 이미지 업로드 시작');
             const mainImageUrls = await this.uploadImagesToS3(
                 [mainImages],
                 'project-teams/main',
             );
+            this.logger.debug(
+                `메인 이미지 업로드 완료: ${mainImageUrls.length}개 업로드됨`,
+            );
 
-            // 결과 이미지 업로드
+            // 2. 결과 이미지 업로드 (첫 번째 파일 제외)
             let resultImageUrls: string[] = [];
             if (resultImages && resultImages.length) {
+                this.logger.debug(
+                    `결과 이미지 업로드 시작: ${resultImages.length}개 파일`,
+                );
                 resultImageUrls = await this.uploadImagesToS3(
                     resultImages,
                     'project-teams/result',
                 );
+                this.logger.debug(
+                    `결과 이미지 업로드 완료: ${resultImageUrls.length}개 업로드됨`,
+                );
+            } else {
+                this.logger.debug(
+                    '결과 이미지 파일이 없습니다. 업로드 건너뜀.',
+                );
             }
 
-            // 스택 검증 로직 (기존 코드와 동일)
+            // 스택 검증: 요청된 스택과 실제 유효한 스택 조회
+            this.logger.debug('유효한 스택 조회 시작');
             const validStacks = await this.prisma.stack.findMany({
                 where: {
                     name: { in: teamStacks?.map((stack) => stack.stack) || [] },
                 },
             });
+            this.logger.debug(`조회된 유효 스택 수: ${validStacks.length}`);
 
             if (validStacks.length !== (teamStacks?.length || 0)) {
+                this.logger.error('유효하지 않은 스택 이름이 포함되어 있음');
                 throw new BadRequestException(
                     '유효하지 않은 스택 이름이 포함되어 있습니다.',
                 );
             }
 
-            // teamStacks 매핑 로직 (기존 코드와 동일)
+            // teamStacks를 stackId 및 isMain 값과 매핑
+            this.logger.debug('teamStacks 매핑 시작');
             const stackData = teamStacks.map((stack) => {
                 const matchedStack = validStacks.find(
                     (validStack) => validStack.name === stack.stack,
                 );
                 if (!matchedStack) {
+                    this.logger.error(`스택(${stack.stack})을 찾을 수 없음`);
                     throw new BadRequestException(
                         `스택(${stack.stack})을 찾을 수 없습니다.`,
                     );
@@ -261,8 +258,11 @@ export class ProjectTeamService {
                     isMain: stack.isMain || false,
                 };
             });
+            this.logger.debug(
+                `teamStacks 매핑 완료: ${stackData.length}개 매핑`,
+            );
 
-            // 프로젝트 DB 생성
+            this.logger.debug('프로젝트 DB 생성 시작');
             const createdProject = await this.prisma.projectTeam.create({
                 data: {
                     ...projectData,
@@ -279,10 +279,10 @@ export class ProjectTeamService {
                     },
                     teamStacks: { create: stackData },
                     projectMember: {
-                        create: uniqueMembers.map((member) => ({
+                        create: projectMember.map((member) => ({
                             user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
-                            teamRole: member.teamRole || 'Member',
+                            teamRole: member.teamRole,
                             summary: '초기 참여 인원입니다',
                             status: 'APPROVED',
                         })),
@@ -292,20 +292,31 @@ export class ProjectTeamService {
                     resultImages: true,
                     mainImages: true,
                     teamStacks: { include: { stack: true } },
-                    projectMember: { include: { user: true } },
+                    projectMember: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    email: true,
+                                },
+                            },
+                        },
+                    },
                 },
             });
 
-            // DTO 변환
+            this.logger.debug(`프로젝트 생성 완료: ID=${createdProject.id}`);
+
+            // DTO 변환 과정 로깅
+            this.logger.debug('DTO 변환 시작');
             const projectResponse = new ProjectTeamDetailResponse(
                 createdProject,
             );
 
-            this.logger.debug('✅ Project created successfully');
             return projectResponse;
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
-            throw error;
+            throw new Error('프로젝트 생성 중 오류가 발생했습니다.');
         }
     }
 
@@ -331,22 +342,22 @@ export class ProjectTeamService {
                     },
                     teamStacks: {
                         where: { isMain: true },
-                        include: { stack: true },
+                        include: {
+                            stack: true, // 전체 stack 반환
+                        },
                     },
                 },
             });
+
             if (!project) {
                 throw new NotFoundProjectException();
             }
-            // Response DTO에서 status 포함하도록 수정
+
             const response = new ProjectTeamDetailResponse({
                 ...project,
-                projectMember: project.projectMember.map((member) => ({
-                    ...member,
-                    name: member.user.name,
-                    status: member.status,
-                })),
+                projectMember: project.projectMember,
             });
+
             return response;
         } catch (error) {
             if (

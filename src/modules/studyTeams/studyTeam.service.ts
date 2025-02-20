@@ -19,8 +19,7 @@ import {
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-import { JwtUser } from 'src/global/interfaces/jwt-user.interface';
-import { PrismaService } from '../prisma/prisma.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class StudyTeamService {
@@ -29,7 +28,6 @@ export class StudyTeamService {
         private readonly studyMemberRepository: StudyMemberRepository,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
-        private readonly prisma: PrismaService,
     ) {}
 
     async ensureUserIsStudyMember(
@@ -110,14 +108,14 @@ export class StudyTeamService {
     async createStudyTeam(
         createStudyTeamRequest: CreateStudyTeamRequest,
         files: Express.Multer.File[],
-        user: JwtUser, // 사용자 정보 추가
     ): Promise<GetStudyTeamResponse> {
+        // 스터디 이름 중복 체크
         const existingStudy = await this.studyTeamRepository.findStudyByName(
             createStudyTeamRequest.name,
         );
         if (existingStudy) {
             this.logger.debug(
-                `팀 이름 중복 확인: ${createStudyTeamRequest.name}`,
+                `Duplicate study team found for name: ${createStudyTeamRequest.name}`,
             );
             throw new DuplicateStudyTeamNameException();
         }
@@ -125,57 +123,27 @@ export class StudyTeamService {
         try {
             this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
 
-            let imageUrls: string[] = [];
-
+            // 파일 업로드 처리
             if (files && files.length > 0) {
                 this.logger.debug(
                     `📂 [INFO] 총 ${files.length}개의 파일이 업로드 대기 중입니다.`,
                 );
-                imageUrls = await this.uploadImagesToS3(files, 'study-teams');
+                const imageUrls = await this.uploadImagesToS3(
+                    files,
+                    'study-teams',
+                );
+                createStudyTeamRequest.resultImages = imageUrls;
+            } else {
+                this.logger.debug('⚠️ [WARNING] 파일이 존재하지 않습니다.');
+                createStudyTeamRequest.resultImages = [];
             }
 
-            // 최소 한 개의 이미지 URL이 존재하도록 기본 이미지 추가
-            if (imageUrls.length === 0) {
-                imageUrls.push(
-                    'https://techeerzip-bucket.s3.ap-southeast-2.amazonaws.com/study-teams/images.png',
-                );
-                this.logger.debug(
-                    '⚠️ [WARNING] 파일이 없어 기본 이미지를 추가했습니다.',
-                );
-            }
-
-            createStudyTeamRequest.resultImages = imageUrls;
-
-            // 요청된 멤버와 토큰으로 추출한 사용자 병합
-            const existingMembers = createStudyTeamRequest.studyMember || [];
-
-            // 이미 리더가 있는지 확인
-            const hasLeader = existingMembers.some((member) => member.isLeader);
-
-            // 토큰 사용자를 리더로 추가 (기존 리더가 없는 경우)
-            const mergedMembers = hasLeader
-                ? existingMembers
-                : [
-                      ...existingMembers,
-                      {
-                          userId: user.id,
-                          isLeader: true,
-                      },
-                  ];
-
-            // 중복 멤버 제거 (userId 기준)
-            const uniqueMembers = Array.from(
-                new Map(
-                    mergedMembers.map((member) => [member.userId, member]),
-                ).values(),
+            // 스터디 멤버에 해당하는 사용자 존재 여부 체크
+            const userIds = createStudyTeamRequest.studyMember.map(
+                (member) => member.userId,
             );
-
-            createStudyTeamRequest.studyMember = uniqueMembers;
-
-            const userIds = uniqueMembers.map((member) => member.userId);
             const existingUserIds =
                 await this.studyTeamRepository.checkExistUsers(userIds);
-
             const nonExistentUsers = userIds.filter(
                 (id) => !existingUserIds.includes(id),
             );
@@ -191,12 +159,15 @@ export class StudyTeamService {
                     JSON.stringify(createStudyTeamRequest),
             );
 
+            // 스터디 생성
             const studyData = await this.studyTeamRepository.createStudyTeam(
                 createStudyTeamRequest,
             );
             this.logger.debug(
                 '✅ [SUCCESS] StudyTeamRepository에 데이터 저장 성공',
             );
+
+            this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
 
             return studyData;
         } catch (error) {
@@ -216,23 +187,6 @@ export class StudyTeamService {
     ): Promise<GetStudyTeamResponse> {
         try {
             this.logger.debug('🔥 [START] updateStudyTeam 요청 시작');
-
-            // 스터디 팀 멤버인지 확인
-            const userMembership = await this.prisma.studyMember.findFirst({
-                where: {
-                    studyTeamId: studyTeamId,
-                    userId: userId,
-                    isDeleted: false,
-                    status: 'APPROVED', // 승인된 멤버만 수정 가능
-                },
-            });
-
-            // 승인된 팀원이 아닌 경우 접근 거부
-            if (!userMembership) {
-                throw new Error(
-                    '스터디 팀의 승인된 팀원만 팀 정보를 수정할 수 있습니다.',
-                );
-            }
 
             await this.ensureUserIsStudyMember(studyTeamId, userId);
 
@@ -289,22 +243,6 @@ export class StudyTeamService {
         userId: number,
     ): Promise<GetStudyTeamResponse> {
         try {
-            // 스터디 팀 멤버인지 확인
-            const userMembership = await this.prisma.studyMember.findFirst({
-                where: {
-                    studyTeamId: studyTeamId,
-                    userId: userId,
-                    isDeleted: false,
-                    status: 'APPROVED', // 승인된 멤버만 수정 가능
-                },
-            });
-
-            // 승인된 팀원이 아닌 경우 접근 거부
-            if (!userMembership) {
-                throw new Error(
-                    '스터디 팀의 승인된 팀원만 팀 정보를 수정할 수 있습니다.',
-                );
-            }
             await this.ensureUserIsStudyMember(studyTeamId, userId);
 
             const study =
@@ -334,22 +272,6 @@ export class StudyTeamService {
         userId: number,
     ): Promise<GetStudyTeamResponse> {
         try {
-            // 스터디 팀 멤버인지 확인
-            const userMembership = await this.prisma.studyMember.findFirst({
-                where: {
-                    studyTeamId: studyTeamId,
-                    userId: userId,
-                    isDeleted: false,
-                    status: 'APPROVED', // 승인된 멤버만 수정 가능
-                },
-            });
-
-            // 승인된 팀원이 아닌 경우 접근 거부
-            if (!userMembership) {
-                throw new Error(
-                    '스터디 팀의 승인된 팀원만 팀 정보를 수정할 수 있습니다.',
-                );
-            }
             await this.ensureUserIsStudyMember(studyTeamId, userId);
             const updatedStudyTeam =
                 await this.studyTeamRepository.deleteStudyTeam(studyTeamId);
@@ -423,60 +345,82 @@ export class StudyTeamService {
         }
     }
 
+    // async applyToStudyTeam(
+    //     createStudyMemberRequest: CreateStudyMemberRequest,
+    //     userId: number,
+    // ): Promise<StudyApplicantResponse> {
+    //     this.logger.debug('🔥 [START] applyToStudyTeam 요청 시작');
+
+    //     // 스터디 팀 조회
+    //     const studyTeam = await this.prisma.studyTeam.findUnique({
+    //         where: {
+    //             id: createStudyMemberRequest.studyTeamId,
+    //             isDeleted: false,
+    //         },
+    //     });
+
+    //     // 스터디 팀이 존재하지 않는 경우
+    //     if (!studyTeam) {
+    //         throw new Error('존재하지 않는 스터디입니다.');
+    //     }
+
+    //     // 모집 상태 확인
+    //     if (!studyTeam.isRecruited) {
+    //         throw new Error('현재 모집이 마감된 스터디입니다.');
+    //     }
+
+    //     // 모집 인원 확인
+    //     if (studyTeam.recruitNum <= 0) {
+    //         throw new Error('더 이상 모집 인원이 없습니다.');
+    //     }
+
+    //     // 현재 스터디 멤버 수 확인
+    //     const currentMemberCount = await this.prisma.studyMember.count({
+    //         where: {
+    //             studyTeamId: createStudyMemberRequest.studyTeamId,
+    //             isDeleted: false,
+    //             status: { not: 'REJECT' },
+    //         },
+    //     });
+
+    //     // 모집 인원 초과 확인
+    //     if (currentMemberCount >= studyTeam.recruitNum) {
+    //         throw new Error('모집 인원이 모두 찼습니다.');
+    //     }
+
+    //     // 사용자의 스터디 중복 지원 확인
+    //     await this.studyMemberRepository.isUserAlreadyInStudy(
+    //         createStudyMemberRequest.studyTeamId,
+    //         userId,
+    //     );
+    //     this.logger.debug('✅ [INFO] 스터디 팀원 확인 성공');
+
+    //     const newApplication =
+    //         await this.studyMemberRepository.applyToStudyTeam(
+    //             createStudyMemberRequest,
+    //             userId,
+    //         );
+
+    //     this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
+    //     return newApplication;
+    // }
+
     async applyToStudyTeam(
         createStudyMemberRequest: CreateStudyMemberRequest,
-        userId: number,
+        user: User,
     ): Promise<StudyApplicantResponse> {
         this.logger.debug('🔥 [START] applyToStudyTeam 요청 시작');
 
-        // 스터디 팀 조회
-        const studyTeam = await this.prisma.studyTeam.findUnique({
-            where: {
-                id: createStudyMemberRequest.studyTeamId,
-                isDeleted: false,
-            },
-        });
-
-        // 스터디 팀이 존재하지 않는 경우
-        if (!studyTeam) {
-            throw new Error('존재하지 않는 스터디입니다.');
-        }
-
-        // 모집 상태 확인
-        if (!studyTeam.isRecruited) {
-            throw new Error('현재 모집이 마감된 스터디입니다.');
-        }
-
-        // 모집 인원 확인
-        if (studyTeam.recruitNum <= 0) {
-            throw new Error('더 이상 모집 인원이 없습니다.');
-        }
-
-        // 현재 스터디 멤버 수 확인
-        const currentMemberCount = await this.prisma.studyMember.count({
-            where: {
-                studyTeamId: createStudyMemberRequest.studyTeamId,
-                isDeleted: false,
-                status: { not: 'REJECT' },
-            },
-        });
-
-        // 모집 인원 초과 확인
-        if (currentMemberCount >= studyTeam.recruitNum) {
-            throw new Error('모집 인원이 모두 찼습니다.');
-        }
-
-        // 사용자의 스터디 중복 지원 확인
         await this.studyMemberRepository.isUserAlreadyInStudy(
             createStudyMemberRequest.studyTeamId,
-            userId,
+            user.id,
         );
         this.logger.debug('✅ [INFO] 스터디 팀원 확인 성공');
 
         const newApplication =
             await this.studyMemberRepository.applyToStudyTeam(
                 createStudyMemberRequest,
-                userId,
+                user.id,
             );
 
         this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
@@ -520,29 +464,41 @@ export class StudyTeamService {
     }
 
     // 스터디 지원자 조회
+    // async getApplicants(
+    //     studyTeamId: number,
+    //     userId: number,
+    // ): Promise<StudyApplicantResponse[]> {
+    //     this.logger.debug('🔥 [START] getApplicants 요청 시작');
+
+    //     // 스터디 팀 멤버인지 확인
+    //     const userMembership = await this.prisma.studyMember.findFirst({
+    //         where: {
+    //             studyTeamId: studyTeamId,
+    //             userId: userId,
+    //             isDeleted: false,
+    //             status: 'APPROVED', // 승인된 멤버만 조회 가능
+    //         },
+    //     });
+
+    //     // 승인된 멤버가 아닌 경우 접근 거부
+    //     if (!userMembership) {
+    //         throw new Error(
+    //             '해당 스터디 팀의 승인된 멤버만 지원자를 조회할 수 있습니다.',
+    //         );
+    //     }
+
+    //     const data =
+    //         await this.studyMemberRepository.getApplicants(studyTeamId);
+    //     this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');
+    //     return data;
+    // }
+
     async getApplicants(
         studyTeamId: number,
-        userId: number,
+        user: User,
     ): Promise<StudyApplicantResponse[]> {
         this.logger.debug('🔥 [START] getApplicants 요청 시작');
-
-        // 스터디 팀 멤버인지 확인
-        const userMembership = await this.prisma.studyMember.findFirst({
-            where: {
-                studyTeamId: studyTeamId,
-                userId: userId,
-                isDeleted: false,
-                status: 'APPROVED', // 승인된 멤버만 조회 가능
-            },
-        });
-
-        // 승인된 멤버가 아닌 경우 접근 거부
-        if (!userMembership) {
-            throw new Error(
-                '해당 스터디 팀의 승인된 멤버만 지원자를 조회할 수 있습니다.',
-            );
-        }
-
+        await this.ensureUserIsStudyMember(studyTeamId, user.id);
         const data =
             await this.studyMemberRepository.getApplicants(studyTeamId);
         this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');

@@ -15,6 +15,7 @@ import {
     mockProjectMemberResponse,
 } from './mock-data';
 import { NotFoundUserException } from '../../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ProjectTeamController', () => {
     let controller: ProjectTeamController;
@@ -22,10 +23,12 @@ describe('ProjectTeamController', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let studyTeamService: StudyTeamService;
     let prismaService: PrismaService;
+    let logger: CustomWinstonLogger;
 
     const mockUser = {
         id: 1,
         name: 'Test User',
+        email: 'test@exaple.com',
     };
     const mockRequest = { user: mockUser };
 
@@ -60,6 +63,13 @@ describe('ProjectTeamController', () => {
                     },
                 },
                 {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
+                {
                     provide: PrismaService,
                     useValue: {
                         projectMember: {
@@ -77,6 +87,7 @@ describe('ProjectTeamController', () => {
         projectTeamService = module.get<ProjectTeamService>(ProjectTeamService);
         studyTeamService = module.get<StudyTeamService>(StudyTeamService);
         prismaService = module.get<PrismaService>(PrismaService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
     it('should be defined', () => {
@@ -102,6 +113,36 @@ describe('ProjectTeamController', () => {
 
             expect(result).toEqual(mockProjectTeamResponse);
             expect(projectTeamService.createProject).toHaveBeenCalled();
+
+            // Logger assertions: 각 단계별 로깅이 수행되었는지 검증
+            expect(logger.debug).toHaveBeenCalledWith(
+                '🔥 [START] createProject 엔드포인트 호출',
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                `✅ 사용자 확인됨: ID=${mockUser.id}`,
+            );
+            // JSON 파싱 전/후 로깅
+            expect(logger.debug).toHaveBeenCalledWith(
+                '📄 요청 본문(JSON) 파싱 시작',
+            );
+            expect(logger.debug).toHaveBeenCalledWith('📄 요청 본문 파싱 완료');
+            // 파일 개수 로깅
+            expect(logger.debug).toHaveBeenCalledWith(
+                `받은 파일 개수: ${files?.length || 0}`,
+            );
+            // 서비스 호출 관련 로깅
+            expect(logger.debug).toHaveBeenCalledWith(
+                '🚀 프로젝트 생성 서비스 호출 시작',
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '🚀 프로젝트 생성 서비스 호출 완료',
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                `생성된 프로젝트 ID: ${mockProjectTeamResponse.id}`,
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '✅ createProject 엔드포인트 성공적으로 완료',
+            );
         });
 
         it('should throw NotFoundUserException if no user', async () => {
@@ -115,6 +156,11 @@ describe('ProjectTeamController', () => {
                     user: null,
                 }),
             ).rejects.toThrow(NotFoundUserException);
+
+            // 로거의 error 호출을 검증 (사용자 정보 없음)
+            expect(logger.error).toHaveBeenCalledWith(
+                '❌ 사용자 정보가 없습니다.',
+            );
         });
     });
 

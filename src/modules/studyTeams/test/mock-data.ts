@@ -19,6 +19,37 @@ export const mockStudyTeam1: StudyTeam = {
     viewCount: 0,
 };
 
+export const mockUser = {
+    id: 1,
+    name: 'Test User',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isDeleted: false,
+    email: 'test@example.com',
+    stack: ['React', 'TypeScript'],
+    nickname: 'testuser',
+    year: 2024,
+    password: 'hashedpassword',
+    isLft: false,
+    githubUrl: 'https://github.com/testuser',
+    mainPosition: 'FRONTEND',
+    subPosition: 'BACKEND',
+    school: '테스트 대학교',
+    profileImage: 'https://example.com/profile.jpg',
+    velogUrl: 'https://velog.io/@testuser',
+    blogUrl: 'https://blog.example.com',
+    introduction: '안녕하세요, 개발자입니다.',
+    region: 'SEOUL',
+    detailRegion: '강남구',
+    careerYear: 3,
+    isPublic: true,
+    isAuth: true, // 추가
+    roleId: 1, // 추가
+    grade: 'JUNIOR', // 추가
+    mediumUrl: 'https://medium.com/@testuser', // 추가
+    tistoryUrl: 'https://testuser.tistory.com', // 추가
+};
+
 export const mockUpdateStudyTeamRequest = {
     name: 'Updated Study',
     githubLink: 'https://github.com/test',
