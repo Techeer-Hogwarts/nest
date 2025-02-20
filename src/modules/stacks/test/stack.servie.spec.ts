@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StackService } from '../stack.service';
 import { StackRepository } from '../repository/stack.repository';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-import { mockRequest, mockPrismaRequest } from './mock-data';
+import { mockRequest, mockPrismaRequest, mockStacks } from './mock-data';
+import { GetStackResponse } from '../dto/response/get.stack.response';
 
 describe('StackService', () => {
     let stackService: StackService;
@@ -16,6 +17,7 @@ describe('StackService', () => {
                     provide: StackRepository,
                     useValue: {
                         createStack: jest.fn(),
+                        findAll: jest.fn(),
                     },
                 },
                 {
@@ -46,6 +48,19 @@ describe('StackService', () => {
                 mockPrismaRequest,
             );
             expect(repository.createStack).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getAllStacks', (): void => {
+        it('should return a list of stacks', async (): Promise<void> => {
+            jest.spyOn(repository, 'findAll').mockResolvedValue(mockStacks);
+
+            const result = await stackService.getAllStacks();
+
+            expect(result).toEqual(
+                mockStacks.map((stack) => new GetStackResponse(stack)),
+            );
+            expect(repository.findAll).toHaveBeenCalledTimes(1);
         });
     });
 });
