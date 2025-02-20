@@ -14,6 +14,6 @@ export class IndexProjectRequest {
         this.projectExplain = project.projectExplain;
         this.resultImages = project.resultImages.map((image) => image.imageUrl);
         this.teamStacks = project.teamStacks.map((stack) => stack.stack.name);
-        this.title = '해당 변수 제거 요망';
+        this.title = project.name;
     }
 }
