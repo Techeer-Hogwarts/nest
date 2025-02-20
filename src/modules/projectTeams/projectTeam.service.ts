@@ -21,6 +21,7 @@ import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { JwtUser } from 'src/global/interfaces/jwt-user.interface';
 
 interface Stack {
     id: number;
@@ -156,6 +157,7 @@ export class ProjectTeamService {
     async createProject(
         createProjectTeamRequest: CreateProjectTeamRequest,
         files: Express.Multer.File[],
+        user: JwtUser, // 사용자 정보 추가
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 [START] createProject 요청 시작');
@@ -182,12 +184,32 @@ export class ProjectTeamService {
                 ...projectData
             } = createProjectTeamRequest;
 
-            // 파일 수 및 상태 로깅
-            if (files && files.length) {
-                this.logger.debug(`받은 파일 개수: ${files.length}`);
-            } else {
-                this.logger.warn('파일이 업로드되지 않았습니다.');
-            }
+            // 요청된 멤버와 토큰으로 추출한 사용자 병합
+            const existingMembers = projectMember || [];
+
+            // 이미 리더가 있는지 확인
+            const hasLeader = existingMembers.some((member) => member.isLeader);
+
+            // 토큰 사용자를 리더로 추가 (기존 리더가 없는 경우)
+            const mergedMembers = hasLeader
+                ? existingMembers
+                : [
+                      ...existingMembers,
+                      {
+                          userId: user.id,
+                          isLeader: true,
+                          teamRole: 'Leader', // 기본 역할 추가
+                      },
+                  ];
+
+            // 중복 멤버 제거 (userId 기준)
+            const uniqueMembers = Array.from(
+                new Map(
+                    mergedMembers.map((member) => [member.userId, member]),
+                ).values(),
+            );
+
+            // 파일 업로드 및 기존 로직 유지 (이전 코드와 동일)
             const [mainImages, ...resultImages] = files || [];
 
             // 메인 이미지 필수 체크
@@ -196,59 +218,40 @@ export class ProjectTeamService {
                 throw new BadRequestException('메인 이미지는 필수입니다.');
             }
 
-            // 1. 메인 이미지 업로드 시작
-            this.logger.debug('메인 이미지 업로드 시작');
+            // 메인 이미지 업로드
             const mainImageUrls = await this.uploadImagesToS3(
                 [mainImages],
                 'project-teams/main',
             );
-            this.logger.debug(
-                `메인 이미지 업로드 완료: ${mainImageUrls.length}개 업로드됨`,
-            );
 
-            // 2. 결과 이미지 업로드 (첫 번째 파일 제외)
+            // 결과 이미지 업로드
             let resultImageUrls: string[] = [];
             if (resultImages && resultImages.length) {
-                this.logger.debug(
-                    `결과 이미지 업로드 시작: ${resultImages.length}개 파일`,
-                );
                 resultImageUrls = await this.uploadImagesToS3(
                     resultImages,
                     'project-teams/result',
                 );
-                this.logger.debug(
-                    `결과 이미지 업로드 완료: ${resultImageUrls.length}개 업로드됨`,
-                );
-            } else {
-                this.logger.debug(
-                    '결과 이미지 파일이 없습니다. 업로드 건너뜀.',
-                );
             }
 
-            // 스택 검증: 요청된 스택과 실제 유효한 스택 조회
-            this.logger.debug('유효한 스택 조회 시작');
+            // 스택 검증 로직 (기존 코드와 동일)
             const validStacks = await this.prisma.stack.findMany({
                 where: {
                     name: { in: teamStacks?.map((stack) => stack.stack) || [] },
                 },
             });
-            this.logger.debug(`조회된 유효 스택 수: ${validStacks.length}`);
 
             if (validStacks.length !== (teamStacks?.length || 0)) {
-                this.logger.error('유효하지 않은 스택 이름이 포함되어 있음');
                 throw new BadRequestException(
                     '유효하지 않은 스택 이름이 포함되어 있습니다.',
                 );
             }
 
-            // teamStacks를 stackId 및 isMain 값과 매핑
-            this.logger.debug('teamStacks 매핑 시작');
+            // teamStacks 매핑 로직 (기존 코드와 동일)
             const stackData = teamStacks.map((stack) => {
                 const matchedStack = validStacks.find(
                     (validStack) => validStack.name === stack.stack,
                 );
                 if (!matchedStack) {
-                    this.logger.error(`스택(${stack.stack})을 찾을 수 없음`);
                     throw new BadRequestException(
                         `스택(${stack.stack})을 찾을 수 없습니다.`,
                     );
@@ -258,11 +261,8 @@ export class ProjectTeamService {
                     isMain: stack.isMain || false,
                 };
             });
-            this.logger.debug(
-                `teamStacks 매핑 완료: ${stackData.length}개 매핑`,
-            );
 
-            this.logger.debug('프로젝트 DB 생성 시작');
+            // 프로젝트 DB 생성
             const createdProject = await this.prisma.projectTeam.create({
                 data: {
                     ...projectData,
@@ -279,10 +279,10 @@ export class ProjectTeamService {
                     },
                     teamStacks: { create: stackData },
                     projectMember: {
-                        create: projectMember.map((member) => ({
+                        create: uniqueMembers.map((member) => ({
                             user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
-                            teamRole: member.teamRole,
+                            teamRole: member.teamRole || 'Member',
                             summary: '초기 참여 인원입니다',
                             status: 'APPROVED',
                         })),
@@ -296,20 +296,16 @@ export class ProjectTeamService {
                 },
             });
 
-            this.logger.debug(`프로젝트 생성 완료: ID=${createdProject.id}`);
-
-            // DTO 변환 과정 로깅
-            this.logger.debug('DTO 변환 시작');
+            // DTO 변환
             const projectResponse = new ProjectTeamDetailResponse(
                 createdProject,
             );
-            this.logger.debug('DTO 변환 완료');
 
             this.logger.debug('✅ Project created successfully');
             return projectResponse;
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
-            throw new Error('프로젝트 생성 중 오류가 발생했습니다.');
+            throw error;
         }
     }
 
@@ -383,6 +379,22 @@ export class ProjectTeamService {
             this.logger.debug(
                 `요청 데이터: ${JSON.stringify(updateProjectTeamRequest)}`,
             );
+            // 사용자가 해당 팀의 승인된 멤버인지 확인
+            const userMembership = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId: id,
+                    userId: userId,
+                    isDeleted: false,
+                    status: 'APPROVED',
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+                );
+            }
 
             await this.ensureUserIsProjectMember(id, userId);
 
@@ -459,6 +471,23 @@ export class ProjectTeamService {
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 프로젝트 마감 시작');
+
+            // 사용자가 해당 팀의 승인된 멤버인지 확인
+            const userMembership = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId: id,
+                    userId: userId,
+                    isDeleted: false,
+                    status: 'APPROVED',
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+                );
+            }
             await this.ensureUserIsProjectMember(id, userId);
             const closedProject = await this.prisma.projectTeam.update({
                 where: { id },
@@ -484,6 +513,22 @@ export class ProjectTeamService {
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 프로젝트 삭제 시작');
+            // 사용자가 해당 팀의 승인된 멤버인지 확인
+            const userMembership = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId: id,
+                    userId: userId,
+                    isDeleted: false,
+                    status: 'APPROVED',
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+                );
+            }
             await this.ensureUserIsProjectMember(id, userId);
             const deletedProject = await this.prisma.projectTeam.update({
                 where: { id },
@@ -574,6 +619,71 @@ export class ProjectTeamService {
                 `요청 데이터: ${JSON.stringify(createProjectMemberRequest)}`,
             );
 
+            // 프로젝트 팀 조회
+            const projectTeam = await this.prisma.projectTeam.findUnique({
+                where: {
+                    id: createProjectMemberRequest.projectTeamId,
+                    isDeleted: false,
+                },
+            });
+
+            // 프로젝트 팀이 존재하지 않는 경우
+            if (!projectTeam) {
+                throw new Error('존재하지 않는 프로젝트입니다.');
+            }
+
+            // 모집 상태 확인
+            if (!projectTeam.isRecruited) {
+                throw new Error('현재 모집이 마감된 프로젝트입니다.');
+            }
+
+            // 지원하려는 직군 확인
+            const teamRole = createProjectMemberRequest.teamRole;
+            let roleNum = 0;
+
+            switch (teamRole) {
+                case 'Frontend':
+                    roleNum = projectTeam.frontendNum;
+                    break;
+                case 'Backend':
+                    roleNum = projectTeam.backendNum;
+                    break;
+                case 'DevOps':
+                    roleNum = projectTeam.devopsNum;
+                    break;
+                case 'UIUX':
+                    roleNum = projectTeam.uiuxNum;
+                    break;
+                case 'DataEngineer':
+                    roleNum = projectTeam.dataEngineerNum;
+                    break;
+                default:
+                    throw new Error('유효하지 않은 직군입니다.');
+            }
+
+            // 해당 직군의 모집 인원 확인
+            if (roleNum <= 0) {
+                throw new Error(
+                    `${teamRole} 직군은 현재 모집이 마감되었습니다.`,
+                );
+            }
+
+            // 이미 해당 프로젝트에 지원했거나 멤버인지 확인
+            const existingApplication =
+                await this.prisma.projectMember.findFirst({
+                    where: {
+                        projectTeamId: createProjectMemberRequest.projectTeamId,
+                        userId: userId,
+                        isDeleted: false,
+                        status: { not: 'REJECT' },
+                    },
+                });
+
+            if (existingApplication) {
+                throw new Error('이미 해당 프로젝트에 지원했거나 멤버입니다.');
+            }
+
+            // 프로젝트 멤버 생성
             const newApplication = await this.prisma.projectMember.create({
                 data: {
                     user: { connect: { id: userId } },
@@ -587,7 +697,14 @@ export class ProjectTeamService {
                     status: 'PENDING',
                     isLeader: false,
                 },
-                include: { user: true },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
+                },
             });
 
             this.logger.debug(
@@ -596,7 +713,7 @@ export class ProjectTeamService {
             return new ProjectApplicantResponse(newApplication);
         } catch (error) {
             this.logger.error('❌ 프로젝트 지원 중 예외 발생:', error);
-            throw new Error('프로젝트 지원 중 예외가 발생했습니다.');
+            throw error; // 이전에 생성된 특정 에러 메시지를 그대로 전달
         }
     }
 
@@ -638,6 +755,22 @@ export class ProjectTeamService {
         projectTeamId: number,
         userId: number,
     ): Promise<ProjectApplicantResponse[]> {
+        // 사용자가 해당 팀의 승인된 멤버인지 확인
+        const userMembership = await this.prisma.projectMember.findFirst({
+            where: {
+                projectTeamId: projectTeamId,
+                userId: userId,
+                isDeleted: false,
+                status: 'APPROVED',
+            },
+        });
+
+        // 승인된 멤버가 아닌 경우 접근 거부
+        if (!userMembership) {
+            throw new Error(
+                '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+            );
+        }
         await this.ensureUserIsProjectMember(projectTeamId, userId);
         const applicants = await this.prisma.projectMember.findMany({
             where: {

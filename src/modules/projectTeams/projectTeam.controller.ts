@@ -142,6 +142,7 @@ export class ProjectTeamController {
                     resultImages,
                 },
                 files,
+                user, // 사용자 정보 전달
             );
             this.logger.debug('🚀 프로젝트 생성 서비스 호출 완료');
             this.logger.debug(`생성된 프로젝트 ID: ${createdProject.id}`);
