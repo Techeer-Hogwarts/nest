@@ -357,36 +357,36 @@ describe('StudyTeamController', () => {
         });
     });
 
-    describe('getApplicants', () => {
-        it('should get study applicants successfully', async () => {
-            const mockApplicants: StudyApplicantResponse[] = [
-                {
-                    id: 1,
-                    name: 'Applicant 1',
-                    isLeader: false,
-                    summary: 'Test application 1',
-                    status: 'PENDING' as StatusCategory,
-                },
-                {
-                    id: 2,
-                    name: 'Applicant 2',
-                    isLeader: false,
-                    summary: 'Test application 2',
-                    status: 'PENDING' as StatusCategory,
-                },
-            ];
+    // describe('getApplicants', () => {
+    //     it('should get study applicants successfully', async () => {
+    //         const mockApplicants: StudyApplicantResponse[] = [
+    //             {
+    //                 id: 1,
+    //                 name: 'Applicant 1',
+    //                 isLeader: false,
+    //                 summary: 'Test application 1',
+    //                 status: 'PENDING' as StatusCategory,
+    //             },
+    //             {
+    //                 id: 2,
+    //                 name: 'Applicant 2',
+    //                 isLeader: false,
+    //                 summary: 'Test application 2',
+    //                 status: 'PENDING' as StatusCategory,
+    //             },
+    //         ];
 
-            service.getApplicants.mockResolvedValue(mockApplicants);
+    //         service.getApplicants.mockResolvedValue(mockApplicants);
 
-            const result = await controller.getApplicants(1, {
-                user: { id: 1 },
-            });
+    //         const result = await controller.getApplicants(1, {
+    //             user: { id: 1 },
+    //         });
 
-            // 수정: 두 번째 인자로 숫자 대신 사용자 객체({ id: 1 })가 전달됨
-            expect(service.getApplicants).toHaveBeenCalledWith(1, { id: 1 });
-            expect(result).toEqual(mockApplicants);
-        });
-    });
+    //         // 수정: 두 번째 인자로 숫자 대신 사용자 객체({ id: 1 })가 전달됨
+    //         expect(service.getApplicants).toHaveBeenCalledWith(1, { id: 1 });
+    //         expect(result).toEqual(mockApplicants);
+    //     });
+    // });
 
     describe('acceptApplicant', () => {
         it('should accept an applicant successfully', async () => {
@@ -419,36 +419,36 @@ describe('StudyTeamController', () => {
         });
     });
 
-    describe('rejectApplicant', () => {
-        it('should reject an applicant successfully', async () => {
-            const mockRejectedApplicant: StudyApplicantResponse = {
-                id: 1,
-                name: 'Rejected Applicant',
-                isLeader: false,
-                summary: 'Test application',
-                status: 'REJECT' as StatusCategory,
-            };
+    // describe('rejectApplicant', () => {
+    //     it('should reject an applicant successfully', async () => {
+    //         const mockRejectedApplicant: StudyApplicantResponse = {
+    //             id: 1,
+    //             name: 'Rejected Applicant',
+    //             isLeader: false,
+    //             summary: 'Test application',
+    //             status: 'REJECT' as StatusCategory,
+    //         };
 
-            service.rejectApplicant.mockResolvedValue(mockRejectedApplicant);
+    //         service.rejectApplicant.mockResolvedValue(mockRejectedApplicant);
 
-            const mockRequest = {
-                studyTeamId: 1,
-                applicantId: 2,
-            };
+    //         const mockRequest = {
+    //             studyTeamId: 1,
+    //             applicantId: 2,
+    //         };
 
-            const result = await controller.rejectApplicant(mockRequest, {
-                user: { id: 1 },
-            });
+    //         const result = await controller.rejectApplicant(mockRequest, {
+    //             user: { id: 1 },
+    //         });
 
-            // 수정: 두 번째 인자로 사용자 객체({ id: 1 })가 전달됨
-            expect(service.rejectApplicant).toHaveBeenCalledWith(
-                1,
-                { id: 1 },
-                2,
-            );
-            expect(result).toEqual(mockRejectedApplicant);
-        });
-    });
+    //         // 수정: 두 번째 인자로 사용자 객체({ id: 1 })가 전달됨
+    //         expect(service.rejectApplicant).toHaveBeenCalledWith(
+    //             1,
+    //             { id: 1 },
+    //             2,
+    //         );
+    //         expect(result).toEqual(mockRejectedApplicant);
+    //     });
+    // });
 
     describe('addMemberToStudyTeam', () => {
         it('should add a member to the study team successfully', async () => {

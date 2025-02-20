@@ -4,6 +4,10 @@ import { StatusCategory } from '@prisma/client';
 import { CreateStudyMemberRequest } from '../dto/request/create.studyMember.request';
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import {
+    StudyApplicantResponse,
+    StudyMemberResponse,
+} from '../../studyTeams/dto/response/get.studyTeam.response';
 
 @Injectable()
 export class StudyMemberRepository {
@@ -28,32 +32,29 @@ export class StudyMemberRepository {
     async isUserAlreadyInStudy(
         studyTeamId: number,
         userId: number,
-    ): Promise<boolean> {
+    ): Promise<void> {
         try {
             const existingMember = await this.prisma.studyMember.findFirst({
                 where: {
                     studyTeamId: studyTeamId,
                     userId: userId,
-                    isDeleted: false, // 삭제되지 않은 멤버만 조회
+                    isDeleted: false,
+                    status: { not: 'REJECT' }, // 거절된 상태 제외
                 },
             });
 
-            const isMember = !!existingMember;
-            if (isMember) {
+            if (existingMember) {
                 this.logger.warn(
                     `User (ID: ${userId}) is already a member of Study Team (ID: ${studyTeamId})`,
                 );
+                throw new Error('이미 해당 스터디에 지원했거나 멤버입니다.');
             }
-
-            return isMember;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] isUserAlreadyInStudy 에서 예외 발생: ',
                 error,
             );
-            throw new Error(
-                '사용자가 스터디에 가입되어 있는지 확인하는 중 오류가 발생했습니다.',
-            );
+            throw error;
         }
     }
 
@@ -61,7 +62,7 @@ export class StudyMemberRepository {
     async applyToStudyTeam(
         createStudyMemberRequest: CreateStudyMemberRequest,
         userId: number,
-    ): Promise<any> {
+    ): Promise<StudyApplicantResponse> {
         try {
             const newApplication = await this.prisma.studyMember.create({
                 data: {
@@ -71,9 +72,16 @@ export class StudyMemberRepository {
                     summary: createStudyMemberRequest.summary,
                     isLeader: false,
                 },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
             });
             this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
-            return newApplication;
+            return new StudyApplicantResponse(newApplication);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] applyToStudyTeam 에서 예외 발생: ',
@@ -84,12 +92,22 @@ export class StudyMemberRepository {
     }
 
     // 스터디 지원 취소
-    async cancelApplication(studyTeamId: number, userId: number): Promise<any> {
+    async cancelApplication(
+        studyTeamId: number,
+        userId: number,
+    ): Promise<StudyMemberResponse> {
         try {
             const existingData = await this.prisma.studyMember.findFirst({
                 where: {
                     studyTeamId: studyTeamId,
                     userId: userId,
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                        },
+                    },
                 },
             });
 
@@ -104,19 +122,18 @@ export class StudyMemberRepository {
                 data: {
                     isDeleted: true,
                 },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
             });
 
             this.logger.debug('✅ [INFO] update 실행 결과:', updatedData);
 
-            const checkData = await this.prisma.studyMember.findFirst({
-                where: {
-                    id: existingData.id,
-                },
-            });
-
-            this.logger.debug('✅ [INFO] 업데이트 후 데이터: ', checkData);
-
-            return updatedData;
+            return new StudyMemberResponse(updatedData);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] cancelApplication 에서 예외 발생: ',
@@ -131,7 +148,9 @@ export class StudyMemberRepository {
     }
 
     // 스터디 지원자 조회
-    async getApplicants(studyTeamId: number): Promise<any> {
+    async getApplicants(
+        studyTeamId: number,
+    ): Promise<StudyApplicantResponse[]> {
         try {
             const applicants = await this.prisma.studyMember.findMany({
                 where: {
@@ -143,13 +162,13 @@ export class StudyMemberRepository {
                     user: {
                         select: {
                             name: true,
-                            email: true,
-                            profileImage: true,
                         },
                     },
                 },
             });
-            return applicants;
+            return applicants.map(
+                (applicant) => new StudyApplicantResponse(applicant),
+            );
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] getApplicants 에서 예외 발생: ',
@@ -164,7 +183,7 @@ export class StudyMemberRepository {
         studyTeamId: number,
         userId: number,
         status: StatusCategory,
-    ): Promise<any> {
+    ): Promise<StudyApplicantResponse> {
         try {
             const data = await this.prisma.studyMember.update({
                 where: {
@@ -172,12 +191,19 @@ export class StudyMemberRepository {
                         studyTeamId: studyTeamId,
                         userId: userId,
                     },
-                }, // ✅ 복합 고유 키를 사용한 where 조건
+                },
                 data: {
-                    status: status, // ✅ 변경할 데이터만 지정
+                    status: status,
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                        },
+                    },
                 },
             });
-            return data;
+            return new StudyApplicantResponse(data);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] updateApplicantStatus 에서 예외 발생: ',
@@ -194,7 +220,7 @@ export class StudyMemberRepository {
         studyTeamId: number,
         memberId: number,
         isLeader: boolean,
-    ): Promise<any> {
+    ): Promise<StudyMemberResponse> {
         try {
             const newMember = await this.prisma.studyMember.create({
                 data: {
@@ -204,8 +230,15 @@ export class StudyMemberRepository {
                     isLeader: isLeader,
                     summary: '스터디 팀에 추가된 멤버',
                 },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
             });
-            return newMember;
+            return new StudyMemberResponse(newMember);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] addMemberToStudyTeam 에서 예외 발생: ',

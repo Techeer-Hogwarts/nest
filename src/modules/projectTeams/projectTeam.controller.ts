@@ -6,7 +6,6 @@ import {
     UseInterceptors,
     UseGuards,
     Req,
-    Logger,
     Patch,
     Param,
     Get,
@@ -32,16 +31,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AddProjectMemberRequest } from '../projectMembers/dto/request/add.projectMember.request';
 import { StudyTeamService } from '../studyTeams/studyTeam.service';
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
 export class ProjectTeamController {
-    private readonly logger = new Logger(ProjectTeamController.name);
-
     constructor(
         private readonly projectTeamService: ProjectTeamService,
         private readonly studyTeamService: StudyTeamService,
         private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
     ) {}
 
     @Post()
@@ -243,6 +242,7 @@ export class ProjectTeamController {
                         name: 'Updated Project Name',
                         projectExplain: '프로젝트에 대한 수정된 설명입니다.',
                         deleteImages: [1, 2, 3],
+                        deleteMembers: [1, 2],
                         projectMember: [
                             {
                                 userId: 2,
@@ -389,13 +389,20 @@ export class ProjectTeamController {
         @Body() createProjectMemberRequest: CreateProjectMemberRequest,
         @Req() request: any,
     ): Promise<ProjectApplicantResponse> {
-        const user = request.user;
-        const userId = user.id;
+        try {
+            const user = request.user;
+            const userId = user.id;
+            this.logger.debug('🔥 프로젝트 지원 시작');
+            this.logger.debug(`사용자 ID: ${userId}`);
 
-        return await this.projectTeamService.applyToProject(
-            createProjectMemberRequest,
-            userId,
-        );
+            return await this.projectTeamService.applyToProject(
+                createProjectMemberRequest,
+                userId,
+            );
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원 중 예외 발생:', error);
+            throw error;
+        }
     }
 
     // 프로젝트 지원 취소 : isDeleted = true
@@ -409,13 +416,22 @@ export class ProjectTeamController {
         @Param('projectTeamId') projectTeamId: number,
         @Req() request: any,
     ): Promise<ProjectMemberResponse> {
-        const user = request.user;
-        const userId = user.id;
+        try {
+            const user = request.user;
+            const userId = user.id;
+            this.logger.debug('🔥 프로젝트 지원 취소 시작');
+            this.logger.debug(
+                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            );
 
-        return await this.projectTeamService.cancelApplication(
-            projectTeamId,
-            userId,
-        );
+            return await this.projectTeamService.cancelApplication(
+                projectTeamId,
+                userId,
+            );
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원 취소 중 예외 발생:', error);
+            throw error;
+        }
     }
 
     // 프로젝트 지원자 조회 : status: PENDING인 데이터 조회
@@ -429,11 +445,21 @@ export class ProjectTeamController {
         @Param('projectTeamId') projectTeamId: number,
         @Req() request: any,
     ): Promise<ProjectApplicantResponse[]> {
-        const userId = request.user.id;
-        return await this.projectTeamService.getApplicants(
-            projectTeamId,
-            userId,
-        );
+        try {
+            const userId = request.user.id;
+            this.logger.debug('🔥 프로젝트 지원자 조회 시작');
+            this.logger.debug(
+                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            );
+
+            return await this.projectTeamService.getApplicants(
+                projectTeamId,
+                userId,
+            );
+        } catch (error) {
+            this.logger.error('❌ 프로젝트 지원자 조회 중 예외 발생:', error);
+            throw error;
+        }
     }
 
     // 프로젝트 지원자 승인

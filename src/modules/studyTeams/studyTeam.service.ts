@@ -24,6 +24,7 @@ import { AlertServcie } from '../alert/alert.service';
 import { User } from '@prisma/client';
 import { IndexStudyRequest } from './dto/request/index.study.request';
 import { IndexService } from '../../global/index/index.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class StudyTeamService {
@@ -33,6 +34,7 @@ export class StudyTeamService {
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
         private readonly alertService: AlertServcie,
+        private readonly prisma: PrismaService,
         private readonly indexService: IndexService,
     ) {}
 
@@ -221,6 +223,19 @@ export class StudyTeamService {
         }
     }
 
+    // 스터디 지원자 조회
+    async getApplicants(
+        studyTeamId: number,
+        user: User,
+    ): Promise<StudyApplicantResponse[]> {
+        this.logger.debug('🔥 [START] getApplicants 요청 시작');
+        await this.ensureUserIsStudyMember(studyTeamId, user.id);
+        const data =
+            await this.studyMemberRepository.getApplicants(studyTeamId);
+        this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');
+        return data;
+    }
+
     async updateStudyTeam(
         studyTeamId: number,
         userId: number,
@@ -406,6 +421,50 @@ export class StudyTeamService {
     ): Promise<StudyApplicantResponse> {
         this.logger.debug('🔥 [START] applyToStudyTeam 요청 시작');
 
+        // 스터디 팀 조회
+        const studyTeam = await this.prisma.studyTeam.findUnique({
+            where: {
+                id: createStudyMemberRequest.studyTeamId,
+                isDeleted: false,
+            },
+        });
+
+        // 스터디 팀이 존재하지 않는 경우
+        if (!studyTeam) {
+            throw new Error('존재하지 않는 스터디입니다.');
+        }
+
+        // 모집 상태 확인
+        if (!studyTeam.isRecruited) {
+            throw new Error('현재 모집이 마감된 스터디입니다.');
+        }
+
+        // 모집 인원 확인
+        if (studyTeam.recruitNum <= 0) {
+            throw new Error('더 이상 모집 인원이 없습니다.');
+        }
+
+        // 현재 스터디 멤버 수 확인
+        const currentMemberCount = await this.prisma.studyMember.count({
+            where: {
+                studyTeamId: createStudyMemberRequest.studyTeamId,
+                isDeleted: false,
+                status: { not: 'REJECT' },
+            },
+        });
+
+        // 모집 인원 초과 확인
+        if (currentMemberCount >= studyTeam.recruitNum) {
+            throw new Error('모집 인원이 모두 찼습니다.');
+        }
+
+        // 사용자의 스터디 중복 지원 확인
+        await this.studyMemberRepository.isUserAlreadyInStudy(
+            createStudyMemberRequest.studyTeamId,
+            user.id,
+        );
+        this.logger.debug('✅ [INFO] 스터디 팀원 확인 성공');
+
         await this.studyMemberRepository.isUserAlreadyInStudy(
             createStudyMemberRequest.studyTeamId,
             user.id,
@@ -439,6 +498,23 @@ export class StudyTeamService {
         try {
             this.logger.debug('🔥 [START] cancelApplication 요청 시작');
             this.logger.debug(user.id);
+
+            // 스터디 팀 멤버인지 확인
+            const userMembership = await this.prisma.studyMember.findFirst({
+                where: {
+                    studyTeamId: studyTeamId,
+                    userId: user.id,
+                    isDeleted: false,
+                    status: 'APPROVED', // 승인된 멤버만 조회 가능
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 스터디 팀의 승인된 멤버만 지원자를 조회할 수 있습니다.',
+                );
+            }
 
             await this.ensureUserIsStudyMember(studyTeamId, user.id);
             this.logger.debug('✅ [INFO] 스터디 팀원 확인 성공');
@@ -475,19 +551,6 @@ export class StudyTeamService {
             );
             throw error;
         }
-    }
-
-    // 스터디 지원자 조회
-    async getApplicants(
-        studyTeamId: number,
-        user: User,
-    ): Promise<StudyApplicantResponse[]> {
-        this.logger.debug('🔥 [START] getApplicants 요청 시작');
-        await this.ensureUserIsStudyMember(studyTeamId, user.id);
-        const data =
-            await this.studyMemberRepository.getApplicants(studyTeamId);
-        this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');
-        return data;
     }
 
     // 스터디 지원 수락

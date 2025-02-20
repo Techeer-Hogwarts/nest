@@ -3,15 +3,24 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockProjectTeamResponse, mockUserResponse } from './mock-data';
 import { StatusCategory } from '@prisma/client';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 
 describe('ProjectTeamRepository', () => {
     let projectTeamRepository: ProjectTeamRepository;
     let prismaService: PrismaService;
+    let logger: CustomWinstonLogger;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 ProjectTeamRepository,
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
                 {
                     provide: PrismaService,
                     useValue: {
@@ -33,6 +42,7 @@ describe('ProjectTeamRepository', () => {
             ProjectTeamRepository,
         );
         prismaService = module.get<PrismaService>(PrismaService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
     });
 
     afterEach(() => {
@@ -53,6 +63,9 @@ describe('ProjectTeamRepository', () => {
             expect(prismaService.projectTeam.findUnique).toHaveBeenCalledWith({
                 where: { name: 'Test Project' },
             });
+            expect(logger.debug).toHaveBeenCalledWith(
+                '🔍 [INFO] 프로젝트 이름 중복 확인 중: Test Project',
+            );
         });
 
         it('should return false if no project with the given name exists', async () => {

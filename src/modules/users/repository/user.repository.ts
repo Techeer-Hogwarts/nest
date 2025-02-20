@@ -359,7 +359,11 @@ export class UserRepository {
                 in: Array.isArray(position) ? position : [position],
             };
         }
-        if (year && year.length > 0) filters.year = { in: year };
+        if (year && (Array.isArray(year) ? year.length > 0 : true)) {
+            filters.year = {
+                in: Array.isArray(year) ? year : [year],
+            };
+        }
         if (university) {
             filters.school = {
                 in: Array.isArray(university) ? university : [university],
