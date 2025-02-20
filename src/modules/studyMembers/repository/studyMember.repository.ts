@@ -75,7 +75,9 @@ export class StudyMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
+                            profileImage: true,
                         },
                     },
                 },
@@ -161,7 +163,10 @@ export class StudyMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
+                            year: true,
+                            profileImage: true,
                         },
                     },
                 },
@@ -198,7 +203,9 @@ export class StudyMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
+                            profileImage: true,
                         },
                     },
                 },

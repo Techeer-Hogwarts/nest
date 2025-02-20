@@ -71,7 +71,7 @@ export class UpdateProjectTeamRequest {
         example: 1,
         description: 'UI/UX 디자이너 인원',
     })
-    uiuxNum: number;
+    fullStackNum: number;
 
     @IsOptional()
     @IsInt()

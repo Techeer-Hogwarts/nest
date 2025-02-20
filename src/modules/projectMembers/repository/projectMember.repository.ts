@@ -91,6 +91,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            year: true,
                         },
                     },
                 },
@@ -122,6 +123,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            year: true,
                         },
                     },
                 },
@@ -173,8 +175,11 @@ export class ProjectMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
                             profileImage: true,
+                            year: true,
+                            email: true,
                         },
                     },
                 },
@@ -197,7 +202,13 @@ export class ProjectMemberRepository {
         status: StatusCategory,
     ): Promise<
         ProjectMember & {
-            user: { name: string; profileImage: string; email: string };
+            user: {
+                id: number;
+                name: string;
+                profileImage: string;
+                email: string;
+                year: number;
+            };
         }
     > {
         try {
@@ -212,6 +223,7 @@ export class ProjectMemberRepository {
                             name: true,
                             profileImage: true,
                             email: true,
+                            year: true,
                         },
                     },
                 },
@@ -227,9 +239,11 @@ export class ProjectMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
                             profileImage: true,
                             email: true,
+                            year: true,
                         },
                     },
                 },
@@ -268,6 +282,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            year: true,
                         },
                     },
                 },

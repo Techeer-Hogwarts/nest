@@ -7,7 +7,7 @@ export class CreateProjectAlertRequest {
     backNum: number;
     dataEngNum: number;
     devOpsNum: number;
-    uiUxNum: number;
+    fullStackNum: number;
     leader: string;
     email: string;
     recruitExplain: string;

@@ -72,7 +72,7 @@ export class ProjectTeamController {
                         frontendNum: 1,
                         backendNum: 1,
                         devopsNum: 0,
-                        uiuxNum: 0,
+                        fullStackNum: 0,
                         dataEngineerNum: 0,
                         isRecruited: true,
                         isFinished: false,
@@ -435,7 +435,7 @@ export class ProjectTeamController {
     }
 
     // 프로젝트 지원자 조회 : status: PENDING인 데이터 조회
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @Get('/:projectTeamId/applicants')
     @ApiOperation({
         summary: '프로젝트 지원자 조회',
@@ -443,18 +443,18 @@ export class ProjectTeamController {
     })
     async getApplicants(
         @Param('projectTeamId') projectTeamId: number,
-        @Req() request: any,
+        // @Req() request: any,
     ): Promise<ProjectApplicantResponse[]> {
         try {
-            const userId = request.user.id;
+            // const userId = request.user.id;
             this.logger.debug('🔥 프로젝트 지원자 조회 시작');
-            this.logger.debug(
-                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
-            );
+            // this.logger.debug(
+            //     `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            // );
 
             return await this.projectTeamService.getApplicants(
                 projectTeamId,
-                userId,
+                // userId,
             );
         } catch (error) {
             this.logger.error('❌ 프로젝트 지원자 조회 중 예외 발생:', error);
