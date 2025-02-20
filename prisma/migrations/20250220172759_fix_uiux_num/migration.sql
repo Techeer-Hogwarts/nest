@@ -6,8 +6,7 @@
 
 */
 -- AlterTable
-ALTER TABLE "ProjectTeam" DROP COLUMN "uiuxNum",
-ADD COLUMN     "fullStackNum" INTEGER NOT NULL;
+ALTER TABLE "ProjectTeam" RENAME COLUMN "uiuxNum" TO "fullStackNum";
 
 -- AlterTable
 ALTER TABLE "SyncDb" ALTER COLUMN "lastSyncedAt" SET DEFAULT '2000-01-01 00:00:00';
