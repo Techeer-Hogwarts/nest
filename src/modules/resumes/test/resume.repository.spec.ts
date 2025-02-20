@@ -14,6 +14,7 @@ import { ResumeEntity } from '../entities/resume.entity';
 import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -43,6 +44,13 @@ describe('ResumeRepository', (): void => {
                     useValue: {
                         debug: jest.fn(),
                         error: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
