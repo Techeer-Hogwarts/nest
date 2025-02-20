@@ -29,6 +29,7 @@ export class GetStudyTeamResponse {
         studyTeamId: number;
         userId: number;
         email: string;
+        year: number;
     }[];
     readonly likeCount: number;
     readonly viewCount: number;
@@ -37,7 +38,7 @@ export class GetStudyTeamResponse {
         studyTeam: StudyTeam & {
             resultImages: StudyResultImage[];
             studyMember: (StudyMember & {
-                user: { name: string; email: string };
+                user: { id: number; name: string; email: string; year: number };
             })[];
         },
     ) {
@@ -64,6 +65,7 @@ export class GetStudyTeamResponse {
             studyTeamId: member.studyTeamId,
             userId: member.userId,
             email: member.user.email,
+            year: member.user.year,
         }));
         this.likeCount = studyTeam.likeCount;
         this.viewCount = studyTeam.viewCount;
@@ -84,14 +86,22 @@ export class StudyMemberResponse {
 
 export class StudyApplicantResponse {
     readonly id: number;
+    readonly userId: number; // 추가된 필드
     readonly name: string;
     readonly isLeader: boolean;
     readonly summary: string;
     readonly status: StatusCategory;
+    readonly profileImage: string;
 
-    constructor(member: StudyMember & { user: { name: string } }) {
+    constructor(
+        member: StudyMember & {
+            user: { id: number; name: string; profileImage: string };
+        },
+    ) {
         this.id = member.id;
+        this.userId = member.user.id; // 할당
         this.name = member.user.name;
+        this.profileImage = member.user.profileImage;
         this.isLeader = member.isLeader;
         this.summary = member.summary;
         this.status = member.status;

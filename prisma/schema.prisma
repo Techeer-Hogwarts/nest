@@ -150,7 +150,7 @@ model ProjectTeam {
   frontendNum     Int
   backendNum      Int
   devopsNum       Int
-  uiuxNum         Int
+  fullStackNum         Int
   dataEngineerNum Int
   recruitExplain  String               @db.VarChar(200)
   teamStacks      TeamStack[]

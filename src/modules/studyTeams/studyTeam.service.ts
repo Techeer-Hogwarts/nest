@@ -215,10 +215,10 @@ export class StudyTeamService {
     // 스터디 지원자 조회
     async getApplicants(
         studyTeamId: number,
-        user: User,
+        // user: User,
     ): Promise<StudyApplicantResponse[]> {
         this.logger.debug('🔥 [START] getApplicants 요청 시작');
-        await this.ensureUserIsStudyMember(studyTeamId, user.id);
+        // await this.ensureUserIsStudyMember(studyTeamId, user.id);
         const data =
             await this.studyMemberRepository.getApplicants(studyTeamId);
         this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');
