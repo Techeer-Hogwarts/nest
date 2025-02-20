@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StackController } from '../stack.controller';
 import { StackService } from '../stack.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-import { mockRequest } from './mock-data';
+import { mockGetStackResponses, mockRequest } from './mock-data';
 
 describe('StackController', () => {
     let controller: StackController;
@@ -16,6 +16,7 @@ describe('StackController', () => {
                     provide: StackService,
                     useValue: {
                         createStack: jest.fn(),
+                        getAllStacks: jest.fn(),
                     },
                 },
                 {
@@ -43,6 +44,19 @@ describe('StackController', () => {
             expect(result).toBeUndefined();
             expect(service.createStack).toHaveBeenCalledWith(mockRequest);
             expect(service.createStack).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getAllStacks', (): void => {
+        it('should return all stacks', async (): Promise<void> => {
+            jest.spyOn(service, 'getAllStacks').mockResolvedValue(
+                mockGetStackResponses,
+            );
+
+            const result = await controller.getAllStacks();
+
+            expect(result).toEqual(mockGetStackResponses);
+            expect(service.getAllStacks).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { StackCategory } from '@prisma/client';
+import { StackEntity } from '../entities/stack.entity';
 
 @Injectable()
 export class StackRepository {
@@ -29,5 +30,12 @@ export class StackRepository {
                 StackRepository.name,
             );
         }
+    }
+
+    async findAll(): Promise<StackEntity[]> {
+        const stacks = await this.prisma.stack.findMany({
+            where: { isDeleted: false },
+        });
+        return stacks;
     }
 }

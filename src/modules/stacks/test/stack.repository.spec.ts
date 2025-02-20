@@ -2,7 +2,7 @@ import { StackRepository } from '../repository/stack.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-import { mockPrismaRequest } from './mock-data';
+import { mockPrismaRequest, mockStacks } from './mock-data';
 
 describe('StackRepository', (): void => {
     let repository: StackRepository;
@@ -17,6 +17,7 @@ describe('StackRepository', (): void => {
                     useValue: {
                         stack: {
                             create: jest.fn(),
+                            findMany: jest.fn(),
                         },
                     },
                 },
@@ -46,6 +47,19 @@ describe('StackRepository', (): void => {
                 data: mockPrismaRequest,
             });
             expect(prismaService.stack.create).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('findAll', (): void => {
+        it('should return all stacks', async (): Promise<void> => {
+            jest.spyOn(prismaService.stack, 'findMany').mockResolvedValue(
+                mockStacks,
+            );
+
+            const stacks = await repository.findAll();
+
+            expect(stacks).toEqual(mockStacks);
+            expect(prismaService.stack.findMany).toHaveBeenCalledTimes(1);
         });
     });
 });
