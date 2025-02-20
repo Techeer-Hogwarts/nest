@@ -212,6 +212,7 @@ export class ResumeRepository {
             });
             this.logger.debug(
                 `이력서 삭제 후 인덱스 삭제 요청 - resumeId: ${resumeId}`,
+                ResumeRepository.name,
             );
             await this.indexService.deleteIndex('resume', String(resumeId));
         } catch (error) {

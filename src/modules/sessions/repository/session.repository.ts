@@ -8,12 +8,15 @@ import { GetSessionsQueryRequest } from '../dto/request/get.session.query.reques
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { NotFoundSessionException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
+import { IndexSessionRequest } from '../dto/request/index.session.request';
 
 @Injectable()
 export class SessionRepository {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {}
 
     async findById(sessionId: number): Promise<SessionEntity | null> {
@@ -32,13 +35,24 @@ export class SessionRepository {
         userId: number,
         createSessionRequest: CreateSessionRequest,
     ): Promise<SessionEntity> {
-        return this.prisma.session.create({
+        const session: SessionEntity = await this.prisma.session.create({
             data: {
                 userId,
                 ...createSessionRequest,
             },
             include: { user: true },
         });
+        // 인덱스 업데이트
+        const indexSession = new IndexSessionRequest(session);
+        this.logger.debug(
+            `세션 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+            SessionRepository.name,
+        );
+        await this.indexService.createIndex<IndexSessionRequest>(
+            'session',
+            indexSession,
+        );
+        return session;
     }
 
     async getSession(sessionId: number): Promise<SessionEntity> {
@@ -162,6 +176,11 @@ export class SessionRepository {
                 },
                 data: { isDeleted: true },
             });
+            this.logger.debug(
+                `세션 삭제 후 인덱스 삭제 요청 - sessionId: ${sessionId}`,
+                SessionRepository.name,
+            );
+            await this.indexService.deleteIndex('session', String(sessionId));
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -193,7 +212,7 @@ export class SessionRepository {
         }: UpdateSessionRequest = updateSessionRequest;
 
         try {
-            return await this.prisma.session.update({
+            const session = await this.prisma.session.update({
                 where: {
                     id: sessionId,
                     isDeleted: false,
@@ -212,6 +231,17 @@ export class SessionRepository {
                     user: true,
                 },
             });
+            // 인덱스 업데이트
+            const indexSession = new IndexSessionRequest(session);
+            this.logger.debug(
+                `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                SessionRepository.name,
+            );
+            await this.indexService.createIndex<IndexSessionRequest>(
+                'session',
+                indexSession,
+            );
+            return session;
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
