@@ -11,6 +11,7 @@ import {
 } from './mock-data';
 import { EventEntity } from '../entities/event.entity';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('EventRepository', (): void => {
     let repository: EventRepository;
@@ -36,6 +37,13 @@ describe('EventRepository', (): void => {
                     useValue: {
                         debug: jest.fn(),
                         error: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
