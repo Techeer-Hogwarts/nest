@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudyTeamRequest } from '../dto/request/create.studyTeam.request';
 import { StatusCategory } from '@prisma/client';
@@ -10,13 +10,15 @@ import {
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NotFoundStudyTeamException } from '../../../global/exception/custom.exception';
 import { StudyTeamService } from '../studyTeam.service';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { CreatePersonalAlertRequest } from '../../alert/dto/request/create.personal.alert.request';
 
 @Injectable()
 export class StudyTeamRepository {
-    private readonly logger = new Logger(StudyTeamRepository.name);
-
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     async sendStudyUserAlert(
         studyTeamId: number,
@@ -152,17 +154,25 @@ export class StudyTeamRepository {
     }
 
     async deleteImages(imageIds: number[]): Promise<void> {
+        this.logger.debug(
+            `🗑️ [START] deleteImages - 삭제할 이미지 ID: ${imageIds}`,
+        );
         await this.prisma.studyResultImage.updateMany({
             where: { id: { in: imageIds } },
-            data: { isDeleted: true }, // soft delete
+            data: { isDeleted: true },
         });
+        this.logger.debug('✅ [SUCCESS] 이미지 삭제 완료');
     }
 
     async deleteMembers(memberIds: number[]): Promise<void> {
+        this.logger.debug(
+            `🗑️ [START] deleteMembers - 삭제할 멤버 ID: ${memberIds}`,
+        );
         await this.prisma.studyMember.updateMany({
             where: { id: { in: memberIds } },
-            data: { isDeleted: true }, // soft delete
+            data: { isDeleted: true },
         });
+        this.logger.debug('✅ [SUCCESS] 멤버 삭제 완료');
     }
 
     async updateStudyTeam(
@@ -482,23 +492,5 @@ export class StudyTeamRepository {
             );
             throw error;
         }
-    }
-
-    async getAllActiveStudyTeams(): Promise<GetStudyTeamResponse[]> {
-        const studyTeams = await this.prisma.studyTeam.findMany({
-            where: { isDeleted: false },
-            include: {
-                resultImages: true,
-                studyMember: {
-                    include: {
-                        user: true,
-                    },
-                },
-            },
-        });
-
-        return studyTeams.map(
-            (studyTeam) => new GetStudyTeamResponse(studyTeam),
-        );
     }
 }

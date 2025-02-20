@@ -21,6 +21,7 @@ export const mockCreateProjectTeamRequest = {
             name: 'test',
             isLeader: true,
             teamRole: 'Frontend',
+            email: 'test@example.com',
         },
     ],
     teamStacks: [
@@ -91,7 +92,10 @@ export const mockProjectTeamResponse = {
             isDeleted: false,
             projectTeamId: 1,
             isMain: true,
-            stack: { name: 'React.js' },
+            stack: {
+                name: 'React.js',
+                category: 'FRONTEND',
+            },
         },
     ],
     projectMember: [

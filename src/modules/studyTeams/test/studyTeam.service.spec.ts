@@ -12,6 +12,7 @@ import {
     mockUser,
 } from './mock-data';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { PrismaService } from '../../../modules/prisma/prisma.service';
 
 describe('StudyTeamService', () => {
     let service: StudyTeamService;
@@ -20,6 +21,7 @@ describe('StudyTeamService', () => {
     let awsService: jest.Mocked<AwsService>;
     let logger: CustomWinstonLogger;
     let alertService: AlertServcie;
+    // let prisma: PrismaService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +73,19 @@ describe('StudyTeamService', () => {
                     useValue: {
                         sendSlackAlert: jest.fn(),
                         sendUserAlert: jest.fn().mockResolvedValue(undefined),
+                    },
+                },
+                {
+                    provide: PrismaService,
+                    useValue: {
+                        prisma: {
+                            studyTeam: {
+                                findMany: jest.fn(),
+                                findFirst: jest.fn(),
+                                create: jest.fn(),
+                                update: jest.fn(),
+                            },
+                        },
                     },
                 },
             ],
@@ -236,7 +251,6 @@ describe('StudyTeamService', () => {
     describe('addMemberToStudyTeam', () => {
         it('should add a new member to the study team', async () => {
             studyTeamRepository.isUserMemberOfStudy.mockResolvedValue(true);
-            studyMemberRepository.addMemberToStudyTeam.mockResolvedValue({});
             studyMemberRepository.isUserMemberOfStudy.mockResolvedValue(false);
 
             await service.addMemberToStudyTeam(1, 1, 2, true);

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ProjectTeamRepository } from './repository/projectTeam.repository';
 import { CreateProjectTeamRequest } from './dto/request/create.projectTeam.request';
 import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.request';
@@ -20,6 +20,7 @@ import {
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateProjectAlertRequest } from '../alert/dto/request/create.project.alert.request';
 import { AlertServcie } from '../alert/alert.service';
 import { CreatePersonalAlertRequest } from '../alert/dto/request/create.personal.alert.request';
@@ -36,12 +37,12 @@ interface TeamStack {
 
 @Injectable()
 export class ProjectTeamService {
-    private readonly logger = new Logger(ProjectTeamService.name);
     constructor(
         private readonly projectTeamRepository: ProjectTeamRepository,
         private readonly projectMemberRepository: ProjectMemberRepository,
         private readonly prisma: PrismaService,
         private readonly awsService: AwsService,
+        private readonly logger: CustomWinstonLogger,
         private readonly alertService: AlertServcie,
     ) {}
 
@@ -181,7 +182,7 @@ export class ProjectTeamService {
 
             const {
                 teamStacks,
-                projectMember,
+                projectMember, // 요청 데이터에서는 여전히 projectMember로 들어옴
                 recruitExplain = '기본 모집 설명입니다',
                 ...projectData
             } = createProjectTeamRequest;
@@ -382,22 +383,22 @@ export class ProjectTeamService {
                     },
                     teamStacks: {
                         where: { isMain: true },
-                        include: { stack: true },
+                        include: {
+                            stack: true, // 전체 stack 반환
+                        },
                     },
                 },
             });
+
             if (!project) {
                 throw new NotFoundProjectException();
             }
-            // Response DTO에서 status 포함하도록 수정
+
             const response = new ProjectTeamDetailResponse({
                 ...project,
-                projectMember: project.projectMember.map((member) => ({
-                    ...member,
-                    name: member.user.name,
-                    status: member.status,
-                })),
+                projectMember: project.projectMember,
             });
+
             return response;
         } catch (error) {
             if (
@@ -430,6 +431,22 @@ export class ProjectTeamService {
             this.logger.debug(
                 `요청 데이터: ${JSON.stringify(updateProjectTeamRequest)}`,
             );
+            // 사용자가 해당 팀의 승인된 멤버인지 확인
+            const userMembership = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId: id,
+                    userId: userId,
+                    isDeleted: false,
+                    status: 'APPROVED',
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+                );
+            }
 
             await this.ensureUserIsProjectMember(id, userId);
 
@@ -505,6 +522,24 @@ export class ProjectTeamService {
         userId: number,
     ): Promise<ProjectTeamDetailResponse> {
         try {
+            this.logger.debug('🔥 프로젝트 마감 시작');
+
+            // 사용자가 해당 팀의 승인된 멤버인지 확인
+            const userMembership = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId: id,
+                    userId: userId,
+                    isDeleted: false,
+                    status: 'APPROVED',
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+                );
+            }
             await this.ensureUserIsProjectMember(id, userId);
             const closedProject = await this.prisma.projectTeam.update({
                 where: { id },
@@ -516,8 +551,10 @@ export class ProjectTeamService {
                     projectMember: { include: { user: true } },
                 },
             });
+            this.logger.debug(`✅ 프로젝트 마감 완료 (ID: ${id})`);
             return new ProjectTeamDetailResponse(closedProject);
         } catch (error) {
+            this.logger.error('프로젝트 마감 중 예외 발생:', error);
             throw new Error('프로젝트 마감 실패');
         }
     }
@@ -527,6 +564,23 @@ export class ProjectTeamService {
         userId: number,
     ): Promise<ProjectTeamDetailResponse> {
         try {
+            this.logger.debug('🔥 프로젝트 삭제 시작');
+            // 사용자가 해당 팀의 승인된 멤버인지 확인
+            const userMembership = await this.prisma.projectMember.findFirst({
+                where: {
+                    projectTeamId: id,
+                    userId: userId,
+                    isDeleted: false,
+                    status: 'APPROVED',
+                },
+            });
+
+            // 승인된 멤버가 아닌 경우 접근 거부
+            if (!userMembership) {
+                throw new Error(
+                    '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+                );
+            }
             await this.ensureUserIsProjectMember(id, userId);
             const deletedProject = await this.prisma.projectTeam.update({
                 where: { id },
@@ -538,8 +592,10 @@ export class ProjectTeamService {
                     projectMember: { include: { user: true } },
                 },
             });
+            this.logger.debug(`✅ 프로젝트 삭제 완료 (ID: ${id})`);
             return new ProjectTeamDetailResponse(deletedProject);
         } catch (error) {
+            this.logger.error('프로젝트 삭제 중 예외 발생:', error);
             throw new Error('프로젝트 삭제 실패');
         }
     }
@@ -651,8 +707,70 @@ export class ProjectTeamService {
             this.logger.debug(
                 `요청 데이터: ${JSON.stringify(createProjectMemberRequest)}`,
             );
+            // 프로젝트 팀 조회
+            const projectTeam = await this.prisma.projectTeam.findUnique({
+                where: {
+                    id: createProjectMemberRequest.projectTeamId,
+                    isDeleted: false,
+                },
+            });
 
-            // 지원 생성
+            // 프로젝트 팀이 존재하지 않는 경우
+            if (!projectTeam) {
+                throw new Error('존재하지 않는 프로젝트입니다.');
+            }
+
+            // 모집 상태 확인
+            if (!projectTeam.isRecruited) {
+                throw new Error('현재 모집이 마감된 프로젝트입니다.');
+            }
+
+            // 지원하려는 직군 확인
+            const teamRole = createProjectMemberRequest.teamRole;
+            let roleNum = 0;
+
+            switch (teamRole) {
+                case 'Frontend':
+                    roleNum = projectTeam.frontendNum;
+                    break;
+                case 'Backend':
+                    roleNum = projectTeam.backendNum;
+                    break;
+                case 'DevOps':
+                    roleNum = projectTeam.devopsNum;
+                    break;
+                case 'UIUX':
+                    roleNum = projectTeam.uiuxNum;
+                    break;
+                case 'DataEngineer':
+                    roleNum = projectTeam.dataEngineerNum;
+                    break;
+                default:
+                    throw new Error('유효하지 않은 직군입니다.');
+            }
+
+            // 해당 직군의 모집 인원 확인
+            if (roleNum <= 0) {
+                throw new Error(
+                    `${teamRole} 직군은 현재 모집이 마감되었습니다.`,
+                );
+            }
+
+            // 이미 해당 프로젝트에 지원했거나 멤버인지 확인
+            const existingApplication =
+                await this.prisma.projectMember.findFirst({
+                    where: {
+                        projectTeamId: createProjectMemberRequest.projectTeamId,
+                        userId: userId,
+                        isDeleted: false,
+                        status: { not: 'REJECT' },
+                    },
+                });
+
+            if (existingApplication) {
+                throw new Error('이미 해당 프로젝트에 지원했거나 멤버입니다.');
+            }
+
             const newApplication = await this.prisma.projectMember.create({
                 data: {
                     user: { connect: { id: userId } },
@@ -666,7 +784,15 @@ export class ProjectTeamService {
                     status: 'PENDING',
                     isLeader: false,
                 },
-                include: { user: true },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                            email: true,
+                        },
+                    },
+                },
             });
 
             // 팀 리더 및 팀 이름 조회 후 사용자 알림 전송 (지원 신청)
@@ -682,7 +808,7 @@ export class ProjectTeamService {
             return new ProjectApplicantResponse(newApplication);
         } catch (error) {
             this.logger.error('❌ 프로젝트 지원 중 예외 발생:', error);
-            throw new Error('프로젝트 지원 중 예외가 발생했습니다.');
+            throw error; // 이전에 생성된 특정 에러 메시지를 그대로 전달
         }
     }
 
@@ -731,6 +857,22 @@ export class ProjectTeamService {
         projectTeamId: number,
         userId: number,
     ): Promise<ProjectApplicantResponse[]> {
+        // 사용자가 해당 팀의 승인된 멤버인지 확인
+        const userMembership = await this.prisma.projectMember.findFirst({
+            where: {
+                projectTeamId: projectTeamId,
+                userId: userId,
+                isDeleted: false,
+                status: 'APPROVED',
+            },
+        });
+
+        // 승인된 멤버가 아닌 경우 접근 거부
+        if (!userMembership) {
+            throw new Error(
+                '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
+            );
+        }
         await this.ensureUserIsProjectMember(projectTeamId, userId);
         const applicants = await this.prisma.projectMember.findMany({
             where: {
@@ -1045,6 +1187,10 @@ export class ProjectTeamService {
                     : { allTeams }),
             };
         } catch (error) {
+            this.logger.error(
+                '팀 데이터를 조회하는 중 오류가 발생했습니다.',
+                error,
+            );
             throw new Error('팀 데이터를 조회하는 중 오류가 발생했습니다.');
         }
     }
