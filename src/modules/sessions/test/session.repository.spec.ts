@@ -179,16 +179,6 @@ describe('SessionRepository', (): void => {
             expect(prismaService.session.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
-                    ...(getSessionsQueryRequest.keyword && {
-                        OR: [
-                            {
-                                title: {
-                                    contains: getSessionsQueryRequest.keyword,
-                                    mode: 'insensitive',
-                                },
-                            },
-                        ],
-                    }),
                     ...(getSessionsQueryRequest.category && {
                         category: getSessionsQueryRequest.category,
                     }),
