@@ -112,7 +112,6 @@ export const mockProjectTeamResponse = {
             userId: 1, // 추가
             email: 'test@test.com',
             summary: '프론트엔드 개발자입니다.', // 추가
-            email: 'test@example.com',
         },
     ],
     likeCount: 0,

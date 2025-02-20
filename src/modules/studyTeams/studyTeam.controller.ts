@@ -436,7 +436,7 @@ export class StudyTeamController {
         try {
             const result = await this.studyTeamService.acceptApplicant(
                 studyTeamId,
-                userId,
+                user,
                 applicantId,
             );
             this.logger.debug(

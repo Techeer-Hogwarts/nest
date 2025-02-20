@@ -789,6 +789,7 @@ export class ProjectTeamService {
                         select: {
                             name: true,
                             profileImage: true,
+                            email: true,
                         },
                     },
                 },

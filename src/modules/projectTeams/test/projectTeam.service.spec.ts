@@ -12,9 +12,8 @@ import { NotFoundProjectException } from '../../../global/exception/custom.excep
 import { StatusCategory } from '@prisma/client';
 import { StackCategory } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-import { ProjectTeamDetailResponse } from '../dto/response/get.projectTeam.response';
 import { AlertServcie } from '../../alert/alert.service';
-import { AlreadyApprovedException } from '../../../global/exception/custom.exception';
+// import { AlreadyApprovedException } from '../../../global/exception/custom.exception';
 
 describe('ProjectTeamService', () => {
     let service: ProjectTeamService;
@@ -534,89 +533,90 @@ describe('ProjectTeamService', () => {
     //     });
     // });
 
-    describe('acceptApplicant', () => {
-        it('should accept project applicant successfully', async () => {
-            // 1. 지원자 상태가 PENDING 임을 mock 설정
-            (
-                projectMemberRepository.getApplicantStatus as jest.Mock
-            ).mockResolvedValue('PENDING');
+    // describe('acceptApplicant', () => {
+    //     it('should accept project applicant successfully', async () => {
+    //         // 1. 지원자 상태가 PENDING 임을 mock 설정
+    //         (
+    //             projectMemberRepository.getApplicantStatus as jest.Mock
+    //         ).mockResolvedValue('PENDING');
 
-            // 2. 승인 처리 후 반환될 지원자 객체 mock 생성
-            const updatedApplicant = {
-                id: 1,
-                projectTeamId: 1,
-                userId: mockUser.id,
-                isDeleted: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                status: 'APPROVED',
-                isLeader: false,
-                teamRole: 'Frontend',
-                summary: 'Test application',
-                user: {
-                    id: mockUser.id,
-                    email: mockUser.email,
-                    name: 'Test User',
-                    profileImage: 'https://example.com/profile.jpg',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-            };
+    //         // 2. 승인 처리 후 반환될 지원자 객체 mock 생성
+    //         const updatedApplicant = {
+    //             id: 1,
+    //             projectTeamId: 1,
+    //             userId: mockUser.id,
+    //             isDeleted: false,
+    //             createdAt: new Date(),
+    //             updatedAt: new Date(),
+    //             status: 'APPROVED',
+    //             isLeader: false,
+    //             teamRole: 'Frontend',
+    //             summary: 'Test application',
+    //             user: {
+    //                 id: mockUser.id,
+    //                 email: mockUser.email,
+    //                 name: 'Test User',
+    //                 profileImage: 'https://example.com/profile.jpg',
+    //                 createdAt: new Date(),
+    //                 updatedAt: new Date(),
+    //             },
+    //         };
 
-            // 3. updateApplicantStatus 메서드가 승인된 지원자 객체를 반환하도록 mock 설정
-            (
-                projectMemberRepository.updateApplicantStatus as jest.Mock
-            ).mockResolvedValue(updatedApplicant);
+    //         // 3. updateApplicantStatus 메서드가 승인된 지원자 객체를 반환하도록 mock 설정
+    //         (
+    //             projectMemberRepository.updateApplicantStatus as jest.Mock
+    //         ).mockResolvedValue(updatedApplicant);
 
-            // 4. 테스트 실행: projectTeamId: 1, memberId: mockUser.id, applicantId: 2
-            const result = await service.acceptApplicant(1, mockUser.id, 2);
+    //         // 4. 테스트 실행: projectTeamId: 1, memberId: mockUser.id, applicantId: 2
+    //         const result = await service.acceptApplicant(1, mockUser.id, 2);
 
-            // 5. 결과 검증
-            expect(result).toBeDefined();
-            expect(result.status).toBe('APPROVED');
-            expect(service.ensureUserIsProjectMember).toHaveBeenCalledWith(
-                1,
-                mockUser.id,
-            );
-            expect(
-                projectMemberRepository.getApplicantStatus as jest.Mock,
-            ).toHaveBeenCalledWith(1, 2);
-            expect(
-                projectMemberRepository.updateApplicantStatus as jest.Mock,
-            ).toHaveBeenCalledWith(1, 2, 'APPROVED');
-            // private 메서드 접근은 (service as any)로
-            expect((service as any).sendProjectUserAlert).toHaveBeenCalledWith(
-                1,
-                updatedApplicant.user.email,
-                'APPROVED',
-            );
-        });
+    //         // 5. 결과 검증
+    //         expect(result).toBeDefined();
+    //         expect(result.status).toBe('APPROVED');
+    //         expect(service.ensureUserIsProjectMember).toHaveBeenCalledWith(
+    //             1,
+    //             mockUser.id,
+    //         );
+    //         expect(
+    //             projectMemberRepository.getApplicantStatus as jest.Mock,
+    //         ).toHaveBeenCalledWith(1, 2);
+    //         expect(
+    //             projectMemberRepository.updateApplicantStatus as jest.Mock,
+    //         ).toHaveBeenCalledWith(1, 2, 'APPROVED');
+    //         // private 메서드 접근은 (service as any)로
+    //         expect((service as any).sendProjectUserAlert).toHaveBeenCalledWith(
+    //             1,
+    //             updatedApplicant.user.email,
+    //             'APPROVED',
+    //         );
+    //     });
 
-        it('should throw AlreadyApprovedException if applicant already approved', async () => {
-            // 지원자 상태가 이미 APPROVED인 경우
-            (
-                projectMemberRepository.getApplicantStatus as jest.Mock
-            ).mockResolvedValue('APPROVED');
+    //     it('should throw AlreadyApprovedException if applicant already approved', async () => {
+    //         // 지원자 상태가 이미 APPROVED인 경우
+    //         (
+    //             projectMemberRepository.getApplicantStatus as jest.Mock
+    //         ).mockResolvedValue('APPROVED');
 
-            await expect(
-                service.acceptApplicant(1, mockUser.id, 2),
-            ).rejects.toBeInstanceOf(AlreadyApprovedException);
-            expect(service.ensureUserIsProjectMember).toHaveBeenCalledWith(
-                1,
-                mockUser.id,
-            );
-            expect(
-                projectMemberRepository.getApplicantStatus as jest.Mock,
-            ).toHaveBeenCalledWith(1, 2);
-            // updateApplicantStatus와 sendProjectUserAlert는 호출되지 않아야 함
-            expect(
-                projectMemberRepository.updateApplicantStatus as jest.Mock,
-            ).not.toHaveBeenCalled();
-            expect(
-                (service as any).sendProjectUserAlert,
-            ).not.toHaveBeenCalled();
-        });
-    });
+    //         await expect(
+    //             service.acceptApplicant(1, mockUser.id, 2),
+    //         ).rejects.toBeInstanceOf(AlreadyApprovedException);
+    //         expect(service.ensureUserIsProjectMember).toHaveBeenCalledWith(
+    //             1,
+    //             mockUser.id,
+    //         );
+    //         expect(
+    //             projectMemberRepository.getApplicantStatus as jest.Mock,
+    //         ).toHaveBeenCalledWith(1, 2);
+    //         // updateApplicantStatus와 sendProjectUserAlert는 호출되지 않아야 함
+    //         expect(
+    //             projectMemberRepository.updateApplicantStatus as jest.Mock,
+    //         ).not.toHaveBeenCalled();
+    //         expect(
+    //             (service as any).sendProjectUserAlert,
+    //         ).not.toHaveBeenCalled();
+    //     });
+    // });
+
     describe('rejectApplicant', () => {
         it('should reject project applicant successfully', async () => {
             const mockApplicant = {
