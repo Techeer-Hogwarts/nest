@@ -12,6 +12,7 @@ import {
     mockUser,
 } from './mock-data';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('StudyTeamService', () => {
     let service: StudyTeamService;
@@ -71,6 +72,13 @@ describe('StudyTeamService', () => {
                     useValue: {
                         sendSlackAlert: jest.fn(),
                         sendUserAlert: jest.fn().mockResolvedValue(undefined),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
