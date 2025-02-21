@@ -10,7 +10,7 @@ export class CustomWinstonLogger implements LoggerService {
             transports: [
                 new winston.transports.Console({
                     level:
-                        process.env.NODE_ENV === 'production'
+                        process.env.LOGGER_LEVEL === 'production'
                             ? 'info'
                             : 'debug',
                     format: winston.format.combine(
