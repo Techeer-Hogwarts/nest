@@ -344,6 +344,7 @@ export class StudyTeamController {
         @Req() request: any,
     ): Promise<StudyApplicantResponse> {
         try {
+            this.logger.error(JSON.stringify(createStudyMemberRequest));
             this.logger.debug('🔥 스터디 지원 시작');
             const user = request.user;
             this.logger.debug(`요청 데이터: userId=${user.id}`);
