@@ -765,23 +765,43 @@ export class ProjectTeamService {
                 );
             }
 
-            // 이미 해당 프로젝트에 지원했거나 멤버인지 확인
+            // 기존 신청 내역 확인
             const existingApplication =
-                await this.prisma.projectMember.findFirst({
+                await this.prisma.projectMember.findUnique({
                     where: {
-                        projectTeamId: createProjectMemberRequest.projectTeamId,
-                        userId: userId,
-                        isDeleted: false,
-                        status: { not: 'REJECT' },
+                        // 복합 유니크 키 (projectTeamId, userId)를 사용합니다.
+                        projectTeamId_userId_unique: {
+                            projectTeamId:
+                                createProjectMemberRequest.projectTeamId,
+                            userId: userId,
+                        },
                     },
                 });
 
-            if (existingApplication) {
+            // 이미 승인된 신청(또는 멤버인 경우)는 재신청을 막음
+            if (
+                existingApplication &&
+                existingApplication.status === 'APPROVED' &&
+                !existingApplication.isDeleted
+            ) {
                 throw new Error('이미 해당 프로젝트에 지원했거나 멤버입니다.');
             }
 
-            const newApplication = await this.prisma.projectMember.create({
-                data: {
+            // upsert를 사용해 기존 내역이 있으면 업데이트, 없으면 생성
+            const upsertedApplication = await this.prisma.projectMember.upsert({
+                where: {
+                    projectTeamId_userId_unique: {
+                        projectTeamId: createProjectMemberRequest.projectTeamId,
+                        userId: userId,
+                    },
+                },
+                update: {
+                    teamRole: createProjectMemberRequest.teamRole,
+                    summary: createProjectMemberRequest.summary,
+                    status: 'PENDING',
+                    isDeleted: false,
+                },
+                create: {
                     user: { connect: { id: userId } },
                     projectTeam: {
                         connect: {
@@ -806,20 +826,20 @@ export class ProjectTeamService {
                 },
             });
 
-            // 팀 리더 및 팀 이름 조회 후 사용자 알림 전송 (지원 신청)
+            // 사용자 알림 전송 (지원 신청)
             await this.sendProjectUserAlert(
                 createProjectMemberRequest.projectTeamId,
-                newApplication.user.email,
+                upsertedApplication.user.email,
                 'PENDING',
             );
 
             this.logger.debug(
-                `✅ 프로젝트 지원 완료 (ID: ${newApplication.id})`,
+                `✅ 프로젝트 지원 완료 (ID: ${upsertedApplication.id})`,
             );
-            return new ProjectApplicantResponse(newApplication);
+            return new ProjectApplicantResponse(upsertedApplication);
         } catch (error) {
             this.logger.error('❌ 프로젝트 지원 중 예외 발생:', error);
-            throw error; // 이전에 생성된 특정 에러 메시지를 그대로 전달
+            throw error;
         }
     }
 

@@ -467,14 +467,13 @@ export class StudyTeamService {
                     studyTeamId: studyTeamId,
                     userId: user.id,
                     isDeleted: false,
-                    status: 'APPROVED', // 승인된 멤버만 조회 가능
+                    status: 'PENDING',
                 },
             });
 
-            // 승인된 멤버가 아닌 경우 접근 거부
             if (!userMembership) {
                 throw new Error(
-                    '해당 스터디 팀의 승인된 멤버만 지원자를 조회할 수 있습니다.',
+                    '해당 스터디 팀을 지원한 멤버만 지원자를 조회할 수 있습니다.',
                 );
             }
 
