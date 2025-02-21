@@ -129,7 +129,10 @@ export class UserRepository {
             },
             include: {
                 projectMembers: {
-                    where: { isDeleted: false },
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
                     include: {
                         projectTeam: {
                             select: {
@@ -151,7 +154,10 @@ export class UserRepository {
                     },
                 },
                 studyMembers: {
-                    where: { isDeleted: false },
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
                     include: {
                         studyTeam: {
                             select: {
@@ -367,7 +373,10 @@ export class UserRepository {
                     take: limit || 10,
                     include: {
                         projectMembers: {
-                            where: { isDeleted: false },
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
                             include: {
                                 projectTeam: {
                                     select: {
@@ -389,7 +398,10 @@ export class UserRepository {
                             },
                         },
                         studyMembers: {
-                            where: { isDeleted: false },
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
                             include: {
                                 studyTeam: {
                                     select: {

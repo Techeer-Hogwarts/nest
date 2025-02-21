@@ -100,10 +100,18 @@ export class StudyApplicantResponse {
     readonly summary: string;
     readonly status: StatusCategory;
     readonly profileImage: string;
+    readonly teamRole: string;
+    readonly year: number;
 
     constructor(
         member: StudyMember & {
-            user: { id: number; name: string; profileImage: string };
+            user: {
+                id: number;
+                name: string;
+                profileImage: string;
+                mainPosition: string;
+                year: number;
+            };
         },
     ) {
         this.id = member.id;
@@ -113,5 +121,7 @@ export class StudyApplicantResponse {
         this.isLeader = member.isLeader;
         this.summary = member.summary;
         this.status = member.status;
+        this.teamRole = member.user.mainPosition;
+        this.year = member.user.year;
     }
 }
