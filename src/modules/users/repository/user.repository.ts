@@ -140,6 +140,12 @@ export class UserRepository {
                                         imageUrl: true, // imageUrl만 선택하여 반환
                                     },
                                 },
+                                mainImages: {
+                                    select: {
+                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                    },
+                                    take: 1, // 첫 번째 mainImage만 가져옴
+                                },
                             },
                         },
                     },
@@ -371,6 +377,12 @@ export class UserRepository {
                                             select: {
                                                 imageUrl: true, // imageUrl만 선택하여 반환
                                             },
+                                        },
+                                        mainImages: {
+                                            select: {
+                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                            },
+                                            take: 1, // 첫 번째 mainImage만 가져옴
                                         },
                                     },
                                 },
