@@ -277,7 +277,7 @@ export class ProjectMemberResponse {
 
 export class ProjectApplicantResponse {
     id: number;
-    userName: string;
+    name: string;
     userId: number;
     isLeader: boolean;
     teamRole: string;
@@ -298,7 +298,7 @@ export class ProjectApplicantResponse {
     ) {
         this.id = member.id;
         this.userId = member.user.id;
-        this.userName = member.user.name;
+        this.name = member.user.name;
         this.isLeader = member.isLeader;
         this.teamRole = member.teamRole;
         this.summary = member.summary;

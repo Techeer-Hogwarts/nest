@@ -129,7 +129,10 @@ export class UserRepository {
             },
             include: {
                 projectMembers: {
-                    where: { isDeleted: false },
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
                     include: {
                         projectTeam: {
                             select: {
