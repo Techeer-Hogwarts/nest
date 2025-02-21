@@ -392,7 +392,6 @@ export class ProjectTeamService {
                         },
                     },
                     teamStacks: {
-                        where: { isMain: true },
                         include: {
                             stack: true, // 전체 stack 반환
                         },
