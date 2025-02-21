@@ -357,6 +357,7 @@ export class StudyTeamController {
             this.logger.debug('✅ 스터디 지원 완료');
             return result;
         } catch (error) {
+            this.logger.error(JSON.stringify(createStudyMemberRequest));
             this.logger.error('❌ 스터디 지원 중 오류 발생:', error);
             throw error;
         }
