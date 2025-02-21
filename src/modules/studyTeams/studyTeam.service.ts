@@ -420,20 +420,6 @@ export class StudyTeamService {
             throw new Error('더 이상 모집 인원이 없습니다.');
         }
 
-        // 현재 스터디 멤버 수 확인
-        const currentMemberCount = await this.prisma.studyMember.count({
-            where: {
-                studyTeamId: createStudyMemberRequest.studyTeamId,
-                isDeleted: false,
-                status: { not: 'REJECT' },
-            },
-        });
-
-        // 모집 인원 초과 확인
-        if (currentMemberCount >= studyTeam.recruitNum) {
-            throw new Error('모집 인원이 모두 찼습니다.');
-        }
-
         // 사용자의 스터디 중복 지원 확인
         await this.studyMemberRepository.isUserAlreadyInStudy(
             createStudyMemberRequest.studyTeamId,
