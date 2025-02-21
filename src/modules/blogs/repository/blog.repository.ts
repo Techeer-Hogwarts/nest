@@ -223,4 +223,21 @@ export class BlogRepository {
         this.logger.debug(`블로그 ID ${blogId} 조회 성공`, BlogRepository.name);
         return new GetBlogResponse(blog);
     }
+    async deleteBlog(blogId: number): Promise<GetBlogResponse> {
+        this.logger.debug(`블로그 ID ${blogId} 삭제 요청`, BlogRepository.name);
+        const deletedBlog = await this.prisma.blog.update({
+            where: {
+                id: blogId,
+                isDeleted: false, // 이미 삭제된 블로그는 제외
+            },
+            data: {
+                isDeleted: true, // soft delete 처리
+            },
+            include: {
+                user: true,
+            },
+        });
+        this.logger.debug(`블로그 ID ${blogId} 삭제 성공`, BlogRepository.name);
+        return new GetBlogResponse(deletedBlog);
+    }
 }
