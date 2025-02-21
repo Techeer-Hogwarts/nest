@@ -346,12 +346,11 @@ export class StudyTeamController {
         try {
             this.logger.debug('🔥 스터디 지원 시작');
             const user = request.user;
-            const userId = user.id;
-            this.logger.debug(`요청 데이터: userId=${userId}`);
+            this.logger.debug(`요청 데이터: userId=${user.id}`);
 
             const result = await this.studyTeamService.applyToStudyTeam(
                 createStudyMemberRequest,
-                userId,
+                user,
             );
 
             this.logger.debug('✅ 스터디 지원 완료');
