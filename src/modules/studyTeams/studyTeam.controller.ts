@@ -78,6 +78,7 @@ export class StudyTeamController {
                                 isLeader: true,
                             },
                         ],
+                        profileImage: 'profileImage.jpg',
                     }),
                 },
             },
@@ -103,11 +104,6 @@ export class StudyTeamController {
                 parsedBody,
             );
 
-            this.logger.debug('✅ 스터디 팀 생성 완료');
-            return await this.studyTeamService.createStudyTeam(
-                createStudyTeamDto,
-                files,
-            );
             const result: GetStudyTeamResponse =
                 await this.studyTeamService.createStudyTeam(
                     createStudyTeamDto,

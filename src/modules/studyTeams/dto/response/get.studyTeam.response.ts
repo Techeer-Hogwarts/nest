@@ -30,6 +30,7 @@ export class GetStudyTeamResponse {
         userId: number;
         email: string;
         year: number;
+        profileImage?: string;
     }[];
     readonly likeCount: number;
     readonly viewCount: number;
@@ -38,7 +39,13 @@ export class GetStudyTeamResponse {
         studyTeam: StudyTeam & {
             resultImages: StudyResultImage[];
             studyMember: (StudyMember & {
-                user: { id: number; name: string; email: string; year: number };
+                user: {
+                    id: number;
+                    name: string;
+                    email: string;
+                    year: number;
+                    profileImage?: string;
+                };
             })[];
         },
     ) {
@@ -66,6 +73,7 @@ export class GetStudyTeamResponse {
             userId: member.userId,
             email: member.user.email,
             year: member.user.year,
+            profileImage: member.user.profileImage,
         }));
         this.likeCount = studyTeam.likeCount;
         this.viewCount = studyTeam.viewCount;

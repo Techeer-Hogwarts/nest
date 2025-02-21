@@ -93,7 +93,7 @@ export class StudyTeamRepository {
         try {
             this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
 
-            const { studyMember, resultImages, ...teamData } =
+            const { studyMember, resultImages, profileImage, ...teamData } =
                 createStudyTeamRequest;
 
             const study = await this.prisma.studyTeam.create({
@@ -120,12 +120,18 @@ export class StudyTeamRepository {
                                     name: true,
                                     email: true,
                                     year: true,
+                                    profileImage: true,
                                 },
                             },
                         },
                     },
                     resultImages: true,
                 },
+            });
+            study.studyMember.forEach((member) => {
+                if (member.user) {
+                    member.user.profileImage = profileImage;
+                }
             });
 
             return new GetStudyTeamResponse(study);
@@ -255,6 +261,7 @@ export class StudyTeamRepository {
                                     name: true,
                                     email: true,
                                     year: true,
+                                    profileImage: true,
                                 },
                             },
                         },
@@ -288,6 +295,7 @@ export class StudyTeamRepository {
                                     name: true,
                                     email: true,
                                     year: true,
+                                    profileImage: true,
                                 },
                             },
                         },
@@ -321,6 +329,7 @@ export class StudyTeamRepository {
                                     name: true,
                                     email: true,
                                     year: true,
+                                    profileImage: true,
                                 },
                             },
                         },
@@ -366,6 +375,7 @@ export class StudyTeamRepository {
                                     name: true,
                                     email: true,
                                     year: true,
+                                    profileImage: true,
                                 },
                             },
                         },
@@ -414,6 +424,7 @@ export class StudyTeamRepository {
                                     name: true,
                                     email: true,
                                     year: true,
+                                    profileImage: true,
                                 },
                             },
                         },
