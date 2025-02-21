@@ -371,13 +371,14 @@ export class ProjectTeamService {
                     },
                 },
                 include: {
-                    resultImages: true,
+                    resultImages: { orderBy: { id: 'asc' } },
                     mainImages: true,
                     projectMember: {
                         where: {
                             isDeleted: false,
                             status: 'APPROVED',
                         },
+                        orderBy: { id: 'asc' },
                         include: {
                             user: {
                                 select: {
@@ -392,6 +393,7 @@ export class ProjectTeamService {
                         },
                     },
                     teamStacks: {
+                        orderBy: { id: 'asc' },
                         include: {
                             stack: true, // 전체 stack 반환
                         },
