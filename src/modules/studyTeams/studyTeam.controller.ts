@@ -201,7 +201,7 @@ export class StudyTeamController {
                 parsedBody,
             );
             this.logger.debug(
-                `Parsed DTO: ${JSON.stringify(updateStudyTeamDto)}`,
+                `Parsed Study Team DTO: ${JSON.stringify(updateStudyTeamDto)}`,
             );
             return await this.studyTeamService.updateStudyTeam(
                 studyTeamId,
