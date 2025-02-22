@@ -192,6 +192,11 @@ export class StudyTeamRepository {
         try {
             // ✅ studyMembers가 존재할 때만 map()을 실행
             this.logger.debug('🔥 [START] updateStudyTeam 요청 시작-라이언');
+            this.logger.debug(`🔍 [INFO] studyMembers: ${studyMembers}`);
+            this.logger.debug(`🔍 [INFO] imageUrls: ${imageUrls}`);
+            this.logger.debug(`🔍 [INFO] updateData: ${updateData}`);
+            this.logger.debug(`🔍 [INFO] id: ${id}`);
+
             const userIds =
                 Array.isArray(studyMembers) && studyMembers.length > 0
                     ? studyMembers.map((member) => member.userId)
