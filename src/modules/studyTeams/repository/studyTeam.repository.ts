@@ -191,11 +191,12 @@ export class StudyTeamRepository {
     ): Promise<GetStudyTeamResponse> {
         try {
             // ✅ studyMembers가 존재할 때만 map()을 실행
+            this.logger.debug('🔥 [START] updateStudyTeam 요청 시작-라이언');
             const userIds =
                 Array.isArray(studyMembers) && studyMembers.length > 0
                     ? studyMembers.map((member) => member.userId)
                     : [];
-
+            this.logger.debug(`🔍 [INFO] userIds: ${userIds}`);
             const existingStudyMembers =
                 (await this.prisma.studyMember.findMany({
                     where: {
@@ -207,14 +208,22 @@ export class StudyTeamRepository {
                         userId: true,
                     },
                 })) || [];
-
+            this.logger.debug(
+                `🔍 [INFO] existingStudyMembers: ${JSON.stringify(
+                    existingStudyMembers,
+                )}`,
+            );
             const studyMemberIdMap = Array.isArray(existingStudyMembers)
                 ? existingStudyMembers.reduce((acc, member) => {
                       acc[member.userId] = member.id;
                       return acc;
                   }, {})
                 : {};
-
+            this.logger.debug(
+                `🔍 [INFO] studyMemberIdMap: ${JSON.stringify(
+                    studyMemberIdMap,
+                )}`,
+            );
             const upsertMembers =
                 Array.isArray(studyMembers) && studyMembers.length > 0
                     ? studyMembers.map((member) => {
@@ -233,6 +242,9 @@ export class StudyTeamRepository {
                           };
                       })
                     : []; // studyMembers가 없으면 빈 배열
+            this.logger.debug(
+                `🔍 [INFO] upsertMembers: ${JSON.stringify(upsertMembers)}`,
+            );
 
             const updatedStudyTeam = await this.prisma.studyTeam.update({
                 where: { id },

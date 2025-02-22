@@ -194,10 +194,14 @@ export class StudyTeamController {
                     parsedBody = {};
                 }
             }
+            this.logger.debug(`Parsed Body: ${JSON.stringify(parsedBody)}`);
 
             const updateStudyTeamDto = plainToInstance(
                 UpdateStudyTeamRequest,
                 parsedBody,
+            );
+            this.logger.debug(
+                `Parsed DTO: ${JSON.stringify(updateStudyTeamDto)}`,
             );
             return await this.studyTeamService.updateStudyTeam(
                 studyTeamId,
