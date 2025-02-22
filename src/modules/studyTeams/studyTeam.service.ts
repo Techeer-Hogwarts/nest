@@ -627,10 +627,19 @@ export class StudyTeamService {
             return updatedApplicant;
         });
 
+        const applicantEmail = await this.prisma.user.findUnique({
+            where: {
+                id: applicantId,
+            },
+            select: {
+                email: true,
+            },
+        });
+
         // 수락된 경우 알림 전송 (결과: APPROVED)
         const alertData = await this.studyTeamRepository.sendStudyUserAlert(
             studyTeamId,
-            user.email,
+            applicantEmail.email,
             'APPROVED',
         );
 
@@ -675,10 +684,19 @@ export class StudyTeamService {
             'REJECT',
         );
 
+        const applicantEmail = await this.prisma.user.findUnique({
+            where: {
+                id: applicantId,
+            },
+            select: {
+                email: true,
+            },
+        });
+
         // 거절된 경우 알림 전송 (결과: REJECT)
         const alertData = await this.studyTeamRepository.sendStudyUserAlert(
             studyTeamId,
-            user.email,
+            applicantEmail.email,
             'REJECT',
         );
         await this.alertService.sendUserAlert(alertData);

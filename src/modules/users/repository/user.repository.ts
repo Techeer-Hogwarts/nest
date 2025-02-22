@@ -134,7 +134,8 @@ export class UserRepository {
     }
 
     async findById(userId: number): Promise<UserEntity | null> {
-        return this.prisma.user.findUnique({
+        // Prisma 쿼리 결과를 await로 받아와 UserEntity 타입으로 처리합니다.
+        const user = (await this.prisma.user.findUnique({
             where: {
                 id: userId,
                 isDeleted: false,
@@ -150,16 +151,17 @@ export class UserRepository {
                             select: {
                                 id: true,
                                 name: true,
+                                isDeleted: true, // 후처리용 필드
                                 resultImages: {
                                     select: {
-                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                        imageUrl: true,
                                     },
                                 },
                                 mainImages: {
                                     select: {
-                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                        imageUrl: true,
                                     },
-                                    take: 1, // 첫 번째 mainImage만 가져옴
+                                    take: 1,
                                 },
                             },
                         },
@@ -177,7 +179,7 @@ export class UserRepository {
                                 name: true,
                                 resultImages: {
                                     select: {
-                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                        imageUrl: true,
                                     },
                                 },
                             },
@@ -197,7 +199,22 @@ export class UserRepository {
                     },
                 },
             },
-        }) as Promise<UserEntity | null>;
+        })) as UserEntity | null; // Promise가 아닌 실제 UserEntity 또는 null
+
+        // user가 존재하면 후처리하여 projectTeam의 isDeleted가 true인 경우 null 처리
+        if (user) {
+            user.projectMembers = user.projectMembers?.map((pm) => {
+                if (pm.projectTeam && pm.projectTeam.isDeleted) {
+                    return {
+                        ...pm,
+                        projectTeam: null,
+                    };
+                }
+                return pm;
+            });
+        }
+
+        return user;
     }
 
     async updateUserProfile(
@@ -410,16 +427,17 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
+                                        isDeleted: true, // 후처리용으로 추가
                                         resultImages: {
                                             select: {
-                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                                imageUrl: true,
                                             },
                                         },
                                         mainImages: {
                                             select: {
-                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                                imageUrl: true,
                                             },
-                                            take: 1, // 첫 번째 mainImage만 가져옴
+                                            take: 1,
                                         },
                                     },
                                 },
@@ -435,9 +453,10 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
+                                        isDeleted: true, // 후처리용으로 추가
                                         resultImages: {
                                             select: {
-                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                                imageUrl: true,
                                             },
                                         },
                                     },
@@ -458,6 +477,33 @@ export class UserRepository {
                         },
                     },
                 })) || [];
+
+            // 후처리: 각 사용자의 projectMembers와 studyMembers에서
+            // 관련 팀(projectTeam, studyTeam)이 삭제된 경우(null 처리)
+            result.forEach((user) => {
+                if (user.projectMembers) {
+                    user.projectMembers = user.projectMembers.map((pm) => {
+                        if (pm.projectTeam && pm.projectTeam.isDeleted) {
+                            return {
+                                ...pm,
+                                projectTeam: null,
+                            };
+                        }
+                        return pm;
+                    });
+                }
+                if (user.studyMembers) {
+                    user.studyMembers = user.studyMembers.map((sm) => {
+                        if (sm.studyTeam && sm.studyTeam.isDeleted) {
+                            return {
+                                ...sm,
+                                studyTeam: null,
+                            };
+                        }
+                        return sm;
+                    });
+                }
+            });
 
             this.logger.debug('조회 성공');
 
