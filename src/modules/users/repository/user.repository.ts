@@ -177,6 +177,7 @@ export class UserRepository {
                             select: {
                                 id: true,
                                 name: true,
+                                isDeleted: true, // 후처리용 필드 추가
                                 resultImages: {
                                     select: {
                                         imageUrl: true,
@@ -199,9 +200,9 @@ export class UserRepository {
                     },
                 },
             },
-        })) as UserEntity | null; // Promise가 아닌 실제 UserEntity 또는 null
+        })) as UserEntity | null;
 
-        // user가 존재하면 후처리하여 projectTeam의 isDeleted가 true인 경우 null 처리
+        // user가 존재하면 후처리하여 projectTeam 및 studyTeam의 isDeleted가 true인 경우 null 처리
         if (user) {
             user.projectMembers = user.projectMembers?.map((pm) => {
                 if (pm.projectTeam && pm.projectTeam.isDeleted) {
@@ -211,6 +212,16 @@ export class UserRepository {
                     };
                 }
                 return pm;
+            });
+
+            user.studyMembers = user.studyMembers?.map((sm) => {
+                if (sm.studyTeam && sm.studyTeam.isDeleted) {
+                    return {
+                        ...sm,
+                        studyTeam: null,
+                    };
+                }
+                return sm;
             });
         }
 
@@ -427,7 +438,7 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
-                                        isDeleted: true, // 후처리용으로 추가
+                                        isDeleted: true, // 후처리용
                                         resultImages: {
                                             select: {
                                                 imageUrl: true,
@@ -453,7 +464,7 @@ export class UserRepository {
                                     select: {
                                         id: true,
                                         name: true,
-                                        isDeleted: true, // 후처리용으로 추가
+                                        isDeleted: true, // 후처리용
                                         resultImages: {
                                             select: {
                                                 imageUrl: true,
@@ -479,7 +490,7 @@ export class UserRepository {
                 })) || [];
 
             // 후처리: 각 사용자의 projectMembers와 studyMembers에서
-            // 관련 팀(projectTeam, studyTeam)이 삭제된 경우(null 처리)
+            // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
             result.forEach((user) => {
                 if (user.projectMembers) {
                     user.projectMembers = user.projectMembers.map((pm) => {
@@ -506,14 +517,12 @@ export class UserRepository {
             });
 
             this.logger.debug('조회 성공');
-
             return result;
         } catch (error) {
             this.logger.error(
                 'findAllProfiles 쿼리 실패',
                 JSON.stringify(error, null, 2),
             );
-
             return [];
         }
     }

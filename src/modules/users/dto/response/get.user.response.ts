@@ -1,5 +1,3 @@
-import { UserEntity } from '../../entities/user.entity';
-
 export class GetUserResponse {
     readonly id: number;
     readonly profileImage: string;
@@ -40,7 +38,7 @@ export class GetUserResponse {
         isFinished: boolean;
     }[];
 
-    constructor(userEntity: UserEntity) {
+    constructor(userEntity: any) {
         this.id = userEntity.id;
         this.profileImage = userEntity.profileImage;
         this.name = userEntity.name;
@@ -58,28 +56,34 @@ export class GetUserResponse {
         this.year = userEntity.year;
         this.stack = userEntity.stack;
 
-        // 프로젝트 팀의 mainImage는 mainImages에서 가져옴
+        // projectMembers에 대해 null 체크 후 매핑
         this.projectTeams = Array.isArray(userEntity.projectMembers)
-            ? userEntity.projectMembers.map((pm) => ({
-                  id: pm.projectTeam.id,
-                  name: pm.projectTeam.name,
-                  resultImages: Array.isArray(pm.projectTeam.resultImages)
-                      ? pm.projectTeam.resultImages.map((img) => img.imageUrl)
-                      : [],
-                  mainImage: pm.projectTeam.mainImages?.[0]?.imageUrl || '', // mainImages의 첫 번째 이미지 사용
-              }))
+            ? userEntity.projectMembers
+                  .filter((pm) => pm.projectTeam) // null인 팀 정보 필터링
+                  .map((pm) => ({
+                      id: pm.projectTeam.id,
+                      name: pm.projectTeam.name,
+                      resultImages: Array.isArray(pm.projectTeam.resultImages)
+                          ? pm.projectTeam.resultImages.map(
+                                (img) => img.imageUrl,
+                            )
+                          : [],
+                      mainImage: pm.projectTeam.mainImages?.[0]?.imageUrl || '',
+                  }))
             : [];
 
-        // 스터디 팀의 mainImage는 resultImages 배열의 첫 번째 값을 사용
+        // studyMembers에 대해 null 체크 후 매핑
         this.studyTeams = Array.isArray(userEntity.studyMembers)
-            ? userEntity.studyMembers.map((sm) => ({
-                  id: sm.studyTeam.id,
-                  name: sm.studyTeam.name,
-                  resultImages: Array.isArray(sm.studyTeam.resultImages)
-                      ? sm.studyTeam.resultImages.map((img) => img.imageUrl)
-                      : [],
-                  mainImage: sm.studyTeam.resultImages?.[0]?.imageUrl || '', // resultImages의 첫 번째 이미지 사용
-              }))
+            ? userEntity.studyMembers
+                  .filter((sm) => sm.studyTeam) // null인 팀 정보 필터링
+                  .map((sm) => ({
+                      id: sm.studyTeam.id,
+                      name: sm.studyTeam.name,
+                      resultImages: Array.isArray(sm.studyTeam.resultImages)
+                          ? sm.studyTeam.resultImages.map((img) => img.imageUrl)
+                          : [],
+                      mainImage: sm.studyTeam.resultImages?.[0]?.imageUrl || '',
+                  }))
             : [];
 
         this.experiences = Array.isArray(userEntity.experiences)
