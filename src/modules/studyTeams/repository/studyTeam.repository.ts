@@ -200,10 +200,23 @@ export class StudyTeamRepository {
             this.logger.debug(
                 `🔍 [INFO] updateData: ${JSON.stringify(updateData)}`,
             );
+
+            const transformedStudyMembers = studyMembers.map((member) => ({
+                userId: member.userId,
+                isLeader: member.isLeader,
+            }));
+            this.logger.debug(
+                `🔍 [INFO] transformedStudyMembers: ${JSON.stringify(transformedStudyMembers)}`,
+            );
             const userIds =
-                Array.isArray(studyMembers) && studyMembers.length > 0
-                    ? studyMembers.map((member) => member.userId)
+                transformedStudyMembers.length > 0
+                    ? transformedStudyMembers.map((m) => m.userId)
                     : [];
+            this.logger.debug(`🔍 [INFO] userIds: ${userIds}`);
+            // const userIds =
+            //     Array.isArray(studyMembers) && studyMembers.length > 0
+            //         ? studyMembers.map((member) => member.userId)
+            //         : [];
             this.logger.debug(`🔍 [INFO] userIds: ${userIds}`);
             const existingStudyMembers =
                 (await this.prisma.studyMember.findMany({
@@ -221,6 +234,11 @@ export class StudyTeamRepository {
                     existingStudyMembers,
                 )}`,
             );
+            // const studyMemberIdMap = existingStudyMembers.reduce((acc, member) => {
+            //     acc[member.userId] = member.id;
+            //     return acc;
+            //     },
+            //     {} as Record<number, number>,
             const studyMemberIdMap = Array.isArray(existingStudyMembers)
                 ? existingStudyMembers.reduce((acc, member) => {
                       acc[member.userId] = member.id;
@@ -236,6 +254,9 @@ export class StudyTeamRepository {
                 Array.isArray(studyMembers) && studyMembers.length > 0
                     ? studyMembers.map((member) => {
                           const existingId = studyMemberIdMap[member.userId];
+                          this.logger.debug(
+                              `🔍 [INFO] existingId for userId ${member.userId}: ${existingId}`,
+                          );
                           return {
                               where: { id: existingId || 0 },
                               create: {
