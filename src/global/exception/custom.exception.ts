@@ -266,3 +266,9 @@ export class NotFoundExperienceException extends HttpException {
         );
     }
 }
+
+export class NoLeaderException extends HttpException {
+    constructor() {
+        super('최소 한 명의 리더가 있어야 합니다.', HttpStatus.BAD_REQUEST);
+    }
+}

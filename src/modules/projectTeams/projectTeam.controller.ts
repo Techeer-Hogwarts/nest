@@ -260,7 +260,7 @@ export class ProjectTeamController {
                             {
                                 userId: 2,
                                 isLeader: false,
-                                teamRole: 'Backend Developer',
+                                teamRole: 'Backend',
                             },
                         ],
                         teamStacks: [
