@@ -548,10 +548,24 @@ export class ProjectTeamService {
                         create: newMembers.map((member) => ({
                             user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
-                            teamRole: member.teamRole || 'Backend',
+                            teamRole: member.teamRole,
                             summary: 'Updated member',
                             status: 'APPROVED',
                         })),
+                        // 기존 멤버의 역할 수정을 위한 update 수정
+                        update: projectMember
+                            .filter((member) =>
+                                existingMembers.some(
+                                    (existing) => existing.userId === member.userId
+                                )
+                            )
+                            .map((member) => ({
+                                where: { id: existingMembers.find(em => em.userId === member.userId).id }, // unique identifier 사용
+                                data: {
+                                    teamRole: member.teamRole,
+                                    isLeader: member.isLeader,
+                                },
+                            })),
                     },
                 },
                 include: {
