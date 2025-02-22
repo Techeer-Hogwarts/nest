@@ -49,12 +49,12 @@ export class CreateSessionRequest {
         example: 'https://example.com',
         description: '세션 영상 url',
     })
-    readonly videoUrl: string;
+    readonly videoUrl?: string;
 
     @IsString()
     @ApiProperty({
         example: 'https://example.com',
         description: '발표 자료 url',
     })
-    readonly fileUrl: string;
+    readonly fileUrl?: string;
 }

@@ -12,8 +12,8 @@ export class SessionEntity implements Session {
     position: string;
     category: string;
     date: string;
-    videoUrl: string;
-    fileUrl: string;
+    videoUrl: string | null;
+    fileUrl: string | null;
     likeCount: number;
     viewCount: number;
 
