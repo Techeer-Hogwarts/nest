@@ -9,12 +9,15 @@ import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto
 import { ForbiddenAccessException } from '../../global/exception/custom.exception';
 import { CreateSessionResponse } from './dto/response/create.session.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { IndexService } from '../../global/index/index.service';
+import { IndexSessionRequest } from './dto/request/index.session.request';
 
 @Injectable()
 export class SessionService {
     constructor(
         private readonly sessionRepository: SessionRepository,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {}
 
     async createSession(
@@ -36,6 +39,14 @@ export class SessionService {
 
         const sessionEntity: SessionEntity =
             await this.sessionRepository.getSession(sessionId);
+
+        // 인덱스 업데이트
+        const indexProject = new IndexSessionRequest(sessionEntity);
+        this.logger.debug(
+            `조회수 증가 후 인덱스 업데이트 요청`,
+            SessionService.name,
+        );
+        await this.indexService.createIndex('session', indexProject);
         return new GetSessionResponse(sessionEntity);
     }
 

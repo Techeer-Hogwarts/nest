@@ -240,7 +240,7 @@ export class BlogRepository {
     }
     async deleteBlog(blogId: number): Promise<GetBlogResponse> {
         this.logger.debug(`블로그 ID ${blogId} 삭제 요청`, BlogRepository.name);
-        const deletedBlog = await this.prisma.blog.update({
+        const deletedBlog: BlogEntity = await this.prisma.blog.update({
             where: {
                 id: blogId,
                 isDeleted: false, // 이미 삭제된 블로그는 제외
@@ -252,7 +252,13 @@ export class BlogRepository {
                 user: true,
             },
         });
-        this.logger.debug(`블로그 ID ${blogId} 삭제 성공`, BlogRepository.name);
+        // 인덱스 삭제
+        this.logger.debug(
+            `블로그 삭제 후 인덱스 삭제 요청 - blogId: ${blogId}`,
+            BlogRepository.name,
+        );
+        await this.indexService.deleteIndex('blog', String(blogId));
+
         return new GetBlogResponse(deletedBlog);
     }
 }

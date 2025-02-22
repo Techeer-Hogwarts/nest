@@ -359,7 +359,7 @@ export class ProjectTeamService {
             // 인덱스 업데이트
             const indexProject = new IndexProjectRequest(projectResponse);
             this.logger.debug(
-                `인덱스 업데이트 요청 - ${JSON.stringify(indexProject)}`,
+                `프로젝트 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexProject)}`,
                 ProjectTeamService.name,
             );
             await this.indexService.createIndex('project', indexProject);
