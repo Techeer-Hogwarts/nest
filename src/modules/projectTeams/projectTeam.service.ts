@@ -446,7 +446,8 @@ export class ProjectTeamService {
         id: number,
         userId: number,
         updateProjectTeamRequest: UpdateProjectTeamRequest,
-        fileUrls: string[] = [],
+        mainImageUrls: string[] = [],
+        resultImageUrls: string[] = [], // resultImages용 URLs
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 프로젝트 업데이트 시작');
@@ -467,7 +468,7 @@ export class ProjectTeamService {
 
             // 승인된 멤버가 아닌 경우 접근 거부
             if (!userMembership) {
-                throw new Error(
+                this.logger.error(
                     '해당 프로젝트 팀의 승인된 팀원만 정보를 수정할 수 있습니다.',
                 );
             }
@@ -483,6 +484,7 @@ export class ProjectTeamService {
                 ...updateData
             } = updateProjectTeamRequest;
 
+            this.logger.debug('📂 기존 프로젝트 데이터 조회');
             // 기존 프로젝트 이미지 검증
             const existingProject = await this.prisma.projectTeam.findUnique({
                 where: { id },
@@ -491,6 +493,10 @@ export class ProjectTeamService {
                     resultImages: true,
                 },
             });
+            if (!existingProject) {
+                this.logger.error(`❌ 프로젝트 ID ${id}를 찾을 수 없습니다.`);
+                throw new Error('프로젝트를 찾을 수 없습니다.');
+            }
 
             // mainImages 존재 여부 확인
             if (deleteMainImages.length > 0) {
@@ -501,10 +507,26 @@ export class ProjectTeamService {
                     (id) => !validMainImageIds.includes(id),
                 );
                 if (invalidMainIds.length > 0) {
-                    throw new Error(
+                    this.logger.error(
                         `유효하지 않은 메인 이미지 ID: ${invalidMainIds.join(', ')}`,
                     );
+                    throw new Error(
+                        '유효하지 않은 메인 이미지 ID가 포함되어 있습니다.',
+                    );
                 }
+            }
+
+            // 메인 이미지 최종 개수 검증
+            const remainingMainImagesCount =
+                existingProject.mainImages.length - deleteMainImages.length;
+            const totalMainImagesCount =
+                remainingMainImagesCount + mainImageUrls.length;
+
+            if (totalMainImagesCount > 1) {
+                this.logger.error(
+                    '메인 이미지는 1개만 설정할 수 있습니다. 기존 메인 이미지를 먼저 삭제해주세요.',
+                );
+                throw new Error('메인 이미지는 1개만 설정할 수 있습니다.');
             }
 
             // resultImages 존재 여부 확인
@@ -516,8 +538,11 @@ export class ProjectTeamService {
                     (id) => !validResultImageIds.includes(id),
                 );
                 if (invalidResultIds.length > 0) {
-                    throw new Error(
+                    this.logger.error(
                         `유효하지 않은 결과 이미지 ID: ${invalidResultIds.join(', ')}`,
+                    );
+                    throw new Error(
+                        '유효하지 않은 결과 이미지 ID가 포함되어 있습니다.',
                     );
                 }
             }
@@ -538,17 +563,47 @@ export class ProjectTeamService {
                     ),
             );
 
+            const updatedMembers = [
+                ...newMembers,
+                ...projectMember.filter((member) =>
+                    existingMembers.some(
+                        (existing) => existing.userId === member.userId,
+                    ),
+                ),
+                ...existingMembers.filter(
+                    (existing) =>
+                        !deleteMembers.includes(existing.id) &&
+                        !projectMember.some(
+                            (member) => member.userId === existing.userId,
+                        ),
+                ),
+            ];
+
+            // 리더 존재 여부 확인
+            const hasLeader = updatedMembers.some((member) => member.isLeader);
+            if (!hasLeader) {
+                this.logger.error(
+                    '프로젝트에는 최소 한 명의 리더가 있어야 합니다.',
+                );
+                throw new Error(
+                    '프로젝트에는 최소 한 명의 리더가 있어야 합니다.',
+                );
+            }
+
+            this.logger.debug(`🚀 프로젝트 업데이트 실행 (ID: ${id})`);
             const updatedProject = await this.prisma.projectTeam.update({
                 where: { id },
                 data: {
                     ...updateData,
                     resultImages: {
                         deleteMany: { id: { in: deleteResultImages } },
-                        create: fileUrls.map((url) => ({ imageUrl: url })),
+                        create: resultImageUrls.map((url) => ({
+                            imageUrl: url,
+                        })),
                     },
                     mainImages: {
                         deleteMany: { id: { in: deleteMainImages } },
-                        create: fileUrls.map((url) => ({ imageUrl: url })),
+                        create: mainImageUrls.map((url) => ({ imageUrl: url })),
                     },
                     teamStacks: {
                         deleteMany: {},
@@ -567,11 +622,16 @@ export class ProjectTeamService {
                         update: projectMember
                             .filter((member) =>
                                 existingMembers.some(
-                                    (existing) => existing.userId === member.userId
-                                )
+                                    (existing) =>
+                                        existing.userId === member.userId,
+                                ),
                             )
                             .map((member) => ({
-                                where: { id: existingMembers.find(em => em.userId === member.userId).id }, // unique identifier 사용
+                                where: {
+                                    id: existingMembers.find(
+                                        (em) => em.userId === member.userId,
+                                    ).id,
+                                }, // unique identifier 사용
                                 data: {
                                     teamRole: member.teamRole,
                                     isLeader: member.isLeader,

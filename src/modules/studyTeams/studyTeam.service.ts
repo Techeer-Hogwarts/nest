@@ -254,6 +254,33 @@ export class StudyTeamService {
                 updateStudyTeamDto.resultImages = imageUrls;
             }
 
+            // 기존 멤버 조회
+            const existingMembers =
+                await this.studyTeamRepository.getStudyTeamMembersById(
+                    studyTeamId,
+                );
+
+            const updatedMembers = [
+                ...existingMembers.filter(
+                    (member) =>
+                        !updateStudyTeamDto.deleteMembers?.includes(
+                            member.id,
+                        ) &&
+                        !updateStudyTeamDto.studyMember?.some(
+                            (m) => m.userId === member.id,
+                        ),
+                ),
+                ...(updateStudyTeamDto.studyMember || []),
+            ];
+
+            // 리더 존재 여부 확인
+            const hasLeader = updatedMembers.some((member) => member.isLeader);
+            if (!hasLeader) {
+                throw new Error(
+                    '스터디에는 최소 한 명의 리더가 있어야 합니다.',
+                );
+            }
+
             // 이미지 삭제 요청 처리
             if (
                 updateStudyTeamDto.deleteImages &&

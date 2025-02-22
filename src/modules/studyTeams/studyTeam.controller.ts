@@ -425,24 +425,24 @@ export class StudyTeamController {
     ): Promise<StudyApplicantResponse> {
         const user = request.user; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
         const { studyTeamId, applicantId } = updateApplicantStatusRequest;
-        return await this.studyTeamService.acceptApplicant(
-            studyTeamId,
-            user,
-            applicantId,
+        this.logger.debug(
+            `스터디 지원 수락 요청 수신 - User: ${user.id}, StudyTeam: ${studyTeamId}, Applicant: ${applicantId}`,
         );
         try {
-            const result = await this.studyTeamService.acceptApplicant(
+            const response = await this.studyTeamService.acceptApplicant(
                 studyTeamId,
                 user,
                 applicantId,
             );
-            this.logger.debug(
-                `✅ 스터디 지원 수락 완료 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}`,
+
+            this.logger.log(
+                `스터디 지원 수락 완료 - StudyTeam: ${studyTeamId}, Applicant: ${applicantId}`,
             );
-            return result;
+
+            return response;
         } catch (error) {
             this.logger.error(
-                `❌ 스터디 지원 수락 실패 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}, error: ${error.message}`,
+                `스터디 지원 수락 실패 - StudyTeam: ${studyTeamId}, Applicant: ${applicantId}, Error: ${error.message}`,
             );
             throw error;
         }

@@ -17,7 +17,10 @@ import { UpdateProjectTeamRequest } from './dto/request/update.projectTeam.reque
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import {
+    FileFieldsInterceptor,
+    FilesInterceptor,
+} from '@nestjs/platform-express';
 import { NotFoundUserException } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
 import { UpdateApplicantStatusRequest } from './dto/request/update.applicantStatus.request';
@@ -226,14 +229,23 @@ export class ProjectTeamController {
         schema: {
             type: 'object',
             properties: {
-                files: {
+                mainImages: {
                     type: 'array',
                     items: {
                         type: 'string',
                         format: 'binary',
                     },
                     description:
-                        '업로드할 이미지 파일들 (최대 10개의 사진 첨부 가능)',
+                        '메인 이미지 파일들 (최대 10개의 사진 첨부 가능)',
+                },
+                resultImages: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        format: 'binary',
+                    },
+                    description:
+                        '결과 이미지 파일들 (최대 10개의 사진 첨부 가능)',
                 },
                 updateProjectTeamRequest: {
                     type: 'string',
@@ -241,7 +253,7 @@ export class ProjectTeamController {
                     example: JSON.stringify({
                         name: 'Updated Project Name',
                         projectExplain: '프로젝트에 대한 수정된 설명입니다.',
-                        deleteMainImages: [1, 2], // mainImages에서 삭제할 이미지 ID 배열
+                        deleteMainImages: [1], // mainImages에서 삭제할 이미지 ID 배열
                         deleteResultImages: [3, 4], // resultImages에서 삭제할 이미지 ID 배열
                         deleteMembers: [1, 2],
                         projectMember: [
@@ -266,11 +278,26 @@ export class ProjectTeamController {
             },
         },
     })
-    @UseInterceptors(FilesInterceptor('files', 10)) // 최대 10개의 파일 업로드 허용
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            {
+                name: 'mainImages',
+                maxCount: 1,
+            },
+            {
+                name: 'resultImages',
+                maxCount: 10,
+            },
+        ]),
+    ) // 최대 10개의 파일 업로드 허용
     async updateProject(
         @Param('projectTeamId') projectTeamId: number,
         @Body('updateProjectTeamRequest') updateProjectTeamRequest: string,
-        @UploadedFiles() files: Express.Multer.File[], // Multer 파일 배열
+        @UploadedFiles()
+        files: {
+            mainImages?: Express.Multer.File[];
+            resultImages?: Express.Multer.File[];
+        },
         @Req() request: any,
     ): Promise<ProjectTeamDetailResponse> {
         const user = request.user;
@@ -285,16 +312,23 @@ export class ProjectTeamController {
             );
 
             // 파일 업로드 및 URL 생성
-            const fileUrls = await this.projectTeamService.uploadImagesToS3(
-                files,
-                'project-teams',
-            );
+            const mainImageUrls =
+                await this.projectTeamService.uploadImagesToS3(
+                    files.mainImages || [],
+                    'project-teams/main',
+                );
+            const resultImageUrls =
+                await this.projectTeamService.uploadImagesToS3(
+                    files.resultImages || [],
+                    'project-teams/result',
+                );
 
             return await this.projectTeamService.updateProjectTeam(
                 projectTeamId,
                 user.id,
                 updateProjectTeamDto,
-                fileUrls, // 업로드된 파일 URL 배열 전달
+                mainImageUrls,
+                resultImageUrls,
             );
         } catch (error) {
             this.logger.error(
