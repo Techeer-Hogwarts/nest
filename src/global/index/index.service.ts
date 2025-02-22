@@ -22,8 +22,8 @@ export class IndexService {
             const response = await axios.delete(url);
 
             this.logger.debug(
-                `응답 상태 코드: ${response.status}`,
-                IndexService.name,
+                `${index} ID: ${id} 인덱스 삭제 요청 응답 상태 코드: ${response.status}`,
+                `deleteIndex`,
             );
             if (response.status !== 200) {
                 this.logger.error('인덱스 삭제 실패', IndexService.name);
@@ -34,7 +34,7 @@ export class IndexService {
                 IndexService.name,
             );
             this.logger.debug(
-                `오류 상세 정보: ${JSON.stringify(error.response?.data)}`,
+                `오류 상세 정보: ${JSON.stringify(error.response)}`,
                 IndexService.name,
             );
         }
@@ -50,8 +50,8 @@ export class IndexService {
             );
             const response = await axios.post(url, data);
             this.logger.debug(
-                `응답 상태 코드: ${response.status}`,
-                IndexService.name,
+                `${index} 인덱스 생성 요청 응답 상태 코드: ${response.status}`,
+                'createIndex',
             );
             if (response.status !== 200) {
                 this.logger.error('인덱스 생성 실패', IndexService.name);
@@ -62,7 +62,7 @@ export class IndexService {
                 IndexService.name,
             );
             this.logger.debug(
-                `오류 상세 정보: ${JSON.stringify(error.response?.data)}`,
+                `오류 상세 정보: ${JSON.stringify(error.response)}`,
                 IndexService.name,
             );
         }
