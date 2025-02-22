@@ -58,6 +58,7 @@ export class SessionController {
         return result;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('/best')
     @ApiOperation({
         summary: '세션 게시물의 인기글 목록 조회',
@@ -79,6 +80,7 @@ export class SessionController {
         return result;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get()
     @ApiOperation({
         summary: '세션 게시물 목록 조회 및 검색',
