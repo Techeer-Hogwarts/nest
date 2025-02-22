@@ -160,9 +160,17 @@ export class UpdateProjectTeamRequest {
     @IsArray()
     @ApiProperty({
         example: [1, 2, 3],
+        description: '삭제할 메인 이미지 ID 배열',
+    })
+    deleteMainImages: number[];
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty({
+        example: [1, 2, 3],
         description: '삭제할 이미지 ID 배열',
     })
-    deleteImages: number[];
+    deleteResultImages: number[];
 
     @IsOptional()
     @IsArray()

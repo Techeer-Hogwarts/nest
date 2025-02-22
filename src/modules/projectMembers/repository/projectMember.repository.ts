@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ProjectMember, StatusCategory } from '@prisma/client';
+import {
+    Prisma,
+    PrismaClient,
+    ProjectMember,
+    StatusCategory,
+} from '@prisma/client';
 import { CreateProjectMemberRequest } from '../dto/request/create.projectMember.request';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import {
@@ -200,6 +205,7 @@ export class ProjectMemberRepository {
         projectTeamId: number,
         userId: number,
         status: StatusCategory,
+        prismaClient?: Prisma.TransactionClient | PrismaClient,
     ): Promise<
         ProjectMember & {
             user: {
@@ -212,7 +218,8 @@ export class ProjectMemberRepository {
         }
     > {
         try {
-            const member = await this.prisma.projectMember.findFirst({
+            const prisma = prismaClient || this.prisma;
+            const member = await prisma.projectMember.findFirst({
                 where: {
                     projectTeamId,
                     userId,
@@ -233,7 +240,7 @@ export class ProjectMemberRepository {
                 throw new Error('해당 멤버를 찾을 수 없습니다.');
             }
 
-            return await this.prisma.projectMember.update({
+            return await prisma.projectMember.update({
                 where: { id: member.id },
                 data: { status },
                 include: {

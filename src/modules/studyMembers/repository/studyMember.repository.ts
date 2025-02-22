@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { StatusCategory } from '@prisma/client';
+import { PrismaClient, StatusCategory } from '@prisma/client';
 import { CreateStudyMemberRequest } from '../dto/request/create.studyMember.request';
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
@@ -219,14 +219,15 @@ export class StudyMemberRepository {
         }
     }
 
-    // 지원자 상태 업데이트
     async updateApplicantStatus(
         studyTeamId: number,
         userId: number,
         status: StatusCategory,
+        prismaClient?: Prisma.TransactionClient | PrismaClient,
     ): Promise<StudyApplicantResponse> {
         try {
-            const data = await this.prisma.studyMember.update({
+            const prisma = prismaClient || this.prisma;
+            const data = await prisma.studyMember.update({
                 where: {
                     studyTeamId_userId: {
                         studyTeamId: studyTeamId,
