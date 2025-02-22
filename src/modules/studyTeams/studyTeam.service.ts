@@ -9,6 +9,7 @@ import {
     AlreadyApprovedException,
     NotApprovedFileExtension,
     DuplicateStudyTeamNameException,
+    NoLeaderException,
 } from '../../global/exception/custom.exception';
 import { UpdateStudyTeamRequest } from './dto/request/update.studyTeam.request';
 import { CreateStudyMemberRequest } from '../studyMembers/dto/request/create.studyMember.request';
@@ -130,6 +131,18 @@ export class StudyTeamService {
 
         try {
             this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
+
+            // 리더 존재 여부 체크
+            const hasLeader = createStudyTeamRequest.studyMember.some(
+                (member) => member.isLeader,
+            );
+            if (!hasLeader) {
+                this.logger.error(
+                    '❌ [ERROR] 스터디 생성 실패: 리더가 지정되지 않음',
+                );
+                throw new NoLeaderException();
+            }
+            this.logger.debug('✅ [SUCCESS] 스터디 리더 검증 완료');
 
             // 파일 업로드 처리
             if (files && files.length > 0) {

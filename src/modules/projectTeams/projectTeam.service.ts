@@ -6,6 +6,7 @@ import { ProjectMemberRepository } from '../projectMembers/repository/projectMem
 import {
     AlreadyApprovedException,
     DuplicateProjectNameException,
+    NoLeaderException,
     NotFoundProjectException,
 } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
@@ -228,6 +229,14 @@ export class ProjectTeamService {
                     '결과 이미지 파일이 없습니다. 업로드 건너뜀.',
                 );
             }
+
+            this.logger.debug('프로젝트 멤버 리더 검증 시작');
+            const hasLeader = projectMember.some((member) => member.isLeader);
+            if (!hasLeader) {
+                this.logger.error('프로젝트 생성 실패: 리더가 지정되지 않음');
+                throw new NoLeaderException();
+            }
+            this.logger.debug('프로젝트 멤버 리더 검증 완료');
 
             // 스택 검증: 요청된 스택과 실제 유효한 스택 조회
             this.logger.debug('유효한 스택 조회 시작');
