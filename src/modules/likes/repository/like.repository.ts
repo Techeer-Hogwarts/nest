@@ -8,6 +8,8 @@ import { ContentCategory } from '../../../global/category/content.category';
 import { CreateContentTableMap } from '../../../global/category/content.category.table.map';
 import { DuplicateStatusException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexSessionRequest } from '../../sessions/dto/request/index.session.request';
+import { IndexService } from '../../../global/index/index.service';
 
 @Injectable()
 export class LikeRepository {
@@ -16,6 +18,7 @@ export class LikeRepository {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly indexService: IndexService,
     ) {
         this.contentTableMap = CreateContentTableMap(prisma);
     }
@@ -90,10 +93,6 @@ export class LikeRepository {
                     },
                 });
                 const changeValue = likeStatus ? 1 : -1;
-                this.logger.debug(
-                    `좋아요 카운트 변경: ${changeValue}`,
-                    LikeRepository.name,
-                );
                 const updateContent = await this.contentTableMap[
                     category
                 ].table.update({
@@ -101,9 +100,21 @@ export class LikeRepository {
                     data: { likeCount: { increment: changeValue } },
                 });
                 this.logger.debug(
-                    `좋아요 카운트 변경 완료: ${updateContent.likeCount}`,
+                    `좋아요 카운트 (${changeValue > 0 ? '+1' : '-1'}) 변경 완료: ${updateContent.likeCount}`,
                     LikeRepository.name,
                 );
+                // 인덱스 업데이트 (세선)
+                if (category === 'SESSION') {
+                    const indexSession = new IndexSessionRequest(updateContent);
+                    this.logger.debug(
+                        `세션 좋아요 변경 이후 인덱스 업데이트 요청`,
+                        LikeRepository.name,
+                    );
+                    await this.indexService.createIndex(
+                        'session',
+                        indexSession,
+                    );
+                }
                 return new GetLikeResponse(like);
             },
         );
