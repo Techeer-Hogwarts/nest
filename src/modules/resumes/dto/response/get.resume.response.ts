@@ -38,6 +38,13 @@ export class GetResumeAuthorResponse {
     readonly year: number;
     readonly mainPosition: string;
     readonly subPosition: string;
+    readonly school: string;
+    readonly grade: string;
+    readonly email: string;
+    readonly githubUrl: string;
+    readonly mediumUrl: string;
+    readonly tistoryUrl: string;
+    readonly velogUrl: string;
     readonly roleId: number;
 
     constructor(user: UserEntity) {
@@ -48,6 +55,13 @@ export class GetResumeAuthorResponse {
         this.year = user.year;
         this.mainPosition = user.mainPosition;
         this.subPosition = user.subPosition;
+        this.school = user.school;
+        this.grade = user.grade;
+        this.email = user.email;
+        this.githubUrl = user.githubUrl;
+        this.mediumUrl = user.mediumUrl;
+        this.tistoryUrl = user.tistoryUrl;
+        this.velogUrl = user.velogUrl;
         this.roleId = user.roleId;
     }
 }

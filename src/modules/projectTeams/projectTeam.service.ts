@@ -24,6 +24,8 @@ import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateProjectAlertRequest } from '../alert/dto/request/create.project.alert.request';
 import { AlertServcie } from '../alert/alert.service';
 import { CreatePersonalAlertRequest } from '../alert/dto/request/create.personal.alert.request';
+import { IndexProjectRequest } from './dto/request/index.project.request';
+import { IndexService } from '../../global/index/index.service';
 
 interface Stack {
     id: number;
@@ -44,6 +46,7 @@ export class ProjectTeamService {
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
         private readonly alertService: AlertServcie,
+        private readonly indexService: IndexService,
     ) {}
 
     private async validateStacks(teamStacks: TeamStack[]): Promise<Stack[]> {
@@ -353,6 +356,14 @@ export class ProjectTeamService {
             );
             await this.alertService.sendSlackAlert(slackPayload);
 
+            // 인덱스 업데이트
+            const indexProject = new IndexProjectRequest(projectResponse);
+            this.logger.debug(
+                `인덱스 업데이트 요청 - ${JSON.stringify(indexProject)}`,
+                ProjectTeamService.name,
+            );
+            await this.indexService.createIndex('project', indexProject);
+
             return projectResponse;
         } catch (error) {
             this.logger.error('❌ Error while creating project', error);
@@ -577,7 +588,19 @@ export class ProjectTeamService {
             });
 
             this.logger.debug(`✅ 프로젝트 업데이트 완료 (ID: ${id})`);
-            return new ProjectTeamDetailResponse(updatedProject);
+            const projectResponse = new ProjectTeamDetailResponse(
+                updatedProject,
+            );
+
+            // 인덱스 업데이트
+            const indexProject = new IndexProjectRequest(projectResponse);
+            this.logger.debug(
+                `프로젝트 업데이트 후 인덱스 업데이트 요청 - ${JSON.stringify(indexProject)}`,
+                ProjectTeamService.name,
+            );
+            await this.indexService.createIndex('project', indexProject);
+
+            return projectResponse;
         } catch (error) {
             this.logger.error('❌ 프로젝트 업데이트 중 예외 발생:', error);
             throw error;
@@ -660,7 +683,17 @@ export class ProjectTeamService {
                 },
             });
             this.logger.debug(`✅ 프로젝트 삭제 완료 (ID: ${id})`);
-            return new ProjectTeamDetailResponse(deletedProject);
+            const projectResponse = new ProjectTeamDetailResponse(
+                deletedProject,
+            );
+
+            // 인덱스 삭제
+            await this.indexService.deleteIndex(
+                'project',
+                String(projectResponse.id),
+            );
+
+            return projectResponse;
         } catch (error) {
             this.logger.error('프로젝트 삭제 중 예외 발생:', error);
             throw new Error('프로젝트 삭제 실패');
@@ -1166,8 +1199,8 @@ export class ProjectTeamService {
                                 return { backendNum: { gt: 0 } };
                             case 'devops':
                                 return { devopsNum: { gt: 0 } };
-                            case 'fullStackNum':
-                                return { fullStackNum: { gt: 0 } };
+                            case 'uiux':
+                                return { uiuxNum: { gt: 0 } };
                             case 'dataEngineer':
                                 return { dataEngineerNum: { gt: 0 } };
                             default:

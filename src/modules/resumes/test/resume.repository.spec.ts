@@ -8,12 +8,13 @@ import {
     getResumesQueryRequest,
     paginationQueryDto,
     getResumeResponseList,
+    user,
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
 import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-import { authorUserMock } from '../../blogs/test/mock-data';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('ResumeRepository', (): void => {
     let repository: ResumeRepository;
@@ -43,6 +44,13 @@ describe('ResumeRepository', (): void => {
                     useValue: {
                         debug: jest.fn(),
                         error: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
@@ -85,7 +93,7 @@ describe('ResumeRepository', (): void => {
                 resumeEntities,
             );
             jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(
-                authorUserMock,
+                user,
             );
 
             const result = await repository.getBestResumes(paginationQueryDto);

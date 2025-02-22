@@ -9,6 +9,7 @@ import { ProjectMemberRepository } from '../projectMembers/repository/projectMem
 import { StudyTeamModule } from '../studyTeams/studyTeam.module';
 import { AwsService } from '../awsS3/aws.service';
 import { AlertModule } from '../alert/alert.module';
+import { IndexModule } from '../../global/index/index.module';
 
 @Module({
     imports: [PrismaModule, AuthModule, StudyTeamModule, AlertModule],
@@ -19,6 +20,7 @@ import { AlertModule } from '../alert/alert.module';
         UserRepository,
         ProjectMemberRepository,
         AwsService,
+        IndexModule,
     ],
     exports: [ProjectTeamRepository, UserRepository],
 })

@@ -22,6 +22,8 @@ import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateStudyAlertRequest } from '../alert/dto/request/create.study.alert.request';
 import { AlertServcie } from '../alert/alert.service';
 import { User } from '@prisma/client';
+import { IndexStudyRequest } from './dto/request/index.study.request';
+import { IndexService } from '../../global/index/index.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -33,6 +35,7 @@ export class StudyTeamService {
         private readonly logger: CustomWinstonLogger,
         private readonly alertService: AlertServcie,
         private readonly prisma: PrismaService,
+        private readonly indexService: IndexService,
     ) {}
 
     async ensureUserIsStudyMember(
@@ -202,6 +205,14 @@ export class StudyTeamService {
             await this.alertService.sendSlackAlert(slackPayload);
             this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
 
+            // 인덱스 업데이트
+            const indexStudy = new IndexStudyRequest(studyData);
+            this.logger.debug(
+                `스터디 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexStudy)}`,
+                StudyTeamService.name,
+            );
+            await this.indexService.createIndex('study', indexStudy);
+
             return studyData;
         } catch (error) {
             this.logger.error(
@@ -269,12 +280,22 @@ export class StudyTeamService {
             delete updateData.deleteMembers;
             delete updateData.resultImages;
 
-            return await this.studyTeamRepository.updateStudyTeam(
+            const studyData = await this.studyTeamRepository.updateStudyTeam(
                 studyTeamId,
                 updateData,
                 updateStudyTeamDto.resultImages,
                 updateStudyTeamDto.studyMember,
             );
+
+            // 인덱스 업데이트
+            const indexStudy = new IndexStudyRequest(studyData);
+            this.logger.debug(
+                `스터디 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexStudy)}`,
+                StudyTeamService.name,
+            );
+            await this.indexService.createIndex('study', indexStudy);
+
+            return studyData;
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] updateStudyTeam 에서 예외 발생: ',
@@ -321,7 +342,10 @@ export class StudyTeamService {
             await this.ensureUserIsStudyMember(studyTeamId, userId);
             const updatedStudyTeam =
                 await this.studyTeamRepository.deleteStudyTeam(studyTeamId);
-            this.logger.debug('✅ [SUCCESS] 스터디 팀 삭제 성공');
+            this.logger.debug(
+                `스터디 팀 삭제 후 인덱스 삭제 요청 - studyId: ${studyTeamId}`,
+            );
+            await this.indexService.deleteIndex('study', String(studyTeamId));
             return updatedStudyTeam;
         } catch (error) {
             this.logger.error(

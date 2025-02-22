@@ -1,18 +1,18 @@
-// import { Test, TestingModule } from '@nestjs/testing';
-// import { StudyTeamService } from '../studyTeam.service';
-// import { StudyTeamRepository } from '../repository/studyTeam.repository';
-// import { AwsService } from '../../awsS3/aws.service';
-// import { StudyMemberRepository } from '../../studyMembers/repository/studyMember.repository';
-// import { DuplicateStudyTeamNameException } from '../../../global/exception/custom.exception';
-// import { AlertServcie } from '../../alert/alert.service';
-// import {
-//     mockCreateStudyTeamRequest,
-//     mockUpdateStudyTeamRequest,
-//     mockStudyTeamResult1,
-//     // mockUser,
-// } from './mock-data';
-// import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-// import { PrismaService } from '../../../modules/prisma/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { StudyTeamService } from '../studyTeam.service';
+import { StudyTeamRepository } from '../repository/studyTeam.repository';
+import { AwsService } from '../../awsS3/aws.service';
+import { StudyMemberRepository } from '../../studyMembers/repository/studyMember.repository';
+import { DuplicateStudyTeamNameException } from '../../../global/exception/custom.exception';
+import { AlertServcie } from '../../alert/alert.service';
+import {
+    mockCreateStudyTeamRequest,
+    mockUpdateStudyTeamRequest,
+    mockStudyTeamResult1,
+    mockUser,
+} from './mock-data';
+import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { PrismaService } from '../../../modules/prisma/prisma.service';
 
 // describe('StudyTeamService', () => {
 //     let service: StudyTeamService;
@@ -23,73 +23,73 @@
 //     let alertService: AlertServcie;
 //     // let prisma: PrismaService;
 
-//     beforeEach(async () => {
-//         const module: TestingModule = await Test.createTestingModule({
-//             providers: [
-//                 StudyTeamService,
-//                 {
-//                     provide: StudyTeamRepository,
-//                     useValue: {
-//                         isUserMemberOfStudy: jest.fn(),
-//                         findStudyByName: jest.fn(),
-//                         checkExistUsers: jest.fn(),
-//                         createStudyTeam: jest.fn(),
-//                         updateStudyTeam: jest.fn(),
-//                         deleteStudyTeam: jest.fn(),
-//                         getUserStudyTeams: jest.fn(),
-//                         getStudyTeamById: jest.fn(),
-//                         getStudyTeamMembersById: jest.fn(),
-//                         closeStudyTeam: jest.fn(),
-//                         deleteImages: jest.fn(),
-//                         deleteMembers: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: CustomWinstonLogger,
-//                     useValue: {
-//                         debug: jest.fn(),
-//                         error: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: StudyMemberRepository,
-//                     useValue: {
-//                         getApplicants: jest.fn(),
-//                         isUserAlreadyInStudy: jest.fn(),
-//                         applyToStudyTeam: jest.fn(),
-//                         cancelApplication: jest.fn(),
-//                         getApplicantStatus: jest.fn(),
-//                         updateApplicantStatus: jest.fn(),
-//                         addMemberToStudyTeam: jest.fn(),
-//                         isUserMemberOfStudy: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: AwsService,
-//                     useValue: { imageUploadToS3: jest.fn() },
-//                 },
-//                 {
-//                     provide: AlertServcie,
-//                     useValue: {
-//                         sendSlackAlert: jest.fn(),
-//                         sendUserAlert: jest.fn().mockResolvedValue(undefined),
-//                     },
-//                 },
-//                 {
-//                     provide: PrismaService,
-//                     useValue: {
-//                         prisma: {
-//                             studyTeam: {
-//                                 findMany: jest.fn(),
-//                                 findFirst: jest.fn(),
-//                                 create: jest.fn(),
-//                                 update: jest.fn(),
-//                             },
-//                         },
-//                     },
-//                 },
-//             ],
-//         }).compile();
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                StudyTeamService,
+                {
+                    provide: StudyTeamRepository,
+                    useValue: {
+                        isUserMemberOfStudy: jest.fn(),
+                        findStudyByName: jest.fn(),
+                        checkExistUsers: jest.fn(),
+                        createStudyTeam: jest.fn(),
+                        updateStudyTeam: jest.fn(),
+                        deleteStudyTeam: jest.fn(),
+                        getUserStudyTeams: jest.fn(),
+                        getStudyTeamById: jest.fn(),
+                        getStudyTeamMembersById: jest.fn(),
+                        closeStudyTeam: jest.fn(),
+                        deleteImages: jest.fn(),
+                        deleteMembers: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
+                {
+                    provide: StudyMemberRepository,
+                    useValue: {
+                        getApplicants: jest.fn(),
+                        isUserAlreadyInStudy: jest.fn(),
+                        applyToStudyTeam: jest.fn(),
+                        cancelApplication: jest.fn(),
+                        getApplicantStatus: jest.fn(),
+                        updateApplicantStatus: jest.fn(),
+                        addMemberToStudyTeam: jest.fn(),
+                        isUserMemberOfStudy: jest.fn(),
+                    },
+                },
+                {
+                    provide: AwsService,
+                    useValue: { imageUploadToS3: jest.fn() },
+                },
+                {
+                    provide: AlertServcie,
+                    useValue: {
+                        sendSlackAlert: jest.fn(),
+                        sendUserAlert: jest.fn().mockResolvedValue(undefined),
+                    },
+                },
+                {
+                    provide: PrismaService,
+                    useValue: {
+                        prisma: {
+                            studyTeam: {
+                                findMany: jest.fn(),
+                                findFirst: jest.fn(),
+                                create: jest.fn(),
+                                update: jest.fn(),
+                            },
+                        },
+                    },
+                },
+            ],
+        }).compile();
 
 //         service = module.get<StudyTeamService>(StudyTeamService);
 //         studyTeamRepository = module.get(StudyTeamRepository);
