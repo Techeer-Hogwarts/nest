@@ -304,6 +304,7 @@ export class ProjectTeamService {
                                 },
                             },
                         },
+                        orderBy: { id: 'asc' }, // ID 순서 보장
                     },
                 },
             });
@@ -442,6 +443,7 @@ export class ProjectTeamService {
             this.logger.debug(
                 `요청 데이터: ${JSON.stringify(updateProjectTeamRequest)}`,
             );
+
             // 사용자가 해당 팀의 승인된 멤버인지 확인
             const userMembership = await this.prisma.projectMember.findFirst({
                 where: {
@@ -465,9 +467,49 @@ export class ProjectTeamService {
                 projectMember = [],
                 deleteMembers = [],
                 teamStacks = [],
-                deleteImages = [],
+                deleteMainImages = [],
+                deleteResultImages = [],
                 ...updateData
             } = updateProjectTeamRequest;
+
+            // 기존 프로젝트 이미지 검증
+            const existingProject = await this.prisma.projectTeam.findUnique({
+                where: { id },
+                include: {
+                    mainImages: true,
+                    resultImages: true,
+                },
+            });
+
+            // mainImages 존재 여부 확인
+            if (deleteMainImages.length > 0) {
+                const validMainImageIds = existingProject.mainImages.map(
+                    (img) => img.id,
+                );
+                const invalidMainIds = deleteMainImages.filter(
+                    (id) => !validMainImageIds.includes(id),
+                );
+                if (invalidMainIds.length > 0) {
+                    throw new Error(
+                        `유효하지 않은 메인 이미지 ID: ${invalidMainIds.join(', ')}`,
+                    );
+                }
+            }
+
+            // resultImages 존재 여부 확인
+            if (deleteResultImages.length > 0) {
+                const validResultImageIds = existingProject.resultImages.map(
+                    (img) => img.id,
+                );
+                const invalidResultIds = deleteResultImages.filter(
+                    (id) => !validResultImageIds.includes(id),
+                );
+                if (invalidResultIds.length > 0) {
+                    throw new Error(
+                        `유효하지 않은 결과 이미지 ID: ${invalidResultIds.join(', ')}`,
+                    );
+                }
+            }
 
             // 기존 멤버 정보 조회
             const existingMembers = await this.prisma.projectMember.findMany({
@@ -477,7 +519,7 @@ export class ProjectTeamService {
             const validStacks = await this.validateStacks(teamStacks);
             const stackData = this.mapStackData(teamStacks, validStacks);
 
-            // 새로 추가할 멤버 필터링 (기존 멤버와 중복되지 않는 멤버만)
+            // 새로 추가할 멤버 필터링
             const newMembers = projectMember.filter(
                 (member) =>
                     !existingMembers.some(
@@ -490,11 +532,11 @@ export class ProjectTeamService {
                 data: {
                     ...updateData,
                     resultImages: {
-                        deleteMany: { id: { in: deleteImages } },
+                        deleteMany: { id: { in: deleteResultImages } },
                         create: fileUrls.map((url) => ({ imageUrl: url })),
                     },
                     mainImages: {
-                        deleteMany: { id: { in: deleteImages } },
+                        deleteMany: { id: { in: deleteMainImages } },
                         create: fileUrls.map((url) => ({ imageUrl: url })),
                     },
                     teamStacks: {
@@ -944,22 +986,57 @@ export class ProjectTeamService {
                 throw new AlreadyApprovedException();
             }
 
-            const updatedApplicant =
-                await this.projectMemberRepository.updateApplicantStatus(
-                    projectTeamId,
-                    applicantId,
-                    'APPROVED',
-                );
+            // 트랜잭션 시작
+            const result = await this.prisma.$transaction(async (tx) => {
+                // 1. 먼저 지원자의 상태를 APPROVED로 변경
+                const updatedApplicant =
+                    await this.projectMemberRepository.updateApplicantStatus(
+                        projectTeamId,
+                        applicantId,
+                        'APPROVED',
+                        tx,
+                    );
+
+                // 2. 승인된 지원자의 직군에 따라 모집 인원 감소
+                const updateData: any = {};
+                switch (updatedApplicant.teamRole) {
+                    case 'Frontend':
+                        updateData.frontendNum = { decrement: 1 };
+                        break;
+                    case 'Backend':
+                        updateData.backendNum = { decrement: 1 };
+                        break;
+                    case 'DevOps':
+                        updateData.devopsNum = { decrement: 1 };
+                        break;
+                    case 'FullStack':
+                        updateData.fullStackNum = { decrement: 1 };
+                        break;
+                    case 'DataEngineer':
+                        updateData.dataEngineerNum = { decrement: 1 };
+                        break;
+                    default:
+                        throw new Error('유효하지 않은 직군입니다.');
+                }
+
+                // 3. 프로젝트 팀의 해당 직군 모집 인원 감소
+                await tx.projectTeam.update({
+                    where: { id: projectTeamId },
+                    data: updateData,
+                });
+
+                return updatedApplicant;
+            });
 
             // 승인된 경우 사용자 알림 전송 (결과: APPROVED)
             await this.sendProjectUserAlert(
                 projectTeamId,
-                updatedApplicant.user.email,
+                result.user.email,
                 'APPROVED',
             );
 
             this.logger.debug(`✅ 지원자 승인 완료 (ID: ${applicantId})`);
-            return new ProjectApplicantResponse(updatedApplicant);
+            return new ProjectApplicantResponse(result);
         } catch (error) {
             this.logger.error('❌ 지원자 승인 중 예외 발생:', error);
             throw error;

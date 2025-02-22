@@ -241,7 +241,8 @@ export class ProjectTeamController {
                     example: JSON.stringify({
                         name: 'Updated Project Name',
                         projectExplain: '프로젝트에 대한 수정된 설명입니다.',
-                        deleteImages: [1, 2, 3],
+                        deleteMainImages: [1, 2], // mainImages에서 삭제할 이미지 ID 배열
+                        deleteResultImages: [3, 4], // resultImages에서 삭제할 이미지 ID 배열
                         deleteMembers: [1, 2],
                         projectMember: [
                             {
