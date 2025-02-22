@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { StatusCategory } from '@prisma/client';
+import { PrismaClient, StatusCategory } from '@prisma/client';
 import { CreateStudyMemberRequest } from '../dto/request/create.studyMember.request';
 import { Prisma } from '@prisma/client';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
@@ -39,7 +39,7 @@ export class StudyMemberRepository {
                     studyTeamId: studyTeamId,
                     userId: userId,
                     isDeleted: false,
-                    status: { not: 'REJECT' }, // 거절된 상태 제외
+                    status: 'APPROVED', // 거절된 상태 제외
                 },
             });
 
@@ -64,24 +64,61 @@ export class StudyMemberRepository {
         userId: number,
     ): Promise<StudyApplicantResponse> {
         try {
-            const newApplication = await this.prisma.studyMember.create({
-                data: {
-                    studyTeamId: createStudyMemberRequest.studyTeamId,
-                    userId: userId, // userId는 별도의 매개변수로 전달
-                    status: 'PENDING',
+            // 기존 신청 내역 확인 (복합 유니크 키를 사용)
+            const existingApplication =
+                await this.prisma.studyMember.findUnique({
+                    where: {
+                        studyTeamId_userId: {
+                            studyTeamId: createStudyMemberRequest.studyTeamId,
+                            userId: userId,
+                        },
+                    },
+                });
+
+            // 이미 승인된 신청(또는 멤버인 경우)는 재신청을 막음
+            if (
+                existingApplication &&
+                existingApplication.status === 'APPROVED' &&
+                !existingApplication.isDeleted
+            ) {
+                throw new Error('이미 해당 스터디에 지원했거나 멤버입니다.');
+            }
+
+            // upsert를 사용하여 기존 내역이 있으면 업데이트, 없으면 새로 생성
+            const upsertedApplication = await this.prisma.studyMember.upsert({
+                where: {
+                    studyTeamId_userId: {
+                        studyTeamId: createStudyMemberRequest.studyTeamId,
+                        userId: userId,
+                    },
+                },
+                update: {
                     summary: createStudyMemberRequest.summary,
+                    status: 'PENDING',
+                    isDeleted: false,
+                },
+                create: {
+                    studyTeamId: createStudyMemberRequest.studyTeamId,
+                    userId: userId,
+                    summary: createStudyMemberRequest.summary,
+                    status: 'PENDING',
                     isLeader: false,
                 },
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
+                            profileImage: true,
+                            mainPosition: true,
+                            year: true,
                         },
                     },
                 },
             });
+
             this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
-            return new StudyApplicantResponse(newApplication);
+            return new StudyApplicantResponse(upsertedApplication);
         } catch (error) {
             this.logger.error(
                 '❌ [ERROR] applyToStudyTeam 에서 예외 발생: ',
@@ -161,7 +198,11 @@ export class StudyMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
+                            year: true,
+                            profileImage: true,
+                            mainPosition: true,
                         },
                     },
                 },
@@ -178,14 +219,15 @@ export class StudyMemberRepository {
         }
     }
 
-    // 지원자 상태 업데이트
     async updateApplicantStatus(
         studyTeamId: number,
         userId: number,
         status: StatusCategory,
+        prismaClient?: Prisma.TransactionClient | PrismaClient,
     ): Promise<StudyApplicantResponse> {
         try {
-            const data = await this.prisma.studyMember.update({
+            const prisma = prismaClient || this.prisma;
+            const data = await prisma.studyMember.update({
                 where: {
                     studyTeamId_userId: {
                         studyTeamId: studyTeamId,
@@ -198,7 +240,11 @@ export class StudyMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
+                            profileImage: true,
+                            mainPosition: true,
+                            year: true,
                         },
                     },
                 },

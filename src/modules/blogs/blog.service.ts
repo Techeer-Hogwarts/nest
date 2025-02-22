@@ -68,4 +68,13 @@ export class BlogService {
             BlogService.name,
         );
     }
+
+    async deleteBlog(blogId: number): Promise<GetBlogResponse> {
+        const blog = await this.blogRepository.deleteBlog(blogId);
+        this.logger.debug(
+            `블로그 삭제 성공 후 GetBlogResponse로 변환 중`,
+            BlogService.name,
+        );
+        return blog;
+    }
 }

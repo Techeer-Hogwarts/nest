@@ -226,10 +226,10 @@ export class StudyTeamService {
     // 스터디 지원자 조회
     async getApplicants(
         studyTeamId: number,
-        user: User,
+        // user: User,
     ): Promise<StudyApplicantResponse[]> {
         this.logger.debug('🔥 [START] getApplicants 요청 시작');
-        await this.ensureUserIsStudyMember(studyTeamId, user.id);
+        // await this.ensureUserIsStudyMember(studyTeamId, user.id);
         const data =
             await this.studyMemberRepository.getApplicants(studyTeamId);
         this.logger.debug('✅ [SUCCESS] 스터디 지원자 조회 성공');
@@ -444,20 +444,6 @@ export class StudyTeamService {
             throw new Error('더 이상 모집 인원이 없습니다.');
         }
 
-        // 현재 스터디 멤버 수 확인
-        const currentMemberCount = await this.prisma.studyMember.count({
-            where: {
-                studyTeamId: createStudyMemberRequest.studyTeamId,
-                isDeleted: false,
-                status: { not: 'REJECT' },
-            },
-        });
-
-        // 모집 인원 초과 확인
-        if (currentMemberCount >= studyTeam.recruitNum) {
-            throw new Error('모집 인원이 모두 찼습니다.');
-        }
-
         // 사용자의 스터디 중복 지원 확인
         await this.studyMemberRepository.isUserAlreadyInStudy(
             createStudyMemberRequest.studyTeamId,
@@ -505,14 +491,13 @@ export class StudyTeamService {
                     studyTeamId: studyTeamId,
                     userId: user.id,
                     isDeleted: false,
-                    status: 'APPROVED', // 승인된 멤버만 조회 가능
+                    status: 'PENDING',
                 },
             });
 
-            // 승인된 멤버가 아닌 경우 접근 거부
             if (!userMembership) {
                 throw new Error(
-                    '해당 스터디 팀의 승인된 멤버만 지원자를 조회할 수 있습니다.',
+                    '해당 스터디 팀을 지원한 멤버만 지원자를 조회할 수 있습니다.',
                 );
             }
 
@@ -553,7 +538,6 @@ export class StudyTeamService {
         }
     }
 
-    // 스터디 지원 수락
     async acceptApplicant(
         studyTeamId: number,
         user: User,
@@ -579,11 +563,29 @@ export class StudyTeamService {
             throw new AlreadyApprovedException();
         }
 
-        const result = await this.studyMemberRepository.updateApplicantStatus(
-            studyTeamId,
-            applicantId,
-            'APPROVED',
-        );
+        // 트랜잭션 시작
+        const result = await this.prisma.$transaction(async (tx) => {
+            // 1. 지원자 상태를 APPROVED로 변경
+            const updatedApplicant =
+                await this.studyMemberRepository.updateApplicantStatus(
+                    studyTeamId,
+                    applicantId,
+                    'APPROVED',
+                    tx,
+                );
+
+            // 2. 스터디 팀의 모집 인원 감소
+            await tx.studyTeam.update({
+                where: { id: studyTeamId },
+                data: {
+                    recruitNum: {
+                        decrement: 1,
+                    },
+                },
+            });
+
+            return updatedApplicant;
+        });
 
         // 수락된 경우 알림 전송 (결과: APPROVED)
         const alertData = await this.studyTeamRepository.sendStudyUserAlert(

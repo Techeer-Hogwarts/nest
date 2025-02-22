@@ -19,7 +19,7 @@ export class ProjectTeamDetailResponse {
     readonly frontendNum: number;
     readonly backendNum: number;
     readonly devopsNum: number;
-    readonly uiuxNum: number;
+    readonly fullStackNum: number;
     readonly dataEngineerNum: number;
     readonly recruitExplain: string;
     readonly resultImages: {
@@ -46,6 +46,7 @@ export class ProjectTeamDetailResponse {
         isLeader: boolean;
         teamRole: string;
         email: string;
+        profileImage: string;
     }[];
     readonly likeCount: number;
     readonly viewCount: number;
@@ -63,7 +64,7 @@ export class ProjectTeamDetailResponse {
                 projectTeamId: number;
             })[];
             projectMember: (ProjectMember & {
-                user: { name: string; email: string };
+                user: { name: string; email: string; profileImage: string };
                 projectTeamId: number;
             })[];
         },
@@ -79,7 +80,7 @@ export class ProjectTeamDetailResponse {
         this.frontendNum = project.frontendNum;
         this.backendNum = project.backendNum;
         this.devopsNum = project.devopsNum;
-        this.uiuxNum = project.uiuxNum;
+        this.fullStackNum = project.fullStackNum;
         this.dataEngineerNum = project.dataEngineerNum;
         this.recruitExplain = project.recruitExplain;
         this.resultImages = project.resultImages.map((image) => ({
@@ -109,6 +110,7 @@ export class ProjectTeamDetailResponse {
             isLeader: member.isLeader,
             teamRole: member.teamRole,
             email: member.user.email,
+            profileImage: member.user.profileImage,
         }));
         this.likeCount = project.likeCount;
         this.viewCount = project.viewCount;
@@ -127,7 +129,7 @@ export class ProjectTeamDetailResponse2 {
     readonly frontendNum: number;
     readonly backendNum: number;
     readonly devopsNum: number;
-    readonly uiuxNum: number;
+    readonly fullStackNum: number;
     readonly dataEngineerNum: number;
     readonly recruitExplain: string;
     readonly resultImages: {
@@ -183,7 +185,7 @@ export class ProjectTeamDetailResponse2 {
         this.frontendNum = project.frontendNum;
         this.backendNum = project.backendNum;
         this.devopsNum = project.devopsNum;
-        this.uiuxNum = project.uiuxNum;
+        this.fullStackNum = project.fullStackNum;
         this.dataEngineerNum = project.dataEngineerNum;
         this.recruitExplain = project.recruitExplain;
         this.resultImages = project.resultImages.map((image) => ({
@@ -275,24 +277,33 @@ export class ProjectMemberResponse {
 
 export class ProjectApplicantResponse {
     id: number;
-    userName: string;
+    name: string;
+    userId: number;
     isLeader: boolean;
     teamRole: string;
     summary: string;
     status: StatusCategory;
     profileImage: string;
+    year: number;
 
     constructor(
         member: ProjectMember & {
-            user: { name: string; profileImage: string };
+            user: {
+                id: number;
+                name: string;
+                profileImage: string;
+                year: number;
+            };
         },
     ) {
         this.id = member.id;
-        this.userName = member.user.name;
+        this.userId = member.user.id;
+        this.name = member.user.name;
         this.isLeader = member.isLeader;
         this.teamRole = member.teamRole;
         this.summary = member.summary;
         this.status = member.status;
         this.profileImage = member.user.profileImage;
+        this.year = member.user.year;
     }
 }

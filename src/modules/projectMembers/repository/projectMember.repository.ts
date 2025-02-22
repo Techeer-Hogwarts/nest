@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ProjectMember, StatusCategory } from '@prisma/client';
+import {
+    Prisma,
+    PrismaClient,
+    ProjectMember,
+    StatusCategory,
+} from '@prisma/client';
 import { CreateProjectMemberRequest } from '../dto/request/create.projectMember.request';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import {
@@ -91,6 +96,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            year: true,
                         },
                     },
                 },
@@ -122,6 +128,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            year: true,
                         },
                     },
                 },
@@ -173,8 +180,11 @@ export class ProjectMemberRepository {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
                             profileImage: true,
+                            year: true,
+                            email: true,
                         },
                     },
                 },
@@ -195,13 +205,21 @@ export class ProjectMemberRepository {
         projectTeamId: number,
         userId: number,
         status: StatusCategory,
+        prismaClient?: Prisma.TransactionClient | PrismaClient,
     ): Promise<
         ProjectMember & {
-            user: { name: string; profileImage: string; email: string };
+            user: {
+                id: number;
+                name: string;
+                profileImage: string;
+                email: string;
+                year: number;
+            };
         }
     > {
         try {
-            const member = await this.prisma.projectMember.findFirst({
+            const prisma = prismaClient || this.prisma;
+            const member = await prisma.projectMember.findFirst({
                 where: {
                     projectTeamId,
                     userId,
@@ -212,6 +230,7 @@ export class ProjectMemberRepository {
                             name: true,
                             profileImage: true,
                             email: true,
+                            year: true,
                         },
                     },
                 },
@@ -221,15 +240,17 @@ export class ProjectMemberRepository {
                 throw new Error('해당 멤버를 찾을 수 없습니다.');
             }
 
-            return await this.prisma.projectMember.update({
+            return await prisma.projectMember.update({
                 where: { id: member.id },
                 data: { status },
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
                             profileImage: true,
                             email: true,
+                            year: true,
                         },
                     },
                 },
@@ -268,6 +289,7 @@ export class ProjectMemberRepository {
                         select: {
                             name: true,
                             profileImage: true,
+                            year: true,
                         },
                     },
                 },

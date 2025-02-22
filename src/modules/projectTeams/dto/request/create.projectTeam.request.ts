@@ -62,7 +62,7 @@ export class CreateProjectTeamRequest {
         example: 1,
         description: 'UI/UX 모집 인원',
     })
-    uiuxNum: number;
+    fullStackNum: number;
 
     @IsNotEmpty()
     @IsInt()

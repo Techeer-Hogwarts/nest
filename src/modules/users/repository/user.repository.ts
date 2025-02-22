@@ -141,7 +141,10 @@ export class UserRepository {
             },
             include: {
                 projectMembers: {
-                    where: { isDeleted: false },
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
                     include: {
                         projectTeam: {
                             select: {
@@ -152,12 +155,21 @@ export class UserRepository {
                                         imageUrl: true, // imageUrl만 선택하여 반환
                                     },
                                 },
+                                mainImages: {
+                                    select: {
+                                        imageUrl: true, // imageUrl만 선택하여 반환
+                                    },
+                                    take: 1, // 첫 번째 mainImage만 가져옴
+                                },
                             },
                         },
                     },
                 },
                 studyMembers: {
-                    where: { isDeleted: false },
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
                     include: {
                         studyTeam: {
                             select: {
@@ -389,7 +401,10 @@ export class UserRepository {
                     take: limit || 10,
                     include: {
                         projectMembers: {
-                            where: { isDeleted: false },
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
                             include: {
                                 projectTeam: {
                                     select: {
@@ -400,12 +415,21 @@ export class UserRepository {
                                                 imageUrl: true, // imageUrl만 선택하여 반환
                                             },
                                         },
+                                        mainImages: {
+                                            select: {
+                                                imageUrl: true, // imageUrl만 선택하여 반환
+                                            },
+                                            take: 1, // 첫 번째 mainImage만 가져옴
+                                        },
                                     },
                                 },
                             },
                         },
                         studyMembers: {
-                            where: { isDeleted: false },
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
                             include: {
                                 studyTeam: {
                                     select: {

@@ -78,6 +78,7 @@ export class StudyTeamController {
                                 isLeader: true,
                             },
                         ],
+                        profileImage: 'profileImage.jpg',
                     }),
                 },
             },
@@ -103,11 +104,6 @@ export class StudyTeamController {
                 parsedBody,
             );
 
-            this.logger.debug('✅ 스터디 팀 생성 완료');
-            return await this.studyTeamService.createStudyTeam(
-                createStudyTeamDto,
-                files,
-            );
             const result: GetStudyTeamResponse =
                 await this.studyTeamService.createStudyTeam(
                     createStudyTeamDto,
@@ -348,19 +344,20 @@ export class StudyTeamController {
         @Req() request: any,
     ): Promise<StudyApplicantResponse> {
         try {
+            this.logger.debug(JSON.stringify(createStudyMemberRequest));
             this.logger.debug('🔥 스터디 지원 시작');
             const user = request.user;
-            const userId = user.id;
-            this.logger.debug(`요청 데이터: userId=${userId}`);
+            this.logger.debug(`요청 데이터: userId=${user.id}`);
 
             const result = await this.studyTeamService.applyToStudyTeam(
                 createStudyMemberRequest,
-                userId,
+                user,
             );
 
             this.logger.debug('✅ 스터디 지원 완료');
             return result;
         } catch (error) {
+            this.logger.error(JSON.stringify(createStudyMemberRequest));
             this.logger.error('❌ 스터디 지원 중 오류 발생:', error);
             throw error;
         }
@@ -383,7 +380,7 @@ export class StudyTeamController {
     }
 
     // 스터디 지원자 조회 : status: PENDING인 데이터 조회(스터디팀에 속한 멤버만 조회 가능 멤버가 아니면 확인할 수 없습니다 )
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @Get('/:studyTeamId/applicants')
     @ApiOperation({
         summary: '스터디 지원자 조회',
@@ -391,16 +388,16 @@ export class StudyTeamController {
     })
     async getApplicants(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        // @Req() request: any,
     ): Promise<StudyApplicantResponse[]> {
-        this.logger.debug(
-            `🔥 스터디 지원자 조회 시작 - studyTeamId: ${studyTeamId}, userId: ${request.user.id}`,
-        );
+        // this.logger.debug(
+        //     `🔥 스터디 지원자 조회 시작 - studyTeamId: ${studyTeamId}, userId: ${request.user.id}`,
+        // );
         try {
-            const userId = request.user.id;
+            // const userId = request.user.id;
             const applicants = await this.studyTeamService.getApplicants(
                 studyTeamId,
-                userId,
+                // userId,
             );
             this.logger.debug(
                 `✅ 스터디 지원자 조회 완료 - studyTeamId: ${studyTeamId}, applicantsCount: ${applicants.length}`,

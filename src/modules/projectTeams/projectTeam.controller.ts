@@ -72,7 +72,7 @@ export class ProjectTeamController {
                         frontendNum: 1,
                         backendNum: 1,
                         devopsNum: 0,
-                        uiuxNum: 0,
+                        fullStackNum: 0,
                         dataEngineerNum: 0,
                         isRecruited: true,
                         isFinished: false,
@@ -241,7 +241,8 @@ export class ProjectTeamController {
                     example: JSON.stringify({
                         name: 'Updated Project Name',
                         projectExplain: '프로젝트에 대한 수정된 설명입니다.',
-                        deleteImages: [1, 2, 3],
+                        deleteMainImages: [1, 2], // mainImages에서 삭제할 이미지 ID 배열
+                        deleteResultImages: [3, 4], // resultImages에서 삭제할 이미지 ID 배열
                         deleteMembers: [1, 2],
                         projectMember: [
                             {
@@ -435,7 +436,7 @@ export class ProjectTeamController {
     }
 
     // 프로젝트 지원자 조회 : status: PENDING인 데이터 조회
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @Get('/:projectTeamId/applicants')
     @ApiOperation({
         summary: '프로젝트 지원자 조회',
@@ -443,18 +444,18 @@ export class ProjectTeamController {
     })
     async getApplicants(
         @Param('projectTeamId') projectTeamId: number,
-        @Req() request: any,
+        // @Req() request: any,
     ): Promise<ProjectApplicantResponse[]> {
         try {
-            const userId = request.user.id;
+            // const userId = request.user.id;
             this.logger.debug('🔥 프로젝트 지원자 조회 시작');
-            this.logger.debug(
-                `projectTeamId: ${projectTeamId}, userId: ${userId}`,
-            );
+            // this.logger.debug(
+            //     `projectTeamId: ${projectTeamId}, userId: ${userId}`,
+            // );
 
             return await this.projectTeamService.getApplicants(
                 projectTeamId,
-                userId,
+                // userId,
             );
         } catch (error) {
             this.logger.error('❌ 프로젝트 지원자 조회 중 예외 발생:', error);

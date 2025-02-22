@@ -22,11 +22,13 @@ export class GetUserResponse {
         id: number;
         name: string;
         resultImages: string[];
+        mainImage: string;
     }[];
     readonly studyTeams: {
         id: number;
         name: string;
         resultImages: string[];
+        mainImage: string;
     }[];
     readonly experiences: {
         id: number;
@@ -56,7 +58,7 @@ export class GetUserResponse {
         this.year = userEntity.year;
         this.stack = userEntity.stack;
 
-        // projectMembers와 studyMembers가 undefined일 경우 빈 배열로 초기화
+        // 프로젝트 팀의 mainImage는 mainImages에서 가져옴
         this.projectTeams = Array.isArray(userEntity.projectMembers)
             ? userEntity.projectMembers.map((pm) => ({
                   id: pm.projectTeam.id,
@@ -64,16 +66,19 @@ export class GetUserResponse {
                   resultImages: Array.isArray(pm.projectTeam.resultImages)
                       ? pm.projectTeam.resultImages.map((img) => img.imageUrl)
                       : [],
+                  mainImage: pm.projectTeam.mainImages?.[0]?.imageUrl || '', // mainImages의 첫 번째 이미지 사용
               }))
             : [];
 
+        // 스터디 팀의 mainImage는 resultImages 배열의 첫 번째 값을 사용
         this.studyTeams = Array.isArray(userEntity.studyMembers)
             ? userEntity.studyMembers.map((sm) => ({
-                  id: sm.id,
+                  id: sm.studyTeam.id,
                   name: sm.studyTeam.name,
                   resultImages: Array.isArray(sm.studyTeam.resultImages)
                       ? sm.studyTeam.resultImages.map((img) => img.imageUrl)
                       : [],
+                  mainImage: sm.studyTeam.resultImages?.[0]?.imageUrl || '', // resultImages의 첫 번째 이미지 사용
               }))
             : [];
 

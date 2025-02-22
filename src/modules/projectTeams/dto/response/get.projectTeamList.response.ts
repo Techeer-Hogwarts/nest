@@ -7,7 +7,7 @@ export class GetProjectTeamListResponse {
     private readonly frontendNum: number;
     private readonly backendNum: number;
     private readonly devopsNum: number;
-    private readonly uiuxNum: number;
+    private readonly fullStackNum: number;
     private readonly dataEngineerNum: number;
     private readonly projectExplain: string;
     private readonly recruitExplain: string;
@@ -20,7 +20,7 @@ export class GetProjectTeamListResponse {
         this.frontendNum = project.frontendNum;
         this.backendNum = project.backendNum;
         this.devopsNum = project.devopsNum;
-        this.uiuxNum = project.uiuxNum;
+        this.fullStackNum = project.fullStackNum;
         this.dataEngineerNum = project.dataEngineerNum;
         this.projectExplain = project.projectExplain;
         this.recruitExplain = project.recruitExplain;

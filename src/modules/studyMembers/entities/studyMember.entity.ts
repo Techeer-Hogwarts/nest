@@ -12,6 +12,7 @@ export class StudyMemberEntity implements StudyMember {
     summary: string;
     status: StatusCategory;
     user: User;
+    teamRole: string;
 
     studyMembers: StudyMemberEntity[];
 }
