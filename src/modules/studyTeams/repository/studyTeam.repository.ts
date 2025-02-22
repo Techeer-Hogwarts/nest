@@ -319,8 +319,7 @@ export class StudyTeamRepository {
             return new GetStudyTeamResponse(updatedStudyTeam);
         } catch (error) {
             this.logger.error(
-                '❌ [ERROR] closeStudyTeam 에서 예외 발생: ',
-                error,
+                `❌ [ERROR] closeStudyTeam 에서 예외 발생: ${error}`,
             );
             throw new Error('데이터베이스 에러가 발생했습니다.');
         }
