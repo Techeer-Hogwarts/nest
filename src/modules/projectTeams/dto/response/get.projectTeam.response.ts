@@ -45,6 +45,7 @@ export class ProjectTeamDetailResponse {
         name: string;
         isLeader: boolean;
         teamRole: string;
+        userId: number;
         email: string;
         profileImage: string;
     }[];
@@ -64,7 +65,13 @@ export class ProjectTeamDetailResponse {
                 projectTeamId: number;
             })[];
             projectMember: (ProjectMember & {
-                user: { name: string; email: string; profileImage: string };
+                user: {
+                    id: number;
+                    name: string;
+                    email: string;
+                    year: number;
+                    profileImage: string;
+                };
                 projectTeamId: number;
             })[];
         },
@@ -109,7 +116,9 @@ export class ProjectTeamDetailResponse {
             name: member.user.name,
             isLeader: member.isLeader,
             teamRole: member.teamRole,
+            userId: member.userId,
             email: member.user.email,
+            year: member.user.year,
             profileImage: member.user.profileImage,
         }));
         this.likeCount = project.likeCount;
