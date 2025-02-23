@@ -142,7 +142,8 @@ export class ResumeRepository {
             where: {
                 isDeleted: false,
                 ...(position?.length && {
-                    user: { mainPosition: { in: position } },
+                    // user: { mainPosition: { in: position } }, // 유저 포지션
+                    position: { in: position },
                 }),
                 ...(year?.length && {
                     user: { year: { in: year } },
@@ -161,7 +162,7 @@ export class ResumeRepository {
             },
         });
         this.logger.debug(
-            `${resumes.length}개의 인기 이력서 목록 조회 성공`,
+            `${resumes.length}개의 이력서 목록 조회 성공`,
             ResumeRepository.name,
         );
         return resumes.map((resume) => new GetResumeResponse(resume));

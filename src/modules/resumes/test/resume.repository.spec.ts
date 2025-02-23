@@ -139,11 +139,7 @@ describe('ResumeRepository', (): void => {
                 where: {
                     isDeleted: false,
                     ...(getResumesQueryRequest.position?.length && {
-                        user: {
-                            mainPosition: {
-                                in: getResumesQueryRequest.position,
-                            },
-                        },
+                        position: { in: getResumesQueryRequest.position },
                     }),
                     ...(getResumesQueryRequest.year?.length && {
                         user: { year: { in: getResumesQueryRequest.year } },
