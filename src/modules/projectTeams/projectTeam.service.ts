@@ -1268,8 +1268,8 @@ export class ProjectTeamService {
                                 return { backendNum: { gt: 0 } };
                             case 'devops':
                                 return { devopsNum: { gt: 0 } };
-                            case 'uiux':
-                                return { uiuxNum: { gt: 0 } };
+                            case 'fullstack':
+                                return { fullStackNum: { gt: 0 } };
                             case 'dataEngineer':
                                 return { dataEngineerNum: { gt: 0 } };
                             default:
