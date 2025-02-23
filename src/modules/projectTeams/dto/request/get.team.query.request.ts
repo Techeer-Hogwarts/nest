@@ -48,7 +48,8 @@ export class GetTeamQueryRequest {
 
     // 모집중 페이지에서의 포지션 필터링
     @ApiProperty({
-        description: '포지션 필터링 (frontend, backend 등)',
+        description:
+            '포지션 필터링 (frontend, backend, devops, fullstack, dataEngineer)',
         required: false,
         type: [String],
         example: ['frontend', 'backend'],
