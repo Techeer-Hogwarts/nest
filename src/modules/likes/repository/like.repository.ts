@@ -153,13 +153,8 @@ export class LikeRepository {
                     // userId가 존재하는 경우만 유저 정보 조회
                     this.logger.debug(`유저 정보 추가`, LikeRepository.name);
                     const user = await this.prisma.user.findUnique({
-                        where: { id: content.userId },
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            roleId: true,
-                            profileImage: true,
+                        where: {
+                            id: content.userId,
                         },
                     });
                     return {

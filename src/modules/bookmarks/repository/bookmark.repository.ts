@@ -139,13 +139,6 @@ export class BookmarkRepository {
                     );
                     const user = await this.prisma.user.findUnique({
                         where: { id: content.userId },
-                        select: {
-                            id: true,
-                            name: true,
-                            nickname: true,
-                            roleId: true,
-                            profileImage: true,
-                        },
                     });
                     return {
                         ...content,
