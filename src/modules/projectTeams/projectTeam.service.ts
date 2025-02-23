@@ -1142,7 +1142,32 @@ export class ProjectTeamService {
                     data: updateData,
                 });
 
-                return updatedApplicant;
+                // 4. 정렬된 전체 팀원 정보 조회
+                const orderedMembers = await tx.projectMember.findMany({
+                    where: {
+                        projectTeamId,
+                        status: 'APPROVED',
+                        isDeleted: false,
+                    },
+                    orderBy: {
+                        createdAt: 'asc', // 생성 시간 기준 오름차순 정렬
+                    },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                profileImage: true,
+                                email: true,
+                                year: true,
+                            },
+                        },
+                    },
+                });
+
+                return orderedMembers.find(
+                    (member) => member.id === updatedApplicant.id,
+                );
             });
 
             // 승인된 경우 사용자 알림 전송 (결과: APPROVED)
