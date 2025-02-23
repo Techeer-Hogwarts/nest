@@ -309,6 +309,7 @@ export class ProjectTeamService {
                         include: {
                             user: {
                                 select: {
+                                    id: true,
                                     profileImage: true,
                                     name: true,
                                     email: true,
