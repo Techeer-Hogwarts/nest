@@ -398,15 +398,10 @@ export class StudyTeamRepository {
     // 스터디 아이디로 스터디 상세 조회 (토큰 검사 X)
     async getStudyTeamById(id: number): Promise<GetStudyTeamResponse> {
         try {
-            const studyTeam = await this.prisma.studyTeam.update({
+            const studyTeam = await this.prisma.studyTeam.findFirst({
                 where: {
                     id: id,
                     isDeleted: false,
-                },
-                data: {
-                    viewCount: {
-                        increment: 1,
-                    },
                 },
                 include: {
                     resultImages: {
@@ -431,10 +426,22 @@ export class StudyTeamRepository {
                     },
                 },
             });
+
             if (!studyTeam) {
                 this.logger.error(`Study Team with ID ${id} not found.`);
                 throw new NotFoundStudyTeamException();
             }
+
+            // 조회수를 증가
+            await this.prisma.studyTeam.update({
+                where: { id: id },
+                data: {
+                    viewCount: {
+                        increment: 1,
+                    },
+                },
+            });
+
             return new GetStudyTeamResponse(studyTeam);
         } catch (error) {
             if (
