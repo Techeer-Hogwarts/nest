@@ -398,7 +398,6 @@ export class StudyTeamRepository {
     // 스터디 아이디로 스터디 상세 조회 (토큰 검사 X)
     async getStudyTeamById(id: number): Promise<GetStudyTeamResponse> {
         try {
-            // 먼저 스터디를 찾습니다
             const studyTeam = await this.prisma.studyTeam.findFirst({
                 where: {
                     id: id,
@@ -433,7 +432,7 @@ export class StudyTeamRepository {
                 throw new NotFoundStudyTeamException();
             }
 
-            // 조회수를 증가시킵니다
+            // 조회수를 증가
             await this.prisma.studyTeam.update({
                 where: { id: id },
                 data: {
