@@ -11,6 +11,7 @@ import { CreateSessionResponse } from './dto/response/create.session.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { IndexService } from '../../global/index/index.service';
 import { IndexSessionRequest } from './dto/request/index.session.request';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @Injectable()
 export class SessionService {
@@ -68,18 +69,26 @@ export class SessionService {
 
     async getSessionList(
         query: GetSessionsQueryRequest,
-    ): Promise<GetSessionResponse[]> {
+    ): Promise<{ sessions: GetSessionResponse[]; meta: PagableMeta }> {
         this.logger.debug(`세션 게시물 목록 조회 중`, SessionService.name);
 
-        const sessions: SessionEntity[] =
-            await this.sessionRepository.getSessionList(query);
+        const sessionTotal = await this.sessionRepository.getSessionList(query);
+        const sessions = sessionTotal.sessions.map(
+            (session) => new GetSessionResponse(session),
+        );
+        const meta = new PagableMeta(
+            sessionTotal.total,
+            query.offset,
+            query.limit,
+        );
         this.logger.debug(
-            `세션 게시물 목록 조회 완료 - 조회된 개수: ${sessions.length}`,
+            `세션 게시물 목록 조회 완료 - 조회된 개수: ${sessions.length}, meta: ${JSON.stringify(meta)}`,
             SessionService.name,
         );
-        return sessions.map(
-            (session: SessionEntity) => new GetSessionResponse(session),
-        );
+        return {
+            sessions,
+            meta,
+        };
     }
 
     async getSessionsByUser(

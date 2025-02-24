@@ -114,7 +114,7 @@ export class SessionRepository {
 
     async getSessionList(
         query: GetSessionsQueryRequest,
-    ): Promise<SessionEntity[]> {
+    ): Promise<{ sessions: SessionEntity[]; total: number }> {
         const {
             category,
             date,
@@ -122,20 +122,34 @@ export class SessionRepository {
             offset = 0,
             limit = 10,
         }: GetSessionsQueryRequest = query;
-        return this.prisma.session.findMany({
-            where: {
-                isDeleted: false,
-                ...(category && { category }),
-                ...(date && date.length > 0 && { date: { in: date } }),
-                ...(position &&
-                    position.length > 0 && { position: { in: position } }),
-            },
-            include: {
-                user: true,
-            },
-            skip: offset,
-            take: limit,
-        });
+        // 공통 where 조건 정의
+        const whereCondition = {
+            isDeleted: false,
+            ...(category && { category }),
+            ...(date && date.length > 0 && { date: { in: date } }),
+            ...(position &&
+                position.length > 0 && { position: { in: position } }),
+        };
+
+        // 데이터 조회 및 전체 개수 계산을 병렬 실행
+        const [sessions, total] = await Promise.all([
+            this.prisma.session.findMany({
+                where: whereCondition,
+                include: {
+                    user: true,
+                },
+                skip: offset,
+                take: limit,
+            }),
+            this.prisma.session.count({
+                where: whereCondition,
+            }),
+        ]);
+
+        return {
+            sessions,
+            total,
+        };
     }
 
     async getSessionsByUser(
