@@ -24,6 +24,7 @@ import { CreateUserExperienceRequest } from '../userExperiences/dto/request/crea
 import { UserExperienceRepository } from '../userExperiences/repository/userExperience.repository';
 import { UpdateUserExperienceRequest } from '../userExperiences/dto/request/update.userExperience.request';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @Injectable()
 export class UserService {
@@ -394,7 +395,9 @@ export class UserService {
         return this.userRepository.updateNickname(user.id, nickname);
     }
 
-    async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {
+    async getAllProfiles(
+        query: GetUserssQueryRequest,
+    ): Promise<{ users: GetUserResponse[]; meta: PagableMeta }> {
         this.logger.debug(
             '모든 프로필 조회 시작',
             JSON.stringify({
@@ -403,8 +406,13 @@ export class UserService {
             }),
         );
 
-        const users = (await this.userRepository.findAllProfiles(query)) || [];
-
+        const usersTotal = await this.userRepository.findAllProfiles(query);
+        const users = usersTotal.users ?? [];
+        const meta = new PagableMeta(
+            usersTotal.total,
+            query.offset,
+            query.limit,
+        );
         this.logger.debug(
             '모든 프로필 조회 중',
             JSON.stringify({
@@ -419,12 +427,15 @@ export class UserService {
                     context: UserService.name,
                 }),
             );
-            return [];
         }
 
-        return users
+        const userResult = users
             .filter((user) => user !== null && user !== undefined)
             .map((user) => new GetUserResponse(user));
+        return {
+            users: userResult,
+            meta,
+        };
     }
 
     async getProfile(userId: number): Promise<GetUserResponse> {
