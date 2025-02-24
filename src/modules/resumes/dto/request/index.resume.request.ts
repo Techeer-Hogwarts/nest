@@ -8,6 +8,8 @@ export class IndexResumeRequest {
     readonly userID: string;
     readonly userName: string;
     readonly userProfileImage: string;
+    readonly year: number;
+    readonly position: string;
 
     constructor(resume: ResumeEntity) {
         this.createdAt = String(resume.createdAt);
@@ -17,5 +19,7 @@ export class IndexResumeRequest {
         this.userID = String(resume.user.id);
         this.userName = resume.user.name;
         this.userProfileImage = resume.user.profileImage;
+        this.year = resume.user.year;
+        this.position = resume.user.mainPosition;
     }
 }
