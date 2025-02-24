@@ -5,6 +5,7 @@ import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../global/pagination/pagination.query.dto';
 import { TaskService } from '../../global/task/task.service';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @Injectable()
 export class BlogService {
@@ -22,14 +23,24 @@ export class BlogService {
         await this.taskService.requestSharedPostFetch(userId, url);
     }
 
-    async getBlogList(query: GetBlogsQueryRequest): Promise<GetBlogResponse[]> {
-        const blogs: GetBlogResponse[] =
-            await this.blogRepository.getBlogList(query);
+    async getBlogList(
+        query: GetBlogsQueryRequest,
+    ): Promise<{ blogs: GetBlogResponse[]; meta: PagableMeta }> {
+        const blogsTotal = await this.blogRepository.getBlogList(query);
+        const blogs = blogsTotal.blogs;
+        const meta = new PagableMeta(
+            blogsTotal.total,
+            query.offset,
+            query.limit,
+        );
         this.logger.debug(
             `${blogs.length}개의 블로그 엔티티 목록 조회 성공`,
             BlogService.name,
         );
-        return blogs;
+        return {
+            blogs,
+            meta,
+        };
     }
 
     async getBlogsByUser(

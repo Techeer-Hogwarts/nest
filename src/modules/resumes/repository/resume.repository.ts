@@ -126,7 +126,7 @@ export class ResumeRepository {
 
     async getResumeList(
         query: GetResumesQueryRequest,
-    ): Promise<GetResumeResponse[]> {
+    ): Promise<{ resumes: GetResumeResponse[]; total: number }> {
         const {
             position,
             year,
@@ -138,20 +138,21 @@ export class ResumeRepository {
             `이력서 엔티티 목록 조회 - position: ${position}, year: ${year}, category: ${category}, offset: ${offset}, limit: ${limit}`,
             ResumeRepository.name,
         );
+        const whereCondition = {
+            isDeleted: false,
+            ...(position?.length && {
+                // user: { mainPosition: { in: position } }, // 유저 포지션
+                position: { in: position },
+            }),
+            ...(year?.length && {
+                user: { year: { in: year } },
+            }),
+            ...(category?.length && {
+                category,
+            }),
+        };
         const resumes = await this.prisma.resume.findMany({
-            where: {
-                isDeleted: false,
-                ...(position?.length && {
-                    // user: { mainPosition: { in: position } }, // 유저 포지션
-                    position: { in: position },
-                }),
-                ...(year?.length && {
-                    user: { year: { in: year } },
-                }),
-                ...(category?.length && {
-                    category,
-                }),
-            },
+            where: whereCondition,
             include: {
                 user: true,
             },
@@ -161,11 +162,18 @@ export class ResumeRepository {
                 createdAt: Prisma.SortOrder.desc,
             },
         });
+        const total = await this.prisma.resume.count({ where: whereCondition });
         this.logger.debug(
             `${resumes.length}개의 이력서 목록 조회 성공`,
             ResumeRepository.name,
         );
-        return resumes.map((resume) => new GetResumeResponse(resume));
+        const resumeResponse = resumes.map(
+            (resume: ResumeEntity) => new GetResumeResponse(resume),
+        );
+        return {
+            resumes: resumeResponse,
+            total,
+        };
     }
 
     async getResumesByUser(

@@ -390,7 +390,9 @@ export class UserRepository {
         });
     }
 
-    async findAllProfiles(query: GetUserssQueryRequest): Promise<UserEntity[]> {
+    async findAllProfiles(
+        query: GetUserssQueryRequest,
+    ): Promise<{ users: UserEntity[]; total: number }> {
         const { position, year, university, grade, offset, limit } = query;
 
         const filters: Record<string, any> = {};
@@ -516,14 +518,24 @@ export class UserRepository {
                 }
             });
 
+            const total = await this.prisma.user.count({
+                where: {
+                    isDeleted: false,
+                    ...filters,
+                },
+            });
+
             this.logger.debug('조회 성공');
-            return result;
+            return {
+                users: result,
+                total,
+            };
         } catch (error) {
             this.logger.error(
                 'findAllProfiles 쿼리 실패',
                 JSON.stringify(error, null, 2),
             );
-            return [];
+            throw Error(error);
         }
     }
 }

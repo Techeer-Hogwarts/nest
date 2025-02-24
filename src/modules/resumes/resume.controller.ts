@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @ApiTags('resumes')
 @Controller('resumes')
@@ -40,7 +41,7 @@ export class ResumeController {
     })
     async getResumeList(
         @Query() query: GetResumesQueryRequest,
-    ): Promise<GetResumeResponse[]> {
+    ): Promise<{ resumes: GetResumeResponse[]; meta: PagableMeta }> {
         this.logger.debug(
             `이력서 목록 조회 및 검색 요청 처리 중 - query: ${JSON.stringify(query)}`,
             ResumeController.name,
