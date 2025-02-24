@@ -18,6 +18,7 @@ import { GetBlogsQueryRequest } from './dto/request/get.blog.query.request';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @ApiTags('blogs')
 @Controller('/blogs')
@@ -93,7 +94,7 @@ export class BlogController {
     })
     async getBlogList(
         @Query() query: GetBlogsQueryRequest,
-    ): Promise<GetBlogResponse[]> {
+    ): Promise<{ blogs: GetBlogResponse[]; meta: PagableMeta }> {
         this.logger.debug(
             `블로그 목록 조회 및 검색 처리 중 - query: ${JSON.stringify(query)}`,
             BlogController.name,
