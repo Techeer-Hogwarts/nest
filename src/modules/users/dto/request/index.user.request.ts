@@ -8,7 +8,7 @@ export class IndexUserRequest {
     readonly profileImage: string;
     readonly school: string;
     readonly stack: string[];
-    readonly year: number;
+    readonly year: string;
 
     constructor(user: UserEntity) {
         this.email = user.email;
@@ -18,6 +18,6 @@ export class IndexUserRequest {
         this.profileImage = user.profileImage;
         this.school = user.school;
         this.stack = user.stack;
-        this.year = user.year;
+        this.year = String(user.year);
     }
 }
