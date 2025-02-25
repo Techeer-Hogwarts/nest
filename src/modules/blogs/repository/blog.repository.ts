@@ -113,7 +113,7 @@ export class BlogRepository {
             skip: offset,
             take: limit,
             orderBy: {
-                createdAt: Prisma.SortOrder.desc,
+                title: 'asc',
             },
         });
         this.logger.debug(
