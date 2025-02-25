@@ -1421,12 +1421,10 @@ export class ProjectTeamService {
                         : team.isFinished === isFinished),
             );
 
-            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환
+            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환(가나다 순)
             const allTeams = !teamTypes
-                ? [...filteredProjects, ...filteredStudies].sort(
-                      (a, b) =>
-                          new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime(), // 날짜 순으로 정렬
+                ? [...filteredProjects, ...filteredStudies].sort((a, b) =>
+                      a.name.localeCompare(b.name),
                   )
                 : [];
 
