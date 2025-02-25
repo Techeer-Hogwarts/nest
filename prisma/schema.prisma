@@ -18,18 +18,18 @@ model User {
   year              Int
   password          String
   isLft             Boolean             @default(false)
-  githubUrl         String              @db.VarChar(200)
+  githubUrl         String              @db.VarChar(500)
   mainPosition      String              @db.VarChar(100)
   subPosition       String?             @db.VarChar(100)
   school            String              @db.VarChar(100)
-  profileImage      String              @db.VarChar(200)
+  profileImage      String              @db.VarChar(1000)
   stack             String[]            @default([])
   isAuth            Boolean             @default(false)
   roleId            Int
   grade             String              @db.VarChar(100)
-  mediumUrl         String?             @db.VarChar(200)
-  tistoryUrl        String?             @db.VarChar(200)
-  velogUrl          String?             @db.VarChar(200)
+  mediumUrl         String?             @db.VarChar(300)
+  tistoryUrl        String?             @db.VarChar(300)
+  velogUrl          String?             @db.VarChar(300)
   blogs             Blog[]              @relation("UserBlogs")
   bookmarks         Bookmark[]          @relation("UserBookmarks")
   events            Event[]             @relation("UserEvents")
@@ -90,7 +90,7 @@ model ProjectMember {
   teamRole      String         @db.VarChar(100)
   projectTeamId Int
   userId        Int
-  summary       String         @db.VarChar(100)
+  summary       String         @db.VarChar(3000)
   status        StatusCategory
   projectTeam   ProjectTeam    @relation(fields: [projectTeamId], references: [id])
   user          User           @relation(fields: [userId], references: [id])
@@ -106,7 +106,7 @@ model StudyMember {
   isLeader    Boolean
   studyTeamId Int
   userId      Int
-  summary     String         @db.VarChar(100)
+  summary     String         @db.VarChar(3000)
   status      StatusCategory
   studyTeam   StudyTeam      @relation(fields: [studyTeamId], references: [id])
   user        User           @relation(fields: [userId], references: [id])
@@ -144,15 +144,15 @@ model ProjectTeam {
   isRecruited     Boolean              @default(true)
   isFinished      Boolean              @default(true)
   name            String               @unique @db.VarChar(100)
-  githubLink      String               @db.VarChar(200)
-  notionLink      String               @db.VarChar(200)
-  projectExplain  String               @db.VarChar(200)
+  githubLink      String               @db.VarChar(500)
+  notionLink      String               @db.VarChar(500)
+  projectExplain  String               @db.VarChar(500)
   frontendNum     Int
   backendNum      Int
   devopsNum       Int
   fullStackNum         Int
   dataEngineerNum Int
-  recruitExplain  String               @db.VarChar(200)
+  recruitExplain  String               @db.VarChar(3000)
   teamStacks      TeamStack[]
   projectMember   ProjectMember[]
   resultImages    ProjectResultImage[]
@@ -169,13 +169,13 @@ model StudyTeam {
   isRecruited    Boolean            @default(true)
   isFinished     Boolean            @default(true)
   name           String             @unique @db.VarChar(100)
-  githubLink     String             @db.VarChar(200)
-  notionLink     String             @db.VarChar(200)
-  studyExplain   String             @db.VarChar(200)
-  goal           String             @db.VarChar(300)
-  rule           String             @db.VarChar(300)
+  githubLink     String             @db.VarChar(500)
+  notionLink     String             @db.VarChar(500)
+  studyExplain   String             @db.VarChar(3000)
+  goal           String             @db.VarChar(3000)
+  rule           String             @db.VarChar(3000)
   recruitNum     Int
-  recruitExplain String             @db.VarChar(200)
+  recruitExplain String             @db.VarChar(3000)
   studyMember    StudyMember[]
   resultImages   StudyResultImage[]
   likeCount      Int                @default(0)
@@ -187,7 +187,7 @@ model StudyResultImage {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   isDeleted   Boolean   @default(false)
-  imageUrl    String    @db.VarChar(300)
+  imageUrl    String    @db.VarChar(3000)
   studyTeamId Int
   studyTeam   StudyTeam @relation(fields: [studyTeamId], references: [id])
 }
@@ -197,7 +197,7 @@ model ProjectResultImage {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   isDeleted     Boolean     @default(false)
-  imageUrl      String      @db.VarChar(300)
+  imageUrl      String      @db.VarChar(3000)
   projectTeamId Int
   projectTeam   ProjectTeam @relation(fields: [projectTeamId], references: [id])
 }
@@ -207,7 +207,7 @@ model ProjectMainImage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isDeleted Boolean  @default(false)
-  imageUrl  String   @db.VarChar(300)
+  imageUrl  String   @db.VarChar(3000)
 
   projectTeamId Int
   projectTeam   ProjectTeam @relation(fields: [projectTeamId], references: [id])
@@ -219,13 +219,13 @@ model Blog {
   updatedAt   DateTime     @updatedAt
   isDeleted   Boolean      @default(false)
   userId      Int
-  title       String       @db.VarChar(100)
-  url         String       @db.VarChar(200)
+  title       String       @db.VarChar(1000)
+  url         String       @db.VarChar(2000)
   date        DateTime
-  author      String?      @db.VarChar(100)
-  authorImage String?      @db.VarChar(200)
-  category    String       @db.VarChar(50)
-  thumbnail   String?      @db.VarChar(200)
+  author      String?      @db.VarChar(300)
+  authorImage String?      @db.VarChar(300)
+  category    String       @db.VarChar(300)
+  thumbnail   String?      @db.VarChar(2000)
   tags        String[]     @default([])
   user        User         @relation("UserBlogs", fields: [userId], references: [id])
   likeCount       Int             @default(0)
@@ -265,8 +265,8 @@ model Resume {
   updatedAt DateTime       @updatedAt
   isDeleted Boolean        @default(false)
   userId    Int
-  title     String         @db.VarChar(100)
-  url       String         @db.VarChar(100)
+  title     String         @db.VarChar(1000)
+  url       String         @db.VarChar(1000)
   isMain    Boolean        @default(false)
   category  String         @db.VarChar(50)
   position  String         @db.VarChar(100)
@@ -281,7 +281,7 @@ model Event {
   updatedAt DateTime      @updatedAt
   isDeleted Boolean       @default(false)
   category  String        @db.VarChar(50)
-  title     String        @db.VarChar(200)
+  title     String        @db.VarChar(2000)
   startDate DateTime
   endDate   DateTime?
   url       String?       @db.VarChar(200)
@@ -298,9 +298,9 @@ model Session {
   title     String          @db.VarChar(200)
   likeCount Int             @default(0)
   viewCount Int             @default(0)
-  thumbnail String          @db.VarChar(300)
-  videoUrl  String?         @db.VarChar(200)
-  fileUrl   String?         @db.VarChar(200)
+  thumbnail String          @db.VarChar(3000)
+  videoUrl  String?         @db.VarChar(3000)
+  fileUrl   String?         @db.VarChar(3000)
   presenter String          @db.VarChar(50)
   date      String          @db.VarChar(50)
   category  String          @db.VarChar(50)
