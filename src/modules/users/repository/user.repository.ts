@@ -427,6 +427,7 @@ export class UserRepository {
                     },
                     skip: offset || 0,
                     take: limit || 10,
+                    orderBy: { name: 'asc' },
                     include: {
                         projectMembers: {
                             where: {

@@ -158,7 +158,7 @@ export class ResumeRepository {
             skip: offset,
             take: limit,
             orderBy: {
-                createdAt: Prisma.SortOrder.desc,
+                title: 'asc',
             },
         });
         this.logger.debug(
@@ -188,7 +188,7 @@ export class ResumeRepository {
             skip: offset,
             take: limit,
             orderBy: {
-                createdAt: Prisma.SortOrder.desc,
+                title: 'asc',
             },
         });
         this.logger.debug(

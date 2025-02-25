@@ -135,6 +135,9 @@ export class SessionRepository {
             },
             skip: offset,
             take: limit,
+            orderBy: {
+                title: 'asc',
+            },
         });
     }
 
