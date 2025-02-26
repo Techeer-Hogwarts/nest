@@ -114,9 +114,10 @@ export class BlogRepository {
             },
             skip: offset,
             take: limit,
-            orderBy: {
-                createdAt: Prisma.SortOrder.desc,
-            },
+            orderBy: [
+                { likeCount: Prisma.SortOrder.desc }, // 좋아요 개수 내림차순
+                { createdAt: Prisma.SortOrder.desc }, // 생성일 최신순 정렬
+            ],
         });
         const total = await this.prisma.blog.count({
             where: {
