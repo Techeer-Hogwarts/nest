@@ -23,7 +23,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateProjectAlertRequest } from '../alert/dto/request/create.project.alert.request';
-import { AlertServcie } from '../alert/alert.service';
+import { AlertService } from '../alert/alert.service';
 import { CreatePersonalAlertRequest } from '../alert/dto/request/create.personal.alert.request';
 import { IndexProjectRequest } from './dto/request/index.project.request';
 import { IndexService } from '../../global/index/index.service';
@@ -46,7 +46,7 @@ export class ProjectTeamService {
         private readonly prisma: PrismaService,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
-        private readonly alertService: AlertServcie,
+        private readonly alertService: AlertService,
         private readonly indexService: IndexService,
     ) {}
 
