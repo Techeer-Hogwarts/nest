@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BlogController } from '../blog.controller';
 import { BlogService } from '../blog.service';
 import {
+    blogMetaMock,
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
@@ -69,13 +70,11 @@ describe('BlogController', (): void => {
 
     describe('getBlogList', (): void => {
         it('should return a list of blogs based on query', async (): Promise<void> => {
-            jest.spyOn(service, 'getBlogList').mockResolvedValue(
-                getBlogResponseList,
-            );
+            jest.spyOn(service, 'getBlogList').mockResolvedValue(blogMetaMock);
 
             const result = await controller.getBlogList(getBlogsQueryRequest);
 
-            expect(result).toEqual(getBlogResponseList);
+            expect(result).toEqual(blogMetaMock);
             expect(service.getBlogList).toHaveBeenCalledWith(
                 getBlogsQueryRequest,
             );

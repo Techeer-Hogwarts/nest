@@ -6,6 +6,7 @@ import { sessionEntity } from '../../sessions/test/mock-data';
 import { createLikeRequest, likeEntity } from './mock-data';
 import { ContentCategory } from '../../../global/category/content.category';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('LikeRepository', (): void => {
     let repository: LikeRepository;
@@ -49,6 +50,10 @@ describe('LikeRepository', (): void => {
                         debug: jest.fn(),
                         error: jest.fn(),
                     },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {},
                 },
             ],
         }).compile();

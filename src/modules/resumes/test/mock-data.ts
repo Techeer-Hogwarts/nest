@@ -5,6 +5,7 @@ import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { UpdateResumeRequest } from '../dto/request/update.resume.request';
 import { Request } from 'express';
+import { metaMock } from '../../sessions/test/mock-data';
 
 export const user = {
     id: 1,
@@ -99,4 +100,9 @@ export const updatedResumeEntity: ResumeEntity = resumeEntity({
 export const paginationQueryDto: PaginationQueryDto = {
     offset: 0,
     limit: 10,
+};
+
+export const resumeMetaMock = {
+    resumes: getResumeResponseList,
+    meta: metaMock,
 };

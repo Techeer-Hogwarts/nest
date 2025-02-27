@@ -3,6 +3,7 @@ import { GetBlogResponse } from '../dto/response/get.blog.response';
 import { GetBlogsQueryRequest } from '../dto/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
 import { BlogCategory } from '../category/blog.category';
+import { metaMock } from '../../sessions/test/mock-data';
 
 export const authorUserMock = {
     id: 1,
@@ -70,4 +71,10 @@ export const paginationQueryDto: PaginationQueryDto = {
     offset: 0,
     limit: 10,
 };
+
 export const singleBlogResponse: GetBlogResponse = getBlogResponseList[0];
+
+export const blogMetaMock = {
+    blogs: getBlogResponseList,
+    meta: metaMock,
+};

@@ -20,7 +20,8 @@ async function main(): Promise<void> {
         },
     });
 
-    const userRole = await prisma.role.upsert({
+    // const userRole = await prisma.role.upsert({
+    await prisma.role.upsert({
         where: { name: 'user' },
         update: {},
         create: {

@@ -33,6 +33,7 @@ describe('ResumeRepository', (): void => {
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
                             update: jest.fn(),
+                            count: jest.fn(),
                         },
                         user: {
                             findUnique: jest.fn(),
@@ -129,12 +130,16 @@ describe('ResumeRepository', (): void => {
             jest.spyOn(prismaService.resume, 'findMany').mockResolvedValue(
                 resumeEntities,
             );
+            jest.spyOn(prismaService.resume, 'count').mockResolvedValue(1);
 
             const result = await repository.getResumeList(
                 getResumesQueryRequest,
             );
 
-            expect(result).toEqual(getResumeResponseList);
+            expect(result).toEqual({
+                resumes: getResumeResponseList,
+                total: 1,
+            });
             expect(prismaService.resume.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,

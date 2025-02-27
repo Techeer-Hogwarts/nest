@@ -29,6 +29,7 @@ describe('BlogRepository', (): void => {
                             findMany: jest.fn(),
                             update: jest.fn(),
                             findUnique: jest.fn(),
+                            count: jest.fn(),
                         },
                         user: {
                             findUnique: jest.fn(),
@@ -81,10 +82,14 @@ describe('BlogRepository', (): void => {
             jest.spyOn(prismaService.blog, 'findMany').mockResolvedValue(
                 blogEntities,
             );
+            jest.spyOn(prismaService.blog, 'count').mockResolvedValue(1);
 
             const result = await repository.getBlogList(getBlogsQueryRequest);
 
-            expect(result).toEqual(getBlogResponseList);
+            expect(result).toEqual({
+                blogs: getBlogResponseList,
+                total: 1,
+            });
             expect(prismaService.blog.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
@@ -97,9 +102,10 @@ describe('BlogRepository', (): void => {
                 },
                 skip: getBlogsQueryRequest.offset,
                 take: getBlogsQueryRequest.limit,
-                orderBy: {
-                    createdAt: Prisma.SortOrder.desc,
-                },
+                orderBy: [
+                    { likeCount: Prisma.SortOrder.desc },
+                    { createdAt: Prisma.SortOrder.desc },
+                ],
             });
             expect(prismaService.blog.findMany).toHaveBeenCalledTimes(1);
         });

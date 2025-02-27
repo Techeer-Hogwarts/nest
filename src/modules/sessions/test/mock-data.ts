@@ -5,6 +5,7 @@ import { UpdateSessionRequest } from '../dto/request/update.session.request';
 import { GetSessionsQueryRequest } from '../dto/request/get.session.query.request';
 import { CreateSessionResponse } from '../dto/response/create.session.response';
 import { PaginationQueryDto } from '../../../global/pagination/pagination.query.dto';
+import { PagableMeta } from '../../../global/pagable/pageble-meta';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
@@ -142,3 +143,15 @@ export const updateSessionRequest: UpdateSessionRequest = {
 export const updatedSessionEntity: SessionEntity = sessionEntity({
     ...updateSessionRequest,
 });
+
+export const metaMock: PagableMeta = {
+    totalItems: 3,
+    totalPages: 1,
+    currentPage: 1,
+    hasNextPage: false,
+};
+
+export const sessionMetaMock = {
+    sessions: getSessionListResponse,
+    meta: metaMock,
+};

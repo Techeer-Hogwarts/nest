@@ -31,6 +31,7 @@ describe('SessionRepository', (): void => {
                             findUnique: jest.fn(),
                             findMany: jest.fn(),
                             update: jest.fn(),
+                            count: jest.fn(),
                         },
                     },
                 },
@@ -178,12 +179,16 @@ describe('SessionRepository', (): void => {
             jest.spyOn(prismaService.session, 'findMany').mockResolvedValue(
                 sessionEntities,
             );
+            jest.spyOn(prismaService.session, 'count').mockResolvedValue(1);
 
-            const result: SessionEntity[] = await repository.getSessionList(
+            const result = await repository.getSessionList(
                 getSessionsQueryRequest,
             );
 
-            expect(result).toEqual(sessionEntities);
+            expect(result).toEqual({
+                sessions: sessionEntities,
+                total: 1,
+            });
             expect(prismaService.session.findMany).toHaveBeenCalledWith({
                 where: {
                     isDeleted: false,
