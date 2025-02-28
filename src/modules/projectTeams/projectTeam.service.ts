@@ -317,7 +317,7 @@ export class ProjectTeamService {
                                 },
                             },
                         },
-                        orderBy: { id: 'asc' }, // ID 순서 보장
+                        orderBy: { userId: 'asc' }, // ID 순서 보장
                     },
                 },
             });
@@ -457,7 +457,7 @@ export class ProjectTeamService {
         userId: number,
         updateProjectTeamRequest: UpdateProjectTeamRequest,
         mainImageUrls: string[] = [],
-        resultImageUrls: string[] = [], // resultImages용 URLs
+        resultImageUrls: string[] = [],
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 프로젝트 업데이트 시작');
@@ -557,40 +557,64 @@ export class ProjectTeamService {
                 }
             }
 
-            // 기존 멤버 정보 조회
+            // 기존 멤버 정보 조회 (삭제된 멤버 포함)
             const existingMembers = await this.prisma.projectMember.findMany({
-                where: { projectTeamId: id },
+                where: {
+                    projectTeamId: id,
+                },
             });
 
             const validStacks = await this.validateStacks(teamStacks);
             const stackData = this.mapStackData(teamStacks, validStacks);
 
-            // 새로 추가할 멤버 필터링
-            const newMembers = projectMember.filter(
+            // 새로 추가할 멤버의 userId 목록
+            const userIdsToAdd = projectMember.map((member) => member.userId);
+
+            // 삭제된 멤버 중 다시 추가되는 멤버 찾기
+            const deletedMembersToReactivate = existingMembers.filter(
                 (member) =>
-                    !existingMembers.some(
-                        (existing) => existing.userId === member.userId,
-                    ),
+                    member.isDeleted === true &&
+                    userIdsToAdd.includes(member.userId),
             );
 
-            const updatedMembers = [
-                ...newMembers,
-                ...projectMember.filter((member) =>
-                    existingMembers.some(
-                        (existing) => existing.userId === member.userId,
-                    ),
-                ),
-                ...existingMembers.filter(
-                    (existing) =>
-                        !deleteMembers.includes(existing.id) &&
-                        !projectMember.some(
-                            (member) => member.userId === existing.userId,
-                        ),
-                ),
-            ];
+            // 삭제된 멤버 재활성화
+            if (deletedMembersToReactivate.length > 0) {
+                this.logger.debug(
+                    `삭제된 멤버 재활성화: ${deletedMembersToReactivate.map((m) => m.userId).join(', ')}`,
+                );
+
+                await this.prisma.projectMember.updateMany({
+                    where: {
+                        id: {
+                            in: deletedMembersToReactivate.map(
+                                (member) => member.id,
+                            ),
+                        },
+                    },
+                    data: {
+                        isDeleted: false,
+                    },
+                });
+            }
+
+            // 기존 멤버 ID를 매핑한 객체 생성
+            const memberIdMap = existingMembers.reduce((acc, member) => {
+                acc[member.userId] = member.id;
+                return acc;
+            }, {});
+
+            // 완전히 새로운 멤버 (기존 멤버 중에 없는 멤버)
+            const brandNewMembers = projectMember.filter(
+                (member) => !memberIdMap[member.userId],
+            );
+
+            // 이미 존재하는 멤버 (활성화 또는 삭제된 상태 포함)
+            const existingProjectMembers = projectMember.filter(
+                (member) => memberIdMap[member.userId],
+            );
 
             // 리더 존재 여부 확인
-            const hasLeader = updatedMembers.some((member) => member.isLeader);
+            const hasLeader = projectMember.some((member) => member.isLeader);
             if (!hasLeader) {
                 this.logger.error(
                     '프로젝트에는 최소 한 명의 리더가 있어야 합니다.',
@@ -601,6 +625,44 @@ export class ProjectTeamService {
             }
 
             this.logger.debug(`🚀 프로젝트 업데이트 실행 (ID: ${id})`);
+            let validDeleteMembers = [];
+            if (deleteMembers.length > 0) {
+                const membersToDelete =
+                    await this.prisma.projectMember.findMany({
+                        where: {
+                            userId: { in: deleteMembers },
+                            projectTeamId: id,
+                            isDeleted: false,
+                        },
+                        select: {
+                            id: true,
+                            userId: true,
+                        },
+                    });
+
+                validDeleteMembers = membersToDelete.map((member) => member.id);
+                this.logger.debug(
+                    `유효한 삭제 멤버 ID: ${validDeleteMembers.join(', ')}`,
+                );
+                this.logger.debug(
+                    `유효한 삭제 멤버 UserID: ${membersToDelete.map((m) => m.userId).join(', ')}`,
+                );
+            }
+
+            if (validDeleteMembers.length > 0) {
+                await this.prisma.projectMember.updateMany({
+                    where: {
+                        id: { in: validDeleteMembers },
+                    },
+                    data: {
+                        isDeleted: true,
+                    },
+                });
+                this.logger.debug(
+                    `멤버 삭제 처리 완료: ${validDeleteMembers.join(', ')}`,
+                );
+            }
+
             const updatedProject = await this.prisma.projectTeam.update({
                 where: { id },
                 data: {
@@ -620,40 +682,33 @@ export class ProjectTeamService {
                         create: stackData,
                     },
                     projectMember: {
-                        deleteMany: { id: { in: deleteMembers } },
-                        create: newMembers.map((member) => ({
+                        create: brandNewMembers.map((member) => ({
                             user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
                             teamRole: member.teamRole,
-                            summary: 'Updated member',
+                            summary: '새로 추가된 멤버입니다.',
                             status: 'APPROVED',
                         })),
-                        // 기존 멤버의 역할 수정을 위한 update 수정
-                        update: projectMember
-                            .filter((member) =>
-                                existingMembers.some(
-                                    (existing) =>
-                                        existing.userId === member.userId,
-                                ),
-                            )
-                            .map((member) => ({
-                                where: {
-                                    id: existingMembers.find(
-                                        (em) => em.userId === member.userId,
-                                    ).id,
-                                }, // unique identifier 사용
-                                data: {
-                                    teamRole: member.teamRole,
-                                    isLeader: member.isLeader,
-                                },
-                            })),
+                        update: existingProjectMembers.map((member) => ({
+                            where: {
+                                id: memberIdMap[member.userId],
+                            },
+                            data: {
+                                isLeader: member.isLeader,
+                                teamRole: member.teamRole,
+                                isDeleted: false,
+                            },
+                        })),
                     },
                 },
                 include: {
                     resultImages: true,
                     mainImages: true,
                     teamStacks: { include: { stack: true } },
-                    projectMember: { include: { user: true } },
+                    projectMember: {
+                        where: { isDeleted: false },
+                        include: { user: true },
+                    },
                 },
             });
 
@@ -1165,6 +1220,7 @@ export class ProjectTeamService {
                     },
                 });
 
+                // 승인된 지원자의 정보를 찾아서 반환
                 return orderedMembers.find(
                     (member) => member.id === updatedApplicant.id,
                 );
@@ -1340,6 +1396,9 @@ export class ProjectTeamService {
                             include: { stack: true },
                         },
                     },
+                    orderBy: {
+                        name: 'asc', // 이름 기준 오름차순 정렬
+                    },
                 });
             }
 
@@ -1362,6 +1421,9 @@ export class ProjectTeamService {
                         createdAt: true,
                         recruitNum: true,
                         studyExplain: true,
+                    },
+                    orderBy: {
+                        name: 'asc', // 이름 기준 오름차순 정렬
                     },
                 });
             }
@@ -1421,20 +1483,20 @@ export class ProjectTeamService {
                         : team.isFinished === isFinished),
             );
 
-            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환(가나다 순)
+            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합친 후 이름 순으로 정렬
             const allTeams = !teamTypes
-                ? [...filteredProjects, ...filteredStudies].sort((a, b) =>
-                      a.name.localeCompare(b.name),
+                ? [...filteredProjects, ...filteredStudies].sort(
+                      (a, b) => a.name.localeCompare(b.name, 'ko'), // 이름 기준 가나다순/알파벳순 정렬
                   )
                 : [];
 
             return {
                 ...(teamTypes
                     ? {
-                          projectTeams: filteredProjects,
-                          studyTeams: filteredStudies,
+                          projectTeams: filteredProjects, // 이미 DB에서 정렬됨
+                          studyTeams: filteredStudies, // 이미 DB에서 정렬됨
                       }
-                    : { allTeams }),
+                    : { allTeams }), // allTeams는 이름 순으로 정렬됨
             };
         } catch (error) {
             this.logger.error(
