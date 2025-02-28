@@ -16,6 +16,7 @@ import {
     UnauthorizedAdminException,
     NotFoundTecheerException,
     NotFoundUserException,
+    NotFoundResumeException,
 } from '../../global/exception/custom.exception';
 import { TaskService } from '../../global/task/task.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -120,6 +121,14 @@ export class UserService {
                 '경력 생성 완료',
                 JSON.stringify({ context: UserService.name }),
             );
+
+            // 파일 검증: 파일이 없으면 예외 처리
+            if (!file) {
+                this.logger.error('이력서 파일이 없습니다.', {
+                    context: UserService.name,
+                });
+                throw new NotFoundResumeException(); // 혹은 BadRequestException으로 변경 가능
+            }
 
             // 이력서 저장
             if (file && resumeData) {

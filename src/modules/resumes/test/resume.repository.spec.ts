@@ -11,7 +11,6 @@ import {
     user,
 } from './mock-data';
 import { ResumeEntity } from '../entities/resume.entity';
-import { Prisma } from '@prisma/client';
 import { NotFoundResumeException } from '../../../global/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { IndexService } from '../../../global/index/index.service';
@@ -159,7 +158,7 @@ describe('ResumeRepository', (): void => {
                 skip: getResumesQueryRequest.offset,
                 take: getResumesQueryRequest.limit,
                 orderBy: {
-                    createdAt: Prisma.SortOrder.desc,
+                    title: 'asc',
                 },
             });
             expect(prismaService.resume.findMany).toHaveBeenCalledTimes(1);
@@ -189,7 +188,7 @@ describe('ResumeRepository', (): void => {
                 skip: paginationQueryDto.offset,
                 take: paginationQueryDto.limit,
                 orderBy: {
-                    createdAt: Prisma.SortOrder.desc,
+                    title: 'asc',
                 },
             });
             expect(prismaService.resume.findMany).toHaveBeenCalledTimes(1);

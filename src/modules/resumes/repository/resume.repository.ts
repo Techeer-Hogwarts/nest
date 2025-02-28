@@ -159,7 +159,7 @@ export class ResumeRepository {
             skip: offset,
             take: limit,
             orderBy: {
-                createdAt: Prisma.SortOrder.desc,
+                title: 'asc',
             },
         });
         const total = await this.prisma.resume.count({ where: whereCondition });
@@ -196,7 +196,7 @@ export class ResumeRepository {
             skip: offset,
             take: limit,
             orderBy: {
-                createdAt: Prisma.SortOrder.desc,
+                title: 'asc',
             },
         });
         this.logger.debug(

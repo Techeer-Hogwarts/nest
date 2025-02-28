@@ -205,6 +205,9 @@ describe('SessionRepository', (): void => {
                 include: { user: true },
                 skip: getSessionsQueryRequest.offset,
                 take: getSessionsQueryRequest.limit,
+                orderBy: {
+                    title: 'asc',
+                },
             });
             expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
         });

@@ -4,11 +4,12 @@ import { Logger } from '@nestjs/common';
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
-    // Role 데이터 생성 (upsert 그대로)
     const adminRole = await prisma.role.upsert({
         where: { name: 'admin' },
         update: {},
-        create: { name: 'admin' },
+        create: {
+            name: 'admin',
+        },
     });
 
     const mentorRole = await prisma.role.upsert({
@@ -16,83 +17,24 @@ async function main(): Promise<void> {
         update: {},
         create: {
             name: 'mentor',
-            parent: { connect: { id: adminRole.id } },
+            parent: { connect: { id: adminRole.id } }, // admin과 연결
         },
     });
 
-    // const userRole = await prisma.role.upsert({
-    await prisma.role.upsert({
+    const userRole = await prisma.role.upsert({
         where: { name: 'user' },
         update: {},
         create: {
             name: 'user',
-            parent: { connect: { id: mentorRole.id } },
+            parent: { connect: { id: mentorRole.id } }, // mentor와 연결
         },
     });
 
-    // User 더미 데이터 생성 (upsert 사용, 고유 식별자로 email 사용)
-    // await prisma.user.upsert({
-    //     where: { email: 'test1@example.com' },
-    //     update: {},
-    //     create: {
-    //         name: '테커짱',
-    //         email: 'test1@example.com',
-    //         nickname: 'johnny', // 닉네임 중복 주의!
-    //         year: 7,
-    //         password:
-    //             '$2b$12$Rw9jlCjZlBz.YIE/rCKzEu0OoUmsujUwyk8LgTUZaaKGfYP9tvHTO',
-    //         githubUrl: 'https://github.com/johndoe',
-    //         mainPosition: 'BACKEND',
-    //         subPosition: 'FRONTEND',
-    //         school: '성결대학교',
-    //         profileImage: 'https://example.com/profile.jpg',
-    //         stack: ['Node.js', 'TypeScript', 'Docker'],
-    //         grade: '1학년',
-    //         roleId: userRole.id,
-    //     },
-    // });
-    //
-    // await prisma.user.upsert({
-    //     where: { email: 'test2@example.com' },
-    //     update: {},
-    //     create: {
-    //         name: '테커짱2',
-    //         email: 'test2@example.com',
-    //         nickname: 'johnny2', // 중복되지 않는 닉네임 사용
-    //         year: 6,
-    //         password:
-    //             '$2b$12$Rw9jlCjZlBz.YIE/rCKzEu0OoUmsujUwyk8LgTUZaaKGfYP9tvHTO',
-    //         githubUrl: 'https://github.com/johndoe',
-    //         mainPosition: 'FRONTEND',
-    //         subPosition: 'BACKEND',
-    //         school: '한국공학대학교',
-    //         profileImage: 'https://example.com/profile.jpg',
-    //         stack: ['Node.js', 'TypeScript', 'Docker'],
-    //         grade: '1학년',
-    //         roleId: userRole.id,
-    //     },
-    // });
-    //
-    // await prisma.user.upsert({
-    //     where: { email: 'test3@example.com' },
-    //     update: {},
-    //     create: {
-    //         name: '테커짱3',
-    //         email: 'test3@example.com',
-    //         nickname: 'johnny3', // 중복되지 않는 닉네임 사용
-    //         year: 5,
-    //         password:
-    //             '$2b$12$Rw9jlCjZlBz.YIE/rCKzEu0OoUmsujUwyk8LgTUZaaKGfYP9tvHTO',
-    //         githubUrl: 'https://github.com/johndoe',
-    //         mainPosition: 'FRONTEND',
-    //         subPosition: 'BACKEND',
-    //         school: '한국공학대학교',
-    //         profileImage: 'https://example.com/profile.jpg',
-    //         stack: ['Node.js', 'TypeScript', 'Docker'],
-    //         grade: '1학년',
-    //         roleId: userRole.id,
-    //     },
-    // });
+    Logger.log('Roles have been seeded:', {
+        adminRole,
+        mentorRole,
+        userRole,
+    });
 
     // Stack 데이터 생성
     const stacks = [
