@@ -22,6 +22,7 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Request } from 'express';
 import { CreateSessionResponse } from './dto/response/create.session.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @ApiTags('sessions')
 @Controller('/sessions')
@@ -88,12 +89,11 @@ export class SessionController {
     })
     async getSessionList(
         @Query() query: GetSessionsQueryRequest,
-    ): Promise<GetSessionResponse[]> {
+    ): Promise<{ sessions: GetSessionResponse[]; meta: PagableMeta }> {
         this.logger.debug(
             `세션 목록 조회 및 검색 처리 중 - query: ${JSON.stringify(query)}`,
             SessionController.name,
         );
-
         const result = await this.sessionService.getSessionList(query);
         this.logger.debug(
             `세션 목록 조회 및 검색 처리 완료`,

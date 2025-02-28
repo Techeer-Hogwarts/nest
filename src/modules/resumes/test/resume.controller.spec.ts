@@ -7,6 +7,7 @@ import {
     getResumesQueryRequest,
     request,
     user,
+    resumeMetaMock,
 } from './mock-data';
 import { ResumeController } from '../resume.controller';
 import { ResumeService } from '../resume.service';
@@ -145,14 +146,14 @@ describe('ResumeController', (): void => {
     describe('getResumeList', (): void => {
         it('should return a list of resumes based on query', async (): Promise<void> => {
             jest.spyOn(service, 'getResumeList').mockResolvedValue(
-                getResumeResponseList,
+                resumeMetaMock,
             );
 
             const result = await controller.getResumeList(
                 getResumesQueryRequest,
             );
 
-            expect(result).toEqual(getResumeResponseList);
+            expect(result).toEqual(resumeMetaMock);
             expect(service.getResumeList).toHaveBeenCalledWith(
                 getResumesQueryRequest,
             );

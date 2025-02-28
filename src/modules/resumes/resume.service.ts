@@ -13,6 +13,7 @@ import {
 import { GoogleDriveService } from '../googleDrive/google.drive.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @Injectable()
 export class ResumeService {
@@ -102,14 +103,22 @@ export class ResumeService {
 
     async getResumeList(
         query: GetResumesQueryRequest,
-    ): Promise<GetResumeResponse[]> {
-        const resumes: GetResumeResponse[] =
-            await this.resumeRepository.getResumeList(query);
+    ): Promise<{ resumes: GetResumeResponse[]; meta: PagableMeta }> {
+        const resumesTotal = await this.resumeRepository.getResumeList(query);
+        const resumes = resumesTotal.resumes;
+        const meta = new PagableMeta(
+            resumesTotal.total,
+            query.offset,
+            query.limit,
+        );
         this.logger.debug(
             `${resumes.length}개의 이력서 목록 조회 후 GetResumeResponse 변환 중`,
             ResumeService.name,
         );
-        return resumes;
+        return {
+            resumes,
+            meta,
+        };
     }
 
     async getResume(resumeId: number): Promise<GetResumeResponse> {

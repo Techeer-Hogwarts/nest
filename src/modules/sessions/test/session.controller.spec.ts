@@ -5,13 +5,13 @@ import { GetSessionResponse } from '../dto/response/get.session.response';
 import {
     createSessionRequest,
     getSessionResponse,
-    getSessionListResponse,
     getSessionsQueryRequest,
     paginationQueryDto,
     sessionEntities,
     updateSessionRequest,
     updatedSessionEntity,
     createSessionResponse,
+    sessionMetaMock,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
 import { Request } from 'express';
@@ -119,14 +119,14 @@ describe('SessionController', () => {
     describe('getSessionList', (): void => {
         it('should return a list of sessions based on query', async (): Promise<void> => {
             jest.spyOn(service, 'getSessionList').mockResolvedValue(
-                getSessionListResponse,
+                sessionMetaMock,
             );
 
             const result = await controller.getSessionList(
                 getSessionsQueryRequest,
             );
 
-            expect(result).toEqual(getSessionListResponse);
+            expect(result).toEqual(sessionMetaMock);
             expect(service.getSessionList).toHaveBeenCalledWith(
                 getSessionsQueryRequest,
             );

@@ -161,13 +161,16 @@ export class ProjectTeamController {
     })
     async getAllTeams(
         @Query(new ValidationPipe({ transform: true }))
-        dto: GetTeamQueryRequest,
+        request: GetTeamQueryRequest,
     ): Promise<any> {
         try {
             // 모든 팀 데이터 조회
-            return await this.projectTeamService.getAllTeams(dto);
+            return await this.projectTeamService.getAllTeams(request);
         } catch (error) {
-            this.logger.error('❌ [ERROR] getAllTeams 에서 예외 발생: ', error);
+            this.logger.error(
+                `getAllTeams 에서 예외 발생: ${error}`,
+                ProjectTeamController.name,
+            );
             throw error;
         }
     }

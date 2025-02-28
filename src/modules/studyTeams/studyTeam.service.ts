@@ -21,7 +21,7 @@ import {
 } from './dto/response/get.studyTeam.response';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateStudyAlertRequest } from '../alert/dto/request/create.study.alert.request';
-import { AlertServcie } from '../alert/alert.service';
+import { AlertService } from '../alert/alert.service';
 import { User } from '@prisma/client';
 import { IndexStudyRequest } from './dto/request/index.study.request';
 import { IndexService } from '../../global/index/index.service';
@@ -34,7 +34,7 @@ export class StudyTeamService {
         private readonly studyMemberRepository: StudyMemberRepository,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
-        private readonly alertService: AlertServcie,
+        private readonly alertService: AlertService,
         private readonly prisma: PrismaService,
         private readonly indexService: IndexService,
     ) {}

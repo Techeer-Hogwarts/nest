@@ -11,7 +11,7 @@ const SLACKBOT_PERSONAL_URL = process.env.SLACKBOT_PERSONAL_URL;
 type SlackAlertPayload = CreateProjectAlertRequest | CreateStudyAlertRequest;
 
 @Injectable()
-export class AlertServcie {
+export class AlertService {
     constructor(private readonly logger: CustomWinstonLogger) {}
 
     /**

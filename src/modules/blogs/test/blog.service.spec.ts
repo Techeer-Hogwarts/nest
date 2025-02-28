@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BlogService } from '../blog.service';
 import { BlogRepository } from '../repository/blog.repository';
 import {
+    blogMetaMock,
     getBlogResponseList,
     getBlogsQueryRequest,
     paginationQueryDto,
@@ -84,20 +85,14 @@ describe('BlogService', (): void => {
 
     describe('getBlogList', (): void => {
         it('should return a list of GetBlogResponse objects based on query', async (): Promise<void> => {
-            jest.spyOn(repository, 'getBlogList').mockResolvedValue(
-                getBlogResponseList,
-            );
+            jest.spyOn(repository, 'getBlogList').mockResolvedValue({
+                blogs: getBlogResponseList,
+                total: 3,
+            });
 
-            const result: GetBlogResponse[] =
-                await service.getBlogList(getBlogsQueryRequest);
+            const result = await service.getBlogList(getBlogsQueryRequest);
 
-            expect(result).toEqual(getBlogResponseList);
-            expect(
-                result.every(
-                    (item: GetBlogResponse): boolean =>
-                        item instanceof GetBlogResponse,
-                ),
-            ).toBe(true);
+            expect(result).toEqual(blogMetaMock);
             expect(repository.getBlogList).toHaveBeenCalledWith(
                 getBlogsQueryRequest,
             );

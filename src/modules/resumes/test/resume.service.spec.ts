@@ -7,6 +7,7 @@ import {
     getResumesQueryRequest,
     paginationQueryDto,
     user,
+    resumeMetaMock,
 } from './mock-data';
 import { GetResumeResponse } from '../dto/response/get.resume.response';
 import { ResumeService } from '../../resumes/resume.service';
@@ -15,6 +16,7 @@ import { NotFoundResumeException } from '../../../global/exception/custom.except
 import { GoogleDriveService } from '../../googleDrive/google.drive.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('ResumeService', (): void => {
     let service: ResumeService;
@@ -60,6 +62,10 @@ describe('ResumeService', (): void => {
                         debug: jest.fn(),
                         error: jest.fn(),
                     },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {},
                 },
             ],
         }).compile();
@@ -176,21 +182,14 @@ describe('ResumeService', (): void => {
 
     describe('getResumeList', (): void => {
         it('should return a list of GetResumeResponse objects based on query', async (): Promise<void> => {
-            jest.spyOn(repository, 'getResumeList').mockResolvedValue(
-                getResumeResponseList,
-            );
+            jest.spyOn(repository, 'getResumeList').mockResolvedValue({
+                resumes: getResumeResponseList,
+                total: 3,
+            });
 
-            const result: GetResumeResponse[] = await service.getResumeList(
-                getResumesQueryRequest,
-            );
+            const result = await service.getResumeList(getResumesQueryRequest);
 
-            expect(result).toEqual(getResumeResponseList);
-            expect(
-                result.every(
-                    (item: GetResumeResponse): boolean =>
-                        item instanceof GetResumeResponse,
-                ),
-            ).toBe(true);
+            expect(result).toEqual(resumeMetaMock);
             expect(repository.getResumeList).toHaveBeenCalledWith(
                 getResumesQueryRequest,
             );

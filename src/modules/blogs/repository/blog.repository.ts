@@ -92,7 +92,9 @@ export class BlogRepository {
         await Promise.all(blogPromises);
     }
 
-    async getBlogList(query: GetBlogsQueryRequest): Promise<GetBlogResponse[]> {
+    async getBlogList(
+        query: GetBlogsQueryRequest,
+    ): Promise<{ blogs: GetBlogResponse[]; total: number }> {
         const {
             category,
             offset = 0,
@@ -102,7 +104,7 @@ export class BlogRepository {
             `query - category: ${category}, offset: ${offset}, limit: ${limit}`,
             BlogRepository.name,
         );
-        const blogs = await this.prisma.blog.findMany({
+        const blogentities = await this.prisma.blog.findMany({
             where: {
                 isDeleted: false,
                 ...(category && { category }),
@@ -112,15 +114,26 @@ export class BlogRepository {
             },
             skip: offset,
             take: limit,
-            orderBy: {
-                title: 'asc',
+            orderBy: [
+                { likeCount: Prisma.SortOrder.desc }, // 좋아요 개수 내림차순
+                { createdAt: Prisma.SortOrder.desc }, // 생성일 최신순 정렬
+            ],
+        });
+        const total = await this.prisma.blog.count({
+            where: {
+                isDeleted: false,
+                ...(category && { category }),
             },
         });
         this.logger.debug(
-            `${blogs.length}개의 블로그 엔티티 목록 조회 성공`,
+            `${blogentities.length}개의 블로그 엔티티 목록 조회 성공`,
             BlogRepository.name,
         );
-        return blogs.map((blog) => new GetBlogResponse(blog));
+        const blogs = blogentities.map((blog) => new GetBlogResponse(blog));
+        return {
+            blogs,
+            total,
+        };
     }
 
     async getBlogsByUser(
@@ -163,7 +176,7 @@ export class BlogRepository {
         const blogs = await this.prisma.$queryRaw<BlogEntity[]>(Prisma.sql`
             SELECT * FROM "Blog"
             WHERE "isDeleted" = false
-                AND "date" >= ${twoWeeksAgo}
+                AND "createdAt" >= ${twoWeeksAgo}
             ORDER BY ("viewCount" + "likeCount" * 10) DESC
             LIMIT ${limit} OFFSET ${offset}
         `);

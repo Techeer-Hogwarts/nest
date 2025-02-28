@@ -14,10 +14,12 @@ import {
     getBestSessionsResponse,
     getSessionsQueryRequest,
     createSessionResponse,
+    sessionMetaMock,
 } from './mock-data';
 import { SessionEntity } from '../entities/session.entity';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { CreateSessionResponse } from '../dto/response/create.session.response';
+import { IndexService } from '../../../global/index/index.service';
 
 describe('SessionService', (): void => {
     let service: SessionService;
@@ -45,6 +47,13 @@ describe('SessionService', (): void => {
                     useValue: {
                         debug: jest.fn(),
                         error: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
                     },
                 },
             ],
@@ -117,25 +126,16 @@ describe('SessionService', (): void => {
 
     describe('getSessionList', (): void => {
         it('should return a list of GetSessionDto objects based on query', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSessionList').mockResolvedValue(
-                sessionEntities,
-            );
+            jest.spyOn(repository, 'getSessionList').mockResolvedValue({
+                sessions: sessionEntities,
+                total: 3,
+            });
 
-            const result: GetSessionResponse[] = await service.getSessionList(
+            const result = await service.getSessionList(
                 getSessionsQueryRequest,
             );
 
-            expect(result).toEqual(
-                sessionEntities.map(
-                    (session: SessionEntity) => new GetSessionResponse(session),
-                ),
-            );
-            expect(
-                result.every(
-                    (item: GetSessionResponse): boolean =>
-                        item instanceof GetSessionResponse,
-                ),
-            ).toBe(true);
+            expect(result).toEqual(sessionMetaMock);
             expect(repository.getSessionList).toHaveBeenCalledWith(
                 getSessionsQueryRequest,
             );

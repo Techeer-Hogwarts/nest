@@ -27,6 +27,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ParseJsonAndValidatePipe } from '../../global/validation/ParseJsonAndValidatePipe';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { PermissionRequest, User } from '@prisma/client';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
 
 @ApiTags('users')
 @Controller('/users')
@@ -494,7 +495,7 @@ export class UserController {
     })
     async getAllProfiles(
         @Query() query: GetUserssQueryRequest,
-    ): Promise<GetUserResponse[]> {
+    ): Promise<{ users: GetUserResponse[]; meta: PagableMeta }> {
         const profiles = await this.userService.getAllProfiles(query);
         this.logger.debug(
             '모든 프로필 조회 완료',
