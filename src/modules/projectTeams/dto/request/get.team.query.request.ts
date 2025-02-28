@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsBoolean, IsArray, IsNumber } from 'class-validator';
+import {
+    IsOptional,
+    IsBoolean,
+    IsArray,
+    IsNumber,
+    IsString,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class GetTeamQueryRequest {
@@ -9,7 +15,7 @@ export class GetTeamQueryRequest {
         example: 'project',
     })
     @IsOptional()
-    @IsArray()
+    @IsString()
     teamType?: string;
 
     @ApiPropertyOptional({

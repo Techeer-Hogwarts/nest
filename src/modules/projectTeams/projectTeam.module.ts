@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ProjectTeamController } from './projectTeam.controller';
 import { ProjectTeamService } from './projectTeam.service';
@@ -10,17 +10,9 @@ import { StudyTeamModule } from '../studyTeams/studyTeam.module';
 import { AwsService } from '../awsS3/aws.service';
 import { AlertModule } from '../alert/alert.module';
 import { IndexModule } from '../../global/index/index.module';
-import { StudyMemberModule } from '../studyMembers/studyMember.module';
 
 @Module({
-    imports: [
-        PrismaModule,
-        AuthModule,
-        forwardRef(() => StudyTeamModule),
-        StudyMemberModule,
-        AlertModule,
-        IndexModule,
-    ],
+    imports: [PrismaModule, AuthModule, StudyTeamModule, AlertModule],
     controllers: [ProjectTeamController],
     providers: [
         ProjectTeamService,
@@ -28,6 +20,7 @@ import { StudyMemberModule } from '../studyMembers/studyMember.module';
         UserRepository,
         ProjectMemberRepository,
         AwsService,
+        IndexModule,
     ],
     exports: [ProjectTeamRepository, UserRepository],
 })

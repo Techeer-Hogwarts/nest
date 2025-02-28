@@ -31,7 +31,6 @@ import {
     GetAllTeamsResponse,
 } from './dto/response/get.allTeams.response';
 import { PagableMeta } from '../../global/pagable/pageble-meta';
-import { StudyTeamRepository } from '../studyTeams/repository/studyTeam.repository';
 import { AlertService } from '../alert/alert.service';
 
 interface Stack {
@@ -47,7 +46,6 @@ interface TeamStack {
 @Injectable()
 export class ProjectTeamService {
     constructor(
-        private readonly studyTeamRepository: StudyTeamRepository,
         private readonly projectTeamRepository: ProjectTeamRepository,
         private readonly projectMemberRepository: ProjectMemberRepository,
         private readonly prisma: PrismaService,
@@ -76,7 +74,7 @@ export class ProjectTeamService {
                             );
                         case 'study':
                             // 스터디 팀 조회
-                            return await this.studyTeamRepository.getStudyTeamsList(
+                            return await this.projectTeamRepository.getStudyTeamList(
                                 request,
                             );
                     }

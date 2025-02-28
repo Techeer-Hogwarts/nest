@@ -9,23 +9,6 @@ import {
 import { Prisma } from '@prisma/client';
 import { DuplicateProjectNameException } from '../../../global/exception/custom.exception';
 
-type TeamQueryResult = {
-    id: number;
-    created_at: Date;
-    is_deleted: boolean;
-    is_recruited: boolean;
-    is_finished: boolean;
-    name: string;
-    team_type: 'project' | 'study';
-    description: string;
-    frontend_num?: number;
-    backend_num?: number;
-    devops_num?: number;
-    full_stack_num?: number;
-    data_engineer_num?: number;
-    recruit_num?: number;
-};
-
 @Injectable()
 export class ProjectTeamRepository {
     constructor(
@@ -37,70 +20,122 @@ export class ProjectTeamRepository {
         teams: (FormattedProject | FormattedStudy)[];
         total: number;
     }> {
-        const {
-            isRecruited,
-            isFinished,
-            offset = 0,
-            limit = 10,
-        }: GetTeamQueryRequest = request;
+        try {
+            const {
+                isRecruited,
+                isFinished,
+                positions,
+                offset = 0,
+                limit = 10,
+            }: GetTeamQueryRequest = request;
+            this.logger.debug('모든 팀 조회 시작', 'getAllTeams');
 
-        const recruitedFilter =
-            isRecruited !== undefined
-                ? `AND is_recruited = ${isRecruited}`
-                : '';
-        const finishedFilter =
-            isFinished !== undefined ? `AND is_finished = ${isFinished}` : '';
-
-        // 프로젝트와 스터디를 하나의 쿼리에서 조회
-        const query = `
-        SELECT id, created_at, is_deleted, is_recruited, is_finished, name, 
-            'project' AS team_type,
-            project_explain AS description,
-            frontend_num, backend_num, devops_num, full_stack_num, data_engineer_num,
-            NULL AS recruit_num
-        FROM project_team
-        WHERE is_deleted = false ${recruitedFilter} ${finishedFilter}
-        
-        UNION ALL
-        
-        SELECT id, created_at, is_deleted, is_recruited, is_finished, name, 
-            'study' AS team_type,
-            study_explain AS description,
-            NULL AS frontend_num, NULL AS backend_num, NULL AS devops_num, NULL AS full_stack_num, NULL AS data_engineer_num,
-            recruit_num
-        FROM study_team
-        WHERE is_deleted = false ${recruitedFilter} ${finishedFilter}
-        
-        ORDER BY created_at DESC
-        LIMIT ${limit} OFFSET ${offset};
-    `;
-
-        const totalQuery = `
-            SELECT COUNT(*) AS total FROM (
-                SELECT id FROM project_team WHERE is_deleted = false ${recruitedFilter} ${finishedFilter}
-                UNION ALL
-                SELECT id FROM study_team WHERE is_deleted = false ${recruitedFilter} ${finishedFilter}
-            ) AS total_teams;
-        `;
-
-        const teamsResult =
-            await this.prisma.$queryRawUnsafe<TeamQueryResult[]>(query);
-        const totalResult = await this.prisma.$queryRawUnsafe(totalQuery);
-        const total = totalResult[0]?.total ?? 0;
-
-        const formattedTeams: (FormattedProject | FormattedStudy)[] =
-            teamsResult.map((team): FormattedProject | FormattedStudy => {
-                if (team.team_type === 'project') {
-                    return new FormattedProject(team);
-                } else {
-                    return new FormattedStudy(team);
-                }
+            // 프로젝트 조회
+            const getPositionFilter = (
+                positions?: string[],
+            ): Prisma.ProjectTeamWhereInput => {
+                if (!positions || positions.length === 0) return {};
+                const filters = positions
+                    .map((position) => {
+                        switch (position) {
+                            case 'frontend':
+                                return { frontendNum: { gt: 0 } };
+                            case 'backend':
+                                return { backendNum: { gt: 0 } };
+                            case 'devops':
+                                return { devopsNum: { gt: 0 } };
+                            case 'fullstack':
+                                return { fullStackNum: { gt: 0 } };
+                            case 'dataEngineer':
+                                return { dataEngineerNum: { gt: 0 } };
+                            default:
+                                return null;
+                        }
+                    })
+                    .filter(Boolean);
+                return filters.length > 0 ? { OR: filters } : {};
+            };
+            const projectTeams = await this.prisma.projectTeam.findMany({
+                where: {
+                    isDeleted: false,
+                    ...(isRecruited !== undefined ? { isRecruited } : {}),
+                    ...(isFinished !== undefined ? { isFinished } : {}),
+                    ...(positions && getPositionFilter(positions)),
+                },
+                select: {
+                    id: true,
+                    isDeleted: true,
+                    isRecruited: true,
+                    isFinished: true,
+                    name: true,
+                    createdAt: true,
+                    frontendNum: true,
+                    backendNum: true,
+                    devopsNum: true,
+                    fullStackNum: true,
+                    dataEngineerNum: true,
+                    projectExplain: true,
+                    mainImages: {
+                        where: { isDeleted: false },
+                        select: { imageUrl: true },
+                    },
+                    teamStacks: {
+                        where: { isMain: true },
+                        include: { stack: true },
+                    },
+                },
             });
+            const formattedProjects = projectTeams.map(
+                (project) => new FormattedProject(project),
+            );
 
-        return {
-            teams: formattedTeams,
-            total,
-        };
+            // 스터디 조회
+            const studyTeams = await this.prisma.studyTeam.findMany({
+                where: {
+                    isDeleted: false,
+                    ...(isRecruited !== undefined ? { isRecruited } : {}),
+                    ...(isFinished !== undefined ? { isFinished } : {}),
+                },
+                select: {
+                    id: true,
+                    isDeleted: true,
+                    isRecruited: true,
+                    isFinished: true,
+                    name: true,
+                    createdAt: true,
+                    recruitNum: true,
+                    studyExplain: true,
+                },
+            });
+            const formattedStudies = studyTeams.map(
+                (study) => new FormattedStudy(study),
+            );
+
+            // 프로젝트와 스터디 데이터를 병합 후 정렬
+            const combinedList = [
+                ...formattedProjects,
+                ...formattedStudies,
+            ].sort(
+                (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime(),
+            );
+
+            // 페이징 처리
+            const paginatedList = combinedList.slice(offset, offset + limit);
+            const total = combinedList.length; // 전체 개수 계산
+
+            return {
+                teams: paginatedList,
+                total,
+            };
+        } catch (error) {
+            this.logger.error(
+                `getAllTeams 에서 예외 발생: ${error}`,
+                ProjectTeamRepository.name,
+            );
+            throw error;
+        }
     }
 
     async getProjectTeamList(request: GetTeamQueryRequest): Promise<{
@@ -114,12 +149,12 @@ export class ProjectTeamRepository {
             offset = 0,
             limit = 10,
         }: GetTeamQueryRequest = request;
+        this.logger.debug('모든 프로젝트 조회 시작', 'getProjectTeamList');
 
         const getPositionFilter = (
             positions?: string[],
         ): Prisma.ProjectTeamWhereInput => {
             if (!positions || positions.length === 0) return {};
-
             const filters = positions
                 .map((position) => {
                     switch (position) {
@@ -138,7 +173,6 @@ export class ProjectTeamRepository {
                     }
                 })
                 .filter(Boolean);
-
             return filters.length > 0 ? { OR: filters } : {};
         };
 
@@ -187,6 +221,53 @@ export class ProjectTeamRepository {
         );
         return {
             teams: formattedProjects,
+            total,
+        };
+    }
+
+    async getStudyTeamList(request: GetTeamQueryRequest): Promise<{
+        teams: FormattedStudy[];
+        total: number;
+    }> {
+        const {
+            isRecruited,
+            isFinished,
+            offset = 0,
+            limit = 10,
+        }: GetTeamQueryRequest = request;
+        this.logger.debug('모든 스터디 조회 시작', 'getStudyTeamList');
+
+        const studyTeams = await this.prisma.studyTeam.findMany({
+            where: {
+                isDeleted: false,
+                ...(isRecruited !== undefined ? { isRecruited } : {}),
+                ...(isFinished !== undefined ? { isFinished } : {}),
+            },
+            select: {
+                id: true,
+                isDeleted: true,
+                isRecruited: true,
+                isFinished: true,
+                name: true,
+                createdAt: true,
+                recruitNum: true,
+                studyExplain: true,
+            },
+            skip: offset,
+            take: limit,
+        });
+        const total = await this.prisma.studyTeam.count({
+            where: {
+                isDeleted: false,
+                ...(isRecruited !== undefined ? { isRecruited } : {}),
+                ...(isFinished !== undefined ? { isFinished } : {}),
+            },
+        });
+        const formattedStudies = studyTeams.map(
+            (study) => new FormattedStudy(study),
+        );
+        return {
+            teams: formattedStudies,
             total,
         };
     }
