@@ -19,14 +19,20 @@ import {
     ProjectTeamListResponse,
 } from './dto/response/get.projectTeam.response';
 import { GetTeamQueryRequest } from './dto/request/get.team.query.request';
-import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateProjectAlertRequest } from '../alert/dto/request/create.project.alert.request';
-import { AlertService } from '../alert/alert.service';
 import { CreatePersonalAlertRequest } from '../alert/dto/request/create.personal.alert.request';
 import { IndexProjectRequest } from './dto/request/index.project.request';
 import { IndexService } from '../../global/index/index.service';
+import {
+    FormattedProject,
+    FormattedStudy,
+    GetAllTeamsResponse,
+} from './dto/response/get.allTeams.response';
+import { PagableMeta } from '../../global/pagable/pageble-meta';
+import { StudyTeamRepository } from '../studyTeams/repository/studyTeam.repository';
+import { AlertService } from '../alert/alert.service';
 
 interface Stack {
     id: number;
@@ -41,6 +47,7 @@ interface TeamStack {
 @Injectable()
 export class ProjectTeamService {
     constructor(
+        private readonly studyTeamRepository: StudyTeamRepository,
         private readonly projectTeamRepository: ProjectTeamRepository,
         private readonly projectMemberRepository: ProjectMemberRepository,
         private readonly prisma: PrismaService,
@@ -49,6 +56,47 @@ export class ProjectTeamService {
         private readonly alertService: AlertService,
         private readonly indexService: IndexService,
     ) {}
+
+    async getAllTeams(
+        request: GetTeamQueryRequest = {},
+    ): Promise<GetAllTeamsResponse> {
+        try {
+            const { teamType, offset, limit } = request;
+
+            const result = await (async (): Promise<{
+                teams: (FormattedProject | FormattedStudy)[];
+                total: number;
+            }> => {
+                if (teamType) {
+                    switch (teamType) {
+                        case 'project':
+                            // 프로젝트 팀 조회
+                            return await this.projectTeamRepository.getProjectTeamList(
+                                request,
+                            );
+                        case 'study':
+                            // 스터디 팀 조회
+                            return await this.studyTeamRepository.getStudyTeamsList(
+                                request,
+                            );
+                    }
+                } else {
+                    // 모든 팀 조회
+                    return await this.projectTeamRepository.getAllTeams(
+                        request,
+                    );
+                }
+            })();
+            const meta = new PagableMeta(result.total, offset, limit);
+            return new GetAllTeamsResponse(result.teams, meta);
+        } catch (error) {
+            this.logger.error(
+                '팀 데이터를 조회하는 중 오류가 발생했습니다.',
+                error,
+            );
+            throw new Error('팀 데이터를 조회하는 중 오류가 발생했습니다.');
+        }
+    }
 
     private async validateStacks(teamStacks: TeamStack[]): Promise<Stack[]> {
         const validStacks = teamStacks.length
@@ -1274,174 +1322,6 @@ export class ProjectTeamService {
         } catch (error) {
             this.logger.error('❌ 팀원 추가 중 예외 발생:', error);
             throw error;
-        }
-    }
-
-    async getAllTeams(dto: GetTeamQueryRequest = {}): Promise<any> {
-        try {
-            const { teamTypes, isRecruited, isFinished, positions } = dto;
-            const getPositionFilter = (
-                positions?: string[],
-            ): Prisma.ProjectTeamWhereInput => {
-                if (!positions || positions.length === 0) return {};
-
-                const filters = positions
-                    .map((position) => {
-                        switch (position) {
-                            case 'frontend':
-                                return { frontendNum: { gt: 0 } };
-                            case 'backend':
-                                return { backendNum: { gt: 0 } };
-                            case 'devops':
-                                return { devopsNum: { gt: 0 } };
-                            case 'fullstack':
-                                return { fullStackNum: { gt: 0 } };
-                            case 'dataEngineer':
-                                return { dataEngineerNum: { gt: 0 } };
-                            default:
-                                return null;
-                        }
-                    })
-                    .filter(Boolean);
-
-                return filters.length > 0 ? { OR: filters } : {};
-            };
-
-            let projectTeams = [];
-            const shouldFetchProjects =
-                !teamTypes || teamTypes.includes('project');
-            if (shouldFetchProjects) {
-                projectTeams = await this.prisma.projectTeam.findMany({
-                    where: {
-                        isDeleted: false,
-                        ...(isRecruited !== undefined ? { isRecruited } : {}),
-                        ...(isFinished !== undefined ? { isFinished } : {}),
-                        ...(positions && getPositionFilter(positions)),
-                    },
-                    select: {
-                        id: true,
-                        isDeleted: true,
-                        isRecruited: true,
-                        isFinished: true,
-                        name: true,
-                        createdAt: true,
-                        frontendNum: true,
-                        backendNum: true,
-                        devopsNum: true,
-                        fullStackNum: true,
-                        dataEngineerNum: true,
-                        projectExplain: true,
-                        mainImages: {
-                            where: { isDeleted: false },
-                            select: { imageUrl: true },
-                        },
-                        teamStacks: {
-                            where: { isMain: true },
-                            include: { stack: true },
-                        },
-                    },
-                });
-            }
-
-            let studyTeams = [];
-            const shouldFetchStudies =
-                !teamTypes || teamTypes.includes('study');
-            if (shouldFetchStudies) {
-                studyTeams = await this.prisma.studyTeam.findMany({
-                    where: {
-                        isDeleted: false,
-                        ...(isRecruited !== undefined ? { isRecruited } : {}),
-                        ...(isFinished !== undefined ? { isFinished } : {}),
-                    },
-                    select: {
-                        id: true,
-                        isDeleted: true,
-                        isRecruited: true,
-                        isFinished: true,
-                        name: true,
-                        createdAt: true,
-                        recruitNum: true,
-                        studyExplain: true,
-                    },
-                });
-            }
-
-            const formattedProjects = projectTeams.map((project) => ({
-                type: 'project',
-                createdAt: project.createdAt,
-                id: project.id,
-                isDeleted: project.isDeleted,
-                isRecruited: project.isRecruited,
-                isFinished: project.isFinished,
-                name: project.name,
-                frontendNum: project.frontendNum,
-                backendNum: project.backendNum,
-                devopsNum: project.devopsNum,
-                fullStackNum: project.fullStackNum,
-                dataEngineerNum: project.dataEngineerNum,
-                projectExplain: project.projectExplain,
-                mainImages: project.mainImages.map((image) => image.imageUrl),
-                teamStacks: project.teamStacks.map((stack) => ({
-                    stackName: stack.stack.name,
-                    isMain: stack.isMain,
-                })),
-            }));
-
-            const formattedStudies = studyTeams.map((study) => ({
-                type: 'study',
-                createdAt: study.createdAt,
-                id: study.id,
-                isDeleted: study.isDeleted,
-                isRecruited: study.isRecruited,
-                isFinished: study.isFinished,
-                name: study.name,
-                recruitNum: study.recruitNum,
-                studyExplain: study.studyExplain,
-            }));
-
-            const filteredProjects = formattedProjects.filter(
-                (team) =>
-                    (teamTypes ? teamTypes.includes(team.type) : true) && // teamTypes 조건 체크
-                    (isRecruited === undefined
-                        ? true
-                        : team.isRecruited === isRecruited) &&
-                    (isFinished === undefined
-                        ? true
-                        : team.isFinished === isFinished),
-            );
-
-            const filteredStudies = formattedStudies.filter(
-                (team) =>
-                    (teamTypes ? teamTypes.includes(team.type) : true) && // teamTypes 조건 체크
-                    (isRecruited === undefined
-                        ? true
-                        : team.isRecruited === isRecruited) &&
-                    (isFinished === undefined
-                        ? true
-                        : team.isFinished === isFinished),
-            );
-
-            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환(가나다 순)
-            const allTeams = !teamTypes
-                ? [...filteredProjects, ...filteredStudies].sort((a, b) =>
-                      a.name.localeCompare(b.name),
-                  )
-                : [];
-
-            return {
-                ...(teamTypes
-                    ? {
-                          projectTeams: filteredProjects,
-                          studyTeams: filteredStudies,
-                      }
-                    : { allTeams }),
-            };
-        } catch (error) {
-            this.logger.error(
-                '팀 데이터를 조회하는 중 오류가 발생했습니다.',
-                error,
-            );
-            throw new Error('팀 데이터를 조회하는 중 오류가 발생했습니다.');
         }
     }
 }

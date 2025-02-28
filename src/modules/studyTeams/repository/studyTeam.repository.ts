@@ -12,6 +12,8 @@ import { NotFoundStudyTeamException } from '../../../global/exception/custom.exc
 import { StudyTeamService } from '../studyTeam.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { CreatePersonalAlertRequest } from '../../alert/dto/request/create.personal.alert.request';
+import { GetTeamQueryRequest } from '../../projectTeams/dto/request/get.team.query.request';
+import { FormattedStudy } from '../../projectTeams/dto/response/get.allTeams.response';
 
 @Injectable()
 export class StudyTeamRepository {
@@ -19,6 +21,52 @@ export class StudyTeamRepository {
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
     ) {}
+
+    async getStudyTeamsList(request: GetTeamQueryRequest): Promise<{
+        teams: FormattedStudy[];
+        total: number;
+    }> {
+        const {
+            isRecruited,
+            isFinished,
+            offset = 0,
+            limit = 10,
+        }: GetTeamQueryRequest = request;
+
+        const studyTeams = await this.prisma.studyTeam.findMany({
+            where: {
+                isDeleted: false,
+                ...(isRecruited !== undefined ? { isRecruited } : {}),
+                ...(isFinished !== undefined ? { isFinished } : {}),
+            },
+            select: {
+                id: true,
+                isDeleted: true,
+                isRecruited: true,
+                isFinished: true,
+                name: true,
+                createdAt: true,
+                recruitNum: true,
+                studyExplain: true,
+            },
+            skip: offset,
+            take: limit,
+        });
+        const total = await this.prisma.studyTeam.count({
+            where: {
+                isDeleted: false,
+                ...(isRecruited !== undefined ? { isRecruited } : {}),
+                ...(isFinished !== undefined ? { isFinished } : {}),
+            },
+        });
+        const formattedStudies = studyTeams.map(
+            (study) => new FormattedStudy(study),
+        );
+        return {
+            teams: formattedStudies,
+            total,
+        };
+    }
 
     async sendStudyUserAlert(
         studyTeamId: number,

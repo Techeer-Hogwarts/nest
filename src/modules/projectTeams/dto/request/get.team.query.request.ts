@@ -1,22 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsBoolean, IsArray } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsBoolean, IsArray, IsNumber } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class GetTeamQueryRequest {
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: '팀 타입 필터링 (project, study)',
         required: false,
-        type: [String],
-        example: ['project', 'study'],
+        example: 'project',
     })
     @IsOptional()
     @IsArray()
-    @Transform(({ value }) => {
-        return typeof value === 'string' ? [value] : value;
-    })
-    teamTypes?: string[];
+    teamType?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: '모집 상태 필터링',
         required: false,
         type: 'boolean',
@@ -31,7 +27,7 @@ export class GetTeamQueryRequest {
     })
     isRecruited?: boolean;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: '진행 상태 필터링',
         required: false,
         type: 'boolean',
@@ -47,7 +43,7 @@ export class GetTeamQueryRequest {
     isFinished?: boolean;
 
     // 모집중 페이지에서의 포지션 필터링
-    @ApiProperty({
+    @ApiPropertyOptional({
         description:
             '포지션 필터링 (frontend, backend, devops, fullstack, dataEngineer)',
         required: false,
@@ -60,4 +56,22 @@ export class GetTeamQueryRequest {
         return typeof value === 'string' ? [value] : value;
     })
     positions?: string[];
+
+    @ApiPropertyOptional({
+        description: '오프셋',
+        example: 0,
+    })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    readonly offset?: number;
+
+    @ApiPropertyOptional({
+        description: '가져올 개수',
+        example: 10,
+    })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    readonly limit?: number;
 }
