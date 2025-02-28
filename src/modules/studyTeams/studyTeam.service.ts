@@ -723,29 +723,76 @@ export class StudyTeamService {
             `✅ 요청자 ${requesterId}의 스터디 멤버 자격 확인 완료`,
         );
 
-        const isMember = await this.studyMemberRepository.isUserMemberOfStudy(
-            studyTeamId,
-            memberId,
-        );
-        this.logger.debug(`사용자가 이미 멤버인지 확인: ${isMember}`);
+        // 삭제된 멤버인지 먼저 확인
+        const deletedMember = await this.prisma.studyMember.findFirst({
+            where: {
+                studyTeamId,
+                userId: memberId,
+                isDeleted: true,
+            },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        profileImage: true,
+                    },
+                },
+            },
+        });
 
-        if (isMember) {
-            this.logger.warn(
-                `사용자(ID: ${memberId})는 이미 스터디팀(ID: ${studyTeamId})의 멤버입니다.`,
+        let data;
+        if (deletedMember) {
+            // 삭제된 멤버가 있으면 isDeleted를 false로 복구
+            this.logger.debug(
+                `삭제된 멤버 발견, 복구 시작 - 멤버 ID: ${deletedMember.id}`,
             );
-            throw new Error(
-                `사용자(ID: ${memberId})는 이미 스터디(ID: ${studyTeamId})에 속해 있습니다.`,
+            data = await this.prisma.studyMember.update({
+                where: { id: deletedMember.id },
+                data: {
+                    isDeleted: false,
+                    isLeader: isLeader,
+                    status: 'APPROVED', // 상태도 필요하다면 업데이트
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
+                },
+            });
+            this.logger.debug(`✅ 멤버 복구 완료 (ID: ${data.id})`);
+        } else {
+            // 활성 멤버인지 확인
+            const isMember =
+                await this.studyMemberRepository.isUserMemberOfStudy(
+                    studyTeamId,
+                    memberId,
+                );
+            this.logger.debug(`사용자가 이미 멤버인지 확인: ${isMember}`);
+
+            if (isMember) {
+                this.logger.warn(
+                    `사용자(ID: ${memberId})는 이미 스터디팀(ID: ${studyTeamId})의 멤버입니다.`,
+                );
+                throw new Error(
+                    `사용자(ID: ${memberId})는 이미 스터디(ID: ${studyTeamId})에 속해 있습니다.`,
+                );
+            }
+
+            // 새 멤버 추가
+            this.logger.debug(`새 멤버 추가 시작 - 사용자 ID: ${memberId}`);
+            data = await this.studyMemberRepository.addMemberToStudyTeam(
+                studyTeamId,
+                memberId,
+                isLeader,
             );
+            this.logger.debug(`✅ 새 멤버 추가 완료 (ID: ${data.id})`);
         }
 
-        const data = await this.studyMemberRepository.addMemberToStudyTeam(
-            studyTeamId,
-            memberId,
-            isLeader,
-        );
-
         this.logger.debug(
-            `✅ [완료] 스터디팀 멤버 추가 성공 - 새 멤버 ${memberId}, 스터디팀 ${studyTeamId}`,
+            `✅ [완료] 스터디팀 멤버 추가/복구 성공 - 멤버 ${memberId}, 스터디팀 ${studyTeamId}`,
         );
         return data;
     }
