@@ -1,4 +1,4 @@
-import { StackCategory } from '../../../../global/category/stack.category';
+import { StackCategory } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString } from 'class-validator';
 
