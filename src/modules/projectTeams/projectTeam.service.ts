@@ -89,7 +89,21 @@ export class ProjectTeamService {
         files: Express.Multer.File[],
         folder: string,
     ): Promise<string[]> {
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        const allowedExtensions = [
+            'jpg',
+            'jpeg',
+            'png',
+            'gif',
+            'svg',
+            'webp',
+            'bmp',
+            'tiff',
+            'ico',
+            'heic',
+            'heif',
+            'raw',
+            'psd',
+        ];
 
         try {
             const imageUrls = await Promise.all(
@@ -329,16 +343,19 @@ export class ProjectTeamService {
             const projectResponse = new ProjectTeamDetailResponse(
                 createdProject,
             );
-            // 리더 정보를 추출합니다.
-            const leaderMember = createdProject.projectMember.find(
+
+            // 리더 정보를 추출합니다. (모든 리더 가져오기)
+            const leaderMembers = createdProject.projectMember.filter(
                 (member) => member.isLeader,
             );
-            const leaderName = leaderMember
-                ? leaderMember.user.name
-                : 'Unknown Leader';
-            const leaderEmail = leaderMember
-                ? leaderMember.user.email
-                : 'No Email';
+            // 리더 이름과 이메일을 배열로 저장
+            const leaderNames = leaderMembers.length
+                ? leaderMembers.map((leader) => leader.user.name) // 🔹 문자열이 아닌 배열 유지
+                : ['Unknown Leader'];
+
+            const leaderEmails = leaderMembers.length
+                ? leaderMembers.map((leader) => leader.user.email) // 🔹 문자열이 아닌 배열 유지
+                : ['No Email'];
 
             // Slack 알림에 사용할 DTO 매핑 (서비스에서 처리)
             const slackPayload: CreateProjectAlertRequest = {
@@ -351,8 +368,8 @@ export class ProjectTeamService {
                 dataEngNum: createdProject.dataEngineerNum,
                 devOpsNum: createdProject.devopsNum,
                 fullStackNum: createdProject.fullStackNum,
-                leader: leaderName,
-                email: leaderEmail,
+                leader: leaderNames, // 🔹 이제 배열로 전달됨
+                email: leaderEmails, // 🔹 이제 배열로 전달됨
                 recruitExplain: createdProject.recruitExplain,
                 notionLink: createdProject.notionLink,
                 stack: createdProject.teamStacks.map(
@@ -495,18 +512,24 @@ export class ProjectTeamService {
             } = updateProjectTeamRequest;
 
             this.logger.debug('📂 기존 프로젝트 데이터 조회');
-            // 기존 프로젝트 이미지 검증
+            // 기존 프로젝트 정보 조회
+            this.logger.debug('📂 기존 프로젝트 데이터 조회');
             const existingProject = await this.prisma.projectTeam.findUnique({
                 where: { id },
                 include: {
                     mainImages: true,
                     resultImages: true,
+                    projectMember: { include: { user: true } }, // 리더 정보 포함
+                    teamStacks: { include: { stack: true } },
                 },
             });
+
             if (!existingProject) {
                 this.logger.error(`❌ 프로젝트 ID ${id}를 찾을 수 없습니다.`);
                 throw new Error('프로젝트를 찾을 수 없습니다.');
             }
+
+            const wasRecruited = existingProject.isRecruited; // 기존 모집 상태
 
             // mainImages 존재 여부 확인
             if (deleteMainImages.length > 0) {
@@ -661,6 +684,54 @@ export class ProjectTeamService {
             const projectResponse = new ProjectTeamDetailResponse(
                 updatedProject,
             );
+
+            // 🔹 isRecruited 값이 false → true 로 변경되었을 때 Slack 알림 전송
+            if (!wasRecruited && updatedProject.isRecruited) {
+                this.logger.debug(
+                    '📢 [INFO] 프로젝트 모집이 시작되어 Slack 알림을 전송합니다.',
+                );
+
+                // 리더 정보 가져오기
+                const leaderMembers = updatedProject.projectMember.filter(
+                    (member) => member.isLeader,
+                );
+
+                // 리더 이름과 이메일을 배열로 저장
+                const leaderNames = leaderMembers.length
+                    ? leaderMembers.map((leader) => leader.user.name)
+                    : ['Unknown Leader'];
+
+                const leaderEmails = leaderMembers.length
+                    ? leaderMembers.map((leader) => leader.user.email)
+                    : ['No Email'];
+
+                // Slack 알림 Payload 생성
+                const slackPayload: CreateProjectAlertRequest = {
+                    id: updatedProject.id,
+                    type: 'project', // 프로젝트 타입
+                    name: updatedProject.name,
+                    projectExplain: updatedProject.projectExplain,
+                    frontNum: updatedProject.frontendNum,
+                    backNum: updatedProject.backendNum,
+                    dataEngNum: updatedProject.dataEngineerNum,
+                    devOpsNum: updatedProject.devopsNum,
+                    fullStackNum: updatedProject.fullStackNum,
+                    leader: leaderNames, // 배열 형태로 모든 리더 표시
+                    email: leaderEmails, // 배열 형태로 모든 리더 이메일 표시
+                    recruitExplain: updatedProject.recruitExplain,
+                    notionLink: updatedProject.notionLink,
+                    stack: updatedProject.teamStacks.map(
+                        (teamStack) => teamStack.stack.name,
+                    ),
+                };
+
+                this.logger.debug(
+                    `📢 [INFO] 슬랙봇 요청 데이터 : ${JSON.stringify(slackPayload)}`,
+                );
+
+                // Slack 알림 전송
+                await this.alertService.sendSlackAlert(slackPayload);
+            }
 
             // 인덱스 업데이트
             const indexProject = new IndexProjectRequest(projectResponse);
@@ -836,8 +907,8 @@ export class ProjectTeamService {
         applicantEmail: string,
         result: 'PENDING' | 'CANCELLED' | 'APPROVED' | 'REJECT',
     ): Promise<void> {
-        // 팀 리더 정보 조회
-        const teamLeader = await this.prisma.projectMember.findFirst({
+        // 1. 모든 리더 조회
+        const teamLeaders = await this.prisma.projectMember.findMany({
             where: {
                 projectTeamId,
                 isLeader: true,
@@ -846,26 +917,34 @@ export class ProjectTeamService {
             include: { user: true },
         });
 
-        // 실제 프로젝트 이름 조회
+        // 2. 프로젝트 팀 정보 조회
         const projectTeam = await this.prisma.projectTeam.findUnique({
             where: { id: projectTeamId },
             select: { name: true },
         });
 
-        // 팀 리더와 프로젝트 정보가 존재할 경우 알림 전송
-        if (teamLeader && projectTeam) {
+        if (!projectTeam || teamLeaders.length === 0) {
+            this.logger.error('프로젝트 팀 또는 리더를 찾을 수 없습니다.');
+            return;
+        }
+
+        // 3. 리더들에게 알림 전송
+        const alertPromises = teamLeaders.map((leader, index) => {
             const userAlertPayload: CreatePersonalAlertRequest = {
                 teamId: projectTeamId,
                 teamName: projectTeam.name,
                 type: 'project',
-                leaderEmail: teamLeader.user.email,
-                applicantEmail,
+                leaderEmail: leader.user.email,
+                applicantEmail: index === 0 ? applicantEmail : 'Null', // 첫 번째 리더만 신청자 포함
                 result,
             };
+            this.logger.debug('AlertData: ', JSON.stringify(userAlertPayload));
+            this.logger.log('AlertData: ', JSON.stringify(userAlertPayload));
+            return this.alertService.sendUserAlert(userAlertPayload);
+        });
 
-            await this.alertService.sendUserAlert(userAlertPayload);
-            this.logger.debug('AlterData : ', JSON.stringify(userAlertPayload));
-        }
+        // 모든 알림을 병렬로 전송
+        await Promise.all(alertPromises);
     }
 
     async applyToProject(

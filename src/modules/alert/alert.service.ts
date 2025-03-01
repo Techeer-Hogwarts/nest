@@ -29,7 +29,9 @@ export class AlertServcie {
     /**
      * 공고에 지원/승인/거절 등 사용자에게 전달(슬랙 개인 디엠)할 알림을 전송합니다.
      */
-    async sendUserAlert(payload: CreatePersonalAlertRequest): Promise<void> {
+    async sendUserAlert(
+        payload: CreatePersonalAlertRequest | CreatePersonalAlertRequest[],
+    ): Promise<void> {
         try {
             await axios.post(SLACKBOT_PERSONAL_URL, payload);
             this.logger.debug('User alert sent successfully!');
