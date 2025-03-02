@@ -146,6 +146,14 @@ export class StudyTeamService {
         try {
             this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
 
+            // 모집 인원이 0명이면 isRecruited를 false로 설정
+            if (createStudyTeamRequest.recruitNum <= 0) {
+                this.logger.debug(
+                    '📢 [INFO] 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                );
+                createStudyTeamRequest.isRecruited = false;
+            }
+
             // 리더 존재 여부 체크
             const hasLeader = createStudyTeamRequest.studyMember.some(
                 (member) => member.isLeader,
@@ -315,6 +323,14 @@ export class StudyTeamService {
                 throw new Error(
                     '스터디에는 최소 한 명의 리더가 있어야 합니다.',
                 );
+            }
+
+            // 모집 인원이 0명이면 isRecruited를 false로 설정
+            if (updateStudyTeamDto.recruitNum <= 0) {
+                this.logger.debug(
+                    '📢 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                );
+                updateStudyTeamDto.isRecruited = false;
             }
 
             // 이미지 삭제 요청 처리
@@ -667,6 +683,16 @@ export class StudyTeamService {
             throw new AlreadyApprovedException();
         }
 
+        // 현재 스터디 정보 조회 (모집 인원 확인)
+        const studyTeam = await this.prisma.studyTeam.findUnique({
+            where: { id: studyTeamId },
+            select: { recruitNum: true },
+        });
+
+        if (!studyTeam) {
+            throw new NotFoundStudyTeamException();
+        }
+
         // 트랜잭션 시작
         const result = await this.prisma.$transaction(async (tx) => {
             // 1. 지원자 상태를 APPROVED로 변경
@@ -678,15 +704,33 @@ export class StudyTeamService {
                     tx,
                 );
 
-            // 2. 스터디 팀의 모집 인원 감소
-            await tx.studyTeam.update({
+            // 2. 스터디 팀의 모집 인원 감소 (0 이하로 내려가지 않도록)
+            const updateData: any = {};
+
+            // 현재 모집 인원이 0보다 크면 감소
+            if (studyTeam.recruitNum > 0) {
+                updateData.recruitNum = { decrement: 1 };
+            } else {
+                this.logger.warn(
+                    `스터디팀(ID: ${studyTeamId})의 모집 인원이 이미 0명이지만, 기존 지원자 승인 처리됨.`,
+                );
+            }
+
+            // 3. 스터디 팀 업데이트 (모집 인원 감소 및 필요시 모집 상태 변경)
+            const updatedStudy = await tx.studyTeam.update({
                 where: { id: studyTeamId },
                 data: {
-                    recruitNum: {
-                        decrement: 1,
-                    },
+                    ...updateData,
+                    // 모집 인원이 0명이 되면 isRecruited = false
+                    ...(studyTeam.recruitNum <= 1
+                        ? { isRecruited: false }
+                        : {}),
                 },
             });
+
+            this.logger.debug(
+                `스터디 팀 업데이트 완료 - 모집 인원: ${updatedStudy.recruitNum}, 모집 상태: ${updatedStudy.isRecruited}`,
+            );
 
             return updatedApplicant;
         });
@@ -787,29 +831,76 @@ export class StudyTeamService {
             `✅ 요청자 ${requesterId}의 스터디 멤버 자격 확인 완료`,
         );
 
-        const isMember = await this.studyMemberRepository.isUserMemberOfStudy(
-            studyTeamId,
-            memberId,
-        );
-        this.logger.debug(`사용자가 이미 멤버인지 확인: ${isMember}`);
+        // 삭제된 멤버인지 먼저 확인
+        const deletedMember = await this.prisma.studyMember.findFirst({
+            where: {
+                studyTeamId,
+                userId: memberId,
+                isDeleted: true,
+            },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        profileImage: true,
+                    },
+                },
+            },
+        });
 
-        if (isMember) {
-            this.logger.warn(
-                `사용자(ID: ${memberId})는 이미 스터디팀(ID: ${studyTeamId})의 멤버입니다.`,
+        let data;
+        if (deletedMember) {
+            // 삭제된 멤버가 있으면 isDeleted를 false로 복구
+            this.logger.debug(
+                `삭제된 멤버 발견, 복구 시작 - 멤버 ID: ${deletedMember.id}`,
             );
-            throw new Error(
-                `사용자(ID: ${memberId})는 이미 스터디(ID: ${studyTeamId})에 속해 있습니다.`,
+            data = await this.prisma.studyMember.update({
+                where: { id: deletedMember.id },
+                data: {
+                    isDeleted: false,
+                    isLeader: isLeader,
+                    status: 'APPROVED', // 상태도 필요하다면 업데이트
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            profileImage: true,
+                        },
+                    },
+                },
+            });
+            this.logger.debug(`✅ 멤버 복구 완료 (ID: ${data.id})`);
+        } else {
+            // 활성 멤버인지 확인
+            const isMember =
+                await this.studyMemberRepository.isUserMemberOfStudy(
+                    studyTeamId,
+                    memberId,
+                );
+            this.logger.debug(`사용자가 이미 멤버인지 확인: ${isMember}`);
+
+            if (isMember) {
+                this.logger.warn(
+                    `사용자(ID: ${memberId})는 이미 스터디팀(ID: ${studyTeamId})의 멤버입니다.`,
+                );
+                throw new Error(
+                    `사용자(ID: ${memberId})는 이미 스터디(ID: ${studyTeamId})에 속해 있습니다.`,
+                );
+            }
+
+            // 새 멤버 추가
+            this.logger.debug(`새 멤버 추가 시작 - 사용자 ID: ${memberId}`);
+            data = await this.studyMemberRepository.addMemberToStudyTeam(
+                studyTeamId,
+                memberId,
+                isLeader,
             );
+            this.logger.debug(`✅ 새 멤버 추가 완료 (ID: ${data.id})`);
         }
 
-        const data = await this.studyMemberRepository.addMemberToStudyTeam(
-            studyTeamId,
-            memberId,
-            isLeader,
-        );
-
         this.logger.debug(
-            `✅ [완료] 스터디팀 멤버 추가 성공 - 새 멤버 ${memberId}, 스터디팀 ${studyTeamId}`,
+            `✅ [완료] 스터디팀 멤버 추가/복구 성공 - 멤버 ${memberId}, 스터디팀 ${studyTeamId}`,
         );
         return data;
     }

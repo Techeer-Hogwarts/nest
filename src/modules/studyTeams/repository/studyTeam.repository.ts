@@ -178,11 +178,27 @@ export class StudyTeamRepository {
         this.logger.debug(
             `🗑️ [START] deleteMembers - 삭제할 멤버 ID: ${memberIds}`,
         );
-        await this.prisma.studyMember.updateMany({
-            where: { id: { in: memberIds } },
-            data: { isDeleted: true },
-        });
-        this.logger.debug('✅ [SUCCESS] 멤버 삭제 완료');
+
+        try {
+            await this.prisma.studyMember.updateMany({
+                where: {
+                    userId: { in: memberIds },
+                },
+                data: {
+                    isDeleted: true,
+                },
+            });
+
+            this.logger.debug(
+                `✅ [SUCCESS] 스터디 멤버 삭제 처리 완료: ${memberIds.join(', ')}`,
+            );
+        } catch (error) {
+            this.logger.error(
+                '❌ [ERROR] deleteMembers 에서 예외 발생: ',
+                error,
+            );
+            throw new Error('스터디 멤버 삭제 중 오류가 발생했습니다.');
+        }
     }
 
     async updateStudyTeam(
@@ -192,12 +208,30 @@ export class StudyTeamRepository {
         studyMembers: { userId: number; isLeader: boolean }[] = [], // 기본값 추가
     ): Promise<GetStudyTeamResponse> {
         try {
-            // ✅ studyMembers가 존재할 때만 map()을 실행
+            // 이름 중복 검사 - 수정하려는 스터디 제외하고 동일 이름 존재 여부 확인
+            if (updateData.name) {
+                const existingStudyWithSameName =
+                    await this.prisma.studyTeam.findFirst({
+                        where: {
+                            name: updateData.name,
+                            id: { not: id }, // 현재 수정 중인 스터디는 제외
+                            isDeleted: false, // 삭제되지 않은 스터디만 검사
+                        },
+                    });
+
+                if (existingStudyWithSameName) {
+                    this.logger.error(
+                        '이미 동일한 이름의 스터디가 존재합니다.',
+                    );
+                }
+            }
+
             const userIds =
                 Array.isArray(studyMembers) && studyMembers.length > 0
                     ? studyMembers.map((member) => member.userId)
                     : [];
 
+            // 삭제된 멤버도 포함하여 조회하도록 수정
             const existingStudyMembers =
                 (await this.prisma.studyMember.findMany({
                     where: {
@@ -207,8 +241,30 @@ export class StudyTeamRepository {
                     select: {
                         id: true,
                         userId: true,
+                        isDeleted: true,
                     },
                 })) || [];
+
+            // 삭제된 멤버 중 다시 추가되는 멤버들 찾기
+            const deletedMembersToReactivate = existingStudyMembers.filter(
+                (member) => member.isDeleted === true,
+            );
+
+            // 삭제된 멤버를 다시 활성화
+            if (deletedMembersToReactivate.length > 0) {
+                await this.prisma.studyMember.updateMany({
+                    where: {
+                        id: {
+                            in: deletedMembersToReactivate.map(
+                                (member) => member.id,
+                            ),
+                        },
+                    },
+                    data: {
+                        isDeleted: false,
+                    },
+                });
+            }
 
             const studyMemberIdMap = Array.isArray(existingStudyMembers)
                 ? existingStudyMembers.reduce((acc, member) => {
@@ -231,6 +287,7 @@ export class StudyTeamRepository {
                               },
                               update: {
                                   isLeader: member.isLeader,
+                                  isDeleted: false,
                               },
                           };
                       })
@@ -256,6 +313,7 @@ export class StudyTeamRepository {
                 include: {
                     resultImages: true,
                     studyMember: {
+                        where: { isDeleted: false }, // 활성 멤버만 포함하도록
                         include: {
                             user: {
                                 select: {

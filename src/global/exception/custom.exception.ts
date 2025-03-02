@@ -272,3 +272,27 @@ export class NoLeaderException extends HttpException {
         super('최소 한 명의 리더가 있어야 합니다.', HttpStatus.BAD_REQUEST);
     }
 }
+
+export class NoPositionException extends HttpException {
+    constructor() {
+        super('모든 팀원은 포지션을 선택해야 합니다.', HttpStatus.BAD_REQUEST);
+    }
+}
+
+export class NoRecruitmentSpaceException extends HttpException {
+    constructor() {
+        super(
+            '모집 가능한 인원이 0명으로 더 이상 모집할 수 없습니다.',
+            HttpStatus.BAD_REQUEST,
+        );
+    }
+}
+
+export class NotFoundApplicantException extends HttpException {
+    constructor() {
+        super(
+            '모집 가능한 인원이 0명으로 더 이상 모집할 수 없습니다.',
+            HttpStatus.BAD_REQUEST,
+        );
+    }
+}

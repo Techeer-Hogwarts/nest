@@ -7,6 +7,8 @@ import {
     AlreadyApprovedException,
     DuplicateProjectNameException,
     NoLeaderException,
+    NoPositionException,
+    NotFoundApplicantException,
     NotFoundProjectException,
 } from '../../global/exception/custom.exception';
 import { CreateProjectMemberRequest } from '../projectMembers/dto/request/create.projectMember.request';
@@ -196,10 +198,26 @@ export class ProjectTeamService {
 
             const {
                 teamStacks,
-                projectMember, // 요청 데이터에서는 여전히 projectMember로 들어옴
+                projectMember,
                 recruitExplain = '기본 모집 설명입니다',
                 ...projectData
             } = createProjectTeamRequest;
+
+            // 모집 인원 합계 계산
+            const totalRecruitmentCount =
+                (projectData.frontendNum || 0) +
+                (projectData.backendNum || 0) +
+                (projectData.dataEngineerNum || 0) +
+                (projectData.devopsNum || 0) +
+                (projectData.fullStackNum || 0);
+
+            // 모집 인원이 0명이면 isRecruited는 무조건 false로 설정
+            if (totalRecruitmentCount === 0) {
+                this.logger.debug(
+                    '모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                );
+                projectData.isRecruited = false;
+            }
 
             // 파일 수 및 상태 로깅
             if (files && files.length) {
@@ -251,6 +269,19 @@ export class ProjectTeamService {
                 throw new NoLeaderException();
             }
             this.logger.debug('프로젝트 멤버 리더 검증 완료');
+
+            // 프로젝트 멤버 포지션 검증 시작
+            this.logger.debug('프로젝트 멤버 포지션 검증 시작');
+            const hasAllPositions = projectMember.every(
+                (member) => member.teamRole && member.teamRole.trim() !== '',
+            );
+            if (!hasAllPositions) {
+                this.logger.error(
+                    '프로젝트 생성 실패: 포지션이 지정되지 않은 멤버가 있음',
+                );
+                throw new NoPositionException();
+            }
+            this.logger.debug('프로젝트 멤버 포지션 검증 완료');
 
             // 스택 검증: 요청된 스택과 실제 유효한 스택 조회
             this.logger.debug('유효한 스택 조회 시작');
@@ -331,7 +362,7 @@ export class ProjectTeamService {
                                 },
                             },
                         },
-                        orderBy: { id: 'asc' }, // ID 순서 보장
+                        orderBy: { userId: 'asc' }, // ID 순서 보장
                     },
                 },
             });
@@ -474,7 +505,7 @@ export class ProjectTeamService {
         userId: number,
         updateProjectTeamRequest: UpdateProjectTeamRequest,
         mainImageUrls: string[] = [],
-        resultImageUrls: string[] = [], // resultImages용 URLs
+        resultImageUrls: string[] = [],
     ): Promise<ProjectTeamDetailResponse> {
         try {
             this.logger.debug('🔥 프로젝트 업데이트 시작');
@@ -512,8 +543,23 @@ export class ProjectTeamService {
             } = updateProjectTeamRequest;
 
             this.logger.debug('📂 기존 프로젝트 데이터 조회');
-            // 기존 프로젝트 정보 조회
-            this.logger.debug('📂 기존 프로젝트 데이터 조회');
+
+            // 모집 인원 합계 계산
+            const totalRecruitmentCount =
+                (updateData.frontendNum || 0) +
+                (updateData.backendNum || 0) +
+                (updateData.dataEngineerNum || 0) +
+                (updateData.devopsNum || 0) +
+                (updateData.fullStackNum || 0);
+
+            // 모집 인원이 0명이면 isRecruited는 무조건 false로 설정
+            if (totalRecruitmentCount === 0) {
+                this.logger.debug(
+                    '모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                );
+                updateData.isRecruited = false;
+            }
+            // 기존 프로젝트 이미지 검증
             const existingProject = await this.prisma.projectTeam.findUnique({
                 where: { id },
                 include: {
@@ -580,40 +626,64 @@ export class ProjectTeamService {
                 }
             }
 
-            // 기존 멤버 정보 조회
+            // 기존 멤버 정보 조회 (삭제된 멤버 포함)
             const existingMembers = await this.prisma.projectMember.findMany({
-                where: { projectTeamId: id },
+                where: {
+                    projectTeamId: id,
+                },
             });
 
             const validStacks = await this.validateStacks(teamStacks);
             const stackData = this.mapStackData(teamStacks, validStacks);
 
-            // 새로 추가할 멤버 필터링
-            const newMembers = projectMember.filter(
+            // 새로 추가할 멤버의 userId 목록
+            const userIdsToAdd = projectMember.map((member) => member.userId);
+
+            // 삭제된 멤버 중 다시 추가되는 멤버 찾기
+            const deletedMembersToReactivate = existingMembers.filter(
                 (member) =>
-                    !existingMembers.some(
-                        (existing) => existing.userId === member.userId,
-                    ),
+                    member.isDeleted === true &&
+                    userIdsToAdd.includes(member.userId),
             );
 
-            const updatedMembers = [
-                ...newMembers,
-                ...projectMember.filter((member) =>
-                    existingMembers.some(
-                        (existing) => existing.userId === member.userId,
-                    ),
-                ),
-                ...existingMembers.filter(
-                    (existing) =>
-                        !deleteMembers.includes(existing.id) &&
-                        !projectMember.some(
-                            (member) => member.userId === existing.userId,
-                        ),
-                ),
-            ];
+            // 삭제된 멤버 재활성화
+            if (deletedMembersToReactivate.length > 0) {
+                this.logger.debug(
+                    `삭제된 멤버 재활성화: ${deletedMembersToReactivate.map((m) => m.userId).join(', ')}`,
+                );
+
+                await this.prisma.projectMember.updateMany({
+                    where: {
+                        id: {
+                            in: deletedMembersToReactivate.map(
+                                (member) => member.id,
+                            ),
+                        },
+                    },
+                    data: {
+                        isDeleted: false,
+                    },
+                });
+            }
+
+            // 기존 멤버 ID를 매핑한 객체 생성
+            const memberIdMap = existingMembers.reduce((acc, member) => {
+                acc[member.userId] = member.id;
+                return acc;
+            }, {});
+
+            // 완전히 새로운 멤버 (기존 멤버 중에 없는 멤버)
+            const brandNewMembers = projectMember.filter(
+                (member) => !memberIdMap[member.userId],
+            );
+
+            // 이미 존재하는 멤버 (활성화 또는 삭제된 상태 포함)
+            const existingProjectMembers = projectMember.filter(
+                (member) => memberIdMap[member.userId],
+            );
 
             // 리더 존재 여부 확인
-            const hasLeader = updatedMembers.some((member) => member.isLeader);
+            const hasLeader = projectMember.some((member) => member.isLeader);
             if (!hasLeader) {
                 this.logger.error(
                     '프로젝트에는 최소 한 명의 리더가 있어야 합니다.',
@@ -623,7 +693,58 @@ export class ProjectTeamService {
                 );
             }
 
+            // 프로젝트 멤버 포지션 검증 시작
+            this.logger.debug('프로젝트 멤버 포지션 검증 시작');
+            const hasAllPositions = projectMember.every(
+                (member) => member.teamRole && member.teamRole.trim() !== '',
+            );
+            if (!hasAllPositions) {
+                this.logger.error(
+                    '프로젝트 생성 실패: 포지션이 지정되지 않은 멤버가 있음',
+                );
+                throw new NoPositionException();
+            }
+            this.logger.debug('프로젝트 멤버 포지션 검증 완료');
+
             this.logger.debug(`🚀 프로젝트 업데이트 실행 (ID: ${id})`);
+            let validDeleteMembers = [];
+            if (deleteMembers.length > 0) {
+                const membersToDelete =
+                    await this.prisma.projectMember.findMany({
+                        where: {
+                            userId: { in: deleteMembers },
+                            projectTeamId: id,
+                            isDeleted: false,
+                        },
+                        select: {
+                            id: true,
+                            userId: true,
+                        },
+                    });
+
+                validDeleteMembers = membersToDelete.map((member) => member.id);
+                this.logger.debug(
+                    `유효한 삭제 멤버 ID: ${validDeleteMembers.join(', ')}`,
+                );
+                this.logger.debug(
+                    `유효한 삭제 멤버 UserID: ${membersToDelete.map((m) => m.userId).join(', ')}`,
+                );
+            }
+
+            if (validDeleteMembers.length > 0) {
+                await this.prisma.projectMember.updateMany({
+                    where: {
+                        id: { in: validDeleteMembers },
+                    },
+                    data: {
+                        isDeleted: true,
+                    },
+                });
+                this.logger.debug(
+                    `멤버 삭제 처리 완료: ${validDeleteMembers.join(', ')}`,
+                );
+            }
+
             const updatedProject = await this.prisma.projectTeam.update({
                 where: { id },
                 data: {
@@ -643,40 +764,33 @@ export class ProjectTeamService {
                         create: stackData,
                     },
                     projectMember: {
-                        deleteMany: { id: { in: deleteMembers } },
-                        create: newMembers.map((member) => ({
+                        create: brandNewMembers.map((member) => ({
                             user: { connect: { id: member.userId } },
                             isLeader: member.isLeader,
                             teamRole: member.teamRole,
-                            summary: 'Updated member',
+                            summary: '새로 추가된 멤버입니다.',
                             status: 'APPROVED',
                         })),
-                        // 기존 멤버의 역할 수정을 위한 update 수정
-                        update: projectMember
-                            .filter((member) =>
-                                existingMembers.some(
-                                    (existing) =>
-                                        existing.userId === member.userId,
-                                ),
-                            )
-                            .map((member) => ({
-                                where: {
-                                    id: existingMembers.find(
-                                        (em) => em.userId === member.userId,
-                                    ).id,
-                                }, // unique identifier 사용
-                                data: {
-                                    teamRole: member.teamRole,
-                                    isLeader: member.isLeader,
-                                },
-                            })),
+                        update: existingProjectMembers.map((member) => ({
+                            where: {
+                                id: memberIdMap[member.userId],
+                            },
+                            data: {
+                                isLeader: member.isLeader,
+                                teamRole: member.teamRole,
+                                isDeleted: false,
+                            },
+                        })),
                     },
                 },
                 include: {
                     resultImages: true,
                     mainImages: true,
                     teamStacks: { include: { stack: true } },
-                    projectMember: { include: { user: true } },
+                    projectMember: {
+                        where: { isDeleted: false },
+                        include: { user: true },
+                    },
                 },
             });
 
@@ -1182,6 +1296,37 @@ export class ProjectTeamService {
                 throw new AlreadyApprovedException();
             }
 
+            // 지원자 정보 조회 (teamRole 확인용)
+            const applicant = await this.prisma.projectMember.findFirst({
+                where: {
+                    id: applicantId,
+                    projectTeamId,
+                },
+                select: {
+                    teamRole: true,
+                },
+            });
+
+            if (!applicant) {
+                throw new NotFoundApplicantException();
+            }
+
+            // 프로젝트 정보 조회 (현재 모집 인원 확인용)
+            const project = await this.prisma.projectTeam.findUnique({
+                where: { id: projectTeamId },
+                select: {
+                    frontendNum: true,
+                    backendNum: true,
+                    dataEngineerNum: true,
+                    devopsNum: true,
+                    fullStackNum: true,
+                },
+            });
+
+            if (!project) {
+                throw new NotFoundProjectException();
+            }
+
             // 트랜잭션 시작
             const result = await this.prisma.$transaction(async (tx) => {
                 // 1. 먼저 지원자의 상태를 APPROVED로 변경
@@ -1195,33 +1340,96 @@ export class ProjectTeamService {
 
                 // 2. 승인된 지원자의 직군에 따라 모집 인원 감소
                 const updateData: any = {};
+                let positionCount = 0;
+
                 switch (updatedApplicant.teamRole) {
                     case 'Frontend':
-                        updateData.frontendNum = { decrement: 1 };
+                        positionCount = project.frontendNum;
+                        // 0보다 큰 경우에만 감소
+                        if (positionCount > 0) {
+                            updateData.frontendNum = { decrement: 1 };
+                        }
                         break;
                     case 'Backend':
-                        updateData.backendNum = { decrement: 1 };
+                        positionCount = project.backendNum;
+                        if (positionCount > 0) {
+                            updateData.backendNum = { decrement: 1 };
+                        }
                         break;
                     case 'DevOps':
-                        updateData.devopsNum = { decrement: 1 };
+                        positionCount = project.devopsNum;
+                        if (positionCount > 0) {
+                            updateData.devopsNum = { decrement: 1 };
+                        }
                         break;
                     case 'FullStack':
-                        updateData.fullStackNum = { decrement: 1 };
+                        positionCount = project.fullStackNum;
+                        if (positionCount > 0) {
+                            updateData.fullStackNum = { decrement: 1 };
+                        }
                         break;
                     case 'DataEngineer':
-                        updateData.dataEngineerNum = { decrement: 1 };
+                        positionCount = project.dataEngineerNum;
+                        if (positionCount > 0) {
+                            updateData.dataEngineerNum = { decrement: 1 };
+                        }
                         break;
                     default:
                         throw new Error('유효하지 않은 직군입니다.');
                 }
 
-                // 3. 프로젝트 팀의 해당 직군 모집 인원 감소
-                await tx.projectTeam.update({
-                    where: { id: projectTeamId },
-                    data: updateData,
-                });
+                if (positionCount <= 0) {
+                    this.logger.warn(
+                        `${updatedApplicant.teamRole} 직군의 모집 인원이 이미 0명이지만 기존 지원자 승인 처리됨.`,
+                    );
+                }
 
-                // 4. 정렬된 전체 팀원 정보 조회
+                // 3. 프로젝트 팀의 해당 직군 모집 인원 감소
+                if (Object.keys(updateData).length > 0) {
+                    await tx.projectTeam.update({
+                        where: { id: projectTeamId },
+                        data: updateData,
+                    });
+                }
+
+                // 4. 모든 직군의 모집 인원을 확인하고, isRecruited 상태 업데이트
+                const updatedPositionCounts = {
+                    frontendNum: updateData.frontendNum
+                        ? project.frontendNum - 1
+                        : project.frontendNum,
+                    backendNum: updateData.backendNum
+                        ? project.backendNum - 1
+                        : project.backendNum,
+                    dataEngineerNum: updateData.dataEngineerNum
+                        ? project.dataEngineerNum - 1
+                        : project.dataEngineerNum,
+                    devopsNum: updateData.devopsNum
+                        ? project.devopsNum - 1
+                        : project.devopsNum,
+                    fullStackNum: updateData.fullStackNum
+                        ? project.fullStackNum - 1
+                        : project.fullStackNum,
+                };
+
+                const totalRemaining =
+                    (updatedPositionCounts.frontendNum || 0) +
+                    (updatedPositionCounts.backendNum || 0) +
+                    (updatedPositionCounts.dataEngineerNum || 0) +
+                    (updatedPositionCounts.devopsNum || 0) +
+                    (updatedPositionCounts.fullStackNum || 0);
+
+                // 모집 인원이 0명이면 isRecruited를 false로 설정
+                if (totalRemaining <= 0) {
+                    this.logger.debug(
+                        '남은 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                    );
+                    await tx.projectTeam.update({
+                        where: { id: projectTeamId },
+                        data: { isRecruited: false },
+                    });
+                }
+
+                // 5. 정렬된 전체 팀원 정보 조회
                 const orderedMembers = await tx.projectMember.findMany({
                     where: {
                         projectTeamId,
@@ -1244,6 +1452,7 @@ export class ProjectTeamService {
                     },
                 });
 
+                // 승인된 지원자의 정보를 찾아서 반환
                 return orderedMembers.find(
                     (member) => member.id === updatedApplicant.id,
                 );
@@ -1419,6 +1628,9 @@ export class ProjectTeamService {
                             include: { stack: true },
                         },
                     },
+                    orderBy: {
+                        name: 'asc', // 이름 기준 오름차순 정렬
+                    },
                 });
             }
 
@@ -1441,6 +1653,9 @@ export class ProjectTeamService {
                         createdAt: true,
                         recruitNum: true,
                         studyExplain: true,
+                    },
+                    orderBy: {
+                        name: 'asc', // 이름 기준 오름차순 정렬
                     },
                 });
             }
@@ -1500,20 +1715,20 @@ export class ProjectTeamService {
                         : team.isFinished === isFinished),
             );
 
-            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합쳐서 반환(가나다 순)
+            // teamTypes가 주어지지 않으면 filteredProjects와 filteredStudies를 합친 후 이름 순으로 정렬
             const allTeams = !teamTypes
-                ? [...filteredProjects, ...filteredStudies].sort((a, b) =>
-                      a.name.localeCompare(b.name),
+                ? [...filteredProjects, ...filteredStudies].sort(
+                      (a, b) => a.name.localeCompare(b.name, 'ko'), // 이름 기준 가나다순/알파벳순 정렬
                   )
                 : [];
 
             return {
                 ...(teamTypes
                     ? {
-                          projectTeams: filteredProjects,
-                          studyTeams: filteredStudies,
+                          projectTeams: filteredProjects, // 이미 DB에서 정렬됨
+                          studyTeams: filteredStudies, // 이미 DB에서 정렬됨
                       }
-                    : { allTeams }),
+                    : { allTeams }), // allTeams는 이름 순으로 정렬됨
             };
         } catch (error) {
             this.logger.error(
