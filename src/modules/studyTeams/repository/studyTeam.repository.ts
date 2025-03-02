@@ -55,7 +55,7 @@ export class StudyTeamRepository {
                 teamName: studyTeam.name,
                 type: 'study',
                 leaderEmail: leader.user.email,
-                applicantEmail: index === 0 ? applicantEmail : undefined, // 첫 번째 리더만 신청자 포함
+                applicantEmail: index === 0 ? applicantEmail : 'Null', // 첫 번째 리더만 신청자 포함
                 result,
             };
             this.logger.debug(
