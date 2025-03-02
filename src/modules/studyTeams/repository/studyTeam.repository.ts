@@ -12,19 +12,21 @@ import { NotFoundStudyTeamException } from '../../../global/exception/custom.exc
 import { StudyTeamService } from '../studyTeam.service';
 import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
 import { CreatePersonalAlertRequest } from '../../alert/dto/request/create.personal.alert.request';
+import { AlertServcie } from '../../../modules/alert/alert.service';
 
 @Injectable()
 export class StudyTeamRepository {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
+        private readonly alertService: AlertServcie,
     ) {}
 
     async sendStudyUserAlert(
         studyTeamId: number,
         applicantEmail: string,
         result: 'PENDING' | 'CANCELLED' | 'APPROVED' | 'REJECT',
-    ): Promise<CreatePersonalAlertRequest[]> {
+    ): Promise<void> {
         // 1. 모든 리더 조회
         const teamLeaders = await this.prisma.studyMember.findMany({
             where: {
@@ -41,24 +43,29 @@ export class StudyTeamRepository {
             select: { name: true },
         });
 
-        if (!studyTeam) {
-            throw new Error('스터디 팀을 찾을 수 없습니다.');
+        if (!studyTeam || teamLeaders.length === 0) {
+            this.logger.error('스터디 팀 또는 리더를 찾을 수 없습니다.');
+            return;
         }
 
         // 3. 리더들에게 알림 전송
-        const alerts: CreatePersonalAlertRequest[] = teamLeaders.map(
-            (leader, index) => ({
+        const alertPromises = teamLeaders.map((leader, index) => {
+            const userAlertPayload: CreatePersonalAlertRequest = {
                 teamId: studyTeamId,
                 teamName: studyTeam.name,
                 type: 'study',
                 leaderEmail: leader.user.email,
-                applicantEmail: index === 0 ? applicantEmail : 'NULL', // 첫 번째 리더만 신청자 포함
+                applicantEmail: index === 0 ? applicantEmail : undefined, // 첫 번째 리더만 신청자 포함
                 result,
-            }),
-        );
-        this.logger.debug(JSON.stringify(alerts));
+            };
+            this.logger.debug(
+                `📢 [INFO] 개별 알림 전송: ${JSON.stringify(userAlertPayload)}`,
+            );
+            return this.alertService.sendUserAlert(userAlertPayload);
+        });
 
-        return alerts;
+        // 모든 알림을 병렬로 전송
+        await Promise.all(alertPromises);
     }
 
     async findStudyByName(name: string): Promise<boolean> {

@@ -584,14 +584,13 @@ export class StudyTeamService {
             );
 
         // 지원 생성 후, 지원 알림 전송 (지원 상태: PENDING)
-        const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+        await this.studyTeamRepository.sendStudyUserAlert(
             createStudyMemberRequest.studyTeamId,
             user.email,
             'PENDING',
         );
 
-        await this.alertService.sendUserAlert(alertData);
-        this.logger.debug('AlertData : ' + JSON.stringify(alertData));
+        this.logger.debug('📢 [INFO] 스터디 지원 알림 전송 완료');
 
         this.logger.debug('✅ [SUCCESS] 스터디 지원 성공');
         return newApplication;
@@ -635,17 +634,13 @@ export class StudyTeamService {
                 studyTeamId,
                 user.id,
             );
-            this.logger.debug('✅ [INFO] cancelApplication 실행 결과:', data);
 
-            // 취소된 경우 알림 전송 (결과: CANCELLED)
-            const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+            // 지원 생성 후, 지원 알림 전송 (지원 상태: PENDING)
+            await this.studyTeamRepository.sendStudyUserAlert(
                 studyTeamId,
                 user.email,
                 'CANCELLED',
             );
-
-            await this.alertService.sendUserAlert(alertData);
-            this.logger.debug('AlertData : ' + JSON.stringify(alertData));
 
             this.logger.debug('✅ [SUCCESS] 스터디 지원 취소 성공');
             return data;
@@ -744,15 +739,11 @@ export class StudyTeamService {
             },
         });
 
-        // 수락된 경우 알림 전송 (결과: APPROVED)
-        const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+        await this.studyTeamRepository.sendStudyUserAlert(
             studyTeamId,
             applicantEmail.email,
             'APPROVED',
         );
-
-        await this.alertService.sendUserAlert(alertData);
-        this.logger.debug('AlertData : ' + JSON.stringify(alertData));
 
         this.logger.debug(
             `✅ [완료] 지원자 수락 처리 성공 - 지원자 ${applicantId}, 스터디팀 ${studyTeamId}`,
@@ -801,15 +792,11 @@ export class StudyTeamService {
             },
         });
 
-        // 거절된 경우 알림 전송 (결과: REJECT)
-        const alertData = await this.studyTeamRepository.sendStudyUserAlert(
+        await this.studyTeamRepository.sendStudyUserAlert(
             studyTeamId,
             applicantEmail.email,
             'REJECT',
         );
-        await this.alertService.sendUserAlert(alertData);
-        this.logger.debug('AlertData : ' + JSON.stringify(alertData));
-
         this.logger.debug(
             `✅ [완료] 지원자 거절 처리 성공 - 지원자 ${applicantId}, 스터디팀 ${studyTeamId}`,
         );
