@@ -136,7 +136,7 @@ async function main(): Promise<void> {
         },
         {
             name: 'Redis',
-            category: 'BACKEND',
+            category: 'DATABASE',
         },
         {
             name: 'MSA',
