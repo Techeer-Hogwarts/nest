@@ -24,9 +24,9 @@ export class StudyTeamRepository {
         studyTeamId: number,
         applicantEmail: string,
         result: 'PENDING' | 'CANCELLED' | 'APPROVED' | 'REJECT',
-    ): Promise<CreatePersonalAlertRequest> {
-        // 팀 리더 정보 조회 (스터디 멤버 테이블 사용)
-        const teamLeader = await this.prisma.studyMember.findFirst({
+    ): Promise<CreatePersonalAlertRequest[]> {
+        // 1. 모든 리더 조회
+        const teamLeaders = await this.prisma.studyMember.findMany({
             where: {
                 studyTeamId,
                 isLeader: true,
@@ -35,28 +35,30 @@ export class StudyTeamRepository {
             include: { user: true },
         });
 
-        // 실제 스터디 팀 이름 조회
+        // 2. 스터디 팀 정보 조회
         const studyTeam = await this.prisma.studyTeam.findUnique({
             where: { id: studyTeamId },
             select: { name: true },
         });
 
-        const leader = await this.prisma.user.findUnique({
-            where: { id: teamLeader.userId },
-        });
+        if (!studyTeam) {
+            throw new Error('스터디 팀을 찾을 수 없습니다.');
+        }
 
-        // 팀 리더와 스터디 팀 정보가 모두 조회되면 알림 전송
-        if (teamLeader && studyTeam) {
-            const userAlertPayload: CreatePersonalAlertRequest = {
+        // 3. 리더들에게 알림 전송
+        const alerts: CreatePersonalAlertRequest[] = teamLeaders.map(
+            (leader, index) => ({
                 teamId: studyTeamId,
                 teamName: studyTeam.name,
                 type: 'study',
-                leaderEmail: leader.email,
-                applicantEmail,
+                leaderEmail: leader.user.email,
+                applicantEmail: index === 0 ? applicantEmail : 'NULL', // 첫 번째 리더만 신청자 포함
                 result,
-            };
-            return userAlertPayload;
-        }
+            }),
+        );
+        this.logger.debug(JSON.stringify(alerts));
+
+        return alerts;
     }
 
     async findStudyByName(name: string): Promise<boolean> {

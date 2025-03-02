@@ -8,8 +8,8 @@ export class CreateProjectAlertRequest {
     dataEngNum: number;
     devOpsNum: number;
     fullStackNum: number;
-    leader: string;
-    email: string;
+    leader: string[];
+    email: string[];
     recruitExplain: string;
     notionLink: string;
     stack: string[];

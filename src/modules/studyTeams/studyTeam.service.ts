@@ -70,7 +70,21 @@ export class StudyTeamService {
         files: Express.Multer.File[],
         folder: string,
     ): Promise<string[]> {
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        const allowedExtensions = [
+            'jpg',
+            'jpeg',
+            'png',
+            'gif',
+            'svg',
+            'webp',
+            'bmp',
+            'tiff',
+            'ico',
+            'heic',
+            'heif',
+            'raw',
+            'psd',
+        ];
 
         try {
             const imageUrls = await Promise.all(
@@ -197,13 +211,18 @@ export class StudyTeamService {
             );
 
             // Slack 알림에 사용할 DTO 매핑
-            const leaderMember = studyData.studyMember.find(
+            const leaderMembers = studyData.studyMember.filter(
                 (member) => member.isLeader,
             );
-            const leaderName = leaderMember
-                ? leaderMember.name
-                : 'Unknown Leader';
-            const leaderEmail = leaderMember ? leaderMember.email : 'No Email';
+
+            // 리더 이름과 이메일을 배열로 저장
+            const leaderNames = leaderMembers.length
+                ? leaderMembers.map((leader) => leader.name) // 🔹 배열 유지
+                : ['Unknown Leader'];
+
+            const leaderEmails = leaderMembers.length
+                ? leaderMembers.map((leader) => leader.email) // 🔹 배열 유지
+                : ['No Email'];
 
             const slackPayload: CreateStudyAlertRequest = {
                 id: studyData.id,
@@ -211,8 +230,8 @@ export class StudyTeamService {
                 name: studyData.name,
                 studyExplain: studyData.studyExplain,
                 recruitNum: studyData.recruitNum,
-                leader: leaderName,
-                email: leaderEmail,
+                leader: leaderNames, // 여러 명일 경우 ,로 구분
+                email: leaderEmails, // 여러 명일 경우 ,로 구분
                 recruitExplain: studyData.recruitExplain,
                 notionLink: studyData.notionLink,
                 goal: studyData.goal,
@@ -280,6 +299,10 @@ export class StudyTeamService {
                 await this.studyTeamRepository.getStudyTeamMembersById(
                     studyTeamId,
                 );
+            // 기존 스터디 팀 정보 조회
+            const existingStudyTeam =
+                await this.studyTeamRepository.getStudyTeamById(studyTeamId);
+            const wasRecruited = existingStudyTeam.isRecruited;
 
             const updatedMembers = [
                 ...existingMembers.filter(
@@ -342,6 +365,47 @@ export class StudyTeamService {
                 updateStudyTeamDto.resultImages,
                 updateStudyTeamDto.studyMember,
             );
+
+            // 🔹 isRecruited 값이 false → true 로 변경되었을 때 Slack 알림 전송
+            if (!wasRecruited && studyData.isRecruited) {
+                this.logger.debug(
+                    '📢 [INFO] 스터디 모집이 시작되어 Slack 알림을 전송합니다.',
+                );
+
+                // 리더 정보 가져오기
+                const leaderMembers = studyData.studyMember.filter(
+                    (member) => member.isLeader,
+                );
+
+                // 리더 이름과 이메일을 배열로 저장
+                const leaderNames = leaderMembers.length
+                    ? leaderMembers.map((leader) => leader.name) // 🔹 배열 유지
+                    : ['Unknown Leader'];
+
+                const leaderEmails = leaderMembers.length
+                    ? leaderMembers.map((leader) => leader.email) // 🔹 배열 유지
+                    : ['No Email'];
+
+                // Slack 알림 Payload 생성
+                const slackPayload: CreateStudyAlertRequest = {
+                    id: studyData.id,
+                    type: 'study', // 스터디 타입
+                    name: studyData.name,
+                    studyExplain: studyData.studyExplain,
+                    recruitNum: studyData.recruitNum,
+                    leader: leaderNames, // 모든 리더 표시
+                    email: leaderEmails, // 모든 리더 이메일 표시
+                    recruitExplain: studyData.recruitExplain,
+                    notionLink: studyData.notionLink,
+                    goal: studyData.goal,
+                    rule: studyData.rule,
+                };
+
+                this.logger.debug(JSON.stringify(slackPayload));
+
+                // Slack 알림 전송
+                await this.alertService.sendSlackAlert(slackPayload);
+            }
 
             // 인덱스 업데이트
             const indexStudy = new IndexStudyRequest(studyData);
