@@ -132,6 +132,14 @@ export class StudyTeamService {
         try {
             this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
 
+            // 모집 인원이 0명이면 isRecruited를 false로 설정
+            if (createStudyTeamRequest.recruitNum <= 0) {
+                this.logger.debug(
+                    '📢 [INFO] 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                );
+                createStudyTeamRequest.isRecruited = false;
+            }
+
             // 리더 존재 여부 체크
             const hasLeader = createStudyTeamRequest.studyMember.some(
                 (member) => member.isLeader,
@@ -292,6 +300,14 @@ export class StudyTeamService {
                 throw new Error(
                     '스터디에는 최소 한 명의 리더가 있어야 합니다.',
                 );
+            }
+
+            // 모집 인원이 0명이면 isRecruited를 false로 설정
+            if (updateStudyTeamDto.recruitNum <= 0) {
+                this.logger.debug(
+                    '📢 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+                );
+                updateStudyTeamDto.isRecruited = false;
             }
 
             // 이미지 삭제 요청 처리
@@ -603,6 +619,16 @@ export class StudyTeamService {
             throw new AlreadyApprovedException();
         }
 
+        // 현재 스터디 정보 조회 (모집 인원 확인)
+        const studyTeam = await this.prisma.studyTeam.findUnique({
+            where: { id: studyTeamId },
+            select: { recruitNum: true },
+        });
+
+        if (!studyTeam) {
+            throw new NotFoundStudyTeamException();
+        }
+
         // 트랜잭션 시작
         const result = await this.prisma.$transaction(async (tx) => {
             // 1. 지원자 상태를 APPROVED로 변경
@@ -614,15 +640,33 @@ export class StudyTeamService {
                     tx,
                 );
 
-            // 2. 스터디 팀의 모집 인원 감소
-            await tx.studyTeam.update({
+            // 2. 스터디 팀의 모집 인원 감소 (0 이하로 내려가지 않도록)
+            const updateData: any = {};
+
+            // 현재 모집 인원이 0보다 크면 감소
+            if (studyTeam.recruitNum > 0) {
+                updateData.recruitNum = { decrement: 1 };
+            } else {
+                this.logger.warn(
+                    `스터디팀(ID: ${studyTeamId})의 모집 인원이 이미 0명이지만, 기존 지원자 승인 처리됨.`,
+                );
+            }
+
+            // 3. 스터디 팀 업데이트 (모집 인원 감소 및 필요시 모집 상태 변경)
+            const updatedStudy = await tx.studyTeam.update({
                 where: { id: studyTeamId },
                 data: {
-                    recruitNum: {
-                        decrement: 1,
-                    },
+                    ...updateData,
+                    // 모집 인원이 0명이 되면 isRecruited = false
+                    ...(studyTeam.recruitNum <= 1
+                        ? { isRecruited: false }
+                        : {}),
                 },
             });
+
+            this.logger.debug(
+                `스터디 팀 업데이트 완료 - 모집 인원: ${updatedStudy.recruitNum}, 모집 상태: ${updatedStudy.isRecruited}`,
+            );
 
             return updatedApplicant;
         });
