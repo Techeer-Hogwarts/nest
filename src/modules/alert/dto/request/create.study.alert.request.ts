@@ -4,8 +4,8 @@ export class CreateStudyAlertRequest {
     name: string;
     studyExplain: string;
     recruitNum: number;
-    leader: string;
-    email: string;
+    leader: string[];
+    email: string[];
     recruitExplain: string;
     notionLink: string;
     goal: string;
