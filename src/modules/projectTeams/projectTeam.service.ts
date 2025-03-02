@@ -1299,7 +1299,7 @@ export class ProjectTeamService {
             // 지원자 정보 조회 (teamRole 확인용)
             const applicant = await this.prisma.projectMember.findFirst({
                 where: {
-                    id: applicantId,
+                    userId: applicantId,
                     projectTeamId,
                 },
                 select: {
@@ -1308,6 +1308,7 @@ export class ProjectTeamService {
             });
 
             if (!applicant) {
+                this.logger.error(JSON.stringify(applicant));
                 throw new NotFoundApplicantException();
             }
 
@@ -1322,8 +1323,10 @@ export class ProjectTeamService {
                     fullStackNum: true,
                 },
             });
+            this.logger.debug(`프로젝트 정보: ${JSON.stringify(project)}`);
 
             if (!project) {
+                this.logger.error(JSON.stringify(project));
                 throw new NotFoundProjectException();
             }
 
