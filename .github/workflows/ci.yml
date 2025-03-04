@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main # 메인 브렌치에 브랜치 머지 시 자동으로 실행
+            - develop
     pull_request:
         branches:
             - '**' # 모든 브랜치에 PR 올릴 때 실행
@@ -106,7 +107,25 @@ jobs:
             #         --push \
             #         -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:latest .
 
-            - name: Send Image and Version to Slack
+            - name: Send Image and Version to Slack (Staging)
+              if: github.ref == 'refs/heads/develop'
+              env:
+                  IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest
+                  DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+                  SLACK_SECRET: ${{ secrets.SLACK_DEPLOY_SECRET }}
+              run: |
+                  commit_link="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/commit/${{ github.sha }}"
+                  curl -X POST https://your-staging-deploy-endpoint.example.com/api/v1/deploy/image \
+                  -H "Content-Type: application/json" \
+                  -d '{
+                        "imageName": "'"$IMAGE_NAME"'",
+                        "imageTag": "'"$DOCKER_IMAGE_TAG"'",
+                        "commitLink": "'"$commit_link"'",
+                        "environment": "staging",
+                        "secret": "'"$SLACK_SECRET"'"
+                  }'
+
+            - name: Send Image and Version to Slack (Production)
               if: github.ref == 'refs/heads/main' # main 브랜치에 머지 시에만 실행
               env:
                   IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest
