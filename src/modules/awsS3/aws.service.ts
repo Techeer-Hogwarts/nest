@@ -1,12 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { VALID_IMAGE_EXTENSIONS } from './aws.valid-extentions';
+import { NotApprovedFileExtension } from '../../global/exception/custom.exception';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @Injectable()
 export class AwsService {
     s3Client: S3Client;
 
-    constructor(private configService: ConfigService) {
+    constructor(
+        private configService: ConfigService,
+        private readonly logger: CustomWinstonLogger,
+    ) {
         // AWS S3 클라이언트 초기화. 환경 설정 정보를 사용하여 AWS 리전, Access Key, Secret Key를 설정.
         this.s3Client = new S3Client({
             region: this.configService.get('AWS_REGION'),
@@ -39,5 +45,37 @@ export class AwsService {
 
         // 업로드된 이미지의 URL을 반환합니다.
         return `https://${this.configService.get('AWS_S3_BUCKET_NAME')}.s3.${process.env.AWS_REGION}.amazonaws.com/${keyPath}`;
+    }
+
+    async uploadImagesToS3(
+        files: Express.Multer.File[],
+        folderName: string,
+        urlPrefix: string,
+    ): Promise<string[]> {
+        return await Promise.all(
+            files.map(async (file, index) => {
+                const ext = file.originalname.split('.').pop().toLowerCase();
+                if (!VALID_IMAGE_EXTENSIONS.includes(ext)) {
+                    this.logger.warn(
+                        `⚠️ [WARNING] 허용되지 않은 파일 확장자: ${file.originalname}`,
+                    );
+                    throw new NotApprovedFileExtension();
+                }
+                try {
+                    return await this.imageUploadToS3(
+                        folderName,
+                        `${urlPrefix}-${Date.now()}-${index}.${ext}`,
+                        file,
+                        ext,
+                    );
+                } catch (error) {
+                    this.logger.error(
+                        `❌ [ERROR] 파일 업로드 실패: ${file.originalname}`,
+                        error,
+                    );
+                    throw new error(`파일 업로드 실패: ${file.originalname}`);
+                }
+            }),
+        );
     }
 }

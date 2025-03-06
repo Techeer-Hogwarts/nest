@@ -66,68 +66,6 @@ export class StudyTeamService {
         }
     }
 
-    async uploadImagesToS3(
-        files: Express.Multer.File[],
-        folder: string,
-    ): Promise<string[]> {
-        const allowedExtensions = [
-            'jpg',
-            'jpeg',
-            'png',
-            'gif',
-            'svg',
-            'webp',
-            'bmp',
-            'tiff',
-            'ico',
-            'heic',
-            'heif',
-            'raw',
-            'psd',
-        ];
-
-        try {
-            const imageUrls = await Promise.all(
-                files.map(async (file, index) => {
-                    const ext = file.originalname
-                        .split('.')
-                        .pop()
-                        .toLowerCase();
-                    if (!allowedExtensions.includes(ext)) {
-                        this.logger.warn(
-                            `⚠️ [WARNING] 허용되지 않은 파일 확장자: ${file.originalname}`,
-                        );
-                        throw new NotApprovedFileExtension();
-                    }
-                    try {
-                        const imageUrl = await this.awsService.imageUploadToS3(
-                            folder,
-                            `study-team-${Date.now()}-${index}.${ext}`,
-                            file,
-                            ext,
-                        );
-                        return imageUrl;
-                    } catch (error) {
-                        this.logger.error(
-                            `❌ [ERROR] 파일 업로드 실패: ${file.originalname}`,
-                            error,
-                        );
-                        throw new Error(
-                            `파일 업로드 실패: ${file.originalname}`,
-                        );
-                    }
-                }),
-            );
-            return imageUrls;
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] S3 이미지 업로드 중 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
-    }
-
     async createStudyTeam(
         createStudyTeamRequest: CreateStudyTeamRequest,
         files: Express.Multer.File[],
