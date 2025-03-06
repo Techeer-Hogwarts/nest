@@ -7,7 +7,6 @@ import {
     NotFoundStudyTeamException,
     NotStudyMemberException,
     AlreadyApprovedException,
-    NotApprovedFileExtension,
     DuplicateStudyTeamNameException,
     NoLeaderException,
 } from '../../global/exception/custom.exception';
@@ -22,7 +21,7 @@ import {
 import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { CreateStudyAlertRequest } from '../alert/dto/request/create.study.alert.request';
 import { AlertServcie } from '../alert/alert.service';
-import { User } from '@prisma/client';
+import { StatusCategory } from '@prisma/client';
 import { IndexStudyRequest } from './dto/request/index.study.request';
 import { IndexService } from '../../global/index/index.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -70,135 +69,219 @@ export class StudyTeamService {
         createStudyTeamRequest: CreateStudyTeamRequest,
         files: Express.Multer.File[],
     ): Promise<GetStudyTeamResponse> {
-        // 스터디 이름 중복 체크
-        const existingStudy = await this.studyTeamRepository.findStudyByName(
-            createStudyTeamRequest.name,
-        );
-        if (existingStudy) {
-            this.logger.debug(
-                `Duplicate study team found for name: ${createStudyTeamRequest.name}`,
-            );
-            throw new DuplicateStudyTeamNameException();
-        }
-
+        const { studyMember, profileImage, ...teamData } =
+            createStudyTeamRequest;
+        /** 스터디 이름 중복 체크 **/
         try {
-            this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
-
-            // 모집 인원이 0명이면 isRecruited를 false로 설정
-            if (createStudyTeamRequest.recruitNum <= 0) {
-                this.logger.debug(
-                    '📢 [INFO] 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
-                );
-                createStudyTeamRequest.isRecruited = false;
-            }
-
-            // 리더 존재 여부 체크
-            const hasLeader = createStudyTeamRequest.studyMember.some(
-                (member) => member.isLeader,
-            );
-            if (!hasLeader) {
-                this.logger.error(
-                    '❌ [ERROR] 스터디 생성 실패: 리더가 지정되지 않음',
-                );
-                throw new NoLeaderException();
-            }
-            this.logger.debug('✅ [SUCCESS] 스터디 리더 검증 완료');
-
-            // 파일 업로드 처리
-            if (files && files.length > 0) {
-                this.logger.debug(
-                    `📂 [INFO] 총 ${files.length}개의 파일이 업로드 대기 중입니다.`,
-                );
-                const imageUrls = await this.uploadImagesToS3(
-                    files,
-                    'study-teams',
-                );
-                createStudyTeamRequest.resultImages = imageUrls;
-            } else {
-                this.logger.debug('⚠️ [WARNING] 파일이 존재하지 않습니다.');
-                createStudyTeamRequest.resultImages = [];
-            }
-
-            // 스터디 멤버에 해당하는 사용자 존재 여부 체크
-            const userIds = createStudyTeamRequest.studyMember.map(
-                (member) => member.userId,
-            );
-            const existingUserIds =
-                await this.studyTeamRepository.checkExistUsers(userIds);
-            const nonExistentUsers = userIds.filter(
-                (id) => !existingUserIds.includes(id),
-            );
-            if (nonExistentUsers.length > 0) {
-                this.logger.error(
-                    `❌ [ERROR] 존재하지 않는 사용자 ID: ${nonExistentUsers}`,
-                );
-                throw new NotFoundUserException();
-            }
-
-            this.logger.debug(
-                '📘 [INFO] createStudyTeamRequest 데이터: ' +
-                    JSON.stringify(createStudyTeamRequest),
-            );
-
-            // 스터디 생성
-            const studyData = await this.studyTeamRepository.createStudyTeam(
-                createStudyTeamRequest,
-            );
-            this.logger.debug(
-                '✅ [SUCCESS] StudyTeamRepository에 데이터 저장 성공',
-            );
-
-            // Slack 알림에 사용할 DTO 매핑
-            const leaderMembers = studyData.studyMember.filter(
-                (member) => member.isLeader,
-            );
-
-            // 리더 이름과 이메일을 배열로 저장
-            const leaderNames = leaderMembers.length
-                ? leaderMembers.map((leader) => leader.name) // 🔹 배열 유지
-                : ['Unknown Leader'];
-
-            const leaderEmails = leaderMembers.length
-                ? leaderMembers.map((leader) => leader.email) // 🔹 배열 유지
-                : ['No Email'];
-
-            const slackPayload: CreateStudyAlertRequest = {
-                id: studyData.id,
-                type: 'study',
-                name: studyData.name,
-                studyExplain: studyData.studyExplain,
-                recruitNum: studyData.recruitNum,
-                leader: leaderNames, // 여러 명일 경우 ,로 구분
-                email: leaderEmails, // 여러 명일 경우 ,로 구분
-                recruitExplain: studyData.recruitExplain,
-                notionLink: studyData.notionLink,
-                goal: studyData.goal,
-                rule: studyData.rule,
-            };
-
-            // 서비스 단에서 Slack 알림 전송
-            this.logger.debug(
-                `슬랙봇 요청 데이터 : ${JSON.stringify(slackPayload)}`,
-            );
-            await this.alertService.sendSlackAlert(slackPayload);
-            this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
-
-            // 인덱스 업데이트
-            const indexStudy = new IndexStudyRequest(studyData);
-            this.logger.debug(
-                `스터디 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexStudy)}`,
-                StudyTeamService.name,
-            );
-            await this.indexService.createIndex('study', indexStudy);
-
-            return studyData;
+            await this.validateStudyName(createStudyTeamRequest.name);
         } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] createStudyTeam 에서 예외 발생: ',
-                error,
+            this.logger.debug(
+                `[INFO] 스터디 이름 중복: ${createStudyTeamRequest.name}`,
             );
             throw error;
         }
+
+        this.logger.debug('🔥 [START] createStudyTeam 요청 시작');
+
+        if (createStudyTeamRequest.recruitNum <= 0) {
+            createStudyTeamRequest.isRecruited = false;
+            this.logger.debug(
+                '📢 [INFO] 모집 인원이 0명이므로 isRecruited를 false로 설정합니다.',
+            );
+        }
+
+        /** 리더 존재 여부 체크 **/
+        if (!this.hasLeader(createStudyTeamRequest.studyMember)) {
+            this.logger.error(
+                '❌ [ERROR] 스터디 생성 실패: 리더가 지정되지 않음',
+            );
+            throw new NoLeaderException();
+        }
+        this.logger.debug('✅ [SUCCESS] 스터디 리더 검증 완료');
+
+        /** 스터디 멤버에 해당하는 사용자 존재 여부 체크 **/
+        const studyMemberIds = createStudyTeamRequest.studyMember.map(
+            (member) => member.userId,
+        );
+
+        // DB에 존재하는 신청자인지 확인
+        const existingUsers = await this.prisma.user.findMany({
+            where: { id: { in: studyMemberIds } },
+            select: { id: true },
+        });
+        const nonExistentUsers = this.checkNonExistentUsers(
+            studyMemberIds,
+            existingUsers,
+        );
+
+        // DB에 존재하지 않는 신청자면 예외발생
+        if (nonExistentUsers.length > 0) {
+            this.logger.error(
+                `❌ [ERROR] 존재하지 않는 사용자 ID: ${nonExistentUsers}`,
+            );
+            throw new NotFoundUserException();
+        }
+
+        /** 파일 업로드 처리 **/
+        const imageUrls = await this.processImagesUploadToS3(
+            files,
+            'study-teams',
+            'study-team',
+        );
+        this.logger.debug(
+            `✅ [SUCCESS] 총 ${files.length}개의 파일이 업로드 완료`,
+        );
+
+        this.logger.debug(
+            '📘 [INFO] createStudyTeamRequest 데이터: ' +
+                JSON.stringify(createStudyTeamRequest) +
+                'imageUrs: ' +
+                JSON.stringify(imageUrls),
+        );
+
+        /** 스터디 생성 **/
+        const study = await this.prisma.studyTeam.create({
+            data: {
+                ...teamData,
+                studyMember: {
+                    create: studyMember.map((member) => ({
+                        user: { connect: { id: member.userId } },
+                        isLeader: member.isLeader,
+                        summary: '초기 참여 인원입니다',
+                        status: 'APPROVED' as StatusCategory,
+                    })),
+                },
+                resultImages: {
+                    create: imageUrls.map((imageUrl) => ({ imageUrl })),
+                },
+            },
+            include: {
+                studyMember: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                year: true,
+                                profileImage: true,
+                            },
+                        },
+                    },
+                },
+                resultImages: true,
+            },
+        });
+        study.studyMember.forEach((member) => {
+            if (member.user) {
+                member.user.profileImage = profileImage;
+            }
+        });
+        this.logger.debug(
+            '✅ [SUCCESS] StudyTeamRepository에 데이터 저장 성공',
+        );
+        const studyData = new GetStudyTeamResponse(study);
+
+        /** Slack 알림에 사용할 DTO 매핑 **/
+        const leaderMembers = studyData.studyMember.filter(
+            (member) => member.isLeader,
+        );
+        const { names: leaderNames, emails: leaderEmails } =
+            this.extractLeaderInfo(leaderMembers);
+
+        const slackPayload: CreateStudyAlertRequest = {
+            id: studyData.id,
+            type: 'study',
+            name: studyData.name,
+            studyExplain: studyData.studyExplain,
+            recruitNum: studyData.recruitNum,
+            leader: leaderNames, // 여러 명일 경우 ,로 구분
+            email: leaderEmails, // 여러 명일 경우 ,로 구분
+            recruitExplain: studyData.recruitExplain,
+            notionLink: studyData.notionLink,
+            goal: studyData.goal,
+            rule: studyData.rule,
+        };
+
+        /** Slack 알림 전송 **/
+        this.logger.debug(
+            `슬랙봇 요청 데이터 : ${JSON.stringify(slackPayload)}`,
+        );
+        await this.alertService.sendSlackAlert(slackPayload);
+        this.logger.debug('🔥 [DEBUG] 슬랙 알림 전송 완료');
+
+        /** 인덱스 업데이트 **/
+        const indexStudy = new IndexStudyRequest(studyData);
+        this.logger.debug(
+            `스터디 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexStudy)}`,
+            StudyTeamService.name,
+        );
+        await this.indexService.createIndex('study', indexStudy);
+
+        return studyData;
+    }
+
+    private extractLeaderInfo(leaders: { name: string; email: string }[]): {
+        names: string[];
+        emails: string[];
+    } {
+        if (leaders.length === 0) {
+            return {
+                names: ['Unknown Leader'],
+                emails: ['No Email'],
+            };
+        }
+        return {
+            names: leaders.map((leader) => leader.name),
+            emails: leaders.map((email) => email.email),
+        };
+    }
+
+    private checkNonExistentUsers(
+        userIds: number[],
+        existingUsers: { id: number }[],
+    ): number[] {
+        if (userIds.length === existingUsers.length) {
+            return [];
+        }
+        const existingUserIds = new Set<number>(
+            existingUsers.map((user) => user.id),
+        );
+        return userIds.filter((id) => {
+            return !existingUserIds.has(id);
+        });
+    }
+
+    private hasLeader(
+        studyMember: { userId: number; isLeader: boolean }[],
+    ): boolean {
+        return studyMember.some((member) => member.isLeader);
+    }
+
+    private async validateStudyName(name: string): Promise<void> {
+        const existingStudy = await this.prisma.studyTeam.findUnique({
+            where: { name },
+            select: { id: true },
+        });
+        if (existingStudy) {
+            throw new DuplicateStudyTeamNameException();
+        }
+    }
+
+    private async processImagesUploadToS3(
+        files: Express.Multer.File[],
+        folderName: string,
+        urlPrefix: string,
+    ): Promise<string[]> {
+        if (!files || files.length < 1) {
+            this.logger.debug('⚠️ [WARNING] 파일이 존재하지 않습니다.');
+            return [];
+        }
+        return await this.awsService.uploadImagesToS3(
+            files,
+            folderName,
+            urlPrefix,
+        );
     }
 
     // 스터디 지원자 조회
