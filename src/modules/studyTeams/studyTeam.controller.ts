@@ -10,6 +10,7 @@ import {
     Param,
     Get,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { StudyTeamService } from './studyTeam.service';
 import { CreateStudyTeamRequest } from './dto/request/create.studyTeam.request';
 import { UpdateStudyTeamRequest } from './dto/request/update.studyTeam.request';
@@ -86,35 +87,26 @@ export class StudyTeamController {
     })
     @UseInterceptors(FilesInterceptor('files', 10))
     async uploadStudyTeam(
-        @Body('createStudyTeamRequest') createStudyTeamRequest: string,
+        @Body() createStudyTeamRequest: CreateStudyTeamRequest,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
         this.logger.debug('🔥 스터디 팀 생성 시작');
-        const user = request.user;
+        const user = request.user as { id: number };
+        /*
+        ** user 사용하지 않는데 무슨 이유로 받는걸까?
         if (!user) {
             this.logger.error('❌ 사용자 정보가 없습니다.');
             throw new NotFoundUserException();
-        }
+        }*/
         this.logger.debug(`✅ 사용자 확인됨: ID=${user.id}`);
-        try {
-            const parsedBody = JSON.parse(createStudyTeamRequest);
-            const createStudyTeamDto = plainToInstance(
-                CreateStudyTeamRequest,
-                parsedBody,
+        const result: GetStudyTeamResponse =
+            await this.studyTeamService.createStudyTeam(
+                createStudyTeamRequest,
+                files,
             );
-
-            const result: GetStudyTeamResponse =
-                await this.studyTeamService.createStudyTeam(
-                    createStudyTeamDto,
-                    files,
-                );
-            this.logger.debug(`생성된 스터디 정보: ${JSON.stringify(result)}`);
-            return result;
-        } catch (error) {
-            this.logger.error('❌ 스터디 팀 생성 중 오류 발생:', error);
-            throw error;
-        }
+        this.logger.debug(`생성된 스터디 정보: ${JSON.stringify(result)}`);
+        return result;
     }
 
     @Patch('/:studyTeamId')

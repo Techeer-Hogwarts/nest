@@ -6,7 +6,7 @@ import {
     IsInt,
     IsArray,
 } from 'class-validator';
-import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class CreateStudyTeamRequest {
@@ -137,7 +137,4 @@ export class CreateStudyTeamRequest {
         userId: number;
         isLeader: boolean;
     }[];
-
-    @ApiHideProperty() // Swagger에 표시되지 않도록 설정
-    resultImages?: string[]; // 사용자가 입력하지 않음, 서버에서 자동 추가
 }
