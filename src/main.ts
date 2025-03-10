@@ -13,29 +13,12 @@ async function bootstrap(): Promise<void> {
         const app = await NestFactory.create(AppModule, {
             cors: {
                 origin: (origin, callback) => {
-                    const allowedDomainPatterns = [
-                        /^https:\/\/.*-techeerzip\.vercel\.app$/,
-                        /^https:\/\/www\.techeerzip\.cloud$/,
-                        /^http:\/\/(localhost|127\.0\.0\.1):\d+$/, // localhost와 127.0.0.1의 모든 포트 허용
-                        /^null$/,
-                        /^https:\/\/api\.techeerzip\.cloud$/,
-                    ];
-
-                    if (
-                        !origin ||
-                        allowedDomainPatterns.some((pattern) =>
-                            pattern.test(origin),
-                        )
-                    ) {
-                        callback(null, true);
-                    } else {
-                        callback(new Error('Not allowed by CORS'));
-                    }
+                    callback(null, true); // 모든 요청 허용
                 },
                 methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
                 preflightContinue: false,
                 optionsSuccessStatus: 204,
-                credentials: true,
+                credentials: true, // 요청에 쿠키를 포함할 수 있도록 설정
             },
         });
         // CustomWinstonLogger 인스턴스 가져오기
