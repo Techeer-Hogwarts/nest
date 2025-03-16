@@ -11,24 +11,28 @@ import {
     Get,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 import { StudyTeamService } from './studyTeam.service';
-import { CreateStudyTeamRequest } from './dto/request/create.studyTeam.request';
-import { UpdateStudyTeamRequest } from './dto/request/update.studyTeam.request';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { plainToInstance } from 'class-transformer';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateStudyMemberRequest } from '../studyMembers/dto/request/create.studyMember.request';
 import { UpdateApplicantStatusRequest } from './dto/request/update.applicantStatus.request';
 import { AddMemberToStudyTeamRequest } from '../studyMembers/dto/request/add.studyMember.request';
-import { NotFoundUserException } from '../../global/exception/custom.exception';
 import {
     GetStudyTeamResponse,
     StudyApplicantResponse,
     StudyMemberResponse,
 } from './dto/response/get.studyTeam.response';
-import { CustomWinstonLogger } from '../../global/logger/winston.logger';
-
+import {
+    plainToCreateStudyTeamRequest,
+    plainToUpdateStudyTeamRequest,
+} from './mapper/StudyTeamMapper';
+import { validate } from 'class-validator';
+import {
+    StudyTeamBadRequestException,
+    StudyTeamInvalidUserException,
+} from './exception/study-team.exception';
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
 export class StudyTeamController {
@@ -87,26 +91,28 @@ export class StudyTeamController {
     })
     @UseInterceptors(FilesInterceptor('files', 10))
     async uploadStudyTeam(
-        @Body() createStudyTeamRequest: CreateStudyTeamRequest,
+        @Body('createStudyTeamRequest') createStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
         @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
-        this.logger.debug('🔥 스터디 팀 생성 시작');
+        this.logger.debug('스터디 팀 생성 시작');
+
         const user = request.user as { id: number };
-        /*
-        ** user 사용하지 않는데 무슨 이유로 받는걸까?
         if (!user) {
-            this.logger.error('❌ 사용자 정보가 없습니다.');
-            throw new NotFoundUserException();
-        }*/
-        this.logger.debug(`✅ 사용자 확인됨: ID=${user.id}`);
-        const result: GetStudyTeamResponse =
-            await this.studyTeamService.createStudyTeam(
-                createStudyTeamRequest,
-                files,
-            );
-        this.logger.debug(`생성된 스터디 정보: ${JSON.stringify(result)}`);
-        return result;
+            throw new StudyTeamInvalidUserException();
+        }
+        this.logger.debug('스터디 팀 생성: request user 확인 완료');
+
+        const createRequest = plainToCreateStudyTeamRequest(
+            createStudyTeamRequest,
+        );
+        await this.validateDtoFields(createRequest);
+        this.logger.debug('스터디 팀 생성: body dto 검증 완료');
+
+        return await this.studyTeamService.createStudyTeam(
+            createRequest,
+            files,
+        );
     }
 
     @Patch('/:studyTeamId')
@@ -161,49 +167,30 @@ export class StudyTeamController {
     @UseInterceptors(FilesInterceptor('files', 10))
     async updateStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Body('updateStudyTeamRequest')
-        updateStudyTeamRequest: string | undefined,
+        @Body('updateStudyTeamRequest') updateStudyTeamRequest: string,
         @UploadedFiles() files: Express.Multer.File[],
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
-        if (!user) throw new NotFoundUserException();
-        this.logger.debug(
-            `Starting updateStudyTeam for studyTeamId: ${studyTeamId}, userId: ${user.id}`,
-        );
+        this.logger.debug('스터디 팀 업데이트 시작');
 
-        try {
-            let parsedBody = {};
-
-            if (updateStudyTeamRequest) {
-                try {
-                    parsedBody = JSON.parse(updateStudyTeamRequest);
-                } catch (error) {
-                    this.logger.warn(
-                        '❌ [WARN] JSON 파싱 실패, 빈 객체로 초기화합니다.',
-                        error,
-                    );
-                    parsedBody = {};
-                }
-            }
-
-            const updateStudyTeamDto = plainToInstance(
-                UpdateStudyTeamRequest,
-                parsedBody,
-            );
-            return await this.studyTeamService.updateStudyTeam(
-                studyTeamId,
-                user.id,
-                updateStudyTeamDto,
-                files,
-            );
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] updateStudyTeam 에서 예외 발생: ',
-                error,
-            );
-            throw error;
+        const user = request.user as { id: number };
+        if (!user) {
+            throw new StudyTeamInvalidUserException();
         }
+        this.logger.debug('스터디 팀 업데이트: request user 확인 완료');
+
+        const updateRequest = plainToUpdateStudyTeamRequest(
+            updateStudyTeamRequest,
+        );
+        await this.validateDtoFields(updateRequest);
+        this.logger.debug('스터디 팀 업데이트: body dto 확인 완료');
+
+        return await this.studyTeamService.updateStudyTeam(
+            studyTeamId,
+            user.id,
+            updateRequest,
+            files,
+        );
     }
 
     // 스터디 공고 마감(isRecruited: false)
@@ -215,22 +202,11 @@ export class StudyTeamController {
     })
     async closeStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
-
-        try {
-            return await this.studyTeamService.closeStudyTeam(
-                studyTeamId,
-                user.id,
-            );
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] closeStudyTeam 에서 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
+        this.logger.debug('스터디 팀 모집 마감 시작');
+        const user = request.user as { id: number };
+        return await this.studyTeamService.closeStudyTeam(studyTeamId, user.id);
     }
 
     // 스터디 공고 삭제(토큰검사 O,isDeleted: true)
@@ -242,21 +218,14 @@ export class StudyTeamController {
     })
     async deleteStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
-        const user = request.user;
-        try {
-            return await this.studyTeamService.deleteStudyTeam(
-                studyTeamId,
-                user.id,
-            );
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] deleteStudyTeam 에서 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
+        this.logger.debug('스터디 팀 삭제 시작');
+        const user = request.user as { id: number };
+        return await this.studyTeamService.deleteStudyTeam(
+            studyTeamId,
+            user.id,
+        );
     }
 
     // 특정 유저가 참여한 스터디 조회(토큰으로, isDeleted: false만 조회)
@@ -267,20 +236,11 @@ export class StudyTeamController {
         description: '로그인된 유저가 참여한 스터디 목록을 조회합니다.',
     })
     async getUserStudyTeams(
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<GetStudyTeamResponse[]> {
-        const user = request.user;
-
-        try {
-            const userId = user.id;
-            return await this.studyTeamService.getUserStudyTeams(userId);
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] getUserStudyTeams 에서 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
+        this.logger.debug('특정 유저가 참여한 스터디 조회 시작');
+        const user = request.user as { id: number };
+        return await this.studyTeamService.getUserStudyTeams(user.id);
     }
 
     // 스터디 아이디로 스터디 상세 조회(토큰검사 X)
@@ -292,15 +252,8 @@ export class StudyTeamController {
     async getStudyTeamById(
         @Param('studyTeamId') studyTeamId: number,
     ): Promise<GetStudyTeamResponse> {
-        try {
-            return await this.studyTeamService.getStudyTeamById(studyTeamId);
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] getStudyTeamById 에서 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
+        this.logger.debug('스터디 팀 상세 조회 시작');
+        return await this.studyTeamService.getStudyTeamById(studyTeamId);
     }
 
     // 특정 스터디 모든 인원을 조회하는 api(아이디로, 토큰검사 X, 스터디 이름과 인원들의 유저테이블에서 이름:name, 리더여부)
@@ -312,17 +265,8 @@ export class StudyTeamController {
     async getStudyTeamMembersById(
         @Param('studyTeamId') studyTeamId: number,
     ): Promise<StudyMemberResponse[]> {
-        try {
-            return await this.studyTeamService.getStudyTeamMembersById(
-                studyTeamId,
-            );
-        } catch (error) {
-            this.logger.error(
-                '❌ [ERROR] getStudyTeamMembersById 에서 예외 발생: ',
-                error,
-            );
-            throw error;
-        }
+        this.logger.debug('스터디의 모든 인원 조회 시작');
+        return await this.studyTeamService.getStudyTeamMembersById(studyTeamId);
     }
 
     @Post('/apply')
@@ -333,26 +277,14 @@ export class StudyTeamController {
     })
     async applyToStudyTeam(
         @Body() createStudyMemberRequest: CreateStudyMemberRequest,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<StudyApplicantResponse> {
-        try {
-            this.logger.debug(JSON.stringify(createStudyMemberRequest));
-            this.logger.debug('🔥 스터디 지원 시작');
-            const user = request.user;
-            this.logger.debug(`요청 데이터: userId=${user.id}`);
-
-            const result = await this.studyTeamService.applyToStudyTeam(
-                createStudyMemberRequest,
-                user,
-            );
-
-            this.logger.debug('✅ 스터디 지원 완료');
-            return result;
-        } catch (error) {
-            this.logger.error(JSON.stringify(createStudyMemberRequest));
-            this.logger.error('❌ 스터디 지원 중 오류 발생:', error);
-            throw error;
-        }
+        this.logger.debug('스터디 팀 지원 시작');
+        const user = request.user as { id: number; email: string };
+        return await this.studyTeamService.applyToStudyTeam(
+            createStudyMemberRequest,
+            user,
+        );
     }
 
     // 스터디 지원 취소 : isDeleted = true(지원한 사람만 가능)
@@ -364,14 +296,13 @@ export class StudyTeamController {
     })
     async cancelApplication(
         @Param('studyTeamId') studyTeamId: number,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<StudyMemberResponse> {
-        const user = request.user;
-
+        this.logger.debug('스터디 팀 지원 취소 시작');
+        const user = request.user as { id: number; email: string };
         return await this.studyTeamService.cancelApplication(studyTeamId, user);
     }
 
-    // 스터디 지원자 조회 : status: PENDING인 데이터 조회(스터디팀에 속한 멤버만 조회 가능 멤버가 아니면 확인할 수 없습니다 )
     // @UseGuards(JwtAuthGuard)
     @Get('/:studyTeamId/applicants')
     @ApiOperation({
@@ -380,30 +311,12 @@ export class StudyTeamController {
     })
     async getApplicants(
         @Param('studyTeamId') studyTeamId: number,
-        // @Req() request: any,
     ): Promise<StudyApplicantResponse[]> {
-        // this.logger.debug(
-        //     `🔥 스터디 지원자 조회 시작 - studyTeamId: ${studyTeamId}, userId: ${request.user.id}`,
-        // );
-        try {
-            // const userId = request.user.id;
-            const applicants = await this.studyTeamService.getApplicants(
-                studyTeamId,
-                // userId,
-            );
-            this.logger.debug(
-                `✅ 스터디 지원자 조회 완료 - studyTeamId: ${studyTeamId}, applicantsCount: ${applicants.length}`,
-            );
-            return applicants;
-        } catch (error) {
-            this.logger.error(
-                `❌ 스터디 지원자 조회 실패 - studyTeamId: ${studyTeamId}, error: ${error.message}`,
-            );
-            throw error;
-        }
+        this.logger.debug('스터디 팀 지원자 조회 시작');
+        return await this.studyTeamService.getApplicants(studyTeamId);
     }
 
-    // 🔥 스터디 지원자 승인 API
+    // 스터디 지원자 승인 API
     @Patch('/applicants/accept')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({
@@ -413,34 +326,17 @@ export class StudyTeamController {
     @ApiBody({ type: UpdateApplicantStatusRequest })
     async acceptApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<StudyApplicantResponse> {
-        const user = request.user; // 현재 요청을 보낸 사용자 (스터디 멤버인지 확인해야 함)
-        const { studyTeamId, applicantId } = updateApplicantStatusRequest;
-        this.logger.debug(
-            `스터디 지원 수락 요청 수신 - User: ${user.id}, StudyTeam: ${studyTeamId}, Applicant: ${applicantId}`,
+        this.logger.debug('스터디 팀 지원자 수락 시작');
+        return await this.studyTeamService.acceptApplicant(
+            updateApplicantStatusRequest.studyTeamId,
+            request.user as { id: number; email: string },
+            updateApplicantStatusRequest.applicantId,
         );
-        try {
-            const response = await this.studyTeamService.acceptApplicant(
-                studyTeamId,
-                user,
-                applicantId,
-            );
-
-            this.logger.log(
-                `스터디 지원 수락 완료 - StudyTeam: ${studyTeamId}, Applicant: ${applicantId}`,
-            );
-
-            return response;
-        } catch (error) {
-            this.logger.error(
-                `스터디 지원 수락 실패 - StudyTeam: ${studyTeamId}, Applicant: ${applicantId}, Error: ${error.message}`,
-            );
-            throw error;
-        }
     }
 
-    // 🔥 스터디 지원자 거절 API
+    // 스터디 지원자 거절 API
     @Patch('/applicants/reject')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({
@@ -450,29 +346,14 @@ export class StudyTeamController {
     @ApiBody({ type: UpdateApplicantStatusRequest })
     async rejectApplicant(
         @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<StudyApplicantResponse> {
-        const userId = request.user.id;
-        const { studyTeamId, applicantId } = updateApplicantStatusRequest;
-        this.logger.debug(
-            `🔥 스터디 지원 거절 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, applicantId: ${applicantId}`,
+        this.logger.debug('스터디 팀 지원자 거절 시작');
+        return await this.studyTeamService.rejectApplicant(
+            updateApplicantStatusRequest.studyTeamId,
+            request.user as { id: number },
+            updateApplicantStatusRequest.applicantId,
         );
-        try {
-            const result = await this.studyTeamService.rejectApplicant(
-                studyTeamId,
-                userId,
-                applicantId,
-            );
-            this.logger.debug(
-                `✅ 스터디 지원 거절 완료 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}`,
-            );
-            return result;
-        } catch (error) {
-            this.logger.error(
-                `❌ 스터디 지원 거절 실패 - studyTeamId: ${studyTeamId}, applicantId: ${applicantId}, error: ${error.message}`,
-            );
-            throw error;
-        }
     }
 
     // 스터디 팀원 추가 기능 : status: APPROVED인 데이터 추가(스터디팀에 속한 멤버만 가능)
@@ -484,29 +365,34 @@ export class StudyTeamController {
     })
     async addMemberToStudyTeam(
         @Body() addMemberToStudyTeamRequest: AddMemberToStudyTeamRequest,
-        @Req() request: any,
+        @Req() request: Request,
     ): Promise<StudyMemberResponse> {
-        const userId = request.user.id;
-        const { studyTeamId, memberId, isLeader } = addMemberToStudyTeamRequest;
-        this.logger.debug(
-            `🔥 스터디 팀원 추가 요청 - studyTeamId: ${studyTeamId}, userId: ${userId}, memberId: ${memberId}, isLeader: ${isLeader}`,
+        this.logger.debug('스터디 팀원 추가 시작');
+        const user = request.user as { id: number };
+        return await this.studyTeamService.addMemberToStudyTeam(
+            addMemberToStudyTeamRequest.studyTeamId,
+            user.id,
+            addMemberToStudyTeamRequest.memberId,
+            addMemberToStudyTeamRequest.isLeader,
         );
-        try {
-            const result = await this.studyTeamService.addMemberToStudyTeam(
-                studyTeamId,
-                userId,
-                memberId,
-                isLeader,
-            );
-            this.logger.debug(
-                `✅ 스터디 팀원 추가 완료 - studyTeamId: ${studyTeamId}, memberId: ${memberId}, isLeader: ${isLeader}`,
-            );
-            return result;
-        } catch (error) {
-            this.logger.error(
-                `❌ 스터디 팀원 추가 실패 - studyTeamId: ${studyTeamId}, memberId: ${memberId}, error: ${error.message}`,
-            );
-            throw error;
+    }
+
+    // Controller body를 string으로 받아온 다음 dto에 맵핑하면 class-validator 작동 안 한다.
+    private async validateDtoFields(dto: any): Promise<void> {
+        const errors = await validate(dto);
+        if (errors.length > 0) {
+            throw new StudyTeamBadRequestException();
+        }
+        // 모든 필드가 undefined 또는 null인지 체크
+        const isEmpty = Object.values(dto).every(
+            (value) =>
+                value === undefined ||
+                value === null ||
+                (Array.isArray(value) && value.length === 0),
+        );
+
+        if (isEmpty) {
+            throw new StudyTeamBadRequestException();
         }
     }
 }
