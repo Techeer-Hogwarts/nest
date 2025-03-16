@@ -3,16 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { VALID_IMAGE_EXTENSIONS } from './aws.valid-extentions';
 import { NotApprovedFileExtension } from '../../global/exception/custom.exception';
-import { CustomWinstonLogger } from '../../global/logger/winston.logger';
 
 @Injectable()
 export class AwsService {
     s3Client: S3Client;
 
-    constructor(
-        private configService: ConfigService,
-        private readonly logger: CustomWinstonLogger,
-    ) {
+    constructor(private configService: ConfigService) {
         // AWS S3 클라이언트 초기화. 환경 설정 정보를 사용하여 AWS 리전, Access Key, Secret Key를 설정.
         this.s3Client = new S3Client({
             region: this.configService.get('AWS_REGION'),
