@@ -49,7 +49,7 @@ export class StudyTeamAlreadyActiveMemberException extends BaseException {
     }
 }
 
-export class StudyTeamAInvalidApplicantException extends BaseException {
+export class StudyTeamInvalidApplicantException extends BaseException {
     constructor() {
         super(ErrorCode.STUDY_TEAM_INVALID_APPLICANT);
     }

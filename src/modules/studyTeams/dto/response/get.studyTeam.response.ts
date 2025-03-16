@@ -104,7 +104,7 @@ export class StudyLeadersMailResponse {
 export class ExistingStudyMemberResponse {
     readonly id: number;
     readonly userId: number;
-    readonly status: string;
+    readonly status: StatusCategory;
     readonly isLeader: boolean;
     readonly isDeleted: boolean;
 
@@ -112,7 +112,7 @@ export class ExistingStudyMemberResponse {
         id: number;
         isLeader: boolean;
         isDeleted: boolean;
-        status: string;
+        status: StatusCategory;
         user: { id: number };
     }) {
         this.id = member.id;

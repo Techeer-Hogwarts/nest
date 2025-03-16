@@ -97,7 +97,7 @@ export class CustomWinstonLogger implements LoggerService {
 * STATUS CODE:   ${err.statusCode}
 * PATH:          ${request?.url ?? 'N/A'}
 * METHOD:        ${request?.method ?? 'N/A'}
-* BODY:          ${JSON.stringify(request?.body ?? {}, undefined, 2)}
+* BODY:          ${JSON.stringify(this.sanitizeRequestBody(request?.body ?? {}), undefined, 2)}
 * STACK TRACE:   ${error?.stack ?? 'N/A'}
 ━━━━━━━━━━━━━━━━
         `;
@@ -144,5 +144,33 @@ export class CustomWinstonLogger implements LoggerService {
         this.winstonLogger.configure({
             level: winstonLevels[0],
         });
+    }
+    private sanitizeRequestBody(body: any): any {
+        if (!body) return {};
+
+        const sanitized = { ...body };
+        const sensitiveFields = [
+            'password',
+            'token',
+            'secret',
+            'authorization',
+        ];
+
+        for (const key of Object.keys(sanitized)) {
+            if (
+                sensitiveFields.some((field) =>
+                    key.toLowerCase().includes(field),
+                )
+            ) {
+                sanitized[key] = '[REDACTED]';
+            } else if (
+                typeof sanitized[key] === 'object' &&
+                sanitized[key] !== null
+            ) {
+                sanitized[key] = this.sanitizeRequestBody(sanitized[key]);
+            }
+        }
+
+        return sanitized;
     }
 }

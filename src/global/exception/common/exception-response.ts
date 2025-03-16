@@ -1,5 +1,13 @@
 import { BaseException } from './base-exception';
 
+interface ExceptionResponseDto {
+    errorCode: string;
+    statusCode: number;
+    path: string;
+    message: string;
+    timestamp: string;
+}
+
 export class ExceptionResponse {
     private readonly errorCode: string;
     private readonly statusCode: number;
@@ -11,20 +19,14 @@ export class ExceptionResponse {
         this.statusCode = exception.statusCode;
         this.errorMessage = exception.message;
         this.requestUrl = requestUrl;
-        this.date = new Date().toString();
+        this.date = new Date().toISOString();
     }
 
     getStatusCode(): number {
         return this.statusCode;
     }
 
-    toJson(): {
-        errorCode: string;
-        statusCode: number;
-        path: string;
-        message: string;
-        timestamp: string;
-    } {
+    toJson(): ExceptionResponseDto {
         return {
             errorCode: this.errorCode,
             statusCode: this.statusCode,

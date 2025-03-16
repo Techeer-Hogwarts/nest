@@ -15,7 +15,7 @@ import {
 } from './dto/response/studyMember.response';
 import {
     StudyMemberIsActiveMemberException,
-    StudyMemberNotFountException,
+    StudyMemberNotFoundException,
 } from './exception/study-member.exception';
 import { StudyTeamMissingLeaderException } from '../studyTeams/exception/study-team.exception';
 
@@ -34,7 +34,7 @@ export class StudyMemberService {
             where: {
                 studyTeamId: studyTeamId,
                 isDeleted: false,
-                status: 'APPROVED',
+                status: StudyMemberStatus.APPROVED,
             },
             include: {
                 user: {
@@ -44,7 +44,7 @@ export class StudyMemberService {
         });
 
         if (studyMembers.length === 0) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         this.logger.debug(
             '스터디 pk로 멤버 전체 조회: 스터디 팀 활동 멤버 확인 완료',
@@ -99,9 +99,6 @@ export class StudyMemberService {
                 },
             },
         });
-        if (!cancelledStudyMember) {
-            throw new StudyMemberNotFountException();
-        }
         this.logger.debug('스터디 지원 취소: 이메일 조회 완료');
 
         return new StudyMemberResponse(cancelledStudyMember);
@@ -173,7 +170,7 @@ export class StudyMemberService {
             },
         });
         if (!applicant) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         this.logger.debug('스터디 팀 지원자 조회: 조회 완료');
 
@@ -200,7 +197,7 @@ export class StudyMemberService {
             },
         });
         if (!applicant) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         this.logger.debug('스터디 멤버 모든 상태 상세 조회: 조회 완료');
 
@@ -232,7 +229,7 @@ export class StudyMemberService {
             },
         });
         if (!applicant) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         this.logger.debug('스터디 멤버 삭제 안 된 멤버 상세 조회: 조회 완료');
         return new ApplicantDetailAndEmail(applicant);

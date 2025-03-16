@@ -29,11 +29,11 @@ import {
     StudyTeamInvalidUpdateMemberException,
     StudyTeamNotFoundException,
     StudyTeamAlreadyActiveMemberException,
-    StudyTeamAInvalidApplicantException,
+    StudyTeamInvalidApplicantException,
     StudyTeamAlreadyRejectMemberException,
     StudyTeamInvalidUserException,
 } from './exception/study-team.exception';
-import { StudyMemberNotFountException } from '../studyMembers/exception/study-member.exception';
+import { StudyMemberNotFoundException } from '../studyMembers/exception/study-member.exception';
 
 @Injectable()
 export class StudyTeamService {
@@ -46,7 +46,7 @@ export class StudyTeamService {
         private readonly indexService: IndexService,
     ) {}
 
-    // active 멤버만 거절할 수 있다.(isDelete: true, status: APPROVED)
+    // 현재 스터디 팀 활동 중인 멤버만 거절할 수 있다.(isDelete: true, status: APPROVED)
     async ensureUserIsStudyMember(
         studyTeamId: number,
         userId: number,
@@ -101,7 +101,7 @@ export class StudyTeamService {
                         user: { connect: { id: member.userId } },
                         isLeader: member.isLeader,
                         summary: '초기 참여 인원입니다',
-                        status: 'APPROVED' as StatusCategory,
+                        status: StudyMemberStatus.APPROVED,
                     })),
                 },
                 resultImages: {
@@ -257,10 +257,10 @@ export class StudyTeamService {
         });
         // 지원자 조회창에 전달되는 pk는 팀 테이블상있음. 불가능
         if (!studyTeam) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         if (studyTeam.studyMember.length === 0) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         this.logger.debug(
             '스터디 pk로 지원자 전체 조회: 스터디 팀 지원자 조회 완료',
@@ -684,7 +684,7 @@ export class StudyTeamService {
                 studyMember: {
                     where: {
                         isDeleted: false,
-                        status: 'APPROVED',
+                        status: StudyMemberStatus.APPROVED,
                     },
                     include: {
                         user: {
@@ -723,7 +723,7 @@ export class StudyTeamService {
                 studyMember: {
                     where: {
                         isDeleted: false,
-                        status: 'APPROVED',
+                        status: StudyMemberStatus.APPROVED,
                     },
                     include: {
                         user: {
@@ -930,7 +930,7 @@ export class StudyTeamService {
         }
         // 신청자가 없거나 중복에러인 경우
         if (studyTeam.studyMember.length !== 1) {
-            throw new StudyMemberNotFountException();
+            throw new StudyMemberNotFoundException();
         }
         const applicant = studyTeam.studyMember[0];
 
@@ -946,7 +946,7 @@ export class StudyTeamService {
             applicant.status !== StudyMemberStatus.PENDING ||
             applicant.isDeleted
         ) {
-            throw new StudyTeamAInvalidApplicantException();
+            throw new StudyTeamInvalidApplicantException();
         }
         this.logger.debug('스터디 팀 지원 수락: 스터디 팀, 신청자 조회 완료');
 
@@ -1059,10 +1059,10 @@ export class StudyTeamService {
                 studyTeamId,
                 applicantId,
             );
-        if (applicant.status === 'APPROVED') {
+        if (applicant.status === StudyMemberStatus.APPROVED) {
             throw new StudyTeamAlreadyActiveMemberException();
         }
-        if (applicant.status === 'REJECT') {
+        if (applicant.status === StudyMemberStatus.REJECT) {
             throw new StudyTeamAlreadyRejectMemberException();
         }
         this.logger.debug('스터디 팀 지원 거절: 지원자 조회 완료');
@@ -1071,7 +1071,7 @@ export class StudyTeamService {
         const updatedApplicant =
             await this.studyMemberService.updateApplicantStatus(
                 studyMemberId,
-                'REJECT',
+                StudyMemberStatus.REJECT,
             );
         this.logger.debug('스터디 팀 지원 거절: 지원자 거절 완료');
 
@@ -1145,7 +1145,10 @@ export class StudyTeamService {
         );
 
         // 1. activeMember이면 중복 추가가 된다.
-        if (applicant.status === 'APPROVED' && !applicant.isDeleted) {
+        if (
+            applicant.status === StudyMemberStatus.APPROVED &&
+            !applicant.isDeleted
+        ) {
             throw new StudyTeamAlreadyActiveMemberException();
         }
         // 2. inactive => active 상태(isDelete: false, status: APPROVED)로 변경
