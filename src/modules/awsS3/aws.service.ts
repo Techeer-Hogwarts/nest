@@ -47,35 +47,37 @@ export class AwsService {
         return `https://${this.configService.get('AWS_S3_BUCKET_NAME')}.s3.${process.env.AWS_REGION}.amazonaws.com/${keyPath}`;
     }
 
+    /** 이미지 여러개 업로드 **/
     async uploadImagesToS3(
         files: Express.Multer.File[],
-        folderName: string,
+        folderPath: string,
         urlPrefix: string,
     ): Promise<string[]> {
+        // 파일 데이터를 가공한다.[파일 이름, 원본 파일, 확장자(검증 포함)]
+        const fileData = files.map((file, index) => {
+            const ext = this.parseFileExtension(file.originalname);
+            this.validateFileExtension(ext);
+            const filename = `${urlPrefix}-${Date.now()}-${index}.${ext}`;
+            return {
+                filename,
+                file,
+                ext,
+            };
+        });
         return await Promise.all(
-            files.map(async (file, index) => {
-                const ext = file.originalname.split('.').pop().toLowerCase();
-                if (!VALID_IMAGE_EXTENSIONS.includes(ext)) {
-                    this.logger.warn(
-                        `⚠️ [WARNING] 허용되지 않은 파일 확장자: ${file.originalname}`,
-                    );
-                    throw new NotApprovedFileExtension();
-                }
-                try {
-                    return await this.imageUploadToS3(
-                        folderName,
-                        `${urlPrefix}-${Date.now()}-${index}.${ext}`,
-                        file,
-                        ext,
-                    );
-                } catch (error) {
-                    this.logger.error(
-                        `❌ [ERROR] 파일 업로드 실패: ${file.originalname}`,
-                        error,
-                    );
-                    throw new error(`파일 업로드 실패: ${file.originalname}`);
-                }
-            }),
+            fileData.map(({ file, filename, ext }) =>
+                this.imageUploadToS3(folderPath, filename, file, ext),
+            ),
         );
+    }
+
+    private parseFileExtension(filename: string): string {
+        return filename.split('.').pop().toLowerCase();
+    }
+
+    private validateFileExtension(ext: string): void {
+        if (!VALID_IMAGE_EXTENSIONS.includes(ext)) {
+            throw new NotApprovedFileExtension();
+        }
     }
 }
