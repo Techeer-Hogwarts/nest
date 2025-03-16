@@ -101,7 +101,7 @@ export class CustomWinstonLogger implements LoggerService {
 * STATUS CODE:   ${err.statusCode}
 * PATH:          ${request?.url ?? 'N/A'}
 * METHOD:        ${request?.method ?? 'N/A'}
-* BODY:          ${JSON.stringify(request?.body ?? {}, undefined, 2)}
+* BODY:          ${JSON.stringify(this.sanitizeRequestBody(request?.body ?? {}), undefined, 2)}
 * STACK TRACE:   ${error?.stack ?? 'N/A'}
 ━━━━━━━━━━━━━━━━
         `;

@@ -80,12 +80,12 @@ export const ErrorCode = {
         message: '이미 거절된 스터디 팀 지원자 입니다.',
     },
     STUDY_TEAM_INVALID_APPLICANT: {
-        code: 'STUDY_TEAM_INVALID_UPDATE_MEMBER',
+        code: 'STUDY_TEAM_INVALID_APPLICANT',
         status: HttpStatus.BAD_REQUEST,
         message: '유효한 스터디 팀 지원자가 아닙니다.',
     },
     STUDY_TEAM_INVALID_USER: {
-        code: 'STUDY_TEAM_INVALID_UPDATE_MEMBER',
+        code: 'STUDY_TEAM_INVALID_USER',
         status: HttpStatus.BAD_REQUEST,
         message: '유효한 사용자가 아닙니다.',
     },
