@@ -3,27 +3,10 @@ name: CI
 on:
     push:
         branches:
-            - main # 메인 브렌치에 브랜치 머지 시 자동으로 실행
-    pull_request:
-        branches:
-            - '**' # 모든 브랜치에 PR 올릴 때 실행
+            - develop
 
 jobs:
-    # sonarCloud:
-    #     name: SonarCloud
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - uses: actions/checkout@v4
-    #           with:
-    #               fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
-    #         - name: SonarCloud Scan
-    #           uses: SonarSource/sonarcloud-github-action@master
-    #           env:
-    #               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #               SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     build:
-        # needs: sonarCloud
-        # if: success()
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -36,27 +19,14 @@ jobs:
               run: |
                   npm install
 
-            # - name: Run Tests and Generate Coverage
-            #   run: |
-            #       npm run test:cov
-
-            # - name: Upload coverage to Codecov
-            #   uses: codecov/codecov-action@v4
-            #   with:
-            #       token: ${{ secrets.CODECOV_TOKEN }}
-            #       flags: unittests # optional
-            #       name: codecov-coverage
-
             - name: Show build number
               run: |
                   echo "Build Number: ${{ github.run_number }}"
             - name: Show pull request number
-              if: ${{ github.event_name == 'pull_request' }}
               run: |
                   echo "PR Number: ${{ github.event.pull_request.number }}"
             - name: Get PR Number for Main Branch Merge
               id: get_pr_number
-              if: github.ref == 'refs/heads/main'
               run: |
                   PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --state closed --json number,mergeCommit --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number")
                   echo "PR_NUMBER=${PR_NUMBER}"
@@ -68,15 +38,9 @@ jobs:
               env:
                   PR_NUMBER: ${{ steps.get_pr_number.outputs.PR_NUMBER }}
               run: |
-                  if [ "${{ github.ref_name }}" == "main" ]; then
-                    DOCKER_IMAGE_TAG="1.1.$PR_NUMBER"
-                  else
-                    DOCKER_IMAGE_TAG="0.${{ github.event.pull_request.number }}.${{ github.run_number }}"
-                  fi
+                  DOCKER_IMAGE_TAG="1.1.$PR_NUMBER"-dev
                   echo "Docker Image Tag: $DOCKER_IMAGE_TAG"
                   echo "DOCKER_IMAGE_TAG"="${DOCKER_IMAGE_TAG}" >> $GITHUB_OUTPUT
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
@@ -97,17 +61,7 @@ jobs:
                     --push \
                     -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:$DOCKER_IMAGE_TAG .
 
-            # - name: Also latest tag depending on branch
-            #   if: github.ref == 'refs/heads/main'
-            #   run: |
-            #       docker buildx create --use
-            #       docker buildx build \
-            #         --platform linux/amd64 \
-            #         --push \
-            #         -t ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest:latest .
-
             - name: Send Image and Version to Slack
-              if: github.ref == 'refs/heads/main' # main 브랜치에 머지 시에만 실행
               env:
                   IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/techeerism-nest
                   DOCKER_IMAGE_TAG: ${{ steps.set_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
@@ -120,6 +74,6 @@ jobs:
                         "imageName": "'"$IMAGE_NAME"'",
                         "imageTag": "'"$DOCKER_IMAGE_TAG"'",
                         "commitLink": "'"$commit_link"'",
-                        "environment": "production",
+                        "environment": "staging",
                         "secret": "'"$SLACK_SECRET"'"
                       }'

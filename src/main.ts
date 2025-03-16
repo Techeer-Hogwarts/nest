@@ -19,6 +19,7 @@ async function bootstrap(): Promise<void> {
                         /^http:\/\/(localhost|127\.0\.0\.1):\d+$/, // localhost와 127.0.0.1의 모든 포트 허용
                         /^null$/,
                         /^https:\/\/api\.techeerzip\.cloud$/,
+                        /^https:\/\/(?:.*\.)?yje\.kr$/,
                     ];
 
                     if (
