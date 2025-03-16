@@ -8,6 +8,7 @@ import {
 export class GetStudyTeamResponse {
     readonly id: number;
     readonly name: string;
+    readonly githubLink: string;
     readonly notionLink: string;
     readonly recruitExplain: string;
     readonly recruitNum: number;
@@ -51,6 +52,7 @@ export class GetStudyTeamResponse {
     ) {
         this.id = studyTeam.id;
         this.name = studyTeam.name;
+        this.githubLink = studyTeam.githubLink;
         this.notionLink = studyTeam.notionLink;
         this.recruitExplain = studyTeam.recruitExplain;
         this.recruitNum = studyTeam.recruitNum;
@@ -89,6 +91,35 @@ export class StudyMemberResponse {
         this.id = member.id;
         this.name = member.user.name;
         this.isLeader = member.isLeader;
+    }
+}
+
+export class StudyLeadersMailResponse {
+    readonly user: { email: string };
+    constructor(user: { email: string }) {
+        this.user = { email: user.email };
+    }
+}
+
+export class ExistingStudyMemberResponse {
+    readonly id: number;
+    readonly userId: number;
+    readonly status: string;
+    readonly isLeader: boolean;
+    readonly isDeleted: boolean;
+
+    constructor(member: {
+        id: number;
+        isLeader: boolean;
+        isDeleted: boolean;
+        status: string;
+        user: { id: number };
+    }) {
+        this.id = member.id;
+        this.userId = member.user.id;
+        this.status = member.status;
+        this.isLeader = member.isLeader;
+        this.isDeleted = member.isDeleted;
     }
 }
 
