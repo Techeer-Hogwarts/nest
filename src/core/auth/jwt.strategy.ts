@@ -10,8 +10,6 @@ import { Request } from 'express';
 
 import { UserService } from '../users/user.service';
 
-import { UserEntity } from '../users/entities/user.entity';
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
