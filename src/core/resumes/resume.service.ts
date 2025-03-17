@@ -64,15 +64,18 @@ export class ResumeService {
             `파일 제목 생성 완료 - fullTitle: ${fullTitle}`,
             ResumeService.name,
         );
+
+        const resumeUrl = 'https://example.com';
+
         // Google Drive에 파일 업로드
-        const resumeUrl = await this.googleDriveService.uploadFileBuffer(
-            file.buffer, // 파일의 buffer 추출
-            fullTitle,
-        );
-        this.logger.debug(
-            `Google Drive에 파일 업로드 완료 - resumeUrl: ${resumeUrl}`,
-            ResumeService.name,
-        );
+        // const resumeUrl = await this.googleDriveService.uploadFileBuffer(
+        //     file.buffer, // 파일의 buffer 추출
+        //     fullTitle,
+        // );
+        // this.logger.debug(
+        //     `Google Drive에 파일 업로드 완료 - resumeUrl: ${resumeUrl}`,
+        //     ResumeService.name,
+        // );
         // 메인 이력서 중복 방지 처리
         if (isMain) {
             this.logger.debug(
