@@ -1,8 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { UserRepository } from '../users/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UpdateUserPswRequest } from '../../common/dto/users/request/update.user.psw.request';
@@ -23,6 +22,7 @@ import { HttpService } from '@nestjs/axios';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
 import { User } from '@prisma/client';
+import { UserService } from '../users/user.service';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +32,8 @@ export class AuthService {
         @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
-        private readonly userRepository: UserRepository,
+        @Inject(forwardRef(() => UserService))
+        private readonly userService: UserService,
         private readonly httpService: HttpService,
         private readonly logger: CustomWinstonLogger,
     ) {
@@ -74,7 +75,7 @@ export class AuthService {
 
     // 이메일과 비밀번호를 기반으로 사용자 인증
     async validateUser(email: string, password: string): Promise<User> {
-        const user = await this.userRepository.findOneByEmail(email);
+        const user = await this.userService.findOneByEmail(email);
         this.logger.debug('사용자 조회', AuthService.name);
         if (!user) {
             this.logger.error('사용자를 찾을 수 없습니다.', AuthService.name);
@@ -108,7 +109,7 @@ export class AuthService {
             updateUserPswRequest.newPassword,
             10,
         ); // 비밀번호 암호화
-        await this.userRepository.updatePassword(
+        await this.userService.updatePassword(
             updateUserPswRequest.email,
             hashedPassword,
         ); // 비밀번호 업데이트
@@ -157,7 +158,10 @@ export class AuthService {
         try {
             await this.redisClient.set(email, verificationCode, 'EX', 300);
         } catch (error) {
-            this.logger.error('Redis 저장 실패', AuthService.name);
+            this.logger.error(
+                `Redis 저장 실패: ${error.message}`,
+                AuthService.name,
+            );
             throw new InternalServerErrorException();
         }
 
@@ -241,7 +245,10 @@ export class AuthService {
             });
             this.logger.debug('이메일 전송 완료', AuthService.name);
         } catch (error) {
-            this.logger.error('이메일 전송 실패', AuthService.name);
+            this.logger.error(
+                `이메일 전송 실패: ${error.message}`,
+                AuthService.name,
+            );
             throw new InternalServerErrorException();
         }
     }
@@ -270,7 +277,7 @@ export class AuthService {
             return true;
         } catch (error) {
             this.logger.error(
-                '인증 코드가 일치하지 않습니다.',
+                `인증 코드가 일치하지 않습니다: ${error.message}`,
                 AuthService.name,
             );
             throw new InvalidCodeException();
@@ -282,7 +289,10 @@ export class AuthService {
             await this.redisClient.set(`verified_${email}`, 'true', 'EX', 6000);
             this.logger.debug('이메일 인증 완료', AuthService.name);
         } catch (error) {
-            this.logger.error('이메일 인증 실패', AuthService.name);
+            this.logger.error(
+                `이메일 인증 실패: ${error.message}`,
+                AuthService.name,
+            );
             throw new UnauthorizedEmailException();
         }
     }
@@ -294,7 +304,10 @@ export class AuthService {
             this.logger.debug('이메일 인증 확인', AuthService.name);
             return isVerified === 'true';
         } catch (error) {
-            this.logger.error('이메일 인증 확인 실패', AuthService.name);
+            this.logger.error(
+                `이메일 인증 확인 실패: ${error.message}`,
+                AuthService.name,
+            );
             throw new EmailVerificationFailedException();
         }
     }
