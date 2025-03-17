@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { StackCategory } from 'src/common/category/stack.category';
-import { Category } from '../category/category.category';
+import { Category } from './category/category.category';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
 import { normalizeString } from 'src/common/category/normalize';
 import { CreateUserExperienceRequest } from 'src/common/dto/userExperiences/request/create.userExperience.request';
