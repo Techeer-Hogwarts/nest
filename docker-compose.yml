@@ -81,6 +81,54 @@ services:
             - '8001:8001'
         networks:
             - techeerism
+    
+    search-container:
+        image: teami2022/watchtower-test:arm-search
+        networks:
+            - techeerism
+        container_name: search-container
+        env_file:
+            - .env
+        environment:
+            - MEILISEARCH_ADDR=http://meilisearch:7700
+            - MEILISEARCH_KEY=""
+            - GIN_MODE=release
+        ports:
+            - "8082:8080"
+  
+    search-cron:
+        image: teami2022/watchtower-test:arm-cron
+        container_name: search-cron
+        networks:
+            - techeerism
+        env_file:
+            - .env
+        environment:
+            - MEILISEARCH_ADDR=http://meilisearch:7700
+            - MEILISEARCH_KEY=""
+            - GIN_MODE=release
+            - DB_HOST=postgresql
+            - DB_PORT=5432
+            - DB_USER=${POSTGRES_USERNAME}
+            - DB_PASSWORD=${POSTGRES_PASSWORD}
+            - DB_NAME=${POSTGRES_DB}
+            - DB_SSL_MODE=disable
+        ports:
+            - "8081:8081"
+   
+    meilisearch:
+        image: getmeili/meilisearch:latest
+        container_name: meilisearch
+        networks:
+            - techeerism
+        ports:
+            - "7700:7700"
+        environment:
+            - MEILI_EXPERIMENTAL_ENABLE_METRICS=true
+            - MEILI_NO_ANALYTICS=true
+        volumes:
+            - meilisearch-data:/meili_data/data.ms
+        restart: unless-stopped
 
 networks:
     techeerism:
@@ -88,3 +136,4 @@ networks:
 
 volumes:
     techeerism-db:
+    meilisearch-data:
