@@ -144,22 +144,22 @@ export class UserService {
             });
 
             // 블로그 크롤링 요청
-            const blogUrls = [
-                newUser.velogUrl,
-                newUser.mediumUrl,
-                newUser.tistoryUrl,
-            ].filter((url): url is string => !!url); // null 또는 undefined 제거
-            await Promise.all(
-                blogUrls.map((url) =>
-                    this.taskService.requestSignUpBlogFetch(newUser.id, url),
-                ),
-            );
-            this.logger.debug(
-                '블로그 크롤링 요청 완료',
-                JSON.stringify({
-                    context: UserService.name,
-                }),
-            );
+            // const blogUrls = [
+            //     newUser.velogUrl,
+            //     newUser.mediumUrl,
+            //     newUser.tistoryUrl,
+            // ].filter((url): url is string => !!url); // null 또는 undefined 제거
+            // await Promise.all(
+            //     blogUrls.map((url) =>
+            //         this.taskService.requestSignUpBlogFetch(newUser.id, url),
+            //     ),
+            // );
+            // this.logger.debug(
+            //     '블로그 크롤링 요청 완료',
+            //     JSON.stringify({
+            //         context: UserService.name,
+            //     }),
+            // );
 
             this.logger.debug(
                 '회원가입 완료',
