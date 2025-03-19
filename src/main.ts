@@ -2,11 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { PrismaService } from './modules/prisma/prisma.service';
+import { PrismaService } from './infra/prisma/prisma.service';
 import * as cookieParser from 'cookie-parser';
-import { GlobalExceptionsFilter } from './global/exception/common/global-exception.filter';
+import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import * as basicAuth from 'express-basic-auth';
-import { CustomWinstonLogger } from './global/logger/winston.logger';
+import { CustomWinstonLogger } from './common/logger/winston.logger';
 
 async function bootstrap(): Promise<void> {
     try {
