@@ -1,5 +1,7 @@
 import { Session } from '@prisma/client';
 
+type SessionWithUser = Session & { user: User };
+
 export class GetSessionResponse {
     readonly id: number;
     readonly userId: number;
