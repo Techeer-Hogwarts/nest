@@ -1,4 +1,6 @@
-import { SessionEntity } from '../../../../core/sessions/entities/session.entity';
+import { Session, User } from '@prisma/client';
+
+type SessionWithUser = Session & { user: User };
 
 export class GetSessionResponse {
     readonly id: number;
@@ -16,7 +18,7 @@ export class GetSessionResponse {
 
     readonly user: { name: string; nickname: string; profileImage: string };
 
-    constructor(sessionEntity: SessionEntity) {
+    constructor(sessionEntity: SessionWithUser) {
         this.id = sessionEntity.id;
         this.userId = sessionEntity.userId;
         this.thumbnail = sessionEntity.thumbnail;
