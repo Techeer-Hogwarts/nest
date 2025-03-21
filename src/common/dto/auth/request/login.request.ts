@@ -11,7 +11,7 @@ export class LoginRequest {
 
     @IsString()
     @ApiProperty({
-        example: 'hashedpassword',
+        example: 'password',
         description: '사용자 비밀번호',
     })
     readonly password: string;

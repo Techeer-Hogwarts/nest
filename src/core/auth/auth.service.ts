@@ -65,11 +65,10 @@ export class AuthService {
             { expiresIn: '7d' }, // 7일
         );
         this.logger.debug('토큰 생성을 완료했습니다.', AuthService.name);
+
         return {
-            data: {
-                accessToken,
-                refreshToken,
-            },
+            accessToken,
+            refreshToken,
         };
     }
 
@@ -81,6 +80,7 @@ export class AuthService {
             this.logger.error('사용자를 찾을 수 없습니다.', AuthService.name);
             throw new NotFoundUserException();
         }
+
         const hashedPassword = user.password;
         const isPasswordValid = await bcrypt.compare(password, hashedPassword);
 
@@ -89,6 +89,7 @@ export class AuthService {
             throw new InvalidException();
         }
         this.logger.debug('사용자 인증 완료', AuthService.name);
+
         return user;
     }
 
