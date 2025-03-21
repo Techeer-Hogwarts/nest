@@ -5,6 +5,8 @@ import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { Response } from 'express';
 import { UpdateUserPswRequest } from '../../common/dto/users/request/update.user.psw.request';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { LoginResponse } from 'src/common/dto/auth/response/login.reponse';
+import { LoginRequest } from 'src/common/dto/auth/request/login.request';
 
 @ApiTags('auth')
 @Controller('/auth')
@@ -74,34 +76,27 @@ export class AuthController {
     @Post('/login')
     @ApiBody({
         description: '로그인에 필요한 정보',
-        schema: {
-            type: 'object',
-            properties: {
-                email: {
-                    type: 'string',
-                    example: 'user@example.com',
-                },
-                password: {
-                    type: 'string',
-                    example: 'password',
-                },
-            },
-        },
+        type: LoginRequest,
     })
     @ApiOperation({
         summary: '로그인',
         description: '로그인을 진행합니다.',
     })
+    @ApiResponse({
+        status: 201,
+        description: '로그인 성공',
+        type: LoginResponse,
+    })
     async login(
-        @Body() loginRequest: any,
+        @Body() loginRequest: LoginRequest,
         @Res({ passthrough: true }) response: Response,
-    ): Promise<{ accessToken: string; refreshToken: string }> {
-        const {
-            data: { accessToken, refreshToken },
-        } = await this.authService.login(
-            loginRequest.email,
-            loginRequest.password,
+    ): Promise<LoginResponse> {
+        const { email, password } = loginRequest;
+        const { accessToken, refreshToken } = await this.authService.login(
+            email,
+            password,
         );
+
         response.cookie('access_token', accessToken, {
             httpOnly: true,
             path: '/',
@@ -117,6 +112,7 @@ export class AuthController {
             // domain: '.techeerzip.cloud',
         });
         this.logger.debug('로그인이 완료되었습니다.', AuthController.name);
+
         return {
             accessToken,
             refreshToken,
