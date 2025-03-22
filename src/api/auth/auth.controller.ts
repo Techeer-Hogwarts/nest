@@ -3,10 +3,10 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { Response } from 'express';
-import { UpdateUserPswRequest } from '../../common/dto/users/request/update.user.psw.request';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { LoginResponse } from 'src/common/dto/auth/response/login.reponse';
 import { LoginRequest } from 'src/common/dto/auth/request/login.request';
+import { ResetPasswordRequest } from 'src/common/dto/auth/request/reset.password.request';
 
 @ApiTags('auth')
 @Controller('/auth')
@@ -134,18 +134,23 @@ export class AuthController {
     }
 
     @Patch('/findPwd')
+    @ApiBody({
+        description: '이메일, 인증코드, 새로운 비밀번호',
+        type: ResetPasswordRequest,
+    })
     @ApiOperation({
         summary: '비밀번호 재설정',
         description: '이메일 인증 후 비밀번호를 재설정합니다.',
     })
-    @ApiBody({
-        description: '이메일, 인증코드, 새로운 비밀번호',
-        type: UpdateUserPswRequest,
+    @ApiResponse({
+        status: 200,
+        description: '비밀번호 재설정 성공',
     })
     async resetPassword(
-        @Body() updateUserPswRequest: UpdateUserPswRequest,
+        @Body() resetPasswordRequest: ResetPasswordRequest,
     ): Promise<void> {
-        await this.authService.resetPassword(updateUserPswRequest);
+        const { email, code, newPassword } = resetPasswordRequest;
+        await this.authService.resetPassword(email, code, newPassword);
         this.logger.debug('비밀번호를 재설정했습니다.', AuthController.name);
     }
 }

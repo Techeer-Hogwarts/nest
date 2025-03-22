@@ -4,7 +4,6 @@ import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { UpdateUserPswRequest } from '../../common/dto/users/request/update.user.psw.request';
 import {
     NotFoundUserException,
     InvalidException,
@@ -95,25 +94,20 @@ export class AuthService {
 
     // 비밀번호 재설정 (이메일 인증 후)
     async resetPassword(
-        updateUserPswRequest: UpdateUserPswRequest,
+        email: string,
+        code: string,
+        newPassword: string,
     ): Promise<void> {
-        const isVerified = await this.verifyCode(
-            updateUserPswRequest.email,
-            updateUserPswRequest.code,
-        );
+        const isVerified = await this.verifyCode(email, code);
         this.logger.debug('비밀번호 재설정', AuthService.name);
+
         if (!isVerified) {
             this.logger.error('이메일 인증 실패', AuthService.name);
             throw new NotVerifiedEmailException();
         }
-        const hashedPassword = await bcrypt.hash(
-            updateUserPswRequest.newPassword,
-            10,
-        ); // 비밀번호 암호화
-        await this.userService.updatePassword(
-            updateUserPswRequest.email,
-            hashedPassword,
-        ); // 비밀번호 업데이트
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10); // 비밀번호 암호화
+        await this.userService.updatePassword(email, hashedPassword); // 비밀번호 업데이트
     }
 
     async getProfileImageUrl(
