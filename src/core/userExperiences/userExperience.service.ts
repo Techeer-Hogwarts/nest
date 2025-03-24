@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { StackCategory } from 'src/common/category/stack.category';
-import { Category } from './category/category.category';
-import { PrismaService } from 'src/infra/prisma/prisma.service';
+
+import { NotFoundExperienceException } from 'src/common/exception/custom.exception';
 import { normalizeString } from 'src/common/category/normalize';
+import { StackCategory } from 'src/common/category/stack.category';
+
+import { PrismaService } from 'src/infra/prisma/prisma.service';
+
 import { CreateUserExperienceRequest } from 'src/common/dto/userExperiences/request/create.userExperience.request';
 import { UpdateUserExperienceRequest } from 'src/common/dto/userExperiences/request/update.userExperience.request';
-import { NotFoundExperienceException } from 'src/common/exception/custom.exception';
 
-// 인터페이스 분리 방법 고민
-interface TransformedUserExperience {
+import { Category } from './category/category.category';
+
+interface TransformExperienceData {
     userId: number;
     experienceId?: number;
     position: StackCategory;
@@ -67,7 +70,7 @@ export class UserExperienceService {
             | UpdateUserExperienceRequest
         )[],
         userId: number,
-    ): TransformedUserExperience[] {
+    ): TransformExperienceData[] {
         return experiences.map((experience) => ({
             ...experience,
             userId,

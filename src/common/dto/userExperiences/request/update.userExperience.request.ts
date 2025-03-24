@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
     IsDateString,
     IsString,
@@ -5,7 +6,6 @@ import {
     IsOptional,
     IsInt,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserExperienceRequest {
     @IsInt()

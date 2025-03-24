@@ -1,27 +1,31 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import Redis from 'ioredis';
+import * as bcrypt from 'bcryptjs';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
-import {
-    NotFoundUserException,
-    InvalidException,
-    NotVerifiedEmailException,
-    InternalServerErrorException,
-    NotFoundCodeException,
-    InvalidCodeException,
-    UnauthorizedEmailException,
-    EmailVerificationFailedException,
-    NotFoundTecheerException,
-    NotFoundProfileImageException,
-} from '../../common/exception/custom.exception';
-import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { lastValueFrom } from 'rxjs';
+import Redis from 'ioredis';
+
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
+import {
+    EmailVerificationFailedException,
+    InternalServerErrorException,
+    InvalidCodeException,
+    InvalidException,
+    NotFoundCodeException,
+    NotFoundProfileImageException,
+    NotFoundTecheerException,
+    NotFoundUserException,
+    NotVerifiedEmailException,
+    UnauthorizedEmailException,
+} from '../../common/exception/custom.exception';
+
 import { User } from '@prisma/client';
+
 import { UserService } from '../users/user.service';
+
+import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
 
 @Injectable()
 export class AuthService {

@@ -1,17 +1,19 @@
-import {
-    Injectable,
-    ExecutionContext,
-    UnauthorizedException,
-    Inject,
-    forwardRef,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { AuthGuard } from '@nestjs/passport';
 import {
-    NotFoundUserException,
+    ExecutionContext,
+    forwardRef,
+    Inject,
+    Injectable,
+    UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import {
     InvalidTokenException,
+    NotFoundUserException,
 } from '../../common/exception/custom.exception';
+
 import { UserService } from '../users/user.service';
 
 @Injectable()

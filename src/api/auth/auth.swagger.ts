@@ -1,9 +1,11 @@
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+
 import { LoginRequest } from 'src/common/dto/auth/request/login.request';
-import { LoginResponse } from 'src/common/dto/auth/response/login.reponse';
 import { ResetPasswordRequest } from 'src/common/dto/auth/request/reset.password.request';
 import { SendEmailCodeRequest } from 'src/common/dto/auth/request/send.emailCode.request';
 import { VerifyEmailCodeRequest } from 'src/common/dto/auth/request/verfiy.emailCode.request';
+
+import { LoginResponse } from 'src/common/dto/auth/response/login.reponse';
 
 export const SwaggerAuth = {
     sendEmailCode: {
