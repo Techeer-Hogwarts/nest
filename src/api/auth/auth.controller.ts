@@ -1,12 +1,15 @@
 import { Controller, Post, Body, Patch, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from '../../core/auth/auth.service';
-import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { Response } from 'express';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { LoginResponse } from 'src/common/dto/auth/response/login.reponse';
 import { LoginRequest } from 'src/common/dto/auth/request/login.request';
 import { ResetPasswordRequest } from 'src/common/dto/auth/request/reset.password.request';
+import { SendEmailCodeRequest } from 'src/common/dto/auth/request/send.emailCode.request';
+import { VerifyEmailCodeRequest } from 'src/common/dto/auth/request/verfiy.emailCode.request';
+import { SwaggerAuth } from './auth.swagger';
 
 @ApiTags('auth')
 @Controller('/auth')
@@ -17,76 +20,33 @@ export class AuthController {
     ) {}
 
     @Post('/email')
-    @ApiOperation({
-        summary: '인증 코드 전송',
-        description: '사용자의 이메일로 인증 코드를 전송합니다.',
-    })
-    @ApiBody({
-        description: '이메일 주소',
-        schema: {
-            type: 'object',
-            properties: {
-                email: {
-                    type: 'string',
-                    example: 'user@example.com',
-                },
-            },
-        },
-    })
-    @ApiResponse({
-        description: '인증 코드가 전송되었습니다.',
-    })
-    async sendVerificationEmail(@Body('email') email: string): Promise<void> {
+    @SwaggerAuth.sendEmailCode.operation
+    @SwaggerAuth.sendEmailCode.body
+    @SwaggerAuth.sendEmailCode.response
+    async sendVerificationEmail(
+        @Body() sendEmailCodeRequest: SendEmailCodeRequest,
+    ): Promise<void> {
+        const { email } = sendEmailCodeRequest;
         await this.authService.sendVerificationEmail(email);
         this.logger.debug('인증 코드를 전송하였습니다.', AuthController.name);
     }
 
     @Post('/code')
-    @ApiOperation({
-        summary: '이메일 인증 코드 확인',
-        description: '전송된 이메일 인증 코드를 확인합니다.',
-    })
-    @ApiBody({
-        description: '이메일 주소와 인증 코드',
-        schema: {
-            type: 'object',
-            properties: {
-                email: {
-                    type: 'string',
-                    example: 'user@example.com',
-                },
-                code: {
-                    type: 'string',
-                    example: '123456',
-                },
-            },
-        },
-    })
-    @ApiResponse({
-        status: 200,
-    })
+    @SwaggerAuth.verifyEmailCode.operation
+    @SwaggerAuth.verifyEmailCode.body
+    @SwaggerAuth.verifyEmailCode.response
     async verifyCode(
-        @Body('email') email: string,
-        @Body('code') code: string,
+        @Body() verifyEmailCodeRequest: VerifyEmailCodeRequest,
     ): Promise<void> {
-        await this.authService.verifyCode(email, code);
+        const { email, code } = verifyEmailCodeRequest;
+        this.authService.verifyCode(email, code);
         this.logger.debug('이메일 인증이 완료되었습니다.', AuthController.name);
     }
 
     @Post('/login')
-    @ApiBody({
-        description: '로그인에 필요한 정보',
-        type: LoginRequest,
-    })
-    @ApiOperation({
-        summary: '로그인',
-        description: '로그인을 진행합니다.',
-    })
-    @ApiResponse({
-        status: 201,
-        description: '로그인 성공',
-        type: LoginResponse,
-    })
+    @SwaggerAuth.login.operation
+    @SwaggerAuth.login.body
+    @SwaggerAuth.login.response
     async login(
         @Body() loginRequest: LoginRequest,
         @Res({ passthrough: true }) response: Response,
@@ -121,10 +81,8 @@ export class AuthController {
 
     @UseGuards(JwtAuthGuard)
     @Post('/logout')
-    @ApiOperation({
-        summary: '로그아웃',
-        description: '로그아웃을 진행합니다.',
-    })
+    @SwaggerAuth.logout.operation
+    @SwaggerAuth.logout.response
     async logout(
         @Res({ passthrough: true }) response: Response,
     ): Promise<void> {
@@ -134,18 +92,9 @@ export class AuthController {
     }
 
     @Patch('/findPwd')
-    @ApiBody({
-        description: '이메일, 인증코드, 새로운 비밀번호',
-        type: ResetPasswordRequest,
-    })
-    @ApiOperation({
-        summary: '비밀번호 재설정',
-        description: '이메일 인증 후 비밀번호를 재설정합니다.',
-    })
-    @ApiResponse({
-        status: 200,
-        description: '비밀번호 재설정 성공',
-    })
+    @SwaggerAuth.resetPassword.operation
+    @SwaggerAuth.resetPassword.body
+    @SwaggerAuth.resetPassword.response
     async resetPassword(
         @Body() resetPasswordRequest: ResetPasswordRequest,
     ): Promise<void> {
