@@ -1,8 +1,9 @@
-import { Global, Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
 import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
+import { Global, Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
+import { JwtModule } from '@nestjs/jwt';
+
+import { AuthService } from './auth.service';
 
 @Global()
 @Module({
