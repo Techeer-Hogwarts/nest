@@ -8,6 +8,8 @@ import {
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 
+import { User } from '@prisma/client';
+
 import { UserService } from '../users/user.service';
 
 @Injectable()
@@ -26,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: any): Promise<UserEntity> {
+    async validate(payload: any): Promise<User> {
         // 토큰에서 사용자 ID 추출 후 사용자 정보 검증
         const user = await this.userService.findById(payload.id);
         if (!user) {
