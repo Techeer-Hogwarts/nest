@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-import { NotFoundExperienceException } from 'src/common/exception/custom.exception';
-import { normalizeString } from 'src/common/category/normalize';
-import { StackCategory } from 'src/common/category/stack.category';
+import { NotFoundExperienceException } from '../../common/exception/custom.exception';
+import { normalizeString } from '../../common/category/normalize';
+import { StackCategory } from '../../common/category/stack.category';
 
-import { PrismaService } from 'src/infra/prisma/prisma.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
-import { CreateUserExperienceRequest } from 'src/common/dto/userExperiences/request/create.userExperience.request';
-import { UpdateUserExperienceRequest } from 'src/common/dto/userExperiences/request/update.userExperience.request';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
 
 import { Category } from './category/category.category';
 

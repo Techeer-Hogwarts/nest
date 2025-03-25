@@ -14,7 +14,7 @@ export class UpdateUserExperienceRequest {
         example: 1,
         description: '경력 ID',
     })
-    readonly experienceId: number;
+    readonly experienceId?: number;
 
     @IsString()
     @IsOptional()
