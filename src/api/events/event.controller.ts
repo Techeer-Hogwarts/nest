@@ -11,15 +11,19 @@ import {
     Req,
     UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { EventService } from '../../core/events/event.service';
-import { CreateEventRequest } from '../../common/dto/events/request/create.event.request';
-import { GetEventResponse } from '../../common/dto/events/response/get.event.response';
-import { GetEventListQueryRequest } from '../../common/dto/events/request/get.event.query.request';
-import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { Request } from 'express';
-import { CreateEventResponse } from '../../common/dto/events/response/creare.event.response';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { JwtAuthGuard } from '../../core/auth/jwt.guard';
+
+import { EventService } from '../../core/events/event.service';
+
+import { CreateEventRequest } from '../../common/dto/events/request/create.event.request';
+import { GetEventListQueryRequest } from '../../common/dto/events/request/get.event.query.request';
+
+import { CreateEventResponse } from '../../common/dto/events/response/creare.event.response';
+import { GetEventResponse } from '../../common/dto/events/response/get.event.response';
 
 @ApiTags('events')
 @Controller('/events')
@@ -39,7 +43,7 @@ export class EventController {
         @Body() createEventRequest: CreateEventRequest,
         @Req() request: Request,
     ): Promise<CreateEventResponse> {
-        const user = request.user as any;
+        const user = request.user as { id: number };
         this.logger.debug(
             `이벤트 생성 요청 처리 중 - userId: ${user.id}`,
             EventController.name,
@@ -106,7 +110,7 @@ export class EventController {
         @Body() updateEventRequest: CreateEventRequest,
         @Req() request: Request,
     ): Promise<CreateEventResponse> {
-        const user = request.user as any;
+        const user = request.user as { id: number };
         this.logger.debug(
             `이벤트 수정 요청 처리 중 - userId: ${user.id}, eventId: ${eventId}`,
             EventController.name,
@@ -131,7 +135,7 @@ export class EventController {
         @Param('eventId', ParseIntPipe) eventId: number,
         @Req() request: Request,
     ): Promise<void> {
-        const user = request.user as any;
+        const user = request.user as { id: number };
         this.logger.debug(
             `이벤트 삭제 요청 처리 중 - userId: ${user.id}, eventId: ${eventId}`,
             EventController.name,
