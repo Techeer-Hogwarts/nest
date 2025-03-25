@@ -3,17 +3,18 @@ import { Body, Controller, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { ResetPasswordRequest } from 'src/common/dto/auth/request/reset.password.request';
-import { SendEmailCodeRequest } from 'src/common/dto/auth/request/send.emailCode.request';
-import { VerifyEmailCodeRequest } from 'src/common/dto/auth/request/verfiy.emailCode.request';
+import { ResetPasswordRequest } from '../../common/dto/auth/request/reset.password.request';
+import { SendEmailCodeRequest } from '../../common/dto/auth/request/send.emailCode.request';
+import { VerifyEmailCodeRequest } from '../../common/dto/auth/request/verfiy.emailCode.request';
 
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { SwaggerAuth } from './auth.swagger';
 
-import { LoginRequest } from 'src/common/dto/auth/request/login.request';
-import { LoginResponse } from 'src/common/dto/auth/response/login.reponse';
+import { LoginRequest } from '../../common/dto/auth/request/login.request';
+
+import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
 
 @ApiTags('auth')
 @Controller('/auth')
