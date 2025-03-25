@@ -8,9 +8,9 @@ import {
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 
-import { UserEntity } from '../users/entities/user.entity';
-
 import { UserService } from '../users/user.service';
+
+import { UserEntity } from '../users/entities/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

@@ -4,11 +4,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 
-import { AuthController } from '../auth.controller';
-
 import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
 
 import { AuthService } from '../../../core/auth/auth.service';
+
+import { AuthController } from '../auth.controller';
 
 import { LoginRequest } from '../../../common/dto/auth/request/login.request';
 import { ResetPasswordRequest } from '../../../common/dto/auth/request/reset.password.request';
