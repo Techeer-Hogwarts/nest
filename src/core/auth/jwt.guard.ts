@@ -119,7 +119,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // 리프레시 토큰을 사용해 새로운 액세스 토큰 발급
     async refresh(refreshToken: string): Promise<string> {
         try {
-            const decoded = this.jwtService.verify(refreshToken);
+            const decoded = this.jwtService.verify(refreshToken, {
+                ignoreExpiration: false,
+            });
             const user = await this.userService.findById(decoded.id);
 
             if (!user) {
@@ -130,7 +132,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             // 새로운 액세스 토큰 발급
             const newAccessToken = this.jwtService.sign(
                 { id: user.id },
-                { expiresIn: '15m' },
+                { expiresIn: '60m' },
             );
             this.logger.debug('액세스 토큰 재발급');
             return newAccessToken;
