@@ -1,4 +1,4 @@
-import { EventEntity } from '../../../../core/events/entities/event.entity';
+import { Event } from '@prisma/client';
 
 export class CreateEventResponse {
     readonly id: number;
@@ -9,13 +9,13 @@ export class CreateEventResponse {
     readonly endDate: Date;
     readonly url: string;
 
-    constructor(eventEntity: EventEntity) {
-        this.id = eventEntity.id;
-        this.userId = eventEntity.userId;
-        this.category = eventEntity.category;
-        this.title = eventEntity.title;
-        this.startDate = eventEntity.startDate;
-        this.endDate = eventEntity.endDate;
-        this.url = eventEntity.url;
+    constructor(event: Event) {
+        this.id = event.id;
+        this.userId = event.userId;
+        this.category = event.category;
+        this.title = event.title;
+        this.startDate = event.startDate;
+        this.endDate = event.endDate;
+        this.url = event.url;
     }
 }
