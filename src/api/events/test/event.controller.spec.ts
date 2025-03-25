@@ -1,144 +1,144 @@
-// import { Test, TestingModule } from '@nestjs/testing';
-// import { EventController } from '../event.controller';
-// import { EventService } from '../event.service';
-// import {
-//     createEventRequest,
-//     createEventResponse,
-//     getEventListQueryRequest,
-//     getEventListResponse,
-//     getEventResponse,
-//     updatedEventEntity,
-//     updateEventRequest,
-// } from './mock-data';
-// import { JwtAuthGuard } from '../../auth/jwt.guard';
-// import { Request } from 'express';
-// import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-// import { CreateEventResponse } from '../dto/response/creare.event.response';
+import { Test, TestingModule } from '@nestjs/testing';
+import { EventController } from '../event.controller';
+import { EventService } from '../event.service';
+import {
+    createEventRequest,
+    createEventResponse,
+    getEventListQueryRequest,
+    getEventListResponse,
+    getEventResponse,
+    updatedEventEntity,
+    updateEventRequest,
+} from './mock-data';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Request } from 'express';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { CreateEventResponse } from '../dto/response/creare.event.response';
 
-// describe('EventController', () => {
-//     let controller: EventController;
-//     let service: EventService;
+describe('EventController', () => {
+    let controller: EventController;
+    let service: EventService;
 
-//     beforeEach(async (): Promise<void> => {
-//         const module: TestingModule = await Test.createTestingModule({
-//             controllers: [EventController],
-//             providers: [
-//                 {
-//                     provide: EventService,
-//                     useValue: {
-//                         createEvent: jest.fn(),
-//                         getEventList: jest.fn(),
-//                         getEvent: jest.fn(),
-//                         updateEvent: jest.fn(),
-//                         deleteEvent: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: CustomWinstonLogger,
-//                     useValue: {
-//                         debug: jest.fn(),
-//                         error: jest.fn(),
-//                     },
-//                 },
-//             ],
-//         })
-//             .overrideGuard(JwtAuthGuard)
-//             .useValue({
-//                 canActivate: jest.fn().mockReturnValue(true),
-//             })
-//             .compile();
+    beforeEach(async (): Promise<void> => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [EventController],
+            providers: [
+                {
+                    provide: EventService,
+                    useValue: {
+                        createEvent: jest.fn(),
+                        getEventList: jest.fn(),
+                        getEvent: jest.fn(),
+                        updateEvent: jest.fn(),
+                        deleteEvent: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
+            ],
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue({
+                canActivate: jest.fn().mockReturnValue(true),
+            })
+            .compile();
 
-//         controller = module.get<EventController>(EventController);
-//         service = module.get<EventService>(EventService);
-//     });
+        controller = module.get<EventController>(EventController);
+        service = module.get<EventService>(EventService);
+    });
 
-//     it('should be defined', (): void => {
-//         expect(controller).toBeDefined();
-//     });
+    it('should be defined', (): void => {
+        expect(controller).toBeDefined();
+    });
 
-//     describe('createEvent', (): void => {
-//         it('should successfully create a event', async (): Promise<void> => {
-//             jest.spyOn(service, 'createEvent').mockResolvedValue(
-//                 createEventResponse,
-//             );
+    describe('createEvent', (): void => {
+        it('should successfully create a event', async (): Promise<void> => {
+            jest.spyOn(service, 'createEvent').mockResolvedValue(
+                createEventResponse,
+            );
 
-//             const request = { user: { id: 1 } } as unknown as Request;
-//             const result = await controller.createEvent(
-//                 createEventRequest,
-//                 request,
-//             );
+            const request = { user: { id: 1 } } as unknown as Request;
+            const result = await controller.createEvent(
+                createEventRequest,
+                request,
+            );
 
-//             expect(result).toEqual(createEventResponse);
-//             expect(service.createEvent).toHaveBeenCalledWith(
-//                 1,
-//                 createEventRequest,
-//             );
-//             expect(service.createEvent).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            expect(result).toEqual(createEventResponse);
+            expect(service.createEvent).toHaveBeenCalledWith(
+                1,
+                createEventRequest,
+            );
+            expect(service.createEvent).toHaveBeenCalledTimes(1);
+        });
+    });
 
-//     describe('getEventList', (): void => {
-//         it('should return a list of events based on query', async (): Promise<void> => {
-//             jest.spyOn(service, 'getEventList').mockResolvedValue(
-//                 getEventListResponse,
-//             );
+    describe('getEventList', (): void => {
+        it('should return a list of events based on query', async (): Promise<void> => {
+            jest.spyOn(service, 'getEventList').mockResolvedValue(
+                getEventListResponse,
+            );
 
-//             const result = await controller.getEventList(
-//                 getEventListQueryRequest,
-//             );
+            const result = await controller.getEventList(
+                getEventListQueryRequest,
+            );
 
-//             expect(result).toEqual(getEventListResponse);
-//             expect(service.getEventList).toHaveBeenCalledWith(
-//                 getEventListQueryRequest,
-//             );
-//             expect(service.getEventList).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            expect(result).toEqual(getEventListResponse);
+            expect(service.getEventList).toHaveBeenCalledWith(
+                getEventListQueryRequest,
+            );
+            expect(service.getEventList).toHaveBeenCalledTimes(1);
+        });
+    });
 
-//     describe('getEvent', (): void => {
-//         it('should return a event', async (): Promise<void> => {
-//             jest.spyOn(service, 'getEvent').mockResolvedValue(getEventResponse);
+    describe('getEvent', (): void => {
+        it('should return a event', async (): Promise<void> => {
+            jest.spyOn(service, 'getEvent').mockResolvedValue(getEventResponse);
 
-//             const result = await controller.getEvent(1);
+            const result = await controller.getEvent(1);
 
-//             expect(result).toEqual(getEventResponse);
-//             expect(service.getEvent).toHaveBeenCalledWith(1);
-//             expect(service.getEvent).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            expect(result).toEqual(getEventResponse);
+            expect(service.getEvent).toHaveBeenCalledWith(1);
+            expect(service.getEvent).toHaveBeenCalledTimes(1);
+        });
+    });
 
-//     describe('updateEvent', (): void => {
-//         it('should successfully update a event', async (): Promise<void> => {
-//             jest.spyOn(service, 'updateEvent').mockResolvedValue(
-//                 new CreateEventResponse(updatedEventEntity),
-//             );
+    describe('updateEvent', (): void => {
+        it('should successfully update a event', async (): Promise<void> => {
+            jest.spyOn(service, 'updateEvent').mockResolvedValue(
+                new CreateEventResponse(updatedEventEntity),
+            );
 
-//             const request = { user: { id: 1 } } as unknown as Request;
-//             const result = await controller.updateEvent(
-//                 100,
-//                 updateEventRequest,
-//                 request,
-//             );
+            const request = { user: { id: 1 } } as unknown as Request;
+            const result = await controller.updateEvent(
+                100,
+                updateEventRequest,
+                request,
+            );
 
-//             expect(result).toEqual(new CreateEventResponse(updatedEventEntity));
-//             expect(service.updateEvent).toHaveBeenCalledWith(
-//                 1,
-//                 100,
-//                 updateEventRequest,
-//             );
-//             expect(service.updateEvent).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            expect(result).toEqual(new CreateEventResponse(updatedEventEntity));
+            expect(service.updateEvent).toHaveBeenCalledWith(
+                1,
+                100,
+                updateEventRequest,
+            );
+            expect(service.updateEvent).toHaveBeenCalledTimes(1);
+        });
+    });
 
-//     describe('deleteEvent', (): void => {
-//         it('should successfully delete a event', async (): Promise<void> => {
-//             jest.spyOn(service, 'deleteEvent').mockResolvedValue();
+    describe('deleteEvent', (): void => {
+        it('should successfully delete a event', async (): Promise<void> => {
+            jest.spyOn(service, 'deleteEvent').mockResolvedValue();
 
-//             const request = { user: { id: 1 } } as unknown as Request;
-//             await controller.deleteEvent(100, request);
+            const request = { user: { id: 1 } } as unknown as Request;
+            await controller.deleteEvent(100, request);
 
-//             expect(service.deleteEvent).toHaveBeenCalledWith(1, 100);
-//             expect(service.deleteEvent).toHaveBeenCalledTimes(1);
-//         });
-//     });
-// });
+            expect(service.deleteEvent).toHaveBeenCalledWith(1, 100);
+            expect(service.deleteEvent).toHaveBeenCalledTimes(1);
+        });
+    });
+});
