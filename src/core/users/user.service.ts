@@ -30,10 +30,10 @@ import {
     StatusCategory,
     User,
 } from '@prisma/client';
-import { IndexService } from 'src/infra/index/index.service';
-import { StackCategory } from 'src/common/category/stack.category';
-import { IndexUserRequest } from 'src/common/dto/users/request/index.user.request';
-import { normalizeString } from 'src/common/category/normalize';
+import { IndexService } from '../../infra/index/index.service';
+import { StackCategory } from '../../common/category/stack.category';
+import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
+import { normalizeString } from '../../common/category/normalize';
 import { UserExperienceService } from '../userExperiences/userExperience.service';
 
 type Mutable<T> = {
