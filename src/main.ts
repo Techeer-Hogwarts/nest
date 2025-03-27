@@ -1,3 +1,4 @@
+import tracing from './trace';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -10,6 +11,7 @@ import { CustomWinstonLogger } from './common/logger/winston.logger';
 
 async function bootstrap(): Promise<void> {
     try {
+        tracing.start();
         const app = await NestFactory.create(AppModule, {
             cors: {
                 origin: (origin, callback) => {
