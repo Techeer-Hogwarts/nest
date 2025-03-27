@@ -44,7 +44,7 @@ async function bootstrap(): Promise<void> {
 
         // 인스턴스 전달
         app.useLogger(customLogger);
-
+        app.useGlobalFilters(new GlobalExceptionsFilter(customLogger));
         // cookie-parser 미들웨어 추가
         app.use(cookieParser());
 
@@ -125,8 +125,6 @@ async function bootstrap(): Promise<void> {
                 await new Promise((res) => setTimeout(res, retryDelay));
             }
         }
-
-        app.useGlobalFilters(new GlobalExceptionsFilter());
 
         await app.listen(8000);
         customLogger.log('애플리케이션이 포트 8000에서 작동 중입니다.');

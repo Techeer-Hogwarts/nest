@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { StudyMemberRepository } from './repository/studyMember.repository';
+import { StudyMemberService } from './studyMember.service';
 
 @Module({
     imports: [],
-    providers: [StudyMemberRepository],
-    exports: [StudyMemberRepository],
+    providers: [StudyMemberService],
+    exports: [StudyMemberService],
 })
 export class StudyMemberServiceModule {}

@@ -1,5 +1,7 @@
 import { Injectable, LoggerService, LogLevel } from '@nestjs/common';
 import * as winston from 'winston';
+import { Request } from 'express';
+import { BaseException, ServerException } from '../exception/base.exception';
 
 @Injectable()
 export class CustomWinstonLogger implements LoggerService {
@@ -76,6 +78,28 @@ export class CustomWinstonLogger implements LoggerService {
             context,
         });
     }
+    simpleError(error: ServerException, request: Request): void {
+        const logMessage = `[${request.method}] ${request.url} - ${error.constructor.name}: ${error.code} ${
+            Array.isArray(error.message)
+                ? error.message.join(', ')
+                : error.message
+        } (status: ${error.statusCode})`;
+        this.winstonLogger.error(logMessage);
+    }
+    bodyError(error: Error, err: BaseException, request: Request): void {
+        const logMessage = `
+[ERROR] ${new Date().toISOString()}
+* ERROR CODE:    ${err.code ?? 'N/A'}
+* ERROR MESSAGE: ${err?.message ?? 'N/A'}
+* STATUS CODE:   ${err.statusCode}
+* PATH:          ${request?.url ?? 'N/A'}
+* METHOD:        ${request?.method ?? 'N/A'}
+* BODY:          ${JSON.stringify(this.sanitizeRequestBody(request?.body ?? {}), undefined, 2)}
+* STACK TRACE:   ${error?.stack ?? 'N/A'}
+━━━━━━━━━━━━━━━━
+        `;
+        this.winstonLogger.error(logMessage);
+    }
 
     warn(message: any, ...optionalParams: any[]): void {
         this.winstonLogger.warn(message, { context: optionalParams[0] });
@@ -117,5 +141,33 @@ export class CustomWinstonLogger implements LoggerService {
         this.winstonLogger.configure({
             level: winstonLevels[0],
         });
+    }
+    private sanitizeRequestBody(body: any): any {
+        if (!body) return {};
+
+        const sanitized = { ...body };
+        const sensitiveFields = [
+            'password',
+            'token',
+            'secret',
+            'authorization',
+        ];
+
+        for (const key of Object.keys(sanitized)) {
+            if (
+                sensitiveFields.some((field) =>
+                    key.toLowerCase().includes(field),
+                )
+            ) {
+                sanitized[key] = '[REDACTED]';
+            } else if (
+                typeof sanitized[key] === 'object' &&
+                sanitized[key] !== null
+            ) {
+                sanitized[key] = this.sanitizeRequestBody(sanitized[key]);
+            }
+        }
+
+        return sanitized;
     }
 }
