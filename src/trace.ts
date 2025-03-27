@@ -28,6 +28,7 @@ const sdk = new NodeSDK({
 });
 
 // Enable the API to record telemetry
+console.log('Starting tracing');
 sdk.start();
 
 // Gracefully shut down the SDK on process exit
