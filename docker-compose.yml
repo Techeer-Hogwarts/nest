@@ -71,9 +71,9 @@ services:
         restart: always
         ports:
             - '6379:6379'
-        command: redis-server --requirepass 1234
-        # environment:
-        #     REDIS_PASSWORD: "1234"
+        command: redis-server --requirepass ${REDIS_PASSWORD}
+        environment:
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
         networks:
             - techeerism
 
