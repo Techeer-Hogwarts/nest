@@ -14,12 +14,13 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 export class TracingService implements OnModuleInit, OnModuleDestroy {
     private sdk: NodeSDK;
 
-    private readonly logger = new CustomWinstonLogger();
+    constructor(private readonly logger: CustomWinstonLogger) {}
 
     async onModuleInit(): Promise<void> {
         this.sdk = new NodeSDK({
             resource: resourceFromAttributes({
-                [ATTR_SERVICE_NAME]: process.env.TRACE_SERVICE_NAME || 'nestjs-app',
+                [ATTR_SERVICE_NAME]:
+                    process.env.TRACE_SERVICE_NAME || 'nestjs-app',
             }),
             traceExporter: new OTLPTraceExporter({
                 url:
@@ -34,12 +35,20 @@ export class TracingService implements OnModuleInit, OnModuleDestroy {
             ],
         });
 
-        await this.sdk.start();
-        this.logger.log('✅ OpenTelemetry tracing started');
+        try {
+            await this.sdk.start();
+            this.logger.log('OpenTelemetry tracing started');
+        } catch (error) {
+            this.logger.error('Error starting OpenTelemetry tracing', error);
+        }
     }
 
     async onModuleDestroy(): Promise<void> {
-        await this.sdk.shutdown();
-        this.logger.log('OpenTelemetry tracing stopped');
+        try {
+            await this.sdk.shutdown();
+            this.logger.log('OpenTelemetry tracing stopped');
+        } catch (error) {
+            this.logger.error('Error stopping OpenTelemetry tracing', error);
+        }
     }
 }
