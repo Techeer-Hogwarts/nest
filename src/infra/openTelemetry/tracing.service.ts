@@ -1,4 +1,3 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -10,6 +9,7 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 
 @Injectable()
 export class TracingService implements OnModuleInit, OnModuleDestroy {
