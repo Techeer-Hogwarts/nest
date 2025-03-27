@@ -9,6 +9,7 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 // import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { resourceFromAttributes } from '@opentelemetry/resources';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 
 @Injectable()
 export class TracingService implements OnModuleInit, OnModuleDestroy {
@@ -17,6 +18,7 @@ export class TracingService implements OnModuleInit, OnModuleDestroy {
     constructor(private readonly logger: CustomWinstonLogger) {}
 
     async onModuleInit(): Promise<void> {
+        diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
         this.sdk = new NodeSDK({
             resource: resourceFromAttributes({
                 [ATTR_SERVICE_NAME]:
