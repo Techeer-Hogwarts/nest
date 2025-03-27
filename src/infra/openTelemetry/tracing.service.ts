@@ -19,10 +19,12 @@ export class TracingService implements OnModuleInit, OnModuleDestroy {
     async onModuleInit(): Promise<void> {
         this.sdk = new NodeSDK({
             resource: resourceFromAttributes({
-                [ATTR_SERVICE_NAME]: 'nestjs-app',
+                [ATTR_SERVICE_NAME]: process.env.TRACE_SERVICE_NAME || 'nestjs-app',
             }),
             traceExporter: new OTLPTraceExporter({
-                url: 'http://otel-collector:4318/v1/traces', // Adjust if needed
+                url:
+                    process.env.TRACE_OTLP_EXPORTER_URL ||
+                    'http://otel-collector:4318/v1/traces',
             }),
             instrumentations: [
                 new HttpInstrumentation(),
