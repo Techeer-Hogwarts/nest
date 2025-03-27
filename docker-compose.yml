@@ -1,30 +1,32 @@
 version: '3.8'
 
 services:
-    #    nest:
-    #        container_name: nest
-    #        build:
-    #            context: .
-    #            dockerfile: Dockerfile
-    #        restart: always
-    #        env_file:
-    #            - .env
-    #        ports:
-    #            - '8000:8000'
-    #        depends_on:
-    #            - postgresql
-    #            - redis
-    #        networks:
-    #            - techeerism
+    nest:
+        container_name: nest
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - '8000:8000'
+        depends_on:
+            - postgresql
+            - redis
+        networks:
+            - techeerism
 
     postgresql:
         container_name: postgresql
         image: postgres:14-alpine3.20
         restart: always
-        environment:
-            POSTGRES_USER: ${POSTGRES_USERNAME}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB}
+        env_file:
+            - .env
+        # environment:
+        #     POSTGRES_USER: ${POSTGRES_USERNAME}
+        #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        #     POSTGRES_DB: ${POSTGRES_DB}
             # POSTGRES_DB_NAME: ${POSTGRES_DB_NAME}
         volumes:
             - techeerism-db:/techeerism-db/postgres-data
@@ -54,9 +56,11 @@ services:
             - '5672:5672'
             - '15673:15672'
             - '15693:15692'
-        environment:
-            - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+        env_file:
+            - .env
+        # environment:
+        #     - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+        #     - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
         tty: true
         networks:
             - techeerism
@@ -67,9 +71,9 @@ services:
         restart: always
         ports:
             - '6379:6379'
-        command: redis-server --requirepass ${REDIS_PASSWORD}
-        environment:
-            REDIS_PASSWORD: ${REDIS_PASSWORD}
+        command: redis-server --requirepass 1234
+        # environment:
+        #     REDIS_PASSWORD: "1234"
         networks:
             - techeerism
 
@@ -129,6 +133,34 @@ services:
         volumes:
             - meilisearch-data:/meili_data/data.ms
         restart: unless-stopped
+    
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.122.1
+        container_name: otel-collector
+        networks:
+            - techeerism
+        ports:
+            - "4317:4317"
+            - "4318:4318"
+        volumes:
+            - ./otel-collector-config.yaml:/otel-collector-config.yaml
+        command: ["--config=/otel-collector-config.yaml"]
+
+    jaeger:
+        image: jaegertracing/all-in-one:1.67.0
+        container_name: jaeger
+        networks:
+            - techeerism
+        ports:
+            - "16686:16686"
+            - "14250:14250"
+            - "14268:14268"
+            - "14269:14269"
+            - "4319:4317"
+            - "4320:4318"
+        environment:
+            - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+            - SPAN_STORAGE_TYPE=memory
 
 networks:
     techeerism:
