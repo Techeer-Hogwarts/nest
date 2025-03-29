@@ -1,5 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import tracing from './trace';
+tracing.start();
 import { AppModule } from './app.module';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { PrismaService } from './infra/prisma/prisma.service';

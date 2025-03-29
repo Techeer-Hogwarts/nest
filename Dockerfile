@@ -1,18 +1,20 @@
 # 빌드 스테이지
-FROM node:18-alpine3.20 AS builder
+FROM node:20-alpine3.20 AS builder
 
 WORKDIR /app
 
 # Dependency 설치
 COPY package*.json ./
 
-RUN npm install
+RUN npm install && npm cache clean --force
 
 # 소스코드 복사
 COPY . .
 
 # Prisma 클라이언트 생성
 RUN npx prisma generate --schema=./prisma/schema.prisma
+    # && npm run build \
+    # && npx tsc prisma/seed.ts --outDir dist/prisma
 
 # 빌드
 RUN npm run build
@@ -21,7 +23,7 @@ RUN npm run build
 RUN npx tsc prisma/seed.ts --outDir dist/prisma
 
 # 베포용 빌드 이미지 스테이지
-FROM node:18-alpine3.20
+FROM node:20-alpine3.20
 
 # 프로덕션 환경변수
 ENV NODE_ENV=production
@@ -29,13 +31,12 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --only=production
+RUN npm install && npm cache clean --force
 
 # 빌드된 파일들만 복사
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma/ ./prisma/
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
 
 # 포트
 EXPOSE 8000

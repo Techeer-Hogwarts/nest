@@ -1,0 +1,6 @@
+/dist
+/node_modules
+node_modules
+/build
+package-lock.json
+otel-collector-config.yaml
