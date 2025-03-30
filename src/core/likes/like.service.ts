@@ -1,7 +1,5 @@
-// 외부 라이브러리
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-// 공통 모듈 (common)
 import { CreateContentTableMap } from '../../common/category/content.category.table.map';
 import { CreateLikeRequest } from '../../common/dto/likes/request/create.like.request';
 import { GetLikeListRequest } from '../../common/dto/likes/request/get.like-list.request';
@@ -12,22 +10,22 @@ import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
 import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
-import {
-    BadRequestCategoryException,
-    DuplicateStatusException,
-} from '../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
-// Infra 모듈
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { IndexService } from '../../infra/index/index.service';
 
-// 내부 모듈 entities ( Enitity 파일은 삭제될 예정이기 때문에 엔티티 파일이 아닌 프리즈마를 사용하도록 변경해야 합니다.)
 import { Blog } from '@prisma/client';
 import { ProjectTeam } from '@prisma/client';
 import { Resume } from '@prisma/client';
 import { Session } from '@prisma/client';
 import { StudyTeam } from '@prisma/client';
+
+import {
+    LikeContentNotFoundException,
+    LikeDuplicateRequestException,
+    LikeInvalidCategoryException,
+} from './exception/like.exception';
 
 @Injectable()
 export class LikeService {
@@ -78,7 +76,7 @@ export class LikeService {
         );
         if (!isContentExist) {
             this.logger.debug(`해당 콘텐츠를 찾을 수 없음`, LikeService.name);
-            throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
+            throw new LikeContentNotFoundException();
         }
         this.logger.debug(
             `해당 콘텐츠를 찾아서 좋아요 생성 및 설정 변경 중`,
@@ -100,7 +98,7 @@ export class LikeService {
                         `좋아요 상태가 동일함 (중복 요청)`,
                         LikeService.name,
                     );
-                    throw new DuplicateStatusException();
+                    throw new LikeDuplicateRequestException();
                 }
                 this.logger.debug(
                     `좋아요 상태 변경: ${likeStatus}`,
@@ -130,7 +128,7 @@ export class LikeService {
                     data: { likeCount: { increment: changeValue } },
                 });
                 this.logger.debug(
-                    `좋아요 카운트 (${changeValue > 0 ? '+1' : '-1'}) 변경 완료: ${updateContent.likeCount}`,
+                    `좋아요 카운트 (${changeValue > 0 ? '+1' : '-1'}) 변경 완료`,
                     LikeService.name,
                 );
                 // 인덱스 업데이트 (세선)
@@ -206,7 +204,7 @@ export class LikeService {
             }
             default:
                 this.logger.error(`잘못된 카테고리 요청`, LikeService.name);
-                throw new BadRequestCategoryException();
+                throw new LikeInvalidCategoryException();
         }
     }
 

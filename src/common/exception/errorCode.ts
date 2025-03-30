@@ -9,6 +9,21 @@ export const ErrorCode = {
     /** Event **/
     /** GoogleDrive **/
     /** Like **/
+    LIKE_INVALID_CATEGORY: {
+        code: 'LIKE_INVALID_CATEGORY',
+        status: HttpStatus.BAD_REQUEST,
+        message: '존재하지 않는 좋아요 카테고리입니다.',
+    },
+    LIKE_DUPLICATE_REQUEST: {
+        code: 'Like_DUPLICATE_REQUEST',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이미 좋아요를 누른 콘텐츠입니다.',
+    },
+    LIKE_CONTENT_NOT_FOUND: {
+        code: 'LIKE_CONTENT_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '해당 좋아요 콘텐츠를 찾을 수 없습니다.',
+    },
     /** ProjectMember **/
     /** ProjectTeam **/
     /** Resumes **/
