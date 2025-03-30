@@ -15,7 +15,7 @@ export const ErrorCode = {
         message: '존재하지 않는 좋아요 카테고리입니다.',
     },
     LIKE_DUPLICATE_REQUEST: {
-        code: 'Like_DUPLICATE_REQUEST',
+        code: 'LIKE_DUPLICATE_REQUEST',
         status: HttpStatus.BAD_REQUEST,
         message: '이미 좋아요를 누른 콘텐츠입니다.',
     },
