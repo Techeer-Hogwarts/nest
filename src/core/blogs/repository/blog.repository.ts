@@ -1,3 +1,4 @@
+/*
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { BlogEntity } from '../entities/blog.entity';
@@ -262,3 +263,4 @@ export class BlogRepository {
         return new GetBlogResponse(deletedBlog);
     }
 }
+*/

@@ -1,13 +1,12 @@
-import { BlogEntity } from '../../../../core/blogs/entities/blog.entity';
-import { UserEntity } from '../../../../core/users/entities/user.entity';
+import { Prisma } from '@prisma/client';
 
 export class GetBlogResponse {
     readonly id: number;
     readonly title: string;
     readonly url: string;
-    readonly date: Date;
+    readonly date: string;
     readonly category: string;
-    readonly createdAt: Date;
+    readonly createdAt: string;
     readonly likeCount: number;
     readonly viewCount: number;
     readonly thumbnail: string;
@@ -17,13 +16,13 @@ export class GetBlogResponse {
     };
     readonly user?: GetBlogAuthorResponse;
 
-    constructor(blog: BlogEntity) {
+    constructor(blog: Prisma.BlogGetPayload<{ include: { user: true } }>) {
         this.id = blog.id;
         this.title = blog.title;
         this.url = blog.url;
-        this.date = blog.date;
+        this.date = blog.date.toISOString();
         this.category = blog.category;
-        this.createdAt = blog.createdAt;
+        this.createdAt = blog.createdAt.toISOString();
         this.likeCount = blog.likeCount;
         this.viewCount = blog.viewCount;
         this.thumbnail = blog.thumbnail;
@@ -31,7 +30,9 @@ export class GetBlogResponse {
             authorName: blog.author,
             authorImage: blog.authorImage,
         };
-        this.user = new GetBlogAuthorResponse(blog.user);
+        this.user = blog.user
+            ? new GetBlogAuthorResponse(blog.user)
+            : undefined;
     }
 }
 
@@ -42,7 +43,7 @@ export class GetBlogAuthorResponse {
     readonly roleId: number;
     readonly profileImage: string;
 
-    constructor(user: UserEntity) {
+    constructor(user: Prisma.UserGetPayload<{}>) {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;
