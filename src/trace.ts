@@ -8,11 +8,9 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
-
-// import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
+import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { CustomWinstonLogger } from './common/logger/winston.logger';
-
-// Initialize the SDK and register with the OpenTelemetry API
 
 const logger = new CustomWinstonLogger();
 
@@ -27,7 +25,8 @@ const sdk = new NodeSDK({
         new HttpInstrumentation(),
         new ExpressInstrumentation(),
         new NestInstrumentation(),
-        // getNodeAutoInstrumentations(),
+        new AmqplibInstrumentation(),
+        new IORedisInstrumentation(),
     ],
     resource: resourceFromAttributes({
         [ATTR_SERVICE_NAME]: process.env.TRACING_SERVICE_NAME || 'nestjs-app',
