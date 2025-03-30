@@ -1,139 +1,90 @@
 version: '3.8'
 
 services:
-    #    nest:
-    #        container_name: nest
-    #        build:
-    #            context: .
-    #            dockerfile: Dockerfile
-    #        restart: always
-    #        env_file:
-    #            - .env
-    #        ports:
-    #            - '8000:8000'
-    #        depends_on:
-    #            - postgresql
-    #            - redis
-    #        networks:
-    #            - techeerism
+  #    nest:
+  #        container_name: nest
+  #        build:
+  #            context: .
+  #            dockerfile: Dockerfile
+  #        restart: always
+  #        env_file:
+  #            - .env
+  #        ports:
+  #            - '8000:8000'
+  #        depends_on:
+  #            - postgresql
+  #            - redis
+  #        networks:
+  #            - techeerism
 
-    postgresql:
-        container_name: postgresql
-        image: postgres:14-alpine3.20
-        restart: always
-        environment:
-            POSTGRES_USER: ${POSTGRES_USERNAME}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB}
-            # POSTGRES_DB_NAME: ${POSTGRES_DB_NAME}
-        volumes:
-            - techeerism-db:/techeerism-db/postgres-data
-        ports:
-            - '5432:5432'
-        networks:
-            - techeerism
+  postgresql:
+    container_name: postgresql
+    image: postgres:14-alpine3.20
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # POSTGRES_DB_NAME: ${POSTGRES_DB_NAME}
+    volumes:
+      - techeerism-db:/techeerism-db/postgres-data
+    ports:
+      - '5432:5432'
+    networks:
+      - techeerism
 
-    pgadmin:
-        image: dpage/pgadmin4
-        restart: always
-        container_name: pgadmin4
-        user: root
-        ports:
-            - '5050:80'
-        environment:
-            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-            PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-        volumes:
-            - techeerism-db:/techeerism-db/pgadmin-data
-        networks:
-            - techeerism
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    container_name: pgadmin4
+    user: root
+    ports:
+      - '5050:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - techeerism-db:/techeerism-db/pgadmin-data
+    networks:
+      - techeerism
 
-    rabbitmq:
-        image: 'rabbitmq:3-management'
-        ports:
-            - '5672:5672'
-            - '15673:15672'
-            - '15693:15692'
-        environment:
-            - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-        tty: true
-        networks:
-            - techeerism
+  rabbitmq:
+    image: 'rabbitmq:3-management'
+    ports:
+      - '5672:5672'
+      - '15673:15672'
+      - '15693:15692'
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    tty: true
+    networks:
+      - techeerism
 
-    redis:
-        container_name: redis
-        image: redis:6.0.9-alpine
-        restart: always
-        ports:
-            - '6379:6379'
-        command: redis-server --requirepass ${REDIS_PASSWORD}
-        environment:
-            REDIS_PASSWORD: ${REDIS_PASSWORD}
-        networks:
-            - techeerism
+  redis:
+    container_name: redis
+    image: redis:6.0.9-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks:
+      - techeerism
 
-    redis-insight:
-        container_name: redis-insight
-        image: redislabs/redisinsight:latest
-        restart: always
-        ports:
-            - '8001:8001'
-        networks:
-            - techeerism
-    
-    search-container:
-        image: teami2022/watchtower-test:arm-search
-        networks:
-            - techeerism
-        container_name: search-container
-        env_file:
-            - .env
-        environment:
-            - MEILISEARCH_ADDR=http://meilisearch:7700
-            - MEILISEARCH_KEY=""
-            - GIN_MODE=release
-        ports:
-            - "8082:8080"
-  
-    search-cron:
-        image: teami2022/watchtower-test:arm-cron
-        container_name: search-cron
-        networks:
-            - techeerism
-        env_file:
-            - .env
-        environment:
-            - MEILISEARCH_ADDR=http://meilisearch:7700
-            - MEILISEARCH_KEY=""
-            - GIN_MODE=release
-            - DB_HOST=postgresql
-            - DB_PORT=5432
-            - DB_USER=${POSTGRES_USERNAME}
-            - DB_PASSWORD=${POSTGRES_PASSWORD}
-            - DB_NAME=${POSTGRES_DB}
-            - DB_SSL_MODE=disable
-        ports:
-            - "8081:8081"
-   
-    meilisearch:
-        image: getmeili/meilisearch:latest
-        container_name: meilisearch
-        networks:
-            - techeerism
-        ports:
-            - "7700:7700"
-        environment:
-            - MEILI_EXPERIMENTAL_ENABLE_METRICS=true
-            - MEILI_NO_ANALYTICS=true
-        volumes:
-            - meilisearch-data:/meili_data/data.ms
-        restart: unless-stopped
+  redis-insight:
+    container_name: redis-insight
+    image: redislabs/redisinsight:latest
+    restart: always
+    ports:
+      - '8001:8001'
+    networks:
+      - techeerism
 
 networks:
-    techeerism:
-        driver: bridge
+  techeerism:
+    driver: bridge
 
 volumes:
-    techeerism-db:
-    meilisearch-data:
+  techeerism-db:
