@@ -6,4 +6,4 @@ import { LikeService } from './like.service';
     providers: [LikeService],
     exports: [LikeService],
 })
-export class LikeServiceModule { }
+export class LikeServiceModule {}
