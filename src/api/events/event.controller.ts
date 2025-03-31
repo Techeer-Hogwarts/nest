@@ -12,7 +12,6 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
@@ -25,7 +24,16 @@ import { GetEventListQueryRequest } from '../../common/dto/events/request/get.ev
 import { CreateEventResponse } from '../../common/dto/events/response/creare.event.response';
 import { GetEventResponse } from '../../common/dto/events/response/get.event.response';
 
-@ApiTags('events')
+import {
+    EventControllerDoc,
+    CreateEventDoc,
+    GetEventListDoc,
+    GetEventDoc,
+    UpdateEventDoc,
+    DeleteEventDoc,
+} from './event.docs';
+
+@EventControllerDoc()
 @Controller('/events')
 export class EventController {
     constructor(
@@ -35,10 +43,7 @@ export class EventController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    @ApiOperation({
-        summary: '이벤트 생성',
-        description: '새로운 이벤트를 생성합니다.',
-    })
+    @CreateEventDoc()
     async createEvent(
         @Body() createEventRequest: CreateEventRequest,
         @Req() request: Request,
@@ -58,10 +63,7 @@ export class EventController {
     }
 
     @Get()
-    @ApiOperation({
-        summary: '이벤트 목록 조회 및 검색',
-        description: '이벤트 목록을 조회하고 검색합니다.',
-    })
+    @GetEventListDoc()
     async getEventList(
         @Query() query: GetEventListQueryRequest,
     ): Promise<GetEventResponse[]> {
@@ -79,10 +81,7 @@ export class EventController {
     }
 
     @Get(':eventId')
-    @ApiOperation({
-        summary: '단일 이벤트 조회',
-        description: '지정된 ID의 이벤트를 조회합니다.',
-    })
+    @GetEventDoc()
     async getEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
     ): Promise<GetEventResponse> {
@@ -101,10 +100,7 @@ export class EventController {
 
     @UseGuards(JwtAuthGuard)
     @Patch(':eventId')
-    @ApiOperation({
-        summary: '이벤트 수정',
-        description: '지정된 ID의 이벤트를 수정합니다.',
-    })
+    @UpdateEventDoc()
     async updateEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
         @Body() updateEventRequest: CreateEventRequest,
@@ -127,10 +123,7 @@ export class EventController {
 
     @UseGuards(JwtAuthGuard)
     @Delete(':eventId')
-    @ApiOperation({
-        summary: '이벤트 삭제',
-        description: '지정된 ID의 이벤트를 삭제합니다.',
-    })
+    @DeleteEventDoc()
     async deleteEvent(
         @Param('eventId', ParseIntPipe) eventId: number,
         @Req() request: Request,
