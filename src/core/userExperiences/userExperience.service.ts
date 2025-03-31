@@ -15,14 +15,14 @@ import {
     UserExperienceNotFoundExperienceException,
 } from './\bexception/userExperience.exception';
 
-import { Category } from './category/category.category';
+import { UserExperienceEmployment } from './category/userExperienceEmployment';
 
 interface TransformExperienceData {
     userId: number;
     experienceId?: number;
     position: StackCategory;
     companyName: string;
-    category: Category;
+    category: UserExperienceEmployment;
     startDate: Date;
     endDate: Date | null;
     isFinished: boolean;
@@ -69,8 +69,12 @@ export class UserExperienceService {
      * @returns 유효한 Category 값
      * @throws Error 유효하지 않은 category 값일 경우
      */
-    validateCategory(category: string): Category {
-        if (!Object.values(Category).includes(category as Category)) {
+    validateCategory(category: string): UserExperienceEmployment {
+        if (
+            !Object.values(UserExperienceEmployment).includes(
+                category as UserExperienceEmployment,
+            )
+        ) {
             this.logger.error(
                 `유효하지 않은 카테고리 값입니다: ${category}`,
                 'UserExperienceService',
@@ -82,7 +86,7 @@ export class UserExperienceService {
             `카테고리 검증 완료: ${category}`,
             'UserExperienceService',
         );
-        return category as Category;
+        return category as UserExperienceEmployment;
     }
 
     /**

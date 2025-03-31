@@ -6,8 +6,6 @@ import { StackCategory } from '../../../common/category/stack.category';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { UserExperienceService } from '../userExperience.service';
 
-import { Category } from '../category/category.category';
-
 import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.reqeust';
 
 import {
@@ -15,6 +13,8 @@ import {
     UserExperienceInvalidPositionException,
     UserExperienceNotFoundExperienceException,
 } from '../\bexception/userExperience.exception';
+
+import { UserExperienceEmployment } from '../category/userExperienceEmployment';
 
 describe('UserExperienceService', () => {
     let service: UserExperienceService;
@@ -82,7 +82,7 @@ describe('UserExperienceService', () => {
     describe('validateCategory', () => {
         it('정상적인 category는 Category로 반환한다', () => {
             const result = service.validateCategory('인턴');
-            expect(result).toBe(Category.INTERN);
+            expect(result).toBe(UserExperienceEmployment.INTERN);
             expect(logger.debug).toHaveBeenCalledWith(
                 '카테고리 검증 완료: 인턴',
                 'UserExperienceService',
@@ -116,7 +116,7 @@ describe('UserExperienceService', () => {
 
             expect(result[0].userId).toBe(1);
             expect(result[0].position).toBe(StackCategory.FRONTEND);
-            expect(result[0].category).toBe(Category.INTERN);
+            expect(result[0].category).toBe(UserExperienceEmployment.INTERN);
             expect(result[0].startDate instanceof Date).toBe(true);
             expect(result[0].isFinished).toBe(true);
 
@@ -165,7 +165,7 @@ describe('UserExperienceService', () => {
                         userId: 1,
                         position: StackCategory.FRONTEND,
                         companyName: '호그와트',
-                        category: Category.INTERN,
+                        category: UserExperienceEmployment.INTERN,
                         startDate: new Date('2025-03-25'),
                         endDate: new Date('2025-12-20'),
                         isFinished: true,
