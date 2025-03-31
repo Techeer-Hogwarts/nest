@@ -6,7 +6,13 @@ import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 
-import { SwaggerAuth } from './auth.swagger';
+import {
+    LoginDoc,
+    LogoutDoc,
+    ResetPasswordDoc,
+    SendEmailVerificationEmailDoc,
+    VerifyCodeDoc,
+} from './auth.docs';
 
 import { AuthService } from '../../core/auth/auth.service';
 
@@ -26,9 +32,7 @@ export class AuthController {
     ) {}
 
     @Post('/email')
-    @SwaggerAuth.sendEmailCode.operation
-    @SwaggerAuth.sendEmailCode.body
-    @SwaggerAuth.sendEmailCode.response
+    @SendEmailVerificationEmailDoc()
     async sendVerificationEmail(
         @Body() sendEmailCodeRequest: SendEmailCodeRequest,
     ): Promise<void> {
@@ -38,9 +42,7 @@ export class AuthController {
     }
 
     @Post('/code')
-    @SwaggerAuth.verifyEmailCode.operation
-    @SwaggerAuth.verifyEmailCode.body
-    @SwaggerAuth.verifyEmailCode.response
+    @VerifyCodeDoc()
     async verifyCode(
         @Body() verifyEmailCodeRequest: VerifyEmailCodeRequest,
     ): Promise<void> {
@@ -50,9 +52,7 @@ export class AuthController {
     }
 
     @Post('/login')
-    @SwaggerAuth.login.operation
-    @SwaggerAuth.login.body
-    @SwaggerAuth.login.response
+    @LoginDoc()
     async login(
         @Body() loginRequest: LoginRequest,
         @Res({ passthrough: true }) response: Response,
@@ -87,8 +87,7 @@ export class AuthController {
 
     @UseGuards(JwtAuthGuard)
     @Post('/logout')
-    @SwaggerAuth.logout.operation
-    @SwaggerAuth.logout.response
+    @LogoutDoc()
     async logout(
         @Res({ passthrough: true }) response: Response,
     ): Promise<void> {
@@ -98,9 +97,7 @@ export class AuthController {
     }
 
     @Patch('/findPwd')
-    @SwaggerAuth.resetPassword.operation
-    @SwaggerAuth.resetPassword.body
-    @SwaggerAuth.resetPassword.response
+    @ResetPasswordDoc()
     async resetPassword(
         @Body() resetPasswordRequest: ResetPasswordRequest,
     ): Promise<void> {
