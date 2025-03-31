@@ -8,24 +8,23 @@ import { lastValueFrom } from 'rxjs';
 import Redis from 'ioredis';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import {
-    EmailVerificationFailedException,
-    InternalServerErrorException,
-    InvalidCodeException,
-    InvalidException,
-    NotFoundCodeException,
-    NotFoundProfileImageException,
-    NotFoundTecheerException,
-    NotFoundUserException,
-    NotVerifiedEmailException,
-    UnauthorizedEmailException,
-} from '../../common/exception/custom.exception';
 
 import { User } from '@prisma/client';
 
 import { UserService } from '../users/user.service';
 
 import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
+
+import {
+    AuthInvalidCodeException,
+    AuthInvalidPasswordException,
+    AuthNotFoundUserException,
+    AuthNotTecheerException,
+    AuthNotVerifiedEmailException,
+    AuthProfileImageNotFoundException,
+    AuthVerificationFailedException,
+} from './exception/auth.exception';
+import { ServerException } from '../../common/exception/base.exception';
 
 @Injectable()
 export class AuthService {
@@ -55,7 +54,7 @@ export class AuthService {
         const user = await this.validateUser(email, password);
         if (!user) {
             this.logger.error('사용자를 찾을 수 없습니다.', AuthService.name);
-            throw new NotFoundUserException();
+            throw new AuthNotFoundUserException();
         }
 
         // 액세스 토큰과 리프레시 토큰 생성
@@ -81,7 +80,7 @@ export class AuthService {
         this.logger.debug('사용자 조회', AuthService.name);
         if (!user) {
             this.logger.error('사용자를 찾을 수 없습니다.', AuthService.name);
-            throw new NotFoundUserException();
+            throw new AuthNotFoundUserException();
         }
 
         const hashedPassword = user.password;
@@ -89,7 +88,7 @@ export class AuthService {
 
         if (!isPasswordValid) {
             this.logger.debug('비밀번호 불일치', AuthService.name);
-            throw new InvalidException();
+            throw new AuthInvalidPasswordException();
         }
         this.logger.debug('사용자 인증 완료', AuthService.name);
 
@@ -107,7 +106,7 @@ export class AuthService {
 
         if (!isVerified) {
             this.logger.error('이메일 인증 실패', AuthService.name);
-            throw new NotVerifiedEmailException();
+            throw new AuthNotVerifiedEmailException();
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10); // 비밀번호 암호화
@@ -137,7 +136,7 @@ export class AuthService {
             };
         }
         this.logger.error('프로필 이미지 조회 실패', AuthService.name);
-        throw new NotFoundProfileImageException();
+        throw new AuthProfileImageNotFoundException();
     }
 
     // 이메일 인증 코드 생성 및 캐싱 + 이메일 전송
@@ -145,7 +144,7 @@ export class AuthService {
         const { isTecheer } = await this.getProfileImageUrl(email);
         if (!isTecheer) {
             this.logger.error('테커 회원이 아닙니다.', AuthService.name);
-            throw new NotFoundTecheerException();
+            throw new AuthNotTecheerException();
         }
 
         const verificationCode = Math.floor(
@@ -161,7 +160,7 @@ export class AuthService {
                 `Redis 저장 실패: ${error.message}`,
                 AuthService.name,
             );
-            throw new InternalServerErrorException();
+            throw new ServerException();
         }
 
         const subject = '이메일 인증 코드';
@@ -248,7 +247,7 @@ export class AuthService {
                 `이메일 전송 실패: ${error.message}`,
                 AuthService.name,
             );
-            throw new InternalServerErrorException();
+            throw new ServerException();
         }
     }
 
@@ -262,11 +261,11 @@ export class AuthService {
                     '이메일 인증이 필요합니다.',
                     AuthService.name,
                 );
-                throw new NotFoundCodeException();
+                throw new AuthNotVerifiedEmailException();
             }
 
             if (cachedCode !== code) {
-                throw new InvalidCodeException();
+                throw new AuthInvalidCodeException();
             }
 
             // 코드가 일치하면 Redis에서 키를 삭제하고 true 반환
@@ -279,7 +278,7 @@ export class AuthService {
                 `인증 코드가 일치하지 않습니다: ${error.message}`,
                 AuthService.name,
             );
-            throw new InvalidCodeException();
+            throw new AuthInvalidCodeException();
         }
     }
 
@@ -292,7 +291,7 @@ export class AuthService {
                 `이메일 인증 실패: ${error.message}`,
                 AuthService.name,
             );
-            throw new UnauthorizedEmailException();
+            throw new AuthVerificationFailedException();
         }
     }
 
@@ -307,7 +306,7 @@ export class AuthService {
                 `이메일 인증 확인 실패: ${error.message}`,
                 AuthService.name,
             );
-            throw new EmailVerificationFailedException();
+            throw new AuthVerificationFailedException();
         }
     }
 }

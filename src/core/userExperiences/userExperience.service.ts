@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { NotFoundExperienceException } from '../../common/exception/custom.exception';
 import { normalizeString } from '../../common/category/normalize';
 import { StackCategory } from '../../common/category/stack.category';
 
@@ -9,6 +8,12 @@ import { PrismaService } from '../../infra/prisma/prisma.service';
 
 import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
 import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+
+import {
+    UserExperienceInvalidCategoryException,
+    UserExperienceInvalidPositionException,
+    UserExperienceNotFoundExperienceException,
+} from './\bexception/userExperience.exception';
 
 import { Category } from './category/category.category';
 
@@ -47,7 +52,7 @@ export class UserExperienceService {
                 `유효하지 않은 포지션 값입니다: ${position}`,
                 'UserExperienceService',
             );
-            throw new Error(`Invalid position: ${position}`);
+            throw new UserExperienceInvalidPositionException();
         }
 
         this.logger.debug(
@@ -70,7 +75,7 @@ export class UserExperienceService {
                 `유효하지 않은 카테고리 값입니다: ${category}`,
                 'UserExperienceService',
             );
-            throw new Error(`Invalid category: ${category}`);
+            throw new UserExperienceInvalidCategoryException();
         }
 
         this.logger.debug(
@@ -217,7 +222,7 @@ export class UserExperienceService {
         if (!experience || experience.userId !== userId) {
             // 경력이 존재하지 않거나, 사용자가 소유한 경력이 아니라면 예외 발생
             this.logger.error('경험 삭제 실패', 'UserExperienceService');
-            throw new NotFoundExperienceException();
+            throw new UserExperienceNotFoundExperienceException();
         }
 
         // 소프트 딜리트: isDeleted를 true로 업데이트

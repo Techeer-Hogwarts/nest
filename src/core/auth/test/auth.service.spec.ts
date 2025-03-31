@@ -8,13 +8,16 @@ import Redis from 'ioredis';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import {
-    InvalidException,
-    NotFoundUserException,
-} from '../../../common/exception/custom.exception';
 
 import { AuthService } from '../auth.service';
 import { UserService } from '../../../core/users/user.service';
+
+import {
+    AuthInvalidCodeException,
+    AuthInvalidPasswordException,
+    AuthNotFoundUserException,
+    AuthNotTecheerException,
+} from '../exception/auth.exception';
 
 jest.mock('nodemailer');
 
@@ -155,7 +158,7 @@ describe('AuthService', () => {
 
             await expect(
                 authService.validateUser(wrongEmail, password),
-            ).rejects.toThrow(NotFoundUserException);
+            ).rejects.toThrow(AuthNotFoundUserException);
 
             expect(logger.debug).toHaveBeenCalledWith(
                 '사용자 조회',
@@ -180,7 +183,7 @@ describe('AuthService', () => {
 
             await expect(
                 authService.validateUser(email, wrongPassword),
-            ).rejects.toThrow(InvalidException);
+            ).rejects.toThrow(AuthInvalidPasswordException);
 
             expect(logger.debug).toHaveBeenCalledWith(
                 '비밀번호 불일치',
@@ -255,7 +258,7 @@ describe('AuthService', () => {
 
             await expect(
                 authService.sendVerificationEmail(email),
-            ).rejects.toThrow();
+            ).rejects.toThrow(AuthNotTecheerException);
 
             expect(logger.error).toHaveBeenCalledWith(
                 '테커 회원이 아닙니다.',
@@ -286,7 +289,7 @@ describe('AuthService', () => {
 
             await expect(
                 authService.verifyCode(email, password),
-            ).rejects.toThrow();
+            ).rejects.toThrow(AuthInvalidCodeException);
 
             expect(logger.error).toHaveBeenCalledWith(
                 expect.stringContaining('인증 코드가 일치하지 않습니다'),

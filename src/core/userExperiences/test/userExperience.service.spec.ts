@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { NotFoundExperienceException } from '../../../common/exception/custom.exception';
 import { StackCategory } from '../../../common/category/stack.category';
 
 import { PrismaService } from '../../../infra/prisma/prisma.service';
@@ -10,6 +9,12 @@ import { UserExperienceService } from '../userExperience.service';
 import { Category } from '../category/category.category';
 
 import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.reqeust';
+
+import {
+    UserExperienceInvalidCategoryException,
+    UserExperienceInvalidPositionException,
+    UserExperienceNotFoundExperienceException,
+} from '../\bexception/userExperience.exception';
 
 describe('UserExperienceService', () => {
     let service: UserExperienceService;
@@ -66,7 +71,7 @@ describe('UserExperienceService', () => {
         it('유효하지 않은 position은 예외를 던진다', () => {
             expect(() => {
                 service.validateAndNormalizePosition('Fronten');
-            }).toThrow('Invalid position: Fronten');
+            }).toThrow(UserExperienceInvalidPositionException);
             expect(logger.error).toHaveBeenCalledWith(
                 '유효하지 않은 포지션 값입니다: Fronten',
                 'UserExperienceService',
@@ -87,7 +92,7 @@ describe('UserExperienceService', () => {
         it('유효하지 않은 category는 예외를 던진다', () => {
             expect(() => {
                 service.validateCategory('Inter');
-            }).toThrow('Invalid category: Inter');
+            }).toThrow(UserExperienceInvalidCategoryException);
             expect(logger.error).toHaveBeenCalledWith(
                 '유효하지 않은 카테고리 값입니다: Inter',
                 'UserExperienceService',
@@ -245,7 +250,7 @@ describe('UserExperienceService', () => {
             );
 
             await expect(service.deleteUserExperience(1, 99)).rejects.toThrow(
-                NotFoundExperienceException,
+                UserExperienceNotFoundExperienceException,
             );
             expect(logger.error).toHaveBeenCalledWith(
                 '경험 삭제 실패',
@@ -259,7 +264,7 @@ describe('UserExperienceService', () => {
             });
 
             await expect(service.deleteUserExperience(1, 99)).rejects.toThrow(
-                NotFoundExperienceException,
+                UserExperienceNotFoundExperienceException,
             );
             expect(logger.error).toHaveBeenCalledWith(
                 '경험 삭제 실패',
