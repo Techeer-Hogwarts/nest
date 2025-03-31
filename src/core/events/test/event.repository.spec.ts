@@ -1,5 +1,4 @@
 import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { EventRepository } from '../repository/event.repository';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
     createEventRequest,

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventService } from '../event.service';
-import { EventRepository } from '../repository/event.repository';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
 import {
     createEventRequest,
     createEventResponse,
@@ -11,22 +11,22 @@ import {
     updatedEventEntity,
     updateEventRequest,
 } from './mock-data';
-import { GetEventResponse } from '../dto/response/get.event.response';
-import { EventEntity } from '../entities/event.entity';
+import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
 import { ForbiddenAccessException } from '../../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { CreateEventResponse } from '../dto/response/creare.event.response';
+import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
+import { IndexService } from 'src/infra/index/index.service';
 
 describe('EventService', (): void => {
     let service: EventService;
-    let repository: EventRepository;
+    let prismaService: PrismaService;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 EventService,
                 {
-                    provide: EventRepository,
+                    provide: PrismaService,
                     useValue: {
                         findById: jest.fn(),
                         createEvent: jest.fn(),
@@ -34,6 +34,12 @@ describe('EventService', (): void => {
                         getEvent: jest.fn(),
                         updateEvent: jest.fn(),
                         deleteEvent: jest.fn(),
+                        event: {
+                            create: jest.fn(),
+                            findMany: jest.fn(),
+                            findUnique: jest.fn(),
+                            update: jest.fn(),
+                        },
                     },
                 },
                 {
@@ -43,20 +49,63 @@ describe('EventService', (): void => {
                         error: jest.fn(),
                     },
                 },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
         service = module.get<EventService>(EventService);
-        repository = module.get<EventRepository>(EventRepository);
+        prismaService = module.get<PrismaService>(PrismaService);
     });
 
     it('should be defined', (): void => {
         expect(service).toBeDefined();
     });
 
+    describe('findById', (): void => {
+        it('should return a event when it exists', async () => {
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                eventEntity(),
+            );
+
+            const result = await service.findById(100);
+
+            expect(prismaService.event.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
+            expect(result).toEqual(eventEntity());
+        });
+
+        it('should return null when the event does not exist', async () => {
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                null,
+            );
+
+            const result = await service.findById(100);
+
+            expect(prismaService.event.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: { user: true },
+            });
+            expect(result).toBeNull();
+        });
+    });
+
     describe('createEvent', (): void => {
         it('should successfully create a event', async (): Promise<void> => {
-            jest.spyOn(repository, 'createEvent').mockResolvedValue(
+            jest.spyOn(prismaService.event, 'create').mockResolvedValue(
                 eventEntity(),
             );
 
@@ -66,17 +115,20 @@ describe('EventService', (): void => {
             );
 
             expect(result).toEqual(createEventResponse);
-            expect(repository.createEvent).toHaveBeenCalledWith(
-                1,
-                createEventRequest,
-            );
-            expect(repository.createEvent).toHaveBeenCalledTimes(1);
+            expect(prismaService.event.create).toHaveBeenCalledWith({
+                data: {
+                    userId: 1,
+                    ...createEventRequest,
+                },
+                include: { user: true },
+            });
+            expect(prismaService.event.create).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getEventList', (): void => {
         it('should return a list of GetEventResponse objects based on query', async (): Promise<void> => {
-            jest.spyOn(repository, 'getEventList').mockResolvedValue(
+            jest.spyOn(prismaService.event, 'findMany').mockResolvedValue(
                 eventEntities,
             );
 
@@ -85,9 +137,7 @@ describe('EventService', (): void => {
             );
 
             expect(result).toEqual(
-                eventEntities.map(
-                    (event: EventEntity) => new GetEventResponse(event),
-                ),
+                eventEntities.map((event) => new GetEventResponse(event)),
             );
             expect(
                 result.every(
@@ -95,22 +145,40 @@ describe('EventService', (): void => {
                         item instanceof GetEventResponse,
                 ),
             ).toBe(true);
-            expect(repository.getEventList).toHaveBeenCalledWith(
-                getEventListQueryRequest,
-            );
-            expect(repository.getEventList).toHaveBeenCalledTimes(1);
+            expect(prismaService.event.findMany).toHaveBeenCalledWith({
+                where: {
+                    isDeleted: false,
+                    ...(getEventListQueryRequest.keyword && {
+                        OR: [
+                            {
+                                title: {
+                                    contains: getEventListQueryRequest.keyword,
+                                    mode: 'insensitive',
+                                },
+                            },
+                        ],
+                    }),
+                    ...(getEventListQueryRequest.category && {
+                        category: { in: getEventListQueryRequest.category },
+                    }),
+                },
+                include: { user: true },
+                skip: getEventListQueryRequest.offset,
+                take: getEventListQueryRequest.limit,
+            });
+            expect(prismaService.event.findMany).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getEvent', (): void => {
         it('should return a GetEventResponse when a event is found', async (): Promise<void> => {
-            jest.spyOn(repository, 'getEvent').mockResolvedValue(eventEntity());
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(eventEntity());
 
             const result: GetEventResponse = await service.getEvent(1);
 
             expect(result).toEqual(getEventResponse);
             expect(result).toBeInstanceOf(GetEventResponse);
-            expect(repository.getEvent).toHaveBeenCalledTimes(1);
+            expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -118,8 +186,8 @@ describe('EventService', (): void => {
         it('should successfully update a event and return a GetEventResponse', async (): Promise<void> => {
             const event = eventEntity({ id: 100 });
 
-            jest.spyOn(repository, 'findById').mockResolvedValue(event);
-            jest.spyOn(repository, 'updateEvent').mockResolvedValue(
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
+            jest.spyOn(prismaService.event, 'update').mockResolvedValue(
                 updatedEventEntity,
             );
 
@@ -132,26 +200,25 @@ describe('EventService', (): void => {
             expect(result).toEqual(new CreateEventResponse(updatedEventEntity));
             expect(result).toBeInstanceOf(CreateEventResponse);
 
-            expect(repository.updateEvent).toHaveBeenCalledWith(
-                100,
-                updateEventRequest,
-            );
-
-            expect(repository.updateEvent).toHaveBeenCalledTimes(1);
-        });
-
-        it('should throw ForbiddenAccessException if the user does not own the event', async (): Promise<void> => {
-            const event = eventEntity({
-                id: 100,
-                userId: 2,
+            expect(prismaService.event.update).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                data: updateEventRequest,
+                include: { user: true },
             });
+            expect(prismaService.event.update).toHaveBeenCalledTimes(1);
 
-            jest.spyOn(repository, 'findById').mockResolvedValue(event);
+            it('should throw ForbiddenAccessException if the user does not own the event', async (): Promise<void> => {
+                const event = eventEntity({ id: 100, userId: 2 });
+                jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
 
-            await expect(
-                service.updateEvent(1, 100, updateEventRequest),
-            ).rejects.toThrow(ForbiddenAccessException);
-            expect(repository.findById).toHaveBeenCalledWith(100); // eventId 확인
+                await expect(
+                    service.updateEvent(1, 100, updateEventRequest),
+                ).rejects.toThrow(ForbiddenAccessException);
+                expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
+            });
         });
     });
 
@@ -159,30 +226,29 @@ describe('EventService', (): void => {
         it('should successfully delete a event', async (): Promise<void> => {
             const event = eventEntity({ id: 100 });
 
-            jest.spyOn(repository, 'findById').mockResolvedValue(event);
-            jest.spyOn(repository, 'deleteEvent').mockResolvedValue(undefined);
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
+            jest.spyOn(prismaService.event, 'update').mockResolvedValue({
+                ...eventEntity(),
+                isDeleted: true,
+            });
 
             await service.deleteEvent(1, 100);
 
-            expect(repository.findById).toHaveBeenCalledWith(100);
-            expect(repository.findById).toHaveBeenCalledTimes(1);
-
-            expect(repository.deleteEvent).toHaveBeenCalledWith(100);
-            expect(repository.deleteEvent).toHaveBeenCalledTimes(1);
+            expect(prismaService.event.update).toHaveBeenCalledWith({
+                where: { id: 100, isDeleted: false },
+                data: { isDeleted: true },
+            });
+            expect(prismaService.event.update).toHaveBeenCalledTimes(1);
         });
 
         it('should throw ForbiddenAccessException if the user does not own the event', async () => {
-            const event = eventEntity({
-                id: 100,
-                userId: 2,
-            });
-
-            jest.spyOn(repository, 'findById').mockResolvedValue(event);
+            const event = eventEntity({ id: 100, userId: 2 });
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
 
             await expect(service.deleteEvent(1, 100)).rejects.toThrow(
                 ForbiddenAccessException,
             );
-            expect(repository.findById).toHaveBeenCalledWith(100); // eventId 확인
+            expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
         });
     });
 });
