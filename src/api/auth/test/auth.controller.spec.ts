@@ -60,7 +60,7 @@ describe('AuthController', () => {
 
     describe('sendVerificationEmail', () => {
         it('이메일 인증 코드를 요청한다', async () => {
-            const dto: SendEmailCodeRequest = { email: 'user@example.com' };
+            const dto: SendEmailCodeRequest = { email: 'test@test.com' };
 
             await authController.sendVerificationEmail(dto);
 
@@ -77,7 +77,7 @@ describe('AuthController', () => {
     describe('verifyCode', () => {
         it('이메일 인증 코드를 검증한다', async () => {
             const dto: VerifyEmailCodeRequest = {
-                email: 'user@example.com',
+                email: 'test@test.com',
                 code: '123456',
             };
 
@@ -97,8 +97,8 @@ describe('AuthController', () => {
     describe('login', () => {
         it('로그인 시 토큰을 반환하고 쿠키에 설정한다', async () => {
             const dto: LoginRequest = {
-                email: 'user@example.com',
-                password: 'password',
+                email: 'test@test.com',
+                password: '123456',
             };
             const response = {
                 cookie: jest.fn(),
@@ -151,7 +151,7 @@ describe('AuthController', () => {
     describe('resetPassword', () => {
         it('이메일 인증 후 비밀번호를 변경한다', async () => {
             const dto: ResetPasswordRequest = {
-                email: 'user@example.com',
+                email: 'test@test.com',
                 code: '123456',
                 newPassword: 'newPassword',
             };
