@@ -15,8 +15,35 @@ export const createEventRequest: CreateEventRequest = {
 };
 
 export const mockEvent = (
-    overrides?: Partial<Event> & { user?: Partial<User> },
+    overrides?: Partial<Omit<Event, 'user'>> & { user?: Partial<User> },
 ): Event & { user: User } => {
+    const defaultUser: User = {
+        id: 1,
+        createdAt: new Date('2024-09-24T08:51:54.000Z'),
+        updatedAt: new Date('2024-09-24T08:51:54.000Z'),
+        isDeleted: false,
+        name: '홍길동',
+        email: 'hong@test.com',
+        nickname: 'hong123',
+        year: 2024,
+        password: '1234',
+        isLft: false,
+        githubUrl: 'github',
+        mediumUrl: 'blog',
+        velogUrl: 'blog',
+        tistoryUrl: 'blog',
+        mainPosition: 'Backend',
+        subPosition: 'DevOps',
+        school: 'Test University',
+        grade: '4학년',
+        profileImage: 'profile-image-url',
+        stack: [],
+        isAuth: true,
+        roleId: 1,
+    };
+
+    const { user: userOverrides, ...eventOverrides } = overrides || {};
+
     return {
         id: 1,
         userId: 1,
@@ -28,31 +55,11 @@ export const mockEvent = (
         createdAt: fixedDate,
         updatedAt: fixedDate,
         isDeleted: false,
+        ...eventOverrides,
         user: {
-            id: 1,
-            createdAt: new Date('2024-09-24T08:51:54.000Z'),
-            updatedAt: new Date('2024-09-24T08:51:54.000Z'),
-            isDeleted: false,
-            name: '홍길동',
-            email: 'hong@test.com',
-            nickname: 'hong123', // 예시 데이터 추가
-            year: 2024,
-            password: '1234',
-            isLft: false,
-            githubUrl: 'github',
-            mediumUrl: 'blog',
-            velogUrl: 'blog',
-            tistoryUrl: 'blog',
-            mainPosition: 'Backend',
-            subPosition: 'DevOps',
-            school: 'Test University',
-            grade: '4학년',
-            profileImage: 'profile-image-url',
-            stack: [], // 빈 배열 기본값
-            isAuth: true,
-            roleId: 1,
+            ...defaultUser,
+            ...(userOverrides || {}),
         },
-        ...overrides,
     };
 };
 

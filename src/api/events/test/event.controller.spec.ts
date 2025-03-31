@@ -1,6 +1,14 @@
+import { Request } from 'express';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EventController } from '../event.controller';
+
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+
 import { EventService } from '../../../core/events/event.service';
+
+import { EventController } from '../event.controller';
+
+import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
+
 import {
     createEventRequest,
     createEventResponse,
@@ -10,10 +18,8 @@ import {
     updatedEvent,
     updateEventRequest,
 } from './mock-data';
+
 import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
-import { Request } from 'express';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
 
 describe('EventController', () => {
     let controller: EventController;

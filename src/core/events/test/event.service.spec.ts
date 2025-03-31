@@ -4,18 +4,16 @@ import { PrismaService } from '../../../infra/prisma/prisma.service';
 import {
     createEventRequest,
     createEventResponse,
-    eventEntities,
-    eventEntity,
     getEventListQueryRequest,
     getEventResponse,
-    updatedEventEntity,
     updateEventRequest,
+    mockEvent,
 } from './mock-data';
 import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
 import { ForbiddenAccessException } from '../../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
-import { IndexService } from 'src/infra/index/index.service';
+import { IndexService } from '../../../infra/index/index.service';
 
 describe('EventService', (): void => {
     let service: EventService;
@@ -69,8 +67,10 @@ describe('EventService', (): void => {
 
     describe('findById', (): void => {
         it('should return a event when it exists', async () => {
+            const mockEventData = mockEvent();
+
             jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
-                eventEntity(),
+                mockEventData,
             );
 
             const result = await service.findById(100);
@@ -82,7 +82,7 @@ describe('EventService', (): void => {
                 },
                 include: { user: true },
             });
-            expect(result).toEqual(eventEntity());
+            expect(result).toEqual(mockEventData);
         });
 
         it('should return null when the event does not exist', async () => {
@@ -105,8 +105,10 @@ describe('EventService', (): void => {
 
     describe('createEvent', (): void => {
         it('should successfully create a event', async (): Promise<void> => {
+            const mockEventData = mockEvent();
+
             jest.spyOn(prismaService.event, 'create').mockResolvedValue(
-                eventEntity(),
+                mockEventData,
             );
 
             const result: CreateEventResponse = await service.createEvent(
@@ -128,8 +130,10 @@ describe('EventService', (): void => {
 
     describe('getEventList', (): void => {
         it('should return a list of GetEventResponse objects based on query', async (): Promise<void> => {
+            const mockEvents = [mockEvent({ id: 1 }), mockEvent({ id: 2 })];
+
             jest.spyOn(prismaService.event, 'findMany').mockResolvedValue(
-                eventEntities,
+                mockEvents,
             );
 
             const result: GetEventResponse[] = await service.getEventList(
@@ -137,7 +141,7 @@ describe('EventService', (): void => {
             );
 
             expect(result).toEqual(
-                eventEntities.map((event) => new GetEventResponse(event)),
+                mockEvents.map((event) => new GetEventResponse(event)),
             );
             expect(
                 result.every(
@@ -172,7 +176,11 @@ describe('EventService', (): void => {
 
     describe('getEvent', (): void => {
         it('should return a GetEventResponse when a event is found', async (): Promise<void> => {
-            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(eventEntity());
+            const mockEventData = mockEvent();
+
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                mockEventData,
+            );
 
             const result: GetEventResponse = await service.getEvent(1);
 
@@ -184,11 +192,19 @@ describe('EventService', (): void => {
 
     describe('updateEvent', (): void => {
         it('should successfully update a event and return a GetEventResponse', async (): Promise<void> => {
-            const event = eventEntity({ id: 100 });
+            const mockEventData = mockEvent();
 
-            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
+            const mockUpdatedEvent = {
+                ...mockEventData,
+                title: 'Updated Event',
+                description: 'Updated Description',
+            };
+
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                mockEventData,
+            );
             jest.spyOn(prismaService.event, 'update').mockResolvedValue(
-                updatedEventEntity,
+                mockUpdatedEvent,
             );
 
             const result: CreateEventResponse = await service.updateEvent(
@@ -197,7 +213,7 @@ describe('EventService', (): void => {
                 updateEventRequest,
             );
 
-            expect(result).toEqual(new CreateEventResponse(updatedEventEntity));
+            expect(result).toEqual(new CreateEventResponse(mockUpdatedEvent));
             expect(result).toBeInstanceOf(CreateEventResponse);
 
             expect(prismaService.event.update).toHaveBeenCalledWith({
@@ -209,41 +225,54 @@ describe('EventService', (): void => {
                 include: { user: true },
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
+        });
 
-            it('should throw ForbiddenAccessException if the user does not own the event', async (): Promise<void> => {
-                const event = eventEntity({ id: 100, userId: 2 });
-                jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
+        it('should throw ForbiddenAccessException if the user does not own the event', async (): Promise<void> => {
+            const mockEventData = mockEvent({ userId: 2 });
 
-                await expect(
-                    service.updateEvent(1, 100, updateEventRequest),
-                ).rejects.toThrow(ForbiddenAccessException);
-                expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
-            });
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                mockEventData,
+            );
+
+            await expect(
+                service.updateEvent(1, 100, updateEventRequest),
+            ).rejects.toThrow(ForbiddenAccessException);
+            expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('deleteEvent', (): void => {
         it('should successfully delete a event', async (): Promise<void> => {
-            const event = eventEntity({ id: 100 });
+            const mockEventData = mockEvent();
 
-            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                mockEventData,
+            );
             jest.spyOn(prismaService.event, 'update').mockResolvedValue({
-                ...eventEntity(),
+                ...mockEventData,
                 isDeleted: true,
             });
 
             await service.deleteEvent(1, 100);
 
             expect(prismaService.event.update).toHaveBeenCalledWith({
-                where: { id: 100, isDeleted: false },
-                data: { isDeleted: true },
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                data: {
+                    isDeleted: true,
+                },
             });
             expect(prismaService.event.update).toHaveBeenCalledTimes(1);
         });
 
         it('should throw ForbiddenAccessException if the user does not own the event', async () => {
-            const event = eventEntity({ id: 100, userId: 2 });
-            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(event);
+            const mockEventData = mockEvent({ userId: 2 });
+
+            jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
+                mockEventData,
+            );
 
             await expect(service.deleteEvent(1, 100)).rejects.toThrow(
                 ForbiddenAccessException,
