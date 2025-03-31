@@ -256,10 +256,6 @@ describe('UserExperienceService', () => {
                 '경험 삭제 실패',
                 'UserExperienceService',
             );
-            expect(logger.error).toHaveBeenCalledWith(
-                '경험 삭제 실패',
-                'UserExperienceService',
-            );
         });
 
         it('사용자의 경력이 아닐 경우 예외를 던진다', async () => {
@@ -269,10 +265,6 @@ describe('UserExperienceService', () => {
 
             await expect(service.deleteUserExperience(1, 99)).rejects.toThrow(
                 UserExperienceNotFoundExperienceException,
-            );
-            expect(logger.error).toHaveBeenCalledWith(
-                '경험 삭제 실패',
-                'UserExperienceService',
             );
             expect(logger.error).toHaveBeenCalledWith(
                 '경험 삭제 실패',
