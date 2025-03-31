@@ -25,123 +25,179 @@ describe('AuthService', () => {
     let jwtService: Partial<Record<keyof JwtService, jest.Mock>>;
     let httpService: Partial<Record<keyof HttpService, jest.Mock>>;
     let configService: Partial<Record<keyof ConfigService, jest.Mock>>;
-    let transporterMock: { sendMail: jest.Mock };
+    let transporter: nodemailer.Transporter;
+    let logger: CustomWinstonLogger;
 
     beforeEach(async () => {
-        userService = {
-            findOneByEmail: jest.fn(),
-            updatePassword: jest.fn(),
-        };
-        redisClient = {
+        const mockRedisClient = {
             set: jest.fn(),
             get: jest.fn(),
             del: jest.fn(),
         };
-        jwtService = {
-            sign: jest.fn(),
-        };
-        httpService = {
-            post: jest.fn(),
-        };
-        configService = {
-            get: jest.fn().mockReturnValue('mockValue'),
-        };
-        transporterMock = {
-            sendMail: jest.fn(),
+
+        const mockConfigService = {
+            get: jest.fn((key: string) => {
+                if (key === 'EMAIL_USER') return 'test@test.com';
+                if (key === 'EMAIL_PASS') return 'password';
+                return null;
+            }),
         };
 
+        const mockHttpService = {
+            post: jest.fn().mockReturnValue(
+                of({
+                    status: 200,
+                    data: {
+                        image: 'http://example.com/image.jpg',
+                        isTecheer: true,
+                    },
+                }),
+            ),
+        };
+
+        const mockTransporter = {
+            sendMail: jest.fn(),
+        };
         (nodemailer.createTransport as jest.Mock).mockReturnValue(
-            transporterMock,
+            mockTransporter,
         );
+
+        const mockJwtService = {
+            sign: jest.fn().mockReturnValue('mockToken'),
+            verify: jest.fn().mockReturnValue({ id: 1 }),
+        };
+
+        const mockUserService = {
+            findOneByEmail: jest.fn(),
+            updatePassword: jest.fn(),
+        };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 AuthService,
                 {
                     provide: 'REDIS_CLIENT',
-                    useValue: redisClient,
+                    useValue: mockRedisClient,
                 },
                 {
                     provide: ConfigService,
-                    useValue: configService,
+                    useValue: mockConfigService,
                 },
                 {
                     provide: JwtService,
-                    useValue: jwtService,
+                    useValue: mockJwtService,
                 },
                 {
                     provide: UserService,
-                    useValue: userService,
+                    useValue: mockUserService,
                 },
                 {
                     provide: HttpService,
-                    useValue: httpService,
+                    useValue: mockHttpService,
                 },
                 {
                     provide: CustomWinstonLogger,
                     useValue: {
-                        debug: jest.fn(),
-                        error: jest.fn(),
                         log: jest.fn(),
+                        error: jest.fn(),
+                        debug: jest.fn(),
                     },
                 },
             ],
         }).compile();
 
         authService = module.get<AuthService>(AuthService);
+        redisClient = mockRedisClient;
+        userService = mockUserService;
+        jwtService = mockJwtService;
+        httpService = mockHttpService;
+        configService = mockConfigService;
+        transporter = mockTransporter;
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
+    });
+
+    it('정의되어 있어야 한다', () => {
+        expect(authService).toBeDefined();
+        expect(redisClient).toBeDefined();
+        expect(configService).toBeDefined();
+        expect(transporter).toBeDefined();
     });
 
     describe('validateUser', () => {
+        const email = 'test@test.com';
+        const password = '123456';
+
         it('이메일과 비밀번호가 일치하면 사용자 정보를 반환한다', async () => {
-            const password = 'password';
             const hashedPassword = await bcrypt.hash(password, 10);
 
             const mockUser = {
-                email: 'user@example.com',
+                email,
                 password: hashedPassword,
             };
             userService.findOneByEmail!.mockResolvedValue(mockUser);
 
-            const result = await authService.validateUser(
-                'user@example.com',
-                password,
-            );
+            const result = await authService.validateUser(email, password);
 
             expect(result).toBe(mockUser);
+            expect(logger.debug).toHaveBeenCalledWith(
+                '사용자 조회',
+                'AuthService',
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '사용자 인증 완료',
+                'AuthService',
+            );
         });
 
         it('사용자를 찾을 수 없으면 예외를 던진다', async () => {
+            const wrongEmail = 'wrong@example.com';
             userService.findOneByEmail!.mockResolvedValue(null);
 
             await expect(
-                authService.validateUser('wrong@example.com', 'password'),
+                authService.validateUser(wrongEmail, password),
             ).rejects.toThrow(NotFoundUserException);
+
+            expect(logger.debug).toHaveBeenCalledWith(
+                '사용자 조회',
+                'AuthService',
+            );
+
+            expect(logger.error).toHaveBeenCalledWith(
+                '사용자를 찾을 수 없습니다.',
+                'AuthService',
+            );
         });
 
         it('비밀번호가 일치하지 않으면 예외를 던진다', async () => {
-            const password = 'password';
             const wrongPassword = 'wrongPassword';
             const hashedPassword = await bcrypt.hash(password, 10);
 
             const mockUser = {
-                email: 'user@example.com',
+                email,
                 password: hashedPassword,
             };
             userService.findOneByEmail!.mockResolvedValue(mockUser);
 
             await expect(
-                authService.validateUser('user@example.com', wrongPassword),
+                authService.validateUser(email, wrongPassword),
             ).rejects.toThrow(InvalidException);
+
+            expect(logger.debug).toHaveBeenCalledWith(
+                '비밀번호 불일치',
+                'AuthService',
+            );
         });
     });
 
     describe('login', () => {
+        const email = 'test@test.com';
+        const password = '123456';
+
         it('로그인 성공 시 accessToken, refreshToken을 반환한다', async () => {
-            const password = 'password';
             const hashedPassword = await bcrypt.hash(password, 10);
 
             const mockUser = {
-                email: 'user@example.com',
+                email,
                 password: hashedPassword,
             };
             userService.findOneByEmail!.mockResolvedValue(mockUser);
@@ -149,19 +205,23 @@ describe('AuthService', () => {
                 .sign!.mockReturnValueOnce('accessToken')
                 .mockReturnValueOnce('refreshToken');
 
-            const result = await authService.login(
-                'user@example.com',
-                password,
-            );
+            const result = await authService.login(email, password);
 
             expect(result).toEqual({
                 accessToken: 'accessToken',
                 refreshToken: 'refreshToken',
             });
+
+            expect(logger.debug).toHaveBeenCalledWith(
+                '토큰 생성을 완료했습니다.',
+                'AuthService',
+            );
         });
     });
 
     describe('sendVerificationEmail', () => {
+        const email = 'test@test.com';
+
         it('테커인 경우 인증 메일을 전송한다', async () => {
             httpService.post!.mockReturnValue(
                 of({
@@ -173,10 +233,14 @@ describe('AuthService', () => {
             );
             redisClient.set!.mockResolvedValue('OK');
 
-            await authService.sendVerificationEmail('user@example.com');
+            await authService.sendVerificationEmail(email);
 
-            expect(transporterMock.sendMail).toHaveBeenCalled();
+            expect(transporter.sendMail).toHaveBeenCalled();
             expect(redisClient.set).toHaveBeenCalled();
+            expect(logger.debug).toHaveBeenCalledWith(
+                '이메일 전송 완료',
+                'AuthService',
+            );
         });
 
         it('테커가 아닌 경우 예외를 던진다', async () => {
@@ -190,36 +254,50 @@ describe('AuthService', () => {
             );
 
             await expect(
-                authService.sendVerificationEmail('user@example.com'),
+                authService.sendVerificationEmail(email),
             ).rejects.toThrow();
+
+            expect(logger.error).toHaveBeenCalledWith(
+                '테커 회원이 아닙니다.',
+                'AuthService',
+            );
         });
     });
 
     describe('verifyCode', () => {
+        const email = 'test@test.com';
+        const password = '123456';
+
         it('코드가 일치하면 인증에 성공한다', async () => {
             redisClient.get!.mockResolvedValue('123456');
             redisClient.del!.mockResolvedValue(1);
             redisClient.set!.mockResolvedValue('OK');
 
-            const result = await authService.verifyCode(
-                'user@example.com',
-                '123456',
-            );
+            const result = await authService.verifyCode(email, password);
             expect(result).toBe(true);
+            expect(logger.debug).toHaveBeenCalledWith(
+                '인증 코드 확인 완료',
+                'AuthService',
+            );
         });
 
         it('코드가 일치하지 않으면 예외를 던진다', async () => {
             redisClient.get!.mockResolvedValue('111111');
 
             await expect(
-                authService.verifyCode('user@example.com', '123456'),
+                authService.verifyCode(email, password),
             ).rejects.toThrow();
+
+            expect(logger.error).toHaveBeenCalledWith(
+                expect.stringContaining('인증 코드가 일치하지 않습니다'),
+                'AuthService',
+            );
         });
     });
 
     describe('resetPassword', () => {
         it('이메일 인증 후 비밀번호를 변경한다', async () => {
-            const email = 'user@example.com';
+            const email = 'test@test.com';
             const code = '123456';
             const newPassword = 'newPassword';
 
@@ -231,38 +309,56 @@ describe('AuthService', () => {
 
             expect(verifySpy).toHaveBeenCalledWith(email, code);
             expect(userService.updatePassword).toHaveBeenCalled();
+            expect(logger.debug).toHaveBeenCalledWith(
+                '비밀번호 재설정',
+                'AuthService',
+            );
         });
     });
 
     describe('checkIfVerified', () => {
+        const email = 'test@test.com';
+
         it('인증된 이메일이면 true를 반환한다', async () => {
             redisClient.get!.mockResolvedValue('true');
 
-            const result =
-                await authService.checkIfVerified('user@example.com');
+            const result = await authService.checkIfVerified(email);
 
             expect(result).toBe(true);
+            expect(logger.debug).toHaveBeenCalledWith(
+                '이메일 인증 확인',
+                'AuthService',
+            );
         });
 
         it('인증되지 않은 이메일이면 false를 반환한다', async () => {
             redisClient.get!.mockResolvedValue(null);
 
-            const result =
-                await authService.checkIfVerified('user@example.com');
+            const result = await authService.checkIfVerified(email);
 
             expect(result).toBe(false);
+            expect(logger.debug).toHaveBeenCalledWith(
+                '이메일 인증 확인',
+                'AuthService',
+            );
         });
     });
 
     describe('markAsVerified', () => {
+        const email = 'test@test.com';
+
         it('인증 상태를 Redis에 저장한다', async () => {
-            await authService.markAsVerified('user@example.com');
+            await authService.markAsVerified(email);
 
             expect(redisClient.set).toHaveBeenCalledWith(
-                'verified_user@example.com',
+                'verified_test@test.com',
                 'true',
                 'EX',
                 6000,
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '이메일 인증 완료',
+                'AuthService',
             );
         });
     });
