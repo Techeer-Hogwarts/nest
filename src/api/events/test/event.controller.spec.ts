@@ -1,19 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventController } from '../event.controller';
-import { EventService } from '../event.service';
+import { EventService } from '../../../core/events/event.service';
 import {
     createEventRequest,
     createEventResponse,
     getEventListQueryRequest,
     getEventListResponse,
     getEventResponse,
-    updatedEventEntity,
+    updatedEvent,
     updateEventRequest,
 } from './mock-data';
-import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
 import { Request } from 'express';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { CreateEventResponse } from '../dto/response/creare.event.response';
+import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
 
 describe('EventController', () => {
     let controller: EventController;
@@ -110,7 +110,7 @@ describe('EventController', () => {
     describe('updateEvent', (): void => {
         it('should successfully update a event', async (): Promise<void> => {
             jest.spyOn(service, 'updateEvent').mockResolvedValue(
-                new CreateEventResponse(updatedEventEntity),
+                new CreateEventResponse(updatedEvent),
             );
 
             const request = { user: { id: 1 } } as unknown as Request;
@@ -120,7 +120,7 @@ describe('EventController', () => {
                 request,
             );
 
-            expect(result).toEqual(new CreateEventResponse(updatedEventEntity));
+            expect(result).toEqual(new CreateEventResponse(updatedEvent));
             expect(service.updateEvent).toHaveBeenCalledWith(
                 1,
                 100,

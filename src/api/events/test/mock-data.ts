@@ -1,8 +1,8 @@
-import { CreateEventRequest } from '../dto/request/create.event.request';
-import { GetEventListQueryRequest } from '../dto/request/get.event.query.request';
-import { CreateEventResponse } from '../dto/response/creare.event.response';
-import { GetEventResponse } from '../dto/response/get.event.response';
-import { EventEntity } from '../entities/event.entity';
+import { CreateEventRequest } from '../../../common/dto/events/request/create.event.request';
+import { GetEventListQueryRequest } from '../../../common/dto/events/request/get.event.query.request';
+import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
+import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
+import { Event, User } from '@prisma/client';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
 
@@ -14,7 +14,9 @@ export const createEventRequest: CreateEventRequest = {
     url: 'https://example.com',
 };
 
-export const eventEntity = (overrides?: Partial<EventEntity>): EventEntity => {
+export const mockEvent = (
+    overrides?: Partial<Event> & { user?: Partial<User> },
+): Event & { user: User } => {
     return {
         id: 1,
         userId: 1,
@@ -55,20 +57,20 @@ export const eventEntity = (overrides?: Partial<EventEntity>): EventEntity => {
 };
 
 export const createEventResponse: CreateEventResponse = new CreateEventResponse(
-    eventEntity(),
+    mockEvent(),
 );
 
 export const getEventResponse: GetEventResponse = new GetEventResponse(
-    eventEntity(),
+    mockEvent(),
 );
 
-export const eventEntities: EventEntity[] = [
-    eventEntity({ id: 1 }),
-    eventEntity({ id: 2 }),
+export const eventList: (Event & { user: User })[] = [
+    mockEvent({ id: 1 }),
+    mockEvent({ id: 2 }),
 ];
 
-export const getEventListResponse: GetEventResponse[] = eventEntities.map(
-    (event: EventEntity) => new GetEventResponse(event),
+export const getEventListResponse: GetEventResponse[] = eventList.map(
+    (event) => new GetEventResponse(event),
 );
 
 export const getEventListQueryRequest: GetEventListQueryRequest = {
@@ -86,6 +88,6 @@ export const updateEventRequest: CreateEventRequest = {
     url: 'https://example.com/update',
 };
 
-export const updatedEventEntity: EventEntity = eventEntity({
+export const updatedEvent: Event & { user: User } = mockEvent({
     ...updateEventRequest,
 });
