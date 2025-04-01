@@ -33,8 +33,8 @@ export const ErrorCode = {
         status: HttpStatus.NOT_FOUND,
         message: '프로필 이미지를 찾을 수 없습니다.',
     },
-    AUTH_NOT_TECHER: {
-        code: 'AUTH_NOT_TECHER',
+    AUTH_NOT_TECHEER: {
+        code: 'AUTH_NOT_TECHEER',
         status: HttpStatus.BAD_REQUEST,
         message: '테커 회원이 아닙니다.',
     },

@@ -4,7 +4,6 @@ import { UpdateUserRequest } from '../../common/dto/users/request/update.user.re
 import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
 import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
 import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
-import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.reqeust';
 import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
 import * as bcrypt from 'bcryptjs';
 import { HttpService } from '@nestjs/axios';
@@ -35,6 +34,7 @@ import { StackCategory } from '../../common/category/stack.category';
 import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
 import { normalizeString } from '../../common/category/normalize';
 import { UserExperienceService } from '../userExperiences/userExperience.service';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];

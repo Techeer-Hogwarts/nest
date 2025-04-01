@@ -4,8 +4,8 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LoginRequest } from '../../common/dto/auth/request/login.request';
 import { ResetPasswordRequest } from '../../common/dto/auth/request/reset.password.request';
 import { SendEmailCodeRequest } from '../../common/dto/auth/request/send.emailCode.request';
-import { VerifyEmailCodeRequest } from '../../common/dto/auth/request/verfiy.emailCode.request';
-import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
+import { VerifyEmailCodeRequest } from '../../common/dto/auth/request/verify.emailCode.request';
+import { LoginResponse } from '../../common/dto/auth/response/login.response';
 
 export function SendEmailVerificationEmailDoc(): MethodDecorator {
     return applyDecorators(

@@ -39,6 +39,6 @@ export class AuthProfileImageNotFoundException extends BaseException {
 
 export class AuthNotTecheerException extends BaseException {
     constructor() {
-        super(ErrorCode.AUTH_NOT_TECHER);
+        super(ErrorCode.AUTH_NOT_TECHEER);
     }
 }

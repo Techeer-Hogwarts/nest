@@ -13,7 +13,7 @@ import { User } from '@prisma/client';
 
 import { UserService } from '../users/user.service';
 
-import { LoginResponse } from '../../common/dto/auth/response/login.reponse';
+import { LoginResponse } from '../../common/dto/auth/response/login.response';
 
 import {
     AuthInvalidCodeException,

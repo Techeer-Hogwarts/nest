@@ -13,7 +13,7 @@ import {
     UserExperienceInvalidCategoryException,
     UserExperienceInvalidPositionException,
     UserExperienceNotFoundExperienceException,
-} from './\bexception/userExperience.exception';
+} from './exception/userExperience.exception';
 
 import { UserExperienceEmployment } from './category/userExperienceEmployment';
 
