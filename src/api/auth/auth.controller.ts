@@ -47,7 +47,7 @@ export class AuthController {
         @Body() verifyEmailCodeRequest: VerifyEmailCodeRequest,
     ): Promise<void> {
         const { email, code } = verifyEmailCodeRequest;
-        this.authService.verifyCode(email, code);
+        await this.authService.verifyCode(email, code);
         this.logger.debug('이메일 인증이 완료되었습니다.', AuthController.name);
     }
 
