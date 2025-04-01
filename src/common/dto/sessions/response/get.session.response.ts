@@ -15,8 +15,9 @@ export class GetSessionResponse {
     readonly viewCount: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;
+    readonly nickname: string | null; // nullable 타입 반영
 
-    constructor(session: Session) {
+    constructor(session: Session & { user?: { nickname?: string | null } }) {
         this.id = session.id;
         this.userId = session.userId;
         this.thumbnail = session.thumbnail;
@@ -31,5 +32,6 @@ export class GetSessionResponse {
         this.viewCount = session.viewCount;
         this.createdAt = session.createdAt;
         this.updatedAt = session.updatedAt;
+        this.nickname = session.user?.nickname ?? null; // 안전한 null 처리
     }
 }
