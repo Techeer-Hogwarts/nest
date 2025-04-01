@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { LikeRepository } from './repository/like.repository';
-import { SessionEntity } from '../sessions/entities/session.entity';
+import { Session, User } from '@prisma/client';
 import { BlogEntity } from '../blogs/entities/blog.entity';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
@@ -58,17 +58,16 @@ export class LikeService {
     > {
         switch (getLikeListRequest.category) {
             case 'SESSION': {
-                const contents: SessionEntity[] =
-                    await this.likeRepository.getLikeList<SessionEntity>(
-                        userId,
-                        getLikeListRequest,
-                    );
+                const contents = await this.likeRepository.getLikeList<Session & { user: User }>(
+                    userId,
+                    getLikeListRequest,
+                );
                 this.logger.debug(
                     `${contents.length}개의 세션 좋아요 목록 조회 성공 후 GetSessionResponse로 변환 중`,
                     LikeService.name,
                 );
                 return contents.map(
-                    (content: SessionEntity) => new GetSessionResponse(content),
+                    (content) => new GetSessionResponse(content),
                 );
             }
             case 'BLOG': {
