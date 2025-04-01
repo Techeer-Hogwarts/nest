@@ -14,7 +14,7 @@ import { CreateEventRequest } from '../../common/dto/events/request/create.event
 import { GetEventListQueryRequest } from '../../common/dto/events/request/get.event.query.request';
 import { IndexEventRequest } from '../../common/dto/events/request/index.event.request';
 
-import { CreateEventResponse } from '../../common/dto/events/response/creare.event.response';
+import { CreateEventResponse } from '../../common/dto/events/response/create.event.response';
 import { GetEventResponse } from '../../common/dto/events/response/get.event.response';
 
 @Injectable()

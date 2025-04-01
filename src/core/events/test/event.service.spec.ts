@@ -12,7 +12,7 @@ import {
 import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
 import { ForbiddenAccessException } from '../../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { CreateEventResponse } from '../../../common/dto/events/response/creare.event.response';
+import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
 import { IndexService } from '../../../infra/index/index.service';
 
 describe('EventService', (): void => {
