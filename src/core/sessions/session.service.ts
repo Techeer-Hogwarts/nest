@@ -247,6 +247,13 @@ export class SessionService {
         this.logger.debug(`세션 게시물 수정 중`, SessionService.name);
 
         const session = await this.findById(sessionId);
+        if (!session) {
+            this.logger.error(
+                '세션 게시물을 찾을 수 없음',
+                SessionService.name,
+            );
+            throw new NotFoundSessionException();
+        }
 
         if (session.userId !== userId) {
             this.logger.error(
