@@ -8,6 +8,8 @@ export class IndexSessionRequest {
     readonly thumbnail: string;
     readonly title: string;
     readonly viewCount: string;
+    readonly videoUrl: string | null;
+    readonly fileUrl: string | null;
 
     constructor(session: Session) {
         this.date = session.date;
@@ -17,5 +19,7 @@ export class IndexSessionRequest {
         this.thumbnail = session.thumbnail;
         this.title = session.title;
         this.viewCount = String(session.viewCount);
+        this.videoUrl = session.videoUrl;
+        this.fileUrl = session.fileUrl;
     }
 }

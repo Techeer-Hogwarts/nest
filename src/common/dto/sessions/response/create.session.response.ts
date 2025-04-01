@@ -9,8 +9,8 @@ export class CreateSessionResponse {
     readonly date: string;
     readonly position: string;
     readonly category: string;
-    readonly videoUrl: string;
-    readonly fileUrl: string;
+    readonly videoUrl: string | null;
+    readonly fileUrl: string | null;
     readonly likeCount: number;
     readonly viewCount: number;
 
