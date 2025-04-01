@@ -1,5 +1,4 @@
-import { Session } from '@prisma/client';
-import { User } from '@prisma/client';
+import { Session, User } from '@prisma/client';
 
 export class GetSessionResponse {
     readonly id: number;
@@ -14,8 +13,13 @@ export class GetSessionResponse {
     readonly fileUrl: string;
     readonly likeCount: number;
     readonly viewCount: number;
-
-    readonly user: { name: string; nickname: string; profileImage: string };
+    readonly createdAt: Date;
+    readonly updatedAt: Date;
+    readonly user: {
+        readonly name: string;
+        readonly nickname: string;
+        readonly profileImage: string;
+    };
 
     constructor(session: Session & { user: User }) {
         this.id = session.id;
@@ -30,7 +34,8 @@ export class GetSessionResponse {
         this.fileUrl = session.fileUrl;
         this.likeCount = session.likeCount;
         this.viewCount = session.viewCount;
-
+        this.createdAt = session.createdAt;
+        this.updatedAt = session.updatedAt;
         this.user = {
             name: session.user.name,
             nickname: session.user.nickname,
