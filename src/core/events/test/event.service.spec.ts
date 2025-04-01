@@ -85,7 +85,7 @@ describe('EventService', (): void => {
             expect(result).toEqual(mockEventData);
         });
 
-        it('should return null when the event does not exist', async () => {
+        it('should throw NotFoundEventException when the event does not exist', async () => {
             jest.spyOn(prismaService.event, 'findUnique').mockResolvedValue(
                 null,
             );
