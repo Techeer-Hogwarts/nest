@@ -25,7 +25,7 @@ export class EventService {
         private readonly indexService: IndexService,
     ) {}
 
-    private async findById(eventId: number): Promise<Event & { user: any }> {
+    async findById(eventId: number): Promise<Event & { user: any }> {
         const event = await this.prisma.event.findUnique({
             where: {
                 id: eventId,
