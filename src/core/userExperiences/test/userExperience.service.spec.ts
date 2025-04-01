@@ -6,7 +6,7 @@ import { StackCategory } from '../../../common/category/stack.category';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { UserExperienceService } from '../userExperience.service';
 
-import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.list.request';
+import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
 
 import {
     UserExperienceInvalidCategoryException,
