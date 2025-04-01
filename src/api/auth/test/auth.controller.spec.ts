@@ -98,7 +98,7 @@ describe('AuthController', () => {
         it('로그인 시 토큰을 반환하고 쿠키에 설정한다', async () => {
             const dto: LoginRequest = {
                 email: 'test@test.com',
-                password: 'Password1!',
+                password: '123456',
             };
             const response = {
                 cookie: jest.fn(),
