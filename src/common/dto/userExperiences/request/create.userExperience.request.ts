@@ -37,6 +37,13 @@ export class CreateUserExperienceRequest {
     })
     readonly endDate: string;
 
+    @IsOptional()
+    @ApiProperty({
+        example: true,
+        description: '경력 종료 여부',
+    })
+    readonly isFinished?: boolean;
+
     @IsString()
     @ApiProperty({
         example: '인턴',

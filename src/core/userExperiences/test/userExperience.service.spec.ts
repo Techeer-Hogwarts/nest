@@ -6,13 +6,13 @@ import { StackCategory } from '../../../common/category/stack.category';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { UserExperienceService } from '../userExperience.service';
 
-import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.reqeust';
+import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.list.request';
 
 import {
     UserExperienceInvalidCategoryException,
     UserExperienceInvalidPositionException,
     UserExperienceNotFoundExperienceException,
-} from '../\bexception/userExperience.exception';
+} from '../exception/userExperience.exception';
 
 import { UserExperienceEmployment } from '../category/userExperienceEmployment';
 

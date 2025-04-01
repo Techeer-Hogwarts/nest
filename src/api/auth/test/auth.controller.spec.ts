@@ -13,7 +13,7 @@ import { AuthController } from '../auth.controller';
 import { LoginRequest } from '../../../common/dto/auth/request/login.request';
 import { ResetPasswordRequest } from '../../../common/dto/auth/request/reset.password.request';
 import { SendEmailCodeRequest } from '../../../common/dto/auth/request/send.emailCode.request';
-import { VerifyEmailCodeRequest } from '../../../common/dto/auth/request/verfiy.emailCode.request';
+import { VerifyEmailCodeRequest } from '../../../common/dto/auth/request/verify.emailCode.request';
 
 class MockJwtAuthGuard implements CanActivate {
     canActivate(): boolean {
