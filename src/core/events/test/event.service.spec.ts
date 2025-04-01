@@ -1,6 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
+import { ForbiddenAccessException } from '../../../common/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+
 import { EventService } from '../event.service';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { IndexService } from '../../../infra/index/index.service';
+
+import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
+import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
+
 import {
     createEventRequest,
     createEventResponse,
@@ -8,12 +17,7 @@ import {
     getEventResponse,
     updateEventRequest,
     mockEvent,
-} from './mock-data';
-import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
-import { ForbiddenAccessException } from '../../../common/exception/custom.exception';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
-import { IndexService } from '../../../infra/index/index.service';
+} from '../../../api/events/test/mock-data';
 
 describe('EventService', (): void => {
     let service: EventService;
