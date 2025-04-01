@@ -128,7 +128,7 @@ describe('AuthService', () => {
 
     describe('validateUser', () => {
         const email = 'test@test.com';
-        const password = '123456';
+        const password = 'Password1!';
 
         it('이메일과 비밀번호가 일치하면 사용자 정보를 반환한다', async () => {
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -194,7 +194,7 @@ describe('AuthService', () => {
 
     describe('login', () => {
         const email = 'test@test.com';
-        const password = '123456';
+        const password = 'Password1!';
 
         it('로그인 성공 시 accessToken, refreshToken을 반환한다', async () => {
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -269,7 +269,7 @@ describe('AuthService', () => {
 
     describe('verifyCode', () => {
         const email = 'test@test.com';
-        const password = '123456';
+        const password = 'Password1!';
 
         it('코드가 일치하면 인증에 성공한다', async () => {
             redisClient.get!.mockResolvedValue('123456');
