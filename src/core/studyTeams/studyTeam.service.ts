@@ -35,11 +35,12 @@ import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
 
 import { AlertServcie } from '../alert/alert.service';
 import { StudyMemberService } from '../studyMembers/studyMember.service';
-
 import {
     mapToStudyAlertPayload,
-    mapToStudyLeaderAlertPayload,
-} from './mapper/StudyTeamMapper';
+    mapToTeamLeaderAlertPayload,
+} from '../../common/mapper/slack.mapper';
+import { TeamType } from '../../common/category/teamCategory/teamType';
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
 
 @Injectable()
 export class StudyTeamService {
@@ -97,7 +98,7 @@ export class StudyTeamService {
         this.logger.debug('스터디 팀 생성: user 확인 완료');
 
         /** 2. 파일 업로드 처리 **/
-        const resultImageUrls = await this.processImagesUploadToS3(
+        const resultImageUrls = await this.awsService.uploadImagesToS3(
             files,
             'study-teams',
             'study-team',
@@ -224,21 +225,6 @@ export class StudyTeamService {
         }
     }
 
-    private async processImagesUploadToS3(
-        files: Express.Multer.File[],
-        folderName: string,
-        urlPrefix: string,
-    ): Promise<string[]> {
-        if (!files || files.length < 1) {
-            return [];
-        }
-        return await this.awsService.uploadImagesToS3(
-            files,
-            folderName,
-            urlPrefix,
-        );
-    }
-
     /** 스터디 지원자 조회 **/
     async getApplicants(
         studyTeamId: number,
@@ -319,7 +305,7 @@ export class StudyTeamService {
             let imageUrls: string[] = [];
             try {
                 if (files.length > 0) {
-                    imageUrls = await this.processImagesUploadToS3(
+                    imageUrls = await this.awsService.uploadImagesToS3(
                         files,
                         'study-teams',
                         'study-team',
@@ -844,12 +830,13 @@ export class StudyTeamService {
         this.logger.debug('스터디 지원: 지원자 업데이트 완료');
 
         // 지원 생성 후, 리더들에게 지원 알림 전송 (지원 상태: PENDING)
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             user.email,
-            StudyMemberStatus.PENDING,
+            MemberStatus.PENDING,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -908,12 +895,13 @@ export class StudyTeamService {
 
         /** 스터디 리더들에게 지원 취소 슬랙 전송 **/
         const studyTeamLeaders = studyTeam.studyMember;
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             user.email,
-            StudyMemberStatus.CANCELLED,
+            MemberStatus.CANCELLED,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -1055,12 +1043,13 @@ export class StudyTeamService {
             await this.studyMemberService.getAllStudyLeadersEmailByTeamId(
                 studyTeamId,
             );
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             applicantEmail.email,
-            StudyMemberStatus.CANCELLED,
+            MemberStatus.CANCELLED,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -1079,7 +1068,7 @@ export class StudyTeamService {
         applicantId: number,
     ): Promise<StudyApplicantResponse> {
         /** 예외 종류
-         * 1. active 멤버만 지원자 거절할 수 있다.(isDelete: true, status: APPROVED)
+         * 1. active 멤버만 지원자 거절할 수 있다.(isDelete: false, status: APPROVED)
          * 2. 이미 APPROVED 상태이면 거절할 수 없다.
          * 3. 이미 지원 취소한 상태(isDeleted: true)이면 거절할 수 없다.
          * 4. 이미 거절한 상태(status: REJECT)이면 거절할 수 없다.
@@ -1134,12 +1123,13 @@ export class StudyTeamService {
         });
 
         const studyTeamLeaders = studyTeam.studyMember;
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             applicant.email,
-            StudyMemberStatus.CANCELLED,
+            MemberStatus.CANCELLED,
         );
         await Promise.all(
             alertPayloads.map((payload) =>

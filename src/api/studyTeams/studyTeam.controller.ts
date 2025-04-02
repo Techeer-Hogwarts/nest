@@ -14,7 +14,6 @@ import { Request } from 'express';
 import { ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
-import { validate } from 'class-validator';
 import { StudyTeamService } from '../../core/studyTeams/studyTeam.service';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
@@ -23,17 +22,15 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
-import {
-    StudyTeamBadRequestException,
-    StudyTeamInvalidUserException,
-} from '../../core/studyTeams/exception/studyTeam.exception';
-import {
-    plainToCreateStudyTeamRequest,
-    plainToUpdateStudyTeamRequest,
-} from '../../core/studyTeams/mapper/StudyTeamMapper';
+import { StudyTeamInvalidUserException } from '../../core/studyTeams/exception/studyTeam.exception';
+
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
 import { UpdateApplicantStatusRequest } from '../../common/dto/studyTeams/request/update.applicantStatus.request';
 import { AddMemberToStudyTeamRequest } from '../../common/dto/studyMembers/request/add.studyMember.request';
+import { plainToInstance } from 'class-transformer';
+import { UpdateStudyTeamRequest } from '../../common/dto/studyTeams/request/update.studyTeam.request';
+import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
+import { validateDtoFields } from '../../common/validation/plainDto.validation';
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
 export class StudyTeamController {
@@ -104,10 +101,11 @@ export class StudyTeamController {
         }
         this.logger.debug('스터디 팀 생성: request user 확인 완료');
 
-        const createRequest = plainToCreateStudyTeamRequest(
-            createStudyTeamRequest,
+        const createRequest = plainToInstance(
+            CreateStudyTeamRequest,
+            JSON.parse(createStudyTeamRequest),
         );
-        await this.validateDtoFields(createRequest);
+        await validateDtoFields(createRequest);
         this.logger.debug('스터디 팀 생성: body dto 검증 완료');
 
         return await this.studyTeamService.createStudyTeam(
@@ -180,10 +178,11 @@ export class StudyTeamController {
         }
         this.logger.debug('스터디 팀 업데이트: request user 확인 완료');
 
-        const updateRequest = plainToUpdateStudyTeamRequest(
-            updateStudyTeamRequest,
+        const updateRequest = plainToInstance(
+            UpdateStudyTeamRequest,
+            JSON.parse(updateStudyTeamRequest),
         );
-        await this.validateDtoFields(updateRequest);
+        await validateDtoFields(updateRequest);
         this.logger.debug('스터디 팀 업데이트: body dto 확인 완료');
 
         return await this.studyTeamService.updateStudyTeam(
@@ -376,24 +375,5 @@ export class StudyTeamController {
             addMemberToStudyTeamRequest.memberId,
             addMemberToStudyTeamRequest.isLeader,
         );
-    }
-
-    // Controller body를 string으로 받아온 다음 dto에 맵핑하면 class-validator 작동 안 한다.
-    private async validateDtoFields(dto: any): Promise<void> {
-        const errors = await validate(dto);
-        if (errors.length > 0) {
-            throw new StudyTeamBadRequestException();
-        }
-        // 모든 필드가 undefined 또는 null인지 체크
-        const isEmpty = Object.values(dto).every(
-            (value) =>
-                value === undefined ||
-                value === null ||
-                (Array.isArray(value) && value.length === 0),
-        );
-
-        if (isEmpty) {
-            throw new StudyTeamBadRequestException();
-        }
     }
 }
