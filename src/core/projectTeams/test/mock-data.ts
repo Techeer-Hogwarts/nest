@@ -1,16 +1,29 @@
 // mock-data.ts
 
-import { StatusCategory } from '@prisma/client';
+import { ProjectTeam, StatusCategory } from '@prisma/client';
 import { Readable } from 'stream';
-import { TeamRole } from '../../../common/category/teamRole.category';
-import { ProjectMemberInfoRequest } from '../../../common/dto/projectMembers/request/info.projectMember.request';
+import { TeamRole } from '../../../common/category/teamCategory/teamRole.category';
+import { UpdateProjectTeamRequest } from '../../../common/dto/projectTeams/request/update.projectTeam.request';
 
-export const mockZeroProjectRecruitmentRequest = {
-    frontendNum: 0,
-    backendNum: 0,
-    devopsNum: 0,
-    fullStackNum: 0,
-    dataEngineerNum: 0,
+export const mockProjectTeam: ProjectTeam = {
+    id: 1,
+    name: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isDeleted: false,
+    isRecruited: true,
+    isFinished: false,
+    githubLink: '',
+    notionLink: '',
+    projectExplain: '',
+    frontendNum: 1,
+    backendNum: 1,
+    devopsNum: 1,
+    fullStackNum: 1,
+    dataEngineerNum: 1,
+    recruitExplain: '',
+    likeCount: 1,
+    viewCount: 1,
 };
 
 export const mockCreateProjectTeamRequest = {
@@ -83,35 +96,52 @@ export const mockValidStack = [
     },
 ];
 
-export const mockUpdateProjectTeamRequest = {
-    name: 'Updated Project',
+export const mockUpdateProjectTeamRequest: UpdateProjectTeamRequest = {
+    name: '프로젝트',
     githubLink: 'https://github.com/ai-project',
-    notionLink: 'https://notion.so/test-project',
-    projectExplain: '수정된 프로젝트 설명입니다.',
-    frontendNum: 3,
-    backendNum: 3,
-    devopsNum: 3,
-    fullStackNum: 3,
-    dataEngineerNum: 4,
-    isRecruited: false,
+    notionLink: 'https://notion.com/ai-project',
+    projectExplain: '설명',
+    frontendNum: 1,
+    backendNum: 1,
+    devopsNum: 1,
+    fullStackNum: 1,
+    dataEngineerNum: 1,
+    recruitExplain: '열정적으로 참여할 사람을 모집합니다.',
     isFinished: false,
-    recruitExplain: '수정된 모집 설명입니다.',
-    deleteImages: [1, 2],
-    deleteMembers: [1],
+    isRecruited: true,
     projectMember: [
         {
-            userId: 2,
-            name: 'test',
-            isLeader: false,
-            teamRole: 'Backend',
+            userId: 1,
+            isLeader: true,
+            teamRole: TeamRole.FRONTEND,
         },
     ],
+    deleteMainImages: [],
+    deleteResultImages: [],
+    deleteMembers: [],
     teamStacks: [
         {
-            stack: 'TypeScript',
+            id: 1,
+            stack: 'React.js',
             isMain: true,
         },
+        {
+            id: 2,
+            stack: 'Node.js',
+            isMain: false,
+        },
     ],
+};
+
+export const mockUpdatedProject = {
+    id: 1,
+    name: '프로젝트',
+    isRecruited: false,
+    isFinished: false,
+    resultImages: [],
+    mainImages: [],
+    teamStacks: [],
+    projectMember: [],
 };
 
 export const mockProjectTeamCreatePrisma = {
