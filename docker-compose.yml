@@ -1,30 +1,32 @@
 version: '3.8'
 
 services:
-    #    nest:
-    #        container_name: nest
-    #        build:
-    #            context: .
-    #            dockerfile: Dockerfile
-    #        restart: always
-    #        env_file:
-    #            - .env
-    #        ports:
-    #            - '8000:8000'
-    #        depends_on:
-    #            - postgresql
-    #            - redis
-    #        networks:
-    #            - techeerism
+    nest:
+        container_name: nest
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - '8000:8000'
+        depends_on:
+            - postgresql
+            - redis
+        networks:
+            - techeerism
 
     postgresql:
         container_name: postgresql
         image: postgres:14-alpine3.20
         restart: always
-        environment:
-            POSTGRES_USER: ${POSTGRES_USERNAME}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB}
+        env_file:
+            - .env
+        # environment:
+        #     POSTGRES_USER: ${POSTGRES_USERNAME}
+        #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        #     POSTGRES_DB: ${POSTGRES_DB}
             # POSTGRES_DB_NAME: ${POSTGRES_DB_NAME}
         volumes:
             - techeerism-db:/techeerism-db/postgres-data
@@ -54,9 +56,11 @@ services:
             - '5672:5672'
             - '15673:15672'
             - '15693:15692'
-        environment:
-            - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+        env_file:
+            - .env
+        # environment:
+        #     - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+        #     - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
         tty: true
         networks:
             - techeerism
@@ -81,6 +85,82 @@ services:
             - '8001:8001'
         networks:
             - techeerism
+    
+    search-container:
+        image: teami2022/watchtower-test:arm-search
+        networks:
+            - techeerism
+        container_name: search-container
+        env_file:
+            - .env
+        environment:
+            - MEILISEARCH_ADDR=http://meilisearch:7700
+            - MEILISEARCH_KEY=""
+            - GIN_MODE=release
+        ports:
+            - "8082:8080"
+  
+    search-cron:
+        image: teami2022/watchtower-test:arm-cron
+        container_name: search-cron
+        networks:
+            - techeerism
+        env_file:
+            - .env
+        environment:
+            - MEILISEARCH_ADDR=http://meilisearch:7700
+            - MEILISEARCH_KEY=""
+            - GIN_MODE=release
+            - DB_HOST=postgresql
+            - DB_PORT=5432
+            - DB_USER=${POSTGRES_USERNAME}
+            - DB_PASSWORD=${POSTGRES_PASSWORD}
+            - DB_NAME=${POSTGRES_DB}
+            - DB_SSL_MODE=disable
+        ports:
+            - "8081:8081"
+   
+    meilisearch:
+        image: getmeili/meilisearch:latest
+        container_name: meilisearch
+        networks:
+            - techeerism
+        ports:
+            - "7700:7700"
+        environment:
+            - MEILI_EXPERIMENTAL_ENABLE_METRICS=true
+            - MEILI_NO_ANALYTICS=true
+        volumes:
+            - meilisearch-data:/meili_data/data.ms
+        restart: unless-stopped
+    
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.122.1
+        container_name: otel-collector
+        networks:
+            - techeerism
+        ports:
+            - "4317:4317"
+            - "4318:4318"
+        volumes:
+            - ./otel-collector-config.yaml:/otel-collector-config.yaml
+        command: ["--config=/otel-collector-config.yaml"]
+
+    jaeger:
+        image: jaegertracing/all-in-one:1.67.0
+        container_name: jaeger
+        networks:
+            - techeerism
+        ports:
+            - "16686:16686"
+            - "14250:14250"
+            - "14268:14268"
+            - "14269:14269"
+            - "4319:4317"
+            - "4320:4318"
+        environment:
+            - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+            - SPAN_STORAGE_TYPE=memory
 
 networks:
     techeerism:
@@ -88,3 +168,4 @@ networks:
 
 volumes:
     techeerism-db:
+    meilisearch-data:
