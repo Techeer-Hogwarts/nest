@@ -9,7 +9,10 @@ import { GetProjectTeamListResponse } from '../../common/dto/projectTeams/respon
 import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
-import { isInteractableContentType, InteractableContentType } from '../../common/types/content.type.for.interaction';
+import {
+    isInteractableContentType,
+    InteractableContentType,
+} from '../../common/types/content.type.for.interaction';
 import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
@@ -104,7 +107,10 @@ export class LikeService {
                 category,
             );
             if (!isContentExist) {
-                this.logger.debug(`해당 콘텐츠를 찾을 수 없음`, LikeService.name);
+                this.logger.debug(
+                    `해당 콘텐츠를 찾을 수 없음`,
+                    LikeService.name,
+                );
                 throw new LikeContentNotFoundException();
             }
             this.logger.debug(
@@ -122,7 +128,10 @@ export class LikeService {
                             },
                         },
                     });
-                    if (existingLike && existingLike.isDeleted === !likeStatus) {
+                    if (
+                        existingLike &&
+                        existingLike.isDeleted === !likeStatus
+                    ) {
                         this.logger.error(
                             `좋아요 상태가 동일함 (중복 요청)`,
                             LikeService.name,
@@ -162,7 +171,9 @@ export class LikeService {
                     );
                     // 인덱스 업데이트 (세선)
                     if (category === 'SESSION') {
-                        const indexSession = new IndexSessionRequest(updateContent);
+                        const indexSession = new IndexSessionRequest(
+                            updateContent,
+                        );
                         this.logger.debug(
                             `세션 좋아요 변경 이후 인덱스 업데이트 요청`,
                             LikeService.name,
@@ -215,33 +226,45 @@ export class LikeService {
 
             switch (request.category) {
                 case 'SESSION': {
-                    const contents = await this.getLikeListByUser<Session & { user: any }>(
-                        userId,
-                        { ...request, category: 'SESSION' as const }
+                    const contents = await this.getLikeListByUser<
+                        Session & { user: any }
+                    >(userId, {
+                        ...request,
+                        category: 'SESSION' as const,
+                    });
+                    return contents.map(
+                        (content) => new GetSessionResponse(content),
                     );
-                    return contents.map((content) => new GetSessionResponse(content));
                 }
                 case 'BLOG': {
-                    const contents = await this.getLikeListByUser<Blog & { user: any }>(
-                        userId,
-                        { ...request, category: 'BLOG' as const }
+                    const contents = await this.getLikeListByUser<
+                        Blog & { user: any }
+                    >(userId, {
+                        ...request,
+                        category: 'BLOG' as const,
+                    });
+                    return contents.map(
+                        (content) => new GetBlogResponse(content),
                     );
-                    return contents.map((content) => new GetBlogResponse(content));
                 }
                 case 'RESUME': {
-                    const contents = await this.getLikeListByUser<Resume & { user: any }>(
-                        userId,
-                        { ...request, category: 'RESUME' as const }
-                    );
+                    const contents = await this.getLikeListByUser<
+                        Resume & { user: any }
+                    >(userId, {
+                        ...request,
+                        category: 'RESUME' as const,
+                    });
                     return contents.map(
                         (content) => new GetResumeResponse(content),
                     );
                 }
                 case 'PROJECT': {
-                    const contents = await this.getLikeListByUser<ProjectTeam & { resultImages: any; teamStacks: any }>(
-                        userId,
-                        { ...request, category: 'PROJECT' as const }
-                    );
+                    const contents = await this.getLikeListByUser<
+                        ProjectTeam & { resultImages: any; teamStacks: any }
+                    >(userId, {
+                        ...request,
+                        category: 'PROJECT' as const,
+                    });
                     return contents.map(
                         (content) => new GetProjectTeamListResponse(content),
                     );

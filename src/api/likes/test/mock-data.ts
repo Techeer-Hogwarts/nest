@@ -11,13 +11,9 @@ interface RequestWithUser extends Request {
 }
 
 // 테스트에 주로 사용되는 User 필드만 선택
-type TestUser = Pick<User,
-    | 'id'
-    | 'name'
-    | 'email'
-    | 'nickname'
-    | 'mainPosition'
-    | 'profileImage'
+type TestUser = Pick<
+    User,
+    'id' | 'name' | 'email' | 'nickname' | 'mainPosition' | 'profileImage'
 >;
 
 export const likeEntity = (overrides?: Partial<Like>): Like => {
@@ -106,7 +102,9 @@ export const createMockUser = (overrides?: Partial<User>): User => {
 export const mockUser = createMockUser();
 
 // 특정 테스트에서 필요한 필드만 오버라이드해서 사용 가능
-export const mockUserWithCustomFields = (overrides: Partial<TestUser>): User => {
+export const mockUserWithCustomFields = (
+    overrides: Partial<TestUser>,
+): User => {
     return createMockUser(overrides);
 };
 

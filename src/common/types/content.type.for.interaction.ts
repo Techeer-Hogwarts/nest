@@ -7,8 +7,11 @@ export const INTERACTABLE_CONTENT_TYPES = [
     'STUDY',
 ] as const;
 
-export type InteractableContentType = typeof INTERACTABLE_CONTENT_TYPES[number];
+export type InteractableContentType =
+    (typeof INTERACTABLE_CONTENT_TYPES)[number];
 
-export const isInteractableContentType = (type: string): type is InteractableContentType => {
+export const isInteractableContentType = (
+    type: string,
+): type is InteractableContentType => {
     return INTERACTABLE_CONTENT_TYPES.includes(type as InteractableContentType);
-}; 
+};
