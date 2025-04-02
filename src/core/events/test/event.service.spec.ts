@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { ForbiddenAccessException } from '../../../common/exception/custom.exception';
+import { EventForbiddenException } from '../exception/event.exception';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 
 import { EventService } from '../event.service';
@@ -240,7 +240,7 @@ describe('EventService', (): void => {
 
             await expect(
                 service.updateEvent(1, 100, updateEventRequest),
-            ).rejects.toThrow(ForbiddenAccessException);
+            ).rejects.toThrow(EventForbiddenException);
             expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
         });
     });
@@ -279,7 +279,7 @@ describe('EventService', (): void => {
             );
 
             await expect(service.deleteEvent(1, 100)).rejects.toThrow(
-                ForbiddenAccessException,
+                EventForbiddenException,
             );
             expect(prismaService.event.findUnique).toHaveBeenCalledTimes(1);
         });

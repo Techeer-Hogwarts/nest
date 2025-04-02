@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+
 import {
-    ForbiddenAccessException,
-    NotFoundEventException,
-} from '../../common/exception/custom.exception';
+    EventNotFoundException,
+    EventForbiddenException,
+} from './exception/event.exception';
 
 import { IndexService } from '../../infra/index/index.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
@@ -41,7 +42,7 @@ export class EventService {
                 `이벤트를 찾을 수 없음 - eventId: ${eventId}`,
                 EventService.name,
             );
-            throw new NotFoundEventException();
+            throw new EventNotFoundException();
         }
 
         return event;
@@ -177,7 +178,7 @@ export class EventService {
                     `이벤트 수정 권한 없음 - userId: ${userId}, eventId: ${eventId}`,
                     EventService.name,
                 );
-                throw new ForbiddenAccessException();
+                throw new EventForbiddenException();
             }
 
             const updatedEvent = await this.prisma.event.update({
@@ -207,7 +208,7 @@ export class EventService {
             );
             return new CreateEventResponse(updatedEvent);
         } catch (error) {
-            if (error instanceof NotFoundEventException) {
+            if (error instanceof EventNotFoundException) {
                 throw error;
             }
             this.logger.error(
@@ -232,7 +233,7 @@ export class EventService {
                     `이벤트 삭제 권한 없음 - userId: ${userId}, eventId: ${eventId}`,
                     EventService.name,
                 );
-                throw new ForbiddenAccessException();
+                throw new EventForbiddenException();
             }
 
             await this.prisma.event.update({
@@ -249,7 +250,7 @@ export class EventService {
                 EventService.name,
             );
         } catch (error) {
-            if (error instanceof NotFoundEventException) {
+            if (error instanceof EventNotFoundException) {
                 throw error;
             }
             this.logger.error(
