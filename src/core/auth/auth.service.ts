@@ -116,8 +116,7 @@ export class AuthService {
     async getProfileImageUrl(
         email: string,
     ): Promise<{ image: string; isTecheer: boolean }> {
-        const updateUrl =
-            'https://techeer-029051b54345.herokuapp.com/api/v1/profile/picture';
+        const updateUrl = this.configService.get('PROFILE_IMG_URL');
         const secret = process.env.SLACK;
 
         const response = await lastValueFrom(
