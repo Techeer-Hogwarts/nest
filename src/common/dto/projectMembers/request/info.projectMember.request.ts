@@ -1,8 +1,7 @@
 import { IsBoolean, IsInt, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { setTeamRole, TeamRoleType } from '../../../category/teamRole.category';
+import { TeamRoleType } from '../../../category/teamCategory/teamRole.category';
 import { IsTeamRole } from '../../../decorator/teamRole.decorator';
-import { Transform } from 'class-transformer';
 
 export class ProjectMemberInfoRequest {
     @IsNotEmpty()
@@ -23,7 +22,6 @@ export class ProjectMemberInfoRequest {
 
     @IsNotEmpty()
     @IsTeamRole()
-    @Transform(({ value }) => setTeamRole(value))
     @ApiProperty({
         example: 'Frontend',
         description: '팀 내 역할',
