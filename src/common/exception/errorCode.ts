@@ -15,7 +15,7 @@ export const ErrorCode = {
     },
     AUTH_VERIFICATION_FAILED: {
         code: 'AUTH_VERIFICATION_FAILED',
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        status: HttpStatus.BAD_REQUEST,
         message: '이메일 인증이 실패했습니다.',
     },
     AUTH_NOT_FOUND_USER: {
@@ -133,19 +133,19 @@ export const ErrorCode = {
     /** UserExperience **/
     USER_EXPERIENCE_INVALID_POSITION: {
         code: 'USER_EXPERIENCE_INVALID_POSITION',
-        status: 400,
+        status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 포지션입니다.',
     },
 
     USER_EXPERIENCE_INVALID_CATEGORY: {
         code: 'USER_EXPERIENCE_INVALID_CATEGORY',
-        status: 400,
+        status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 카테고리입니다.',
     },
 
     USER_EXPERIENCE_NOT_FOUND: {
         code: 'USER_EXPERIENCE_NOT_FOUND',
-        status: 404,
+        status: HttpStatus.NOT_FOUND,
         message: '해당 경력 정보를 찾을 수 없습니다.',
     },
     /** User **/
