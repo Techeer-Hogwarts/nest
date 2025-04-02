@@ -24,6 +24,31 @@ export const ErrorCode = {
         status: HttpStatus.NOT_FOUND,
         message: '해당 좋아요 콘텐츠를 찾을 수 없습니다.',
     },
+    LIKE_INVALID_USER_ID: {
+        code: 'LIKE_INVALID_USER_ID',
+        message: '유효하지 않은 사용자 ID입니다.',
+        status: HttpStatus.BAD_REQUEST,
+    },
+    LIKE_INVALID_CONTENT_ID: {
+        code: 'LIKE_INVALID_CONTENT_ID',
+        message: '유효하지 않은 콘텐츠 ID입니다.',
+        status: HttpStatus.BAD_REQUEST,
+    },
+    LIKE_DATABASE_OPERATION_FAILED: {
+        code: 'LIKE_DATABASE_OPERATION_FAILED',
+        message: '데이터베이스 작업 중 오류가 발생했습니다.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
+    LIKE_TRANSACTION_FAILED: {
+        code: 'LIKE_TRANSACTION_FAILED',
+        message: '좋아요 처리 중 오류가 발생했습니다.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
+    LIKE_INVALID_TABLE_CONFIGURATION: {
+        code: 'LIKE_INVALID_TABLE_CONFIGURATION',
+        message: '잘못된 테이블 설정입니다.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
     /** ProjectMember **/
     /** ProjectTeam **/
     /** Resumes **/
