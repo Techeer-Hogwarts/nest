@@ -97,8 +97,7 @@ export class CustomWinstonLogger implements LoggerService {
 * METHOD:        ${request?.method ?? 'N/A'}
 * BODY:          ${JSON.stringify(this.sanitizeRequestBody(request?.body ?? {}), undefined, 2)}
 * STACK TRACE:   ${error?.stack ?? 'N/A'}
-━━━━━━━━━━━━━━━━
-        `;
+━━━━━━━━━━━━━━━━`;
         this.winstonLogger.error(logMessage);
     }
 
