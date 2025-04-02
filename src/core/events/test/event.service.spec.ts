@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { EventForbiddenException } from '../exception/event.exception';
+import {
+    EventForbiddenException,
+    EventNotFoundException,
+} from '../exception/event.exception';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 
 import { EventService } from '../event.service';
@@ -94,7 +97,9 @@ describe('EventService', (): void => {
                 null,
             );
 
-            const result = await service.findById(100);
+            await expect(service.findById(100)).rejects.toThrow(
+                EventNotFoundException,
+            );
 
             expect(prismaService.event.findUnique).toHaveBeenCalledWith({
                 where: {
@@ -103,7 +108,6 @@ describe('EventService', (): void => {
                 },
                 include: { user: true },
             });
-            expect(result).toBeNull();
         });
     });
 
