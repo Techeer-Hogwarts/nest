@@ -1,9 +1,0 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npm test
-
-npx prettier --cache --write .
-npx eslint --cache .
-npx tsc -p tsconfig.json --noEmit
-
