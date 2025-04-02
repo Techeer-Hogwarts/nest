@@ -6,9 +6,10 @@ import {
     IsArray,
     ValidateNested,
 } from 'class-validator';
-import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { ProjectMemberInfoRequest } from '../../projectMembers/request/info.projectMember.request';
+import { ParseJsonArray } from '../../../decorator/transform.parseJson.decorator';
 
 export class UpdateProjectTeamRequest {
     @IsOptional()
@@ -152,15 +153,6 @@ export class UpdateProjectTeamRequest {
     })
     deleteMembers: number[];
 
-    @IsOptional()
-    @IsArray()
-    @Transform(({ value }) => {
-        try {
-            return typeof value === 'string' ? JSON.parse(value) : value;
-        } catch (e) {
-            throw new Error('teamStacks는 유효한 JSON 배열이어야 합니다.');
-        }
-    })
     @ApiProperty({
         type: 'array',
         items: {
@@ -197,15 +189,12 @@ export class UpdateProjectTeamRequest {
         ],
         description: '수정할 팀 스택 목록',
     })
+    @IsOptional()
+    @IsArray()
+    @ParseJsonArray()
     teamStacks: {
         id: number;
         stack: string;
         isMain: boolean;
     }[];
-
-    @ApiHideProperty() // Swagger에 표시되지 않도록 설정
-    resultImages?: string[]; // 사용자가 입력하지 않음, 서버에서 자동 추가
-
-    @ApiHideProperty()
-    mainImages?: string[];
 }
