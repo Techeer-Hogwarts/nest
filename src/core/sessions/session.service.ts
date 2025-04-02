@@ -119,8 +119,7 @@ export class SessionService {
                     b.viewCount +
                     b.likeCount * 10 -
                     (a.viewCount + a.likeCount * 10),
-            )
-            .slice(offset, limit);
+            );
 
         return sortedSessions.map(
             (session) => new GetSessionResponse(session as Session),
