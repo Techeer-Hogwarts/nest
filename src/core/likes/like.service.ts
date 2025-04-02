@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { CreateContentTableMap } from '../../common/category/content.category.table.map';
+import { CreateInteractableContentTableMap } from '../../common/types/content.type.for.interaction.table.map';
 import { CreateLikeRequest } from '../../common/dto/likes/request/create.like.request';
 import { GetLikeListRequest } from '../../common/dto/likes/request/get.like-list.request';
 import { GetLikeResponse } from '../../common/dto/likes/response/get.like.response';
@@ -9,6 +9,7 @@ import { GetProjectTeamListResponse } from '../../common/dto/projectTeams/respon
 import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
+import { isInteractableContentType, InteractableContentType } from '../../common/types/content.type.for.interaction';
 import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
@@ -25,6 +26,10 @@ import {
     LikeContentNotFoundException,
     LikeDuplicateRequestException,
     LikeInvalidCategoryException,
+    LikeInvalidUserIdException,
+    LikeDatabaseOperationException,
+    LikeInvalidContentIdException,
+    LikeTransactionFailedException,
 } from './exception/like.exception';
 
 @Injectable()
@@ -35,12 +40,12 @@ export class LikeService {
         private readonly prisma: PrismaService,
         private readonly indexService: IndexService,
     ) {
-        this.contentTableMap = CreateContentTableMap(prisma);
+        this.contentTableMap = CreateInteractableContentTableMap(prisma);
     }
 
     async isContentExist(
         contentId: number,
-        category: string,
+        category: InteractableContentType,
     ): Promise<boolean> {
         this.logger.debug(
             `콘텐츠 존재 여부 검사 시작 - contentId: ${contentId}, category: ${category}`,
@@ -63,89 +68,120 @@ export class LikeService {
         userId: number,
         createLikeRequest: CreateLikeRequest,
     ): Promise<GetLikeResponse> {
-        const { contentId, category, likeStatus }: CreateLikeRequest =
-            createLikeRequest;
-        this.logger.debug(
-            `좋아요 생성 및 설정 변경 요청 처리 중 - userId: ${userId}, contentId: ${contentId}, category: ${category}`,
-            LikeService.name,
-        );
-        // 각 콘텐츠 유형 별 존재 여부 검증
-        const isContentExist: boolean = await this.isContentExist(
-            contentId,
-            category,
-        );
-        if (!isContentExist) {
-            this.logger.debug(`해당 콘텐츠를 찾을 수 없음`, LikeService.name);
-            throw new LikeContentNotFoundException();
+        const { contentId, category, likeStatus } = createLikeRequest;
+
+        // userId 검증
+        if (!userId || userId <= 0) {
+            this.logger.error(
+                `유효하지 않은 사용자 ID - userId: ${userId}`,
+                LikeService.name,
+            );
+            throw new LikeInvalidUserIdException();
         }
-        this.logger.debug(
-            `해당 콘텐츠를 찾아서 좋아요 생성 및 설정 변경 중`,
-            LikeService.name,
-        );
-        return this.prisma.$transaction(
-            async (prisma): Promise<GetLikeResponse> => {
-                const existingLike = await prisma.like.findUnique({
-                    where: {
-                        userId_contentId_category: {
-                            userId,
-                            contentId,
-                            category,
+
+        // contentId 검증
+        if (!contentId || contentId <= 0) {
+            this.logger.error(
+                `유효하지 않은 콘텐츠 ID - contentId: ${contentId}`,
+                LikeService.name,
+            );
+            throw new LikeInvalidContentIdException();
+        }
+
+        // 카테고리 검증 (기존 코드)
+        if (!isInteractableContentType(category)) {
+            throw new LikeInvalidCategoryException();
+        }
+
+        try {
+            this.logger.debug(
+                `좋아요 생성 및 설정 변경 요청 처리 중 - userId: ${userId}, contentId: ${contentId}, category: ${category}`,
+                LikeService.name,
+            );
+            // 각 콘텐츠 유형 별 존재 여부 검증
+            const isContentExist: boolean = await this.isContentExist(
+                contentId,
+                category,
+            );
+            if (!isContentExist) {
+                this.logger.debug(`해당 콘텐츠를 찾을 수 없음`, LikeService.name);
+                throw new LikeContentNotFoundException();
+            }
+            this.logger.debug(
+                `해당 콘텐츠를 찾아서 좋아요 생성 및 설정 변경 중`,
+                LikeService.name,
+            );
+            return this.prisma.$transaction(
+                async (prisma): Promise<GetLikeResponse> => {
+                    const existingLike = await prisma.like.findUnique({
+                        where: {
+                            userId_contentId_category: {
+                                userId,
+                                contentId,
+                                category,
+                            },
                         },
-                    },
-                });
-                if (existingLike && existingLike.isDeleted === !likeStatus) {
-                    this.logger.error(
-                        `좋아요 상태가 동일함 (중복 요청)`,
-                        LikeService.name,
-                    );
-                    throw new LikeDuplicateRequestException();
-                }
-                this.logger.debug(
-                    `좋아요 상태 변경: ${likeStatus}`,
-                    LikeService.name,
-                );
-                const like = await prisma.like.upsert({
-                    where: {
-                        userId_contentId_category: {
-                            userId,
-                            contentId,
-                            category,
-                        },
-                    },
-                    update: { isDeleted: !likeStatus },
-                    create: {
-                        userId,
-                        contentId,
-                        category,
-                        isDeleted: !likeStatus,
-                    },
-                });
-                const changeValue = likeStatus ? 1 : -1;
-                const updateContent = await this.contentTableMap[
-                    category
-                ].table.update({
-                    where: { id: contentId },
-                    data: { likeCount: { increment: changeValue } },
-                });
-                this.logger.debug(
-                    `좋아요 카운트 (${changeValue > 0 ? '+1' : '-1'}) 변경 완료`,
-                    LikeService.name,
-                );
-                // 인덱스 업데이트 (세선)
-                if (category === 'SESSION') {
-                    const indexSession = new IndexSessionRequest(updateContent);
+                    });
+                    if (existingLike && existingLike.isDeleted === !likeStatus) {
+                        this.logger.error(
+                            `좋아요 상태가 동일함 (중복 요청)`,
+                            LikeService.name,
+                        );
+                        throw new LikeDuplicateRequestException();
+                    }
                     this.logger.debug(
-                        `세션 좋아요 변경 이후 인덱스 업데이트 요청`,
+                        `좋아요 상태 변경: ${likeStatus}`,
                         LikeService.name,
                     );
-                    await this.indexService.createIndex(
-                        'session',
-                        indexSession,
+                    const like = await prisma.like.upsert({
+                        where: {
+                            userId_contentId_category: {
+                                userId,
+                                contentId,
+                                category,
+                            },
+                        },
+                        update: { isDeleted: !likeStatus },
+                        create: {
+                            userId,
+                            contentId,
+                            category,
+                            isDeleted: !likeStatus,
+                        },
+                    });
+                    const changeValue = likeStatus ? 1 : -1;
+                    const updateContent = await this.contentTableMap[
+                        category
+                    ].table.update({
+                        where: { id: contentId },
+                        data: { likeCount: { increment: changeValue } },
+                    });
+                    this.logger.debug(
+                        `좋아요 카운트 (${changeValue > 0 ? '+1' : '-1'}) 변경 완료`,
+                        LikeService.name,
                     );
-                }
-                return new GetLikeResponse(like);
-            },
-        );
+                    // 인덱스 업데이트 (세선)
+                    if (category === 'SESSION') {
+                        const indexSession = new IndexSessionRequest(updateContent);
+                        this.logger.debug(
+                            `세션 좋아요 변경 이후 인덱스 업데이트 요청`,
+                            LikeService.name,
+                        );
+                        await this.indexService.createIndex(
+                            'session',
+                            indexSession,
+                        );
+                    }
+                    return new GetLikeResponse(like);
+                },
+            );
+        } catch (error) {
+            this.logger.error(
+                `좋아요 토글 중 오류 발생 - ${error.message}`,
+                LikeService.name,
+            );
+            throw new LikeTransactionFailedException();
+        }
     }
 
     async getLikeList(
@@ -158,53 +194,78 @@ export class LikeService {
         | GetProjectTeamListResponse[]
         | GetStudyTeamListResponse[]
     > {
-        this.logger.debug(
-            `좋아요 목록 조회 시작 - userId: ${userId}, category: ${request.category}`,
-            LikeService.name,
-        );
+        // userId 검증
+        if (!userId || userId <= 0) {
+            this.logger.error(
+                `유효하지 않은 사용자 ID - userId: ${userId}`,
+                LikeService.name,
+            );
+            throw new LikeInvalidUserIdException();
+        }
 
-        switch (request.category) {
-            case 'SESSION': {
-                const contents = await this.getLikeListByUser<
-                    Session & { user: any }
-                >(userId, request);
-                return contents.map(
-                    (content) => new GetSessionResponse(content),
-                );
+        if (!isInteractableContentType(request.category)) {
+            throw new LikeInvalidCategoryException();
+        }
+
+        try {
+            this.logger.debug(
+                `좋아요 목록 조회 시작 - userId: ${userId}, category: ${request.category}`,
+                LikeService.name,
+            );
+
+            switch (request.category) {
+                case 'SESSION': {
+                    const contents = await this.getLikeListByUser<Session & { user: any }>(
+                        userId,
+                        { ...request, category: 'SESSION' as const }
+                    );
+                    return contents.map((content) => new GetSessionResponse(content));
+                }
+                case 'BLOG': {
+                    const contents = await this.getLikeListByUser<Blog & { user: any }>(
+                        userId,
+                        { ...request, category: 'BLOG' as const }
+                    );
+                    return contents.map((content) => new GetBlogResponse(content));
+                }
+                case 'RESUME': {
+                    const contents = await this.getLikeListByUser<Resume & { user: any }>(
+                        userId,
+                        { ...request, category: 'RESUME' as const }
+                    );
+                    return contents.map(
+                        (content) => new GetResumeResponse(content),
+                    );
+                }
+                case 'PROJECT': {
+                    const contents = await this.getLikeListByUser<ProjectTeam & { resultImages: any; teamStacks: any }>(
+                        userId,
+                        { ...request, category: 'PROJECT' as const }
+                    );
+                    return contents.map(
+                        (content) => new GetProjectTeamListResponse(content),
+                    );
+                }
+                case 'STUDY': {
+                    const contents = await this.getLikeListByUser<
+                        StudyTeam & { resultImages: any }
+                    >(userId, request);
+                    return contents.map(
+                        (content) => new GetStudyTeamListResponse(content),
+                    );
+                }
+                default: {
+                    // 여기는 도달할 수 없음 (타입 체크로 인해)
+                    const _exhaustiveCheck: never = request.category;
+                    throw new LikeInvalidCategoryException();
+                }
             }
-            case 'BLOG': {
-                const contents = await this.getLikeListByUser<
-                    Blog & { user: any }
-                >(userId, request);
-                return contents.map((content) => new GetBlogResponse(content));
-            }
-            case 'RESUME': {
-                const contents = await this.getLikeListByUser<
-                    Resume & { user: any }
-                >(userId, request);
-                return contents.map(
-                    (content) => new GetResumeResponse(content),
-                );
-            }
-            case 'PROJECT': {
-                const contents = await this.getLikeListByUser<
-                    ProjectTeam & { resultImages: any; teamStacks: any }
-                >(userId, request);
-                return contents.map(
-                    (content) => new GetProjectTeamListResponse(content),
-                );
-            }
-            case 'STUDY': {
-                const contents = await this.getLikeListByUser<
-                    StudyTeam & { resultImages: any }
-                >(userId, request);
-                return contents.map(
-                    (content) => new GetStudyTeamListResponse(content),
-                );
-            }
-            default:
-                this.logger.error(`잘못된 카테고리 요청`, LikeService.name);
-                throw new LikeInvalidCategoryException();
+        } catch (error) {
+            this.logger.error(
+                `좋아요 목록 조회 중 오류 발생 - ${error.message}`,
+                LikeService.name,
+            );
+            throw new LikeDatabaseOperationException();
         }
     }
 
@@ -213,43 +274,82 @@ export class LikeService {
         request: GetLikeListRequest,
     ): Promise<T[]> {
         const { category, offset, limit } = request;
-        this.logger.debug(
-            `좋아요 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}`,
-            LikeService.name,
-        );
 
-        const likes = await this.prisma.like.findMany({
-            where: {
-                userId,
-                category,
-                isDeleted: false,
-            },
-            orderBy: { createdAt: 'desc' },
-            skip: offset,
-            take: limit,
-        });
+        // userId 검증
+        if (!userId || userId <= 0) {
+            this.logger.error(
+                `유효하지 않은 사용자 ID - userId: ${userId}`,
+                LikeService.name,
+            );
+            throw new LikeInvalidUserIdException();
+        }
 
-        const contentIds = likes.map((like) => like.contentId);
-        const { table, include } = this.contentTableMap[category];
+        // 테이블 정보 검증
+        const tableInfo = this.contentTableMap[category];
+        if (!tableInfo || !tableInfo.table) {
+            this.logger.error(
+                `테이블 정보를 찾을 수 없음 - category: ${category}`,
+                LikeService.name,
+            );
+            throw new LikeInvalidCategoryException();
+        }
 
-        const contents = await table.findMany({
-            where: { id: { in: contentIds } },
-            include, // 연관 객체 명시적 include 필요
-        });
+        try {
+            this.logger.debug(
+                `좋아요 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}`,
+                LikeService.name,
+            );
 
-        const contentMap = new Map(
-            contents.map((content) => [content.id, content]),
-        );
+            const likes = await this.prisma.like.findMany({
+                where: {
+                    userId,
+                    category,
+                    isDeleted: false,
+                },
+                orderBy: { createdAt: 'desc' },
+                skip: offset,
+                take: limit,
+            });
 
-        const result = likes
-            .map((like) => contentMap.get(like.contentId))
-            .filter((content): content is T => Boolean(content));
+            if (!likes.length) {
+                this.logger.debug(
+                    `좋아요 목록이 없습니다 - userId: ${userId}, category: ${category}`,
+                    LikeService.name,
+                );
+                return [];
+            }
 
-        this.logger.debug(
-            `${result.length} 개의 좋아요 목록 조회 성공`,
-            LikeService.name,
-        );
+            const contentIds = likes.map((like) => like.contentId);
+            const { table, include } = tableInfo;
 
-        return result;
+            const contents = await table.findMany({
+                where: {
+                    id: { in: contentIds },
+                    isDeleted: false, // 삭제된 콘텐츠 제외
+                },
+                include,
+            });
+
+            const contentMap = new Map(
+                contents.map((content) => [content.id, content]),
+            );
+
+            const result = likes
+                .map((like) => contentMap.get(like.contentId))
+                .filter((content): content is T => Boolean(content));
+
+            this.logger.debug(
+                `${result.length} 개의 좋아요 목록 조회 성공`,
+                LikeService.name,
+            );
+
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `좋아요 목록 조회 중 오류 발생 - ${error.message}`,
+                LikeService.name,
+            );
+            throw new LikeDatabaseOperationException();
+        }
     }
 }

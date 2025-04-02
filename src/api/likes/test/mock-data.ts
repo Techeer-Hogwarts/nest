@@ -10,6 +10,16 @@ interface RequestWithUser extends Request {
     user: User;
 }
 
+// 테스트에 주로 사용되는 User 필드만 선택
+type TestUser = Pick<User,
+    | 'id'
+    | 'name'
+    | 'email'
+    | 'nickname'
+    | 'mainPosition'
+    | 'profileImage'
+>;
+
 export const likeEntity = (overrides?: Partial<Like>): Like => {
     return {
         id: 1,
@@ -60,30 +70,44 @@ export const getLikeResponse: GetLikeResponse = new GetLikeResponse(
     likeEntity(),
 );
 
-export const mockUser = {
-    id: 1,
-    createdAt: new Date('2024-09-24T08:51:54.000Z'),
-    updatedAt: new Date('2024-09-24T08:51:54.000Z'),
-    isDeleted: false,
-    name: '홍길동',
-    email: 'hong@test.com',
-    nickname: 'hong123',
-    year: 6,
-    password: '1234',
-    isLft: false,
-    githubUrl: 'github',
-    mainPosition: 'Backend',
-    subPosition: 'DevOps',
-    school: 'Test University',
-    profileImage: 'profile-image-url',
-    stack: [],
-    isAuth: true,
-    roleId: 1,
-    grade: '4학년',
-    mediumUrl: 'medium',
-    tistoryUrl: 'tistory',
-    velogUrl: 'velog',
-    class: '4학년',
+export const createMockUser = (overrides?: Partial<User>): User => {
+    const defaultUser: User = {
+        id: 1,
+        createdAt: new Date('2024-09-24T08:51:54.000Z'),
+        updatedAt: new Date('2024-09-24T08:51:54.000Z'),
+        isDeleted: false,
+        name: '홍길동',
+        email: 'hong@test.com',
+        nickname: 'hong123',
+        year: 6,
+        password: '1234',
+        isLft: false,
+        githubUrl: 'github',
+        mainPosition: 'Backend',
+        subPosition: 'DevOps',
+        school: 'Test University',
+        profileImage: 'profile-image-url',
+        stack: [],
+        isAuth: true,
+        roleId: 1,
+        grade: '4학년',
+        mediumUrl: 'medium',
+        tistoryUrl: 'tistory',
+        velogUrl: 'velog',
+    };
+
+    return {
+        ...defaultUser,
+        ...overrides,
+    };
+};
+
+// 테스트에서 자주 사용되는 기본 유저
+export const mockUser = createMockUser();
+
+// 특정 테스트에서 필요한 필드만 오버라이드해서 사용 가능
+export const mockUserWithCustomFields = (overrides: Partial<TestUser>): User => {
+    return createMockUser(overrides);
 };
 
 export const request: RequestWithUser = {
