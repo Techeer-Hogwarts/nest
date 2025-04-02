@@ -51,7 +51,7 @@ export const ErrorCode = {
         code: 'EVENT_FORBIDDEN',
         status: HttpStatus.FORBIDDEN,
         message: '이벤트에 대한 권한이 없습니다.',
-    }
+    },
 
     /** GoogleDrive **/
     /** Like **/
