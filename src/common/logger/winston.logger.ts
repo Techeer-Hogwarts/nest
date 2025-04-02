@@ -1,11 +1,8 @@
 import { Injectable, LoggerService, LogLevel } from '@nestjs/common';
 import * as winston from 'winston';
 import { Request } from 'express';
-<<<<<<< HEAD
 import { BaseException, ServerException } from '../exception/base.exception';
 
-=======
->>>>>>> 098335f (develop 병합)
 @Injectable()
 export class CustomWinstonLogger implements LoggerService {
     private readonly winstonLogger: winston.Logger;
@@ -89,6 +86,7 @@ export class CustomWinstonLogger implements LoggerService {
         } (status: ${error.statusCode})`;
         this.winstonLogger.error(logMessage);
     }
+
     bodyError(error: Error, err: BaseException, request: Request): void {
         const logMessage = `
 [ERROR] ${new Date().toISOString()}
@@ -102,14 +100,6 @@ export class CustomWinstonLogger implements LoggerService {
 ━━━━━━━━━━━━━━━━
         `;
         this.winstonLogger.error(logMessage);
-    }
-
-    bodyError(error: Error, request: Request, ...optionalParams: any[]): void {
-        const body = JSON.stringify(request?.body);
-        const stack = error?.stack;
-        const message = `[${request.method}] ${request.url} - ${error.name}: ${error.message}`;
-
-        this.winstonLogger.error(stack, body, error.message);
     }
 
     warn(message: any, ...optionalParams: any[]): void {
