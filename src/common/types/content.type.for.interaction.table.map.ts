@@ -13,22 +13,22 @@ export const CreateInteractableContentTableMap = (
     prisma: PrismaService,
 ): InteractableContentTableMap => {
     return {
-        'SESSION': {
+        SESSION: {
             table: prisma.session,
             name: 'Session',
             include: { user: true },
         },
-        'BLOG': {
+        BLOG: {
             table: prisma.blog,
             name: 'Blog',
             include: { user: true },
         },
-        'RESUME': {
+        RESUME: {
             table: prisma.resume,
             name: 'Resume',
             include: { user: true },
         },
-        'PROJECT': {
+        PROJECT: {
             table: prisma.projectTeam,
             name: 'ProjectTeam',
             include: {
@@ -36,10 +36,10 @@ export const CreateInteractableContentTableMap = (
                 teamStacks: true,
             },
         },
-        'STUDY': {
+        STUDY: {
             table: prisma.studyTeam,
             name: 'StudyTeam',
             include: { resultImages: true },
         },
     } satisfies InteractableContentTableMap;
-}; 
+};

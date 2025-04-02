@@ -92,7 +92,7 @@ describe('LikeService', () => {
 
             jest.spyOn(service, 'isContentExist').mockResolvedValue(true);
 
-            jest.spyOn(logger, 'debug').mockImplementation(() => { });
+            jest.spyOn(logger, 'debug').mockImplementation(() => {});
 
             mockPrismaService.$transaction.mockImplementation(
                 async (callback) => {
@@ -427,12 +427,12 @@ describe('LikeService', () => {
                     category === 'SESSION'
                         ? GetSessionResponse
                         : category === 'BLOG'
-                            ? GetBlogResponse
-                            : category === 'RESUME'
-                                ? GetResumeResponse
-                                : category === 'PROJECT'
-                                    ? GetProjectTeamListResponse
-                                    : GetStudyTeamListResponse,
+                          ? GetBlogResponse
+                          : category === 'RESUME'
+                            ? GetResumeResponse
+                            : category === 'PROJECT'
+                              ? GetProjectTeamListResponse
+                              : GetStudyTeamListResponse,
                 );
                 expect(logger.debug).toHaveBeenCalledWith(
                     `좋아요 목록 조회 시작 - userId: ${userId}, category: ${category}`,

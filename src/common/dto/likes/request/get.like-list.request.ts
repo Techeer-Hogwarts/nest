@@ -1,10 +1,15 @@
 import { IsIn, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { INTERACTABLE_CONTENT_TYPES, InteractableContentType } from '../../../types/content.type.for.interaction';
+import {
+    INTERACTABLE_CONTENT_TYPES,
+    InteractableContentType,
+} from '../../../types/content.type.for.interaction';
 
 export class GetLikeListRequest {
-    @IsIn(INTERACTABLE_CONTENT_TYPES, { message: '존재하지 않는 카테고리입니다.' })
+    @IsIn(INTERACTABLE_CONTENT_TYPES, {
+        message: '존재하지 않는 카테고리입니다.',
+    })
     @ApiProperty({
         enum: INTERACTABLE_CONTENT_TYPES,
         example: 'RESUME',
