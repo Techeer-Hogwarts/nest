@@ -20,4 +20,5 @@ export function setTeamRole(value: string): TeamRoleType {
 
 type TeamRoleKey = keyof typeof TeamRole;
 export type TeamRoleType = (typeof TeamRole)[TeamRoleKey];
+export type ValidTeamRole = Exclude<TeamRoleType, typeof TeamRole.INVALID>;
 const teamRoleValues: readonly TeamRoleType[] = Object.values(TeamRole);

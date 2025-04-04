@@ -1,4 +1,4 @@
-import { TeamRole, TeamRoleType } from './teamRole.category';
+import { TeamRole, ValidTeamRole } from './teamRole.category';
 
 export const PositionType = {
     FRONTEND: 'frontend',
@@ -17,7 +17,7 @@ export function isPosition(value: string): value is PositionType {
     return positionValues.includes(value as PositionType);
 }
 
-export const mapToTeamRoleNum: Record<TeamRoleType, keyof PositionNumType> = {
+export const mapToTeamRoleNum: Record<ValidTeamRole, keyof PositionNumType> = {
     [TeamRole.BACKEND]: 'backendNum',
     [TeamRole.FRONTEND]: 'frontendNum',
     [TeamRole.FULL_STACK]: 'fullStackNum',
