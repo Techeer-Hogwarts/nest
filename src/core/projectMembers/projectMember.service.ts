@@ -5,14 +5,7 @@ import { Prisma, StatusCategory } from '@prisma/client';
 import { MemberStatus } from '../../common/category/teamCategory/member.category';
 import { TeamRoleType } from '../../common/category/teamCategory/teamRole.category';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { ProjectLeaderEmails } from '../../common/dto/projectMembers/response/get.projectLeaders.response';
-import { ActiveProjectMember } from '../../common/dto/projectMembers/response/get.activeProjectMember.response';
-import { AcceptedApplicant } from '../../common/dto/projectMembers/response/get.acceptedApplicant.response';
-import { PendingApplicant } from '../../common/dto/projectMembers/response/get.applicants.response';
 import { ProjectMemberResponse } from '../../common/dto/projectMembers/response/get.projectMembers.response';
-import { CancelledApplicant } from '../../common/dto/projectMembers/response/update.cancelledApplicant.response';
-import { RejectedApplicant } from '../../common/dto/projectMembers/response/update.rejectedApplicant.response';
-import { UpsertedApplicant } from '../../common/dto/projectMembers/response/upsert.appliedApplicant.response';
 
 import {
     ProjectMemberAlreadyActiveException,
@@ -22,6 +15,15 @@ import {
 } from './exception/projectMember.exception';
 
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import {
+    AcceptedApplicant,
+    CancelledApplicant,
+    ExistingProjectMember,
+    PendingApplicant,
+    ProjectLeaderEmails,
+    RejectedApplicant,
+    UpsertedApplicant,
+} from '../../common/dto/projectMembers/response/project.member.response.interface';
 
 @Injectable()
 export class ProjectMemberService {
@@ -71,9 +73,9 @@ export class ProjectMemberService {
         return teamLeaders;
     }
 
-    async findManyActiveProjectMembers(
+    async findAllProjectMembers(
         projectTeamId: number,
-    ): Promise<ActiveProjectMember[]> {
+    ): Promise<ExistingProjectMember[]> {
         return await this.prisma.projectMember.findMany({
             where: {
                 projectTeamId: projectTeamId,

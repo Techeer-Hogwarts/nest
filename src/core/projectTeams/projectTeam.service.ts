@@ -30,7 +30,7 @@ import {
     StudyTeamGetAllResponse,
     TeamGetAllResponse,
 } from '../../common/dto/projectTeams/response/get.allTeam.response';
-import { ProjectTeamLeadersAlert } from '../../common/dto/projectMembers/response/get.projectLeaders.response';
+import { ProjectTeamLeadersAlert } from '../../common/dto/projectMembers/response/project.member.response.interface';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import {
     mapToProjectTeamAlertPayload,
@@ -451,7 +451,7 @@ export class ProjectTeamService {
         /** 5. 업데이트 멤버 정렬 **/
         // 기존 멤버 정보 조회 (삭제된 멤버 포함)
         const members =
-            await this.projectMemberService.findManyActiveProjectMembers(
+            await this.projectMemberService.findAllProjectMembers(
                 projectTeamId,
             );
 
