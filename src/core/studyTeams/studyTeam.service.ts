@@ -1049,7 +1049,7 @@ export class StudyTeamService {
             studyTeam.name,
             studyTeamLeaders,
             applicantEmail.email,
-            MemberStatus.CANCELLED,
+            MemberStatus.APPROVED,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -1129,7 +1129,7 @@ export class StudyTeamService {
             studyTeam.name,
             studyTeamLeaders,
             applicant.email,
-            MemberStatus.CANCELLED,
+            MemberStatus.REJECT,
         );
         await Promise.all(
             alertPayloads.map((payload) =>

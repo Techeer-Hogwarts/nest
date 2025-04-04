@@ -84,7 +84,7 @@ export class ProjectTeamController {
             CreateProjectTeamRequest,
             JSON.parse(plainRequest),
         );
-        await validateDtoFields(plainRequest);
+        await validateDtoFields(createProjectTeamRequest);
         this.logger.debug('프로젝트 생성 서비스 호출 시작');
         const createdProject = await this.projectTeamService.createProject(
             createProjectTeamRequest,
@@ -153,7 +153,7 @@ export class ProjectTeamController {
             UpdateProjectTeamRequest,
             parsedBody,
         );
-
+        await validateDtoFields(updateProjectRequest);
         return await this.projectTeamService.updateProjectTeam(
             projectTeamId,
             requestUser.id,

@@ -92,6 +92,7 @@ export class CustomWinstonLogger implements LoggerService {
 [ERROR] ${new Date().toISOString()}
 * ERROR CODE:    ${err.code ?? 'N/A'}
 * ERROR MESSAGE: ${err?.message ?? 'N/A'}
+* CUSTOM MESSAGE: ${err?.customMessage ?? 'N/A'}
 * STATUS CODE:   ${err.statusCode}
 * PATH:          ${request?.url ?? 'N/A'}
 * METHOD:        ${request?.method ?? 'N/A'}
