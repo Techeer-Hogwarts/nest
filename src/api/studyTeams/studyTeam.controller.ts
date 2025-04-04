@@ -24,13 +24,13 @@ import {
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
 import { StudyTeamInvalidUserException } from '../../core/studyTeams/exception/studyTeam.exception';
 
+import { JsonBodyToDTO } from '../../common/decorator/JsonBodyToDTO';
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
 import { UpdateApplicantStatusRequest } from '../../common/dto/studyTeams/request/update.applicantStatus.request';
 import { AddMemberToStudyTeamRequest } from '../../common/dto/studyMembers/request/add.studyMember.request';
-import { plainToInstance } from 'class-transformer';
 import { UpdateStudyTeamRequest } from '../../common/dto/studyTeams/request/update.studyTeam.request';
 import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
-import { validateDtoFields } from '../../common/validation/plainDto.validation';
+
 @ApiTags('studyTeams')
 @Controller('/studyTeams')
 export class StudyTeamController {
@@ -89,7 +89,8 @@ export class StudyTeamController {
     })
     @UseInterceptors(FilesInterceptor('files', 10))
     async uploadStudyTeam(
-        @Body('createStudyTeamRequest') createStudyTeamRequest: string,
+        @JsonBodyToDTO(CreateStudyTeamRequest)
+        createStudyTeamRequest: CreateStudyTeamRequest,
         @UploadedFiles() files: Express.Multer.File[],
         @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
@@ -99,17 +100,9 @@ export class StudyTeamController {
         if (!user) {
             throw new StudyTeamInvalidUserException();
         }
-        this.logger.debug('스터디 팀 생성: request user 확인 완료');
-
-        const createRequest = plainToInstance(
-            CreateStudyTeamRequest,
-            JSON.parse(createStudyTeamRequest),
-        );
-        await validateDtoFields(createRequest);
-        this.logger.debug('스터디 팀 생성: body dto 검증 완료');
 
         return await this.studyTeamService.createStudyTeam(
-            createRequest,
+            createStudyTeamRequest,
             files,
         );
     }
@@ -166,7 +159,8 @@ export class StudyTeamController {
     @UseInterceptors(FilesInterceptor('files', 10))
     async updateStudyTeam(
         @Param('studyTeamId') studyTeamId: number,
-        @Body('updateStudyTeamRequest') updateStudyTeamRequest: string,
+        @JsonBodyToDTO(UpdateStudyTeamRequest)
+        updateStudyTeamRequest: UpdateStudyTeamRequest,
         @UploadedFiles() files: Express.Multer.File[],
         @Req() request: Request,
     ): Promise<GetStudyTeamResponse> {
@@ -176,19 +170,11 @@ export class StudyTeamController {
         if (!user) {
             throw new StudyTeamInvalidUserException();
         }
-        this.logger.debug('스터디 팀 업데이트: request user 확인 완료');
-
-        const updateRequest = plainToInstance(
-            UpdateStudyTeamRequest,
-            JSON.parse(updateStudyTeamRequest),
-        );
-        await validateDtoFields(updateRequest);
-        this.logger.debug('스터디 팀 업데이트: body dto 확인 완료');
 
         return await this.studyTeamService.updateStudyTeam(
             studyTeamId,
             user.id,
-            updateRequest,
+            updateStudyTeamRequest,
             files,
         );
     }

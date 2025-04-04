@@ -11,7 +11,6 @@ import {
     UseInterceptors,
     ValidationPipe,
 } from '@nestjs/common';
-import { plainToInstance } from 'class-transformer';
 import {
     FileFieldsInterceptor,
     FilesInterceptor,
@@ -21,9 +20,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { NotFoundUserException } from '../../common/exception/custom.exception';
-import { validateDtoFields } from '../../common/validation/plainDto.validation';
 import { User } from '../../common/decorator/user.decorator';
-import { RequestUser } from '../../common/types/request/user.interface';
+import { RequestUser } from '../../common/dto/users/request/user.interface';
 
 import { AddProjectMemberRequest } from '../../common/dto/projectMembers/request/add.projectMember.request';
 import { CreateProjectMemberRequest } from '../../common/dto/projectMembers/request/create.projectMember.request';
@@ -57,6 +55,7 @@ import {
     RejectApplicantDoc,
     UpdateProjectDoc,
 } from './projectTeam.docs';
+import { JsonBodyToDTO } from '../../common/decorator/JsonBodyToDTO';
 
 @ApiTags('projectTeams')
 @Controller('/projectTeams')
@@ -71,7 +70,8 @@ export class ProjectTeamController {
     @CreateProjectDoc()
     @UseInterceptors(FilesInterceptor('files', 10))
     async createProject(
-        @Body('createProjectTeamRequest') plainRequest: string,
+        @JsonBodyToDTO(CreateProjectTeamRequest)
+        createProjectTeamRequest: CreateProjectTeamRequest,
         @UploadedFiles() files: Express.Multer.File[],
         @User() requestUser: RequestUser,
     ): Promise<ProjectTeamDetailResponse> {
@@ -80,11 +80,6 @@ export class ProjectTeamController {
             this.logger.error('사용자 정보가 없습니다.');
             throw new NotFoundUserException();
         }
-        const createProjectTeamRequest = plainToInstance(
-            CreateProjectTeamRequest,
-            JSON.parse(plainRequest),
-        );
-        await validateDtoFields(createProjectTeamRequest);
         this.logger.debug('프로젝트 생성 서비스 호출 시작');
         const createdProject = await this.projectTeamService.createProject(
             createProjectTeamRequest,
@@ -139,7 +134,8 @@ export class ProjectTeamController {
     )
     async updateProject(
         @Param('projectTeamId') projectTeamId: number,
-        @Body('updateProjectTeamRequest') updateProjectTeamRequest: string,
+        @JsonBodyToDTO(UpdateProjectTeamRequest)
+        updateProjectTeamRequest: UpdateProjectTeamRequest,
         @UploadedFiles()
         files: {
             mainImages?: Express.Multer.File[];
@@ -148,16 +144,10 @@ export class ProjectTeamController {
         @User() requestUser: RequestUser,
     ): Promise<ProjectTeamDetailResponse> {
         if (!requestUser) throw new NotFoundUserException();
-        const parsedBody = JSON.parse(updateProjectTeamRequest);
-        const updateProjectRequest = plainToInstance(
-            UpdateProjectTeamRequest,
-            parsedBody,
-        );
-        await validateDtoFields(updateProjectRequest);
         return await this.projectTeamService.updateProjectTeam(
             projectTeamId,
             requestUser.id,
-            updateProjectRequest,
+            updateProjectTeamRequest,
             files.mainImages,
             files.resultImages,
         );
