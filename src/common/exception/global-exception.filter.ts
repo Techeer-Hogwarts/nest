@@ -1,10 +1,4 @@
-import {
-    ExceptionFilter,
-    Catch,
-    ArgumentsHost,
-    HttpException,
-    HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { BaseException, ServerException } from './base.exception';
 import { ExceptionResponse } from './exception.response';
@@ -24,14 +18,13 @@ export class GlobalExceptionsFilter implements ExceptionFilter {
         if (exception instanceof BaseException) {
             err = exception;
             this.logger.bodyError(exception, err, request);
-            const res = new ExceptionResponse(err, request.url);
-            response.status(res.getStatusCode()).json(res.toJson());
-        }
-        else {
+        } else {
             err = new ServerException();
             if (exception instanceof Error) {
                 this.logger.bodyError(exception, err, request);
             }
         }
+        const res = new ExceptionResponse(err, request.url);
+        response.status(res.getStatusCode()).json(res.toJson());
     }
 }
