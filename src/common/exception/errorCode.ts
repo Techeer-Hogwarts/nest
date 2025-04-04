@@ -199,4 +199,14 @@ export const ErrorCode = {
         status: HttpStatus.INTERNAL_SERVER_ERROR,
         message: '서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
     },
+    GLOBAL_INVALID_DATA_TYPE: {
+        code: 'GLOBAL_INVALID_DATA_TYPE',
+        status: HttpStatus.BAD_REQUEST,
+        message: '올바르지 않은 형식의 데이터입니다.',
+    },
+    GLOBAL_INVALID_INPUT_VALUE: {
+        code: 'GLOBAL_INVALID_INPUT_VALUE',
+        status: HttpStatus.BAD_REQUEST,
+        message: '잘못된 입력값입니다.',
+    },
 } as const;
