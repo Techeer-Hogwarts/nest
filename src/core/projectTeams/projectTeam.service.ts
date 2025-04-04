@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import {
     isTeamRole,
     setTeamRole,
+    TeamRole,
 } from '../../common/category/teamCategory/teamRole.category';
 import { mapToTeamRoleNum } from '../../common/category/teamCategory/projectPositionType';
 import { MemberStatus } from '../../common/category/teamCategory/member.category';
@@ -874,11 +875,11 @@ export class ProjectTeamService {
         }
 
         // 지원 teamRole 검증, 모집 중인 teamRole인지 확인
-        const hopeTeamRole = setTeamRole(teamRole);
-        const roleNumKey = mapToTeamRoleNum[hopeTeamRole];
-        if (!roleNumKey) {
+        const requestedRole = setTeamRole(teamRole);
+        if (requestedRole === TeamRole.INVALID) {
             throw new ProjectTeamInvalidTeamRoleException();
         }
+        const roleNumKey = mapToTeamRoleNum[requestedRole];
 
         const roleNum = projectTeam[roleNumKey];
         if (roleNum < 1) {
@@ -890,7 +891,7 @@ export class ProjectTeamService {
             await this.projectMemberService.upsertAppliedApplicant(
                 projectTeamId,
                 applicantId,
-                hopeTeamRole,
+                requestedRole,
                 summary,
             );
 
@@ -1043,11 +1044,11 @@ export class ProjectTeamService {
             await this.prisma.$transaction(async (tx) => {
                 const updateData = {};
 
-                const positionRoleNumKey =
-                    mapToTeamRoleNum[setTeamRole(applicant.teamRole)];
-                if (!positionRoleNumKey) {
+                const requestedRole = setTeamRole(applicant.teamRole);
+                if (requestedRole === TeamRole.INVALID) {
                     throw new ProjectTeamInvalidTeamRoleException();
                 }
+                const positionRoleNumKey = mapToTeamRoleNum[requestedRole];
 
                 // 수락 시점에 모집인원이 0인 포지션이라도 승인 가능
                 // 데이터베이스에 저장되는 minNum === 0
@@ -1332,15 +1333,15 @@ export class ProjectTeamService {
             projectTeamId,
             requesterId,
         );
-        const addedMemberRole = setTeamRole(teamRole);
-        if (!addedMemberRole) {
+        const requestedRole = setTeamRole(teamRole);
+        if (!requestedRole) {
             throw new ProjectTeamInvalidTeamRoleException();
         }
         return await this.projectMemberService.addProjectMember(
             projectTeamId,
             memberId,
             isLeader,
-            addedMemberRole,
+            requestedRole,
         );
     }
 
