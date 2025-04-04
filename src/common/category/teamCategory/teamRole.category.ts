@@ -4,6 +4,7 @@ export const TeamRole = {
     DEV_OPS: 'DevOps',
     FULL_STACK: 'FullStack',
     DATA_ENGINEER: 'DataEngineer',
+    INVALID: 'Invalid',
 } as const;
 
 export function isTeamRole(value: string): value is TeamRoleType {
@@ -12,7 +13,7 @@ export function isTeamRole(value: string): value is TeamRoleType {
 
 export function setTeamRole(value: string): TeamRoleType {
     if (!isTeamRole(value)) {
-        return undefined;
+        return TeamRole.INVALID;
     }
     return value;
 }
