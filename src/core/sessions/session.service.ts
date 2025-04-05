@@ -84,27 +84,25 @@ export class SessionService {
     async getSession(sessionId: number): Promise<GetSessionResponse> {
         this.logger.debug(`단일 세션 게시물 조회 중`, SessionService.name);
         try {
-            const session = await this.prisma.$transaction(async (tx) => {
-                const updated = await tx.session.update({
-                    where: {
-                        id: sessionId,
-                    },
-                    data: {
-                        viewCount: { increment: 1 }, // 조회수 증가
-                    },
-                    include: {
-                        user: true,
-                    },
-                });
-                // 인덱스 업데이트
-                const indexSession = new IndexSessionRequest(session);
-                this.logger.debug(
-                    `조회수 증가 후 인덱스 업데이트 요청`,
-                    SessionService.name,
-                );
-                await this.indexService.createIndex('session', indexSession);
-                return updated;
+            const session = await this.prisma.session.update({
+                where: {
+                    id: sessionId,
+                    isDeleted: false,
+                },
+                data: {
+                    viewCount: { increment: 1 }, // 조회수 증가
+                },
+                include: {
+                    user: true,
+                },
             });
+            // 인덱스 업데이트
+            const indexSession = new IndexSessionRequest(session);
+            this.logger.debug(
+                `조회수 증가 후 인덱스 업데이트 요청`,
+                SessionService.name,
+            );
+            await this.indexService.createIndex('session', indexSession);
             return new GetSessionResponse(session);
         } catch (error) {
             this.logger.error(
@@ -303,6 +301,7 @@ export class SessionService {
                 const updated = await tx.session.update({
                     where: {
                         id: sessionId,
+                        isDeleted: false,
                     },
                     data: updateSessionRequest,
                 });
