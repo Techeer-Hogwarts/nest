@@ -1,5 +1,8 @@
-import { StudyResultImage } from '@prisma/client';
-import { StudyTeamEntity } from '../../../../core/studyTeams/entities/studyTeam.entity';
+import { StudyResultImage, StudyTeam } from '@prisma/client';
+
+type StudyTeamWithRelations = StudyTeam & {
+    resultImages: StudyResultImage[];
+};
 
 export class GetStudyTeamListResponse {
     private readonly id: number;
@@ -11,7 +14,7 @@ export class GetStudyTeamListResponse {
     private readonly recruitExplain: string;
     private readonly resultImages: StudyResultImage[];
 
-    constructor(study: StudyTeamEntity) {
+    constructor(study: StudyTeamWithRelations) {
         this.id = study.id;
         this.name = study.name;
         this.studyExplain = study.studyExplain;
