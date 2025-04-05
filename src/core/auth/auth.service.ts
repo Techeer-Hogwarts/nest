@@ -25,7 +25,7 @@ import {
     AuthVerificationFailedException,
 } from './exception/auth.exception';
 import { ServerException } from '../../common/exception/base.exception';
-import { authEmailTemplate } from './templete/auth.templete';
+import { authEmailTemplate } from './template/auth.template';
 
 @Injectable()
 export class AuthService {
