@@ -120,129 +120,15 @@ export class NotFoundProfileImageException extends HttpException {
     }
 }
 
-export class BadRequestException extends HttpException {
-    constructor() {
-        super(
-            'isIntern이나 IsFulltime false일 때 인턴 관련 필드를 입력할 수 없습니다.',
-            HttpStatus.BAD_REQUEST,
-        );
-    }
-}
-
-export class NotFoundStudyTeamException extends HttpException {
-    constructor() {
-        super('스터디 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
-    }
-}
-
-export class NotStudyMemberException extends HttpException {
-    constructor() {
-        super('해당 스터디의 멤버가 아닙니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class AlreadyApprovedException extends HttpException {
-    constructor() {
-        super('이미 승인된 지원자는 변경할 수 없습니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
 export class NotApprovedFileExtension extends HttpException {
     constructor() {
         super('허용되지 않은 파일 형식입니다. ', HttpStatus.FORBIDDEN);
     }
 }
 
-export class DuplicateStudyTeamNameException extends HttpException {
-    constructor() {
-        super('이미 존재하는 스터디 이름입니다. ', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class NotFoundProjectException extends HttpException {
-    constructor() {
-        super('프로젝트 공고를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
-    }
-}
-
-export class UploadProjectException extends HttpException {
-    constructor() {
-        super(
-            '프로젝트 공고 업로드에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
-export class UpdateProjectException extends HttpException {
-    constructor() {
-        super(
-            '프로젝트 공고 업데이트에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
-export class CloseProjectException extends HttpException {
-    constructor() {
-        super(
-            '프로젝트 공고 마감에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
-export class DeleteProjectException extends HttpException {
-    constructor() {
-        super(
-            '프로젝트 공고 삭제에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
-export class NotProjectMemberException extends HttpException {
-    constructor() {
-        super('해당 프로젝트의 멤버가 아닙니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class DuplicateProjectNameException extends HttpException {
-    constructor() {
-        super('이미 존재하는 프로젝트 이름입니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class AlreadyApprovedApplicantException extends HttpException {
-    constructor() {
-        super('이미 승인된 지원자는 변경할 수 없습니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class NotApprovedFileExtensionException extends HttpException {
-    constructor() {
-        super('허용되지 않은 파일 형식입니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class UploadProjectImageException extends HttpException {
-    constructor() {
-        super(
-            '프로젝트 이미지 업로드에 실패했습니다.',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-    }
-}
-
 export class ForbiddenAccessException extends HttpException {
     constructor() {
         super('해당 게시물에 대한 권한이 없습니다.', HttpStatus.FORBIDDEN);
-    }
-}
-
-export class DuplicateEmailException extends HttpException {
-    constructor() {
-        super('이미 가입한 이메일입니다. ', HttpStatus.FORBIDDEN);
     }
 }
 
@@ -263,36 +149,6 @@ export class NotFoundExperienceException extends HttpException {
         super(
             '경력을 생성한 사용자만 삭제할 수 있습니다.',
             HttpStatus.NOT_FOUND,
-        );
-    }
-}
-
-export class NoLeaderException extends HttpException {
-    constructor() {
-        super('최소 한 명의 리더가 있어야 합니다.', HttpStatus.BAD_REQUEST);
-    }
-}
-
-export class NoPositionException extends HttpException {
-    constructor() {
-        super('모든 팀원은 포지션을 선택해야 합니다.', HttpStatus.BAD_REQUEST);
-    }
-}
-
-export class NoRecruitmentSpaceException extends HttpException {
-    constructor() {
-        super(
-            '모집 가능한 인원이 0명으로 더 이상 모집할 수 없습니다.',
-            HttpStatus.BAD_REQUEST,
-        );
-    }
-}
-
-export class NotFoundApplicantException extends HttpException {
-    constructor() {
-        super(
-            '모집 가능한 인원이 0명으로 더 이상 모집할 수 없습니다.',
-            HttpStatus.BAD_REQUEST,
         );
     }
 }

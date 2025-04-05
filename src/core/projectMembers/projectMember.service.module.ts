@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ProjectMemberRepository } from './repository/projectMember.repository';
+
+import { ProjectMemberService } from './projectMember.service';
 
 @Module({
     imports: [],
-    providers: [ProjectMemberRepository],
-    exports: [ProjectMemberRepository],
+    providers: [ProjectMemberService],
+    exports: [ProjectMemberService],
 })
 export class ProjectMemberServiceModule {}

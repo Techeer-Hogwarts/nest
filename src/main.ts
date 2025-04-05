@@ -1,14 +1,19 @@
 import tracing from './trace';
 tracing.start();
+
 import { AppModule } from './app.module';
-import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { PrismaService } from './infra/prisma/prisma.service';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestFactory } from '@nestjs/core';
+
 import * as cookieParser from 'cookie-parser';
-import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import * as basicAuth from 'express-basic-auth';
+
+import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import { CustomWinstonLogger } from './common/logger/winston.logger';
+import { JsonBodyPipe } from './common/pipe/jsonBody.pipe';
+
+import { PrismaService } from './infra/prisma/prisma.service';
 
 async function bootstrap(): Promise<void> {
     try {
@@ -96,6 +101,7 @@ async function bootstrap(): Promise<void> {
         customLogger.log('Swagger 모듈 설정이 완료되었습니다.');
 
         app.useGlobalPipes(
+            new JsonBodyPipe(),
             new ValidationPipe({
                 transform: true, // DTO에서 정의한 타입으로 자동 변환
                 forbidNonWhitelisted: true, // DTO에 없는 값이 들어오면 예외 발생

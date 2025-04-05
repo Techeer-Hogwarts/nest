@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { TeamRoleType } from '../../../category/teamCategory/teamRole.category';
+import { IsTeamRole } from '../../../decorator/teamRole.decorator';
 
 export class AddProjectMemberRequest {
     @IsInt()
@@ -26,13 +28,13 @@ export class AddProjectMemberRequest {
     })
     isLeader: boolean; // 팀장 여부
 
-    @IsNotEmpty()
-    @IsString()
     @ApiProperty({
         description: '프로젝트 팀 내 역할',
         example: 'Backend Developer',
     })
-    teamRole: string; // 프로젝트 팀 내 역할
+    @IsNotEmpty()
+    @IsTeamRole()
+    teamRole: TeamRoleType; // 프로젝트 팀 내 역할
 
     @IsNotEmpty()
     @IsString()

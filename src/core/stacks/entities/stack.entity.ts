@@ -1,4 +1,5 @@
 import { Stack, StackCategory } from '@prisma/client';
+
 export class StackEntity implements Stack {
     name: string;
     id: number;
