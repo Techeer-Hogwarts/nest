@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BlogEntity } from '../blogs/entities/blog.entity';
 import { ResumeEntity } from '../resumes/entities/resume.entity';
-import { SessionEntity } from '../sessions/entities/session.entity';
+import { Session } from '@prisma/client';
 import { BookmarkRepository } from './repository/bookmark.repository';
 import { CreateBookmarkRequest } from '../../common/dto/bookmarks/request/create.bookmark.request';
 import { GetBookmarkListRequest } from '../../common/dto/bookmarks/request/get.bookmark-list.request';
@@ -16,6 +16,7 @@ import { ProjectTeamEntity } from '../projectTeams/entities/projectTeam.entity';
 import { StudyTeamEntity } from '../studyTeams/entities/studyTeam.entity';
 import { BadRequestCategoryException } from '../../common/exception/custom.exception';
 import { LikeService } from '../likes/like.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class BookmarkService {
@@ -65,17 +66,16 @@ export class BookmarkService {
     > {
         switch (getBookmarkListRequest.category) {
             case 'SESSION': {
-                const contents: SessionEntity[] =
-                    await this.bookmarkRepository.getBookmarkList<SessionEntity>(
-                        userId,
-                        getBookmarkListRequest,
-                    );
+                const contents = await this.bookmarkRepository.getBookmarkList<Session & { user: User }>(
+                    userId,
+                    getBookmarkListRequest,
+                );
                 this.logger.debug(
                     `${contents.length}개의 세션 북마크 목록 조회 성공 후 GetSessionResponse로 변환 중`,
                     BookmarkService.name,
                 );
                 return contents.map(
-                    (content: SessionEntity) => new GetSessionResponse(content),
+                    (content) => new GetSessionResponse(content),
                 );
             }
             case 'BLOG': {

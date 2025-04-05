@@ -106,47 +106,32 @@ export class BookmarkRepository {
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
     ): Promise<T[]> {
-        const { category, offset, limit }: GetBookmarkListRequest =
-            getBookmarkListRequest;
-        const tableName = `"${this.contentTableMap[category].name}"`;
+        const { category, offset = 0, limit = 10 } = getBookmarkListRequest;
         this.logger.debug(
-            `북마크 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}, tableName: ${tableName}`,
+            `북마크 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}`,
             BookmarkRepository.name,
         );
+
+        const tableName = `"${this.contentTableMap[category].name}"`;
         const result = await this.prisma.$queryRaw<T[]>(
             Prisma.sql`
-                SELECT b.*, c.*
+                SELECT c.*, u.*
                 FROM "Bookmark" b
-                         LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
+                LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
+                LEFT JOIN "User" u ON c."userId" = u."id"
                 WHERE b."userId" = ${userId}
-                  AND b."category" = ${category}
-                  AND b."isDeleted" = false
+                AND b."category" = ${category}
+                AND b."isDeleted" = false
                 ORDER BY b."createdAt" DESC
-                    LIMIT ${limit} OFFSET ${offset}
+                LIMIT ${limit} OFFSET ${offset}
             `,
         );
+
         this.logger.debug(
-            `북마크 목록 조회 성공: ${JSON.stringify(result)}`,
+            `${result.length}개의 북마크 목록 조회 성공`,
             BookmarkRepository.name,
         );
-        return await Promise.all(
-            result.map(async (content) => {
-                if ('userId' in content && content.userId) {
-                    // userId가 존재하는 경우만 유저 정보 조회
-                    this.logger.debug(
-                        `유저 정보 추가`,
-                        BookmarkRepository.name,
-                    );
-                    const user = await this.prisma.user.findUnique({
-                        where: { id: content.userId },
-                    });
-                    return {
-                        ...content,
-                        user,
-                    };
-                }
-                return content; // userId가 없는 경우 그대로 반환
-            }),
-        );
+
+        return result;
     }
 }

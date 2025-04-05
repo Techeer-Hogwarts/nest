@@ -1,7 +1,6 @@
 import { Event } from '@prisma/client';
-import { User } from '@prisma/client';
 
-export class GetEventResponse {
+export class CreateEventResponse {
     readonly id: number;
     readonly userId: number;
     readonly category: string;
@@ -10,9 +9,7 @@ export class GetEventResponse {
     readonly endDate: Date;
     readonly url: string;
 
-    readonly user: { name: string; nickname: string; profileImage: string };
-
-    constructor(event: Event & { user: User }) {
+    constructor(event: Event) {
         this.id = event.id;
         this.userId = event.userId;
         this.category = event.category;
@@ -20,11 +17,5 @@ export class GetEventResponse {
         this.startDate = event.startDate;
         this.endDate = event.endDate;
         this.url = event.url;
-
-        this.user = {
-            name: event.user.name,
-            nickname: event.user.nickname,
-            profileImage: event.user.profileImage,
-        };
     }
 }
