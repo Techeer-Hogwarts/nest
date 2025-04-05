@@ -3,6 +3,41 @@ import { HttpStatus } from '@nestjs/common';
 export const ErrorCode = {
     /** Alert **/
     /** Auth **/
+    AUTH_NOT_VERIFIED_EMAIL: {
+        code: 'AUTH_NOT_VERIFIED_EMAIL',
+        status: HttpStatus.UNAUTHORIZED,
+        message: '이메일 인증이 필요합니다.',
+    },
+    AUTH_INVALID_CODE: {
+        code: 'AUTH_INVALID_CODE',
+        status: HttpStatus.BAD_REQUEST,
+        message: '인증 코드가 일치하지 않습니다.',
+    },
+    AUTH_VERIFICATION_FAILED: {
+        code: 'AUTH_VERIFICATION_FAILED',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이메일 인증이 실패했습니다.',
+    },
+    AUTH_NOT_FOUND_USER: {
+        code: 'AUTH_NOT_FOUND_USER',
+        status: HttpStatus.NOT_FOUND,
+        message: '사용자를 찾을 수 없습니다.',
+    },
+    AUTH_INVALID_PASSWORD: {
+        code: 'AUTH_INVALID_PASSWORD',
+        status: HttpStatus.BAD_REQUEST,
+        message: '비밀번호가 일치하지 않습니다.',
+    },
+    AUTH_PROFILE_IMAGE_NOT_FOUND: {
+        code: 'AUTH_PROFILE_IMAGE_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '프로필 이미지를 찾을 수 없습니다.',
+    },
+    AUTH_NOT_TECHEER: {
+        code: 'AUTH_NOT_TECHEER',
+        status: HttpStatus.BAD_REQUEST,
+        message: '테커 회원이 아닙니다.',
+    },
     /** AwsS3 **/
     /** Blog **/
     /** Bookmark **/
@@ -96,6 +131,23 @@ export const ErrorCode = {
     },
     /** TeamStack **/
     /** UserExperience **/
+    USER_EXPERIENCE_INVALID_POSITION: {
+        code: 'USER_EXPERIENCE_INVALID_POSITION',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 포지션입니다.',
+    },
+
+    USER_EXPERIENCE_INVALID_CATEGORY: {
+        code: 'USER_EXPERIENCE_INVALID_CATEGORY',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 카테고리입니다.',
+    },
+
+    USER_EXPERIENCE_NOT_FOUND: {
+        code: 'USER_EXPERIENCE_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '해당 경력 정보를 찾을 수 없습니다.',
+    },
     /** User **/
     /** Global**/
     INTERNAL_SERVER_ERROR: {
