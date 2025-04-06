@@ -12,7 +12,6 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
@@ -27,7 +26,16 @@ import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.s
 import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 
-@ApiTags('sessions')
+import {
+    PostSessionDocs,
+    GetBestSessionsDocs,
+    GetSessionListDocs,
+    GetSessionDocs,
+    GetSessionsByUserDocs,
+    DeleteSessionDocs,
+    UpdateSessionDocs,
+} from './session.docs';
+
 @Controller('/sessions')
 export class SessionController {
     constructor(
@@ -37,10 +45,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    @ApiOperation({
-        summary: '세션 게시물 생성',
-        description: '새로운 세션 게시물을 생성합니다.',
-    })
+    @PostSessionDocs()
     async createSession(
         @Body() createSessionRequest: CreateSessionRequest,
         @Req() request: Request,
@@ -64,10 +69,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Get('/best')
-    @ApiOperation({
-        summary: '세션 게시물의 인기글 목록 조회',
-        description: '(조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
-    })
+    @GetBestSessionsDocs()
     async getBestSessions(
         @Query() query: PaginationQueryDto,
     ): Promise<GetSessionResponse[]> {
@@ -86,10 +88,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Get()
-    @ApiOperation({
-        summary: '세션 게시물 목록 조회 및 검색',
-        description: '세션 게시물을 조회하고 검색합니다.',
-    })
+    @GetSessionListDocs()
     async getSessionList(
         @Query() query: GetSessionsQueryRequest,
     ): Promise<GetSessionResponse[]> {
@@ -108,10 +107,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Get(':sessionId')
-    @ApiOperation({
-        summary: '단일 세션 게시물 조회',
-        description: '지정된 ID의 세션 게시물을 조회합니다.',
-    })
+    @GetSessionDocs()
     async getSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
     ): Promise<GetSessionResponse> {
@@ -130,10 +126,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Get('/user/:userId')
-    @ApiOperation({
-        summary: '유저 별 세션 게시물 목록 조회',
-        description: '지정된 유저의 세션 게시물 목록을 조회합니다.',
-    })
+    @GetSessionsByUserDocs()
     async getSessionsByUser(
         @Param('userId', ParseIntPipe) userId: number,
         @Query() query: PaginationQueryDto,
@@ -156,10 +149,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Delete(':sessionId')
-    @ApiOperation({
-        summary: '세션 게시물 삭제',
-        description: '지정된 ID의 세션 게시물을 삭제합니다.',
-    })
+    @DeleteSessionDocs()
     async deleteSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Req() request: Request,
@@ -179,10 +169,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard)
     @Patch(':sessionId')
-    @ApiOperation({
-        summary: '세션 게시물 수정',
-        description: '지정된 ID의 세션 게시물을 수정합니다.',
-    })
+    @UpdateSessionDocs()
     async updateSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Body() updateSessionRequest: UpdateSessionRequest,
