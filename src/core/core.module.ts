@@ -31,7 +31,6 @@ import { TaskServiceModule } from './task/taskService.module';
         TaskServiceModule,
         UserExperienceServiceModule,
         UserServiceModule,
-
         InfraModule,
     ],
     exports: [
