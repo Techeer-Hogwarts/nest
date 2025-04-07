@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import {
-    ForbiddenAccessException,
-    NotFoundSessionException,
-} from '../../common/exception/custom.exception';
+    SessionNotFoundException,
+    SessionForbiddenException,
+} from './exception/session.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { IndexService } from '../../infra/index/index.service';
 
@@ -60,7 +60,7 @@ export class SessionService {
             'session',
             indexSession,
         );
-        return new CreateSessionResponse(session as Session);
+        return new CreateSessionResponse(session);
     }
 
     async getSession(sessionId: number): Promise<GetSessionResponse> {
@@ -81,13 +81,13 @@ export class SessionService {
                 SessionService.name,
             );
             await this.indexService.createIndex('session', indexProject);
-            return new GetSessionResponse(session as Session);
+            return new GetSessionResponse(session);
         } catch {
             this.logger.error(
                 `세션 게시물을 찾을 수 없음`,
                 SessionService.name,
             );
-            throw new NotFoundSessionException();
+            throw new SessionNotFoundException();
         }
     }
 
@@ -121,9 +121,7 @@ export class SessionService {
                     (a.viewCount + a.likeCount * 10),
             );
 
-        return sortedSessions.map(
-            (session) => new GetSessionResponse(session as Session),
-        );
+        return sortedSessions.map((session) => new GetSessionResponse(session));
     }
 
     async getSessionList(
@@ -152,9 +150,7 @@ export class SessionService {
             SessionService.name,
         );
 
-        return sessions.map(
-            (session) => new GetSessionResponse(session as Session),
-        );
+        return sessions.map((session) => new GetSessionResponse(session));
     }
 
     async getSessionsByUser(
@@ -177,9 +173,7 @@ export class SessionService {
             SessionService.name,
         );
 
-        return sessions.map(
-            (session) => new GetSessionResponse(session as Session),
-        );
+        return sessions.map((session) => new GetSessionResponse(session));
     }
 
     async deleteSession(userId: number, sessionId: number): Promise<void> {
@@ -192,7 +186,7 @@ export class SessionService {
                 `세션 게시물 삭제 권한 없음`,
                 SessionService.name,
             );
-            throw new ForbiddenAccessException();
+            throw new SessionForbiddenException();
         }
 
         try {
@@ -215,7 +209,7 @@ export class SessionService {
                     `세션 게시물을 찾을 수 없음`,
                     SessionService.name,
                 );
-                throw new NotFoundSessionException();
+                throw new SessionNotFoundException();
             }
             throw error;
         }
@@ -234,7 +228,7 @@ export class SessionService {
                 '세션 게시물을 찾을 수 없음',
                 SessionService.name,
             );
-            throw new NotFoundSessionException();
+            throw new SessionNotFoundException();
         }
 
         if (session.userId !== userId) {
@@ -242,7 +236,7 @@ export class SessionService {
                 `세션 게시물 수정 권한 없음`,
                 SessionService.name,
             );
-            throw new ForbiddenAccessException();
+            throw new SessionForbiddenException();
         }
 
         try {
@@ -262,7 +256,7 @@ export class SessionService {
                 'session',
                 indexSession,
             );
-            return new CreateSessionResponse(updatedSession as Session);
+            return new CreateSessionResponse(updatedSession);
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -272,7 +266,7 @@ export class SessionService {
                     `세션 게시물을 찾을 수 없음`,
                     SessionService.name,
                 );
-                throw new NotFoundSessionException();
+                throw new SessionNotFoundException();
             }
             throw error;
         }
