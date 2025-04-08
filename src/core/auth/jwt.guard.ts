@@ -17,6 +17,8 @@ import {
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { UserService } from '../users/user.service';
 
+import { UserService } from '../users/user.service';
+
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
     constructor(

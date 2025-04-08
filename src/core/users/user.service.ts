@@ -127,6 +127,17 @@ export class UserService {
                 }),
             );
 
+            const userExists = await prisma.user.findUnique({
+                where: { id: newUser.id },
+            });
+
+            if (!userExists) {
+                this.logger.error('유저 아이디 생성 실패', {
+                    userId: newUser.id,
+                });
+                throw new Error('사용자 생성 실패');
+            }
+
             // 경력 생성
             if (createUserExperienceRequest) {
                 await this.userExperienceService.createUserExperience(
@@ -675,6 +686,144 @@ export class UserService {
         });
         this.logger.debug('조회 성공');
         return result;
+    }
+
+    async findAllProfiles(query: GetUserssQueryRequest): Promise<UserEntity[]> {
+        const { position, year, university, grade, offset, limit } = query;
+
+        const filters: Record<string, any> = {};
+        if (position) {
+            filters.mainPosition = {
+                in: Array.isArray(position) ? position : [position],
+            };
+        }
+        if (year && (Array.isArray(year) ? year.length > 0 : true)) {
+            filters.year = {
+                in: Array.isArray(year) ? year : [year],
+            };
+        }
+        if (university) {
+            filters.school = {
+                in: Array.isArray(university) ? university : [university],
+            };
+        }
+        if (grade) {
+            filters.grade = { in: Array.isArray(grade) ? grade : [grade] };
+        }
+
+        this.logger.debug(
+            'findAllProfiles 쿼리 조건',
+            JSON.stringify(filters, null, 2),
+        );
+
+        try {
+            const result =
+                (await this.prisma.user.findMany({
+                    where: {
+                        isDeleted: false,
+                        ...filters,
+                    },
+                    skip: offset || 0,
+                    take: limit || 10,
+                    orderBy: { name: 'asc' },
+                    include: {
+                        projectMembers: {
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
+                            include: {
+                                projectTeam: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        isDeleted: true, // 후처리용
+                                        resultImages: {
+                                            select: {
+                                                imageUrl: true,
+                                            },
+                                        },
+                                        mainImages: {
+                                            select: {
+                                                imageUrl: true,
+                                            },
+                                            take: 1,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        studyMembers: {
+                            where: {
+                                isDeleted: false,
+                                status: 'APPROVED',
+                            },
+                            include: {
+                                studyTeam: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        isDeleted: true, // 후처리용
+                                        resultImages: {
+                                            select: {
+                                                imageUrl: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        experiences: {
+                            where: { isDeleted: false },
+                            select: {
+                                id: true,
+                                position: true,
+                                companyName: true,
+                                category: true,
+                                isFinished: true,
+                                startDate: true,
+                                endDate: true,
+                            },
+                        },
+                    },
+                })) || [];
+
+            // 후처리: 각 사용자의 projectMembers와 studyMembers에서
+            // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
+            result.forEach((user) => {
+                if (user.projectMembers) {
+                    user.projectMembers = user.projectMembers.map((pm) => {
+                        if (pm.projectTeam && pm.projectTeam.isDeleted) {
+                            return {
+                                ...pm,
+                                projectTeam: null,
+                            };
+                        }
+                        return pm;
+                    });
+                }
+                if (user.studyMembers) {
+                    user.studyMembers = user.studyMembers.map((sm) => {
+                        if (sm.studyTeam && sm.studyTeam.isDeleted) {
+                            return {
+                                ...sm,
+                                studyTeam: null,
+                            };
+                        }
+                        return sm;
+                    });
+                }
+            });
+
+            this.logger.debug('조회 성공');
+            return result;
+        } catch (error) {
+            this.logger.error(
+                'findAllProfiles 쿼리 실패',
+                JSON.stringify(error, null, 2),
+            );
+            return [];
+        }
     }
 
     async getProfile(userId: number): Promise<GetUserResponse> {

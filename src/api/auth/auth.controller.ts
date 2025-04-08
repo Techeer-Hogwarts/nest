@@ -20,6 +20,25 @@ import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { AuthService } from '../../core/auth/auth.service';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 
+import { JwtAuthGuard } from '../../core/auth/jwt.guard';
+
+import {
+    LoginDoc,
+    LogoutDoc,
+    ResetPasswordDoc,
+    SendEmailVerificationEmailDoc,
+    VerifyCodeDoc,
+} from './auth.docs';
+
+import { AuthService } from '../../core/auth/auth.service';
+
+import { LoginRequest } from '../../common/dto/auth/request/login.request';
+import { ResetPasswordRequest } from '../../common/dto/auth/request/reset.password.request';
+import { SendEmailCodeRequest } from '../../common/dto/auth/request/send.emailCode.request';
+import { VerifyEmailCodeRequest } from '../../common/dto/auth/request/verify.emailCode.request';
+
+import { LoginResponse } from '../../common/dto/auth/response/login.response';
+
 @ApiTags('auth')
 @Controller('/auth')
 export class AuthController {
