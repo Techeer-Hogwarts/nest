@@ -1,40 +1,44 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
+import * as bcrypt from 'bcryptjs';
+
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import { ResumeService } from '../resumes/resume.service';
+import { AuthService } from '../auth/auth.service';
+import { IndexService } from '../../infra/index/index.service';
+import { TaskService } from '../../core/task/task.service';
+import { UserExperienceService } from '../userExperiences/userExperience.service';
+
 import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
 import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
 import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
 import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
 import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
-import * as bcrypt from 'bcryptjs';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
-import {
-    NotVerifiedEmailException,
-    NotFoundProfileImageException,
-    UnauthorizedAdminException,
-    NotFoundTecheerException,
-    NotFoundUserException,
-    NotFoundResumeException,
-} from '../../common/exception/custom.exception';
-import { TaskService } from '../../core/task/task.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { ResumeService } from '../resumes/resume.service';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { AuthService } from '../auth/auth.service';
-import { GradeCategory } from './category/grade.category';
-import {
-    PermissionRequest,
-    Prisma,
-    StatusCategory,
-    User,
-} from '@prisma/client';
-import { IndexService } from '../../infra/index/index.service';
-import { StackCategory } from '../../common/category/stack.category';
-import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
-import { normalizeString } from '../../common/category/normalize';
-import { UserExperienceService } from '../userExperiences/userExperience.service';
 import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { normalizeString } from '../../common/category/normalize';
+import { StackCategory } from '../../common/category/stack.category';
+
+import {
+    Prisma,
+    User,
+    StatusCategory,
+    PermissionRequest,
+} from '@prisma/client';
 import { UserDetail } from './types/user.detail.type';
+import {
+    UserNotFoundException,
+    UserNotFoundProfileImgException,
+    UserNotFoundResumeException,
+    UserNotFoundTecheerException,
+    UserNotVerifiedEmailException,
+    UserUnauthorizedAdminException,
+} from './exception/user.exception';
+import { UserGrade } from './category/UserGrade';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -70,7 +74,7 @@ export class UserService {
             this.logger.error('이메일 인증 실패', {
                 context: UserService.name,
             });
-            throw new NotVerifiedEmailException();
+            throw new UserNotVerifiedEmailException();
         }
         this.logger.debug(
             '이메일 인증 완료',
@@ -85,7 +89,7 @@ export class UserService {
             this.logger.error('테커가 아닌 사용자', {
                 context: UserService.name,
             });
-            throw new NotFoundTecheerException();
+            throw new UserNotFoundTecheerException();
         }
 
         // 비밀번호 해싱
@@ -118,17 +122,6 @@ export class UserService {
                 }),
             );
 
-            const userExists = await prisma.user.findUnique({
-                where: { id: newUser.id },
-            });
-
-            if (!userExists) {
-                this.logger.error('유저 아이디 생성 실패', {
-                    userId: newUser.id,
-                });
-                throw new Error('사용자 생성 실패');
-            }
-
             // 경력 생성
             if (createUserExperienceRequest) {
                 await this.userExperienceService.createUserExperience(
@@ -147,7 +140,7 @@ export class UserService {
                 this.logger.error('이력서 파일이 없습니다.', {
                     context: UserService.name,
                 });
-                throw new NotFoundResumeException(); // 혹은 BadRequestException으로 변경 가능
+                throw new UserNotFoundResumeException(); // 혹은 BadRequestException으로 변경 가능
             }
 
             // 이력서 저장
@@ -196,74 +189,29 @@ export class UserService {
         profileImage: string,
         prisma: Prisma.TransactionClient,
     ): Promise<User> {
-        let normalizedMainPosition: StackCategory;
-
-        try {
-            normalizedMainPosition = this.validateAndNormalizePosition(
-                createUserRequest.mainPosition,
-            );
-            this.logger.debug(
-                '사용자 메인 포지션 입력 완료',
-                JSON.stringify({
-                    normalizedMainPosition,
-                }),
-            );
-        } catch (error) {
-            this.logger.debug(
-                '유효하지 않은 메인 포지션 입력',
-                JSON.stringify({
-                    mainPosition: createUserRequest.mainPosition,
-                    error: error.message,
-                }),
-            );
-            throw error;
-        }
+        const normalizedMainPosition = this.validateAndNormalizePosition(
+            createUserRequest.mainPosition,
+        );
+        this.logger.debug('사용자 메인 포지션 입력 완료', {
+            normalizedMainPosition,
+        });
 
         let normalizedSubPosition: StackCategory | null = null;
         if (createUserRequest.subPosition) {
-            try {
-                normalizedSubPosition = this.validateAndNormalizePosition(
-                    createUserRequest.subPosition,
-                );
-                this.logger.debug(
-                    '사용자 서브 포지션 입력 완료',
-                    JSON.stringify({
-                        normalizedSubPosition,
-                    }),
-                );
-            } catch (error) {
-                this.logger.error(
-                    '유효하지 않은 서브 포지션 입력',
-                    JSON.stringify({
-                        subPosition: createUserRequest.subPosition,
-                        error: error.message,
-                    }),
-                );
-                throw error;
-            }
+            normalizedSubPosition = this.validateAndNormalizePosition(
+                createUserRequest.subPosition,
+            );
+            this.logger.debug('사용자 서브 포지션 입력 완료', {
+                normalizedSubPosition,
+            });
         }
 
-        let validatedGrade: GradeCategory;
-        try {
-            validatedGrade = this.validateGrade(createUserRequest.grade);
-            this.logger.debug(
-                '사용자 학년 입력 완료',
-                JSON.stringify({
-                    validatedGrade,
-                }),
-            );
-        } catch (error) {
-            this.logger.error(
-                '유효하지 않은 학년 입력',
-                JSON.stringify({
-                    grade: createUserRequest.grade,
-                    error: error.message,
-                }),
-            );
-            throw error;
-        }
+        const validatedGrade = this.validateGrade(createUserRequest.grade);
+        this.logger.debug('사용자 학년 입력 완료', {
+            validatedGrade,
+        });
 
-        const user: User = await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 ...createUserRequest,
                 mainPosition: normalizedMainPosition,
@@ -295,11 +243,11 @@ export class UserService {
         return normalized as StackCategory;
     }
 
-    validateGrade(grade: string): GradeCategory {
-        if (!Object.values(GradeCategory).includes(grade as GradeCategory)) {
+    validateGrade(grade: string): UserGrade {
+        if (!Object.values(UserGrade).includes(grade as UserGrade)) {
             throw new Error(`유효하지 않은 학년 입력: ${grade}`);
         }
-        return grade as GradeCategory;
+        return grade as UserGrade;
     }
 
     async updateUserProfile(
@@ -316,7 +264,7 @@ export class UserService {
                 '사용자 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new NotFoundUserException();
+            throw new UserNotFoundException();
         }
 
         this.logger.debug(
@@ -325,29 +273,29 @@ export class UserService {
         );
 
         return this.prisma.$transaction(async (prisma) => {
-            let updatedUser: User | null = null;
-            let updatedExperiences: UpdateUserExperienceRequest[] | null = null;
+            const updatedUser = updateUserRequest
+                ? await this.validateAndUpdateUser(
+                      userId,
+                      updateUserRequest,
+                      prisma,
+                  )
+                : null;
 
-            if (updateUserRequest) {
-                updatedUser = await this.validateAndUpdateUser(
-                    userId,
-                    updateUserRequest,
-                    prisma,
-                );
+            if (updatedUser) {
                 this.logger.debug(
                     '사용자 정보 업데이트 완료',
-                    JSON.stringify({
-                        context: UserService.name,
-                    }),
+                    JSON.stringify({ context: UserService.name }),
                 );
             }
 
-            if (updateUserExperienceRequest) {
-                updatedExperiences =
-                    await this.userExperienceService.updateUserExperience(
-                        userId,
-                        updateUserExperienceRequest,
-                    );
+            const updatedExperiences = updateUserExperienceRequest
+                ? await this.userExperienceService.updateUserExperience(
+                      userId,
+                      updateUserExperienceRequest,
+                  )
+                : null;
+
+            if (updatedExperiences) {
                 this.logger.debug(
                     '경력 정보 업데이트 완료',
                     JSON.stringify({
@@ -357,8 +305,7 @@ export class UserService {
             }
 
             return {
-                ...user,
-                ...(updatedUser ? updatedUser : {}),
+                ...(updatedUser ?? user),
                 experiences: updatedExperiences || user.experiences || [],
             };
         });
@@ -372,7 +319,7 @@ export class UserService {
                 '사용자 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new NotFoundUserException();
+            throw new UserNotFoundException();
         }
 
         this.logger.debug(
@@ -383,14 +330,24 @@ export class UserService {
     }
 
     async softDeleteUser(userId: number): Promise<User> {
-        const user = await this.prisma.user.update({
-            where: { id: userId },
-            data: { isDeleted: true },
-        });
-        // 인덱스 업데이트
-        this.logger.debug(`유저 삭제 후 인덱스 삭제 요청 - userId: ${userId}`);
-        await this.indexService.deleteIndex('user', String(userId));
-        return user;
+        try {
+            const user = await this.prisma.user.update({
+                where: { id: userId },
+                data: { isDeleted: true },
+            });
+
+            this.logger.debug(
+                `유저 삭제 후 인덱스 삭제 요청 - userId: ${userId}`,
+            );
+            await this.indexService.deleteIndex('user', String(userId));
+            return user;
+        } catch (error) {
+            this.logger.error('유저 삭제 실패', {
+                context: UserService.name,
+                userId,
+            });
+            throw error;
+        }
     }
 
     async getUserInfo(userId: number): Promise<GetUserResponse> {
@@ -401,7 +358,7 @@ export class UserService {
                 '사용자 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new NotFoundUserException();
+            throw new UserNotFoundException();
         }
 
         this.logger.debug('유저 서비스에서 사용자 정보 조회');
@@ -459,7 +416,7 @@ export class UserService {
                 '권한 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new UnauthorizedAdminException();
+            throw new UserUnauthorizedAdminException();
         }
 
         // 사용자 역할 업데이트
@@ -513,8 +470,7 @@ export class UserService {
     async getProfileImageUrl(
         email: string,
     ): Promise<{ image: string; isTecheer: boolean }> {
-        const updateUrl =
-            'https://techeer-029051b54345.herokuapp.com/api/v1/profile/picture';
+        const updateUrl = process.env.PROFILE_IMG_URL;
         const secret = process.env.SLACK;
 
         const response = await lastValueFrom(
@@ -550,7 +506,7 @@ export class UserService {
                 context: UserService.name,
             }),
         );
-        throw new NotFoundProfileImageException();
+        throw new UserNotFoundProfileImgException();
     }
 
     async updateProfileImage(request: any): Promise<User> {
@@ -587,7 +543,7 @@ export class UserService {
                 '권한 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new UnauthorizedAdminException();
+            throw new UserUnauthorizedAdminException();
         }
 
         this.logger.debug(
@@ -793,7 +749,7 @@ export class UserService {
                 '사용자 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new NotFoundUserException();
+            throw new UserNotFoundException();
         }
         this.logger.debug(
             '경력 삭제',

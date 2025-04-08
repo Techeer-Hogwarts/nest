@@ -316,6 +316,41 @@ export const ErrorCode = {
         message: '해당 경력 정보를 찾을 수 없습니다.',
     },
     /** User **/
+    USER_NOT_VERIFIED_EMAIL: {
+        code: 'USER_NOT_VERIFIED_EMAIL',
+        status: HttpStatus.UNAUTHORIZED,
+        message: '이메일 인증이 완료되지 않았습니다.',
+    },
+
+    USER_NOT_FOUND: {
+        code: 'USER_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '사용자를 찾을 수 없습니다.',
+    },
+
+    USER_NOT_TECHEER: {
+        code: 'USER_NOT_TECHEER',
+        status: HttpStatus.BAD_REQUEST,
+        message: '테커가 아닌 사용자입니다.',
+    },
+
+    USER_NOT_FOUND_RESUME: {
+        code: 'USER_NOT_FOUND_RESUME',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이력서 파일이 없습니다.',
+    },
+
+    USER_UNAUTHORIZED_ADMIN: {
+        code: 'USER_UNAUTHORIZED_ADMIN',
+        status: HttpStatus.FORBIDDEN,
+        message: '관리자 권한이 없습니다.',
+    },
+
+    USER_PROFILE_IMG_FAIL: {
+        code: 'USER_PROFILE_IMG_FAIL',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '프로필 이미지를 가져오지 못했습니다.',
+    },
     /** Global**/
     INTERNAL_SERVER_ERROR: {
         code: 'INTERNAL_SERVER_ERROR',

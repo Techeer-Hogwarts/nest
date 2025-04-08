@@ -1,4 +1,4 @@
-export enum GradeCategory {
+export enum UserGrade {
     FIRST_YEAR = '1학년',
     SECOND_YEAR = '2학년',
     THIRD_YEAR = '3학년',
