@@ -1,10 +1,10 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
     IsDateString,
     IsString,
     ValidateIf,
     IsOptional,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserExperienceRequest {
     @IsString()
@@ -36,6 +36,13 @@ export class CreateUserExperienceRequest {
         description: '종료 날짜',
     })
     readonly endDate: string;
+
+    @IsOptional()
+    @ApiProperty({
+        example: true,
+        description: '경력 종료 여부',
+    })
+    readonly isFinished?: boolean;
 
     @IsString()
     @ApiProperty({

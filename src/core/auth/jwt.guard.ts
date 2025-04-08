@@ -1,25 +1,27 @@
-import {
-    Injectable,
-    ExecutionContext,
-    UnauthorizedException,
-    Inject,
-    forwardRef,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UserRepository } from '../users/repository/user.repository';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { AuthGuard } from '@nestjs/passport';
 import {
-    NotFoundUserException,
+    ExecutionContext,
+    forwardRef,
+    Inject,
+    Injectable,
+    UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import {
     InvalidTokenException,
+    NotFoundUserException,
 } from '../../common/exception/custom.exception';
+
+import { UserService } from '../users/user.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
     constructor(
         private readonly jwtService: JwtService,
-        @Inject(forwardRef(() => UserRepository))
-        private readonly userRepository: UserRepository,
+        @Inject(forwardRef(() => UserService))
+        private readonly userService: UserService,
         private readonly logger: CustomWinstonLogger,
     ) {
         super();
@@ -65,7 +67,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         try {
             // access_token 검증 및 디코딩
             const decoded = this.jwtService.verify(token);
-            const user = await this.userRepository.findById(decoded.id);
+            const user = await this.userService.findById(decoded.id);
             if (!user) {
                 throw new UnauthorizedException('존재하지 않는 사용자입니다.');
             }
@@ -89,7 +91,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
                         // 새 토큰으로 재검증
                         const newDecoded =
                             this.jwtService.verify(newAccessToken);
-                        const newUser = await this.userRepository.findById(
+                        const newUser = await this.userService.findById(
                             newDecoded.id,
                         );
                         if (!newUser) {
@@ -117,8 +119,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // 리프레시 토큰을 사용해 새로운 액세스 토큰 발급
     async refresh(refreshToken: string): Promise<string> {
         try {
-            const decoded = this.jwtService.verify(refreshToken);
-            const user = await this.userRepository.findById(decoded.id);
+            const decoded = this.jwtService.verify(refreshToken, {
+                ignoreExpiration: false,
+            });
+            const user = await this.userService.findById(decoded.id);
 
             if (!user) {
                 this.logger.error('사용자를 찾을 수 없습니다.');
@@ -128,12 +132,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             // 새로운 액세스 토큰 발급
             const newAccessToken = this.jwtService.sign(
                 { id: user.id },
-                { expiresIn: '15m' },
+                { expiresIn: '60m' },
             );
             this.logger.debug('액세스 토큰 재발급');
             return newAccessToken;
         } catch (error) {
-            this.logger.error('토큰 재발급 실패');
+            this.logger.error(`토큰 재발급 실패: ${error.message}`);
             throw new InvalidTokenException();
         }
     }

@@ -64,6 +64,7 @@ export class ResumeService {
             `파일 제목 생성 완료 - fullTitle: ${fullTitle}`,
             ResumeService.name,
         );
+
         // Google Drive에 파일 업로드
         const resumeUrl = await this.googleDriveService.uploadFileBuffer(
             file.buffer, // 파일의 buffer 추출

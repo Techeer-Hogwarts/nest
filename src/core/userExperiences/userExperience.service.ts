@@ -1,15 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.reqeust';
-import { Prisma } from '@prisma/client';
-import { StackCategory } from '../../../common/category/stack.category';
-import { normalizeString } from '../../../common/category/normalize';
-import { Category } from '../category/category.category';
-import { NotFoundExperienceException } from '../../../common/exception/custom.exception';
-import { UpdateUserExperienceRequest } from 'src/common/dto/userExperiences/request/update.userExperience.request';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { normalizeString } from '../../common/category/normalize';
+import { StackCategory } from '../../common/category/stack.category';
+
+import { PrismaService } from '../../infra/prisma/prisma.service';
+
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+
+import {
+    UserExperienceInvalidCategoryException,
+    UserExperienceInvalidPositionException,
+    UserExperienceNotFoundExperienceException,
+} from './exception/userExperience.exception';
+
+import { UserExperienceEmployment } from './category/userExperienceEmployment';
+
+interface TransformExperienceData {
+    userId: number;
+    experienceId?: number;
+    position: StackCategory;
+    companyName: string;
+    category: UserExperienceEmployment;
+    startDate: Date;
+    endDate: Date | null;
+    isFinished: boolean;
+}
+
 @Injectable()
-export class UserExperienceRepository {
-    constructor(private readonly prisma: PrismaService) {}
+export class UserExperienceService {
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomWinstonLogger,
+    ) {}
 
     /**
      * Position 값 검증 및 표준화
@@ -24,8 +48,17 @@ export class UserExperienceRepository {
             !normalized ||
             !Object.values(StackCategory).includes(normalized as StackCategory)
         ) {
-            throw new Error(`Invalid position: ${position}`);
+            this.logger.error(
+                `유효하지 않은 포지션 값입니다: ${position}`,
+                'UserExperienceService',
+            );
+            throw new UserExperienceInvalidPositionException();
         }
+
+        this.logger.debug(
+            `포지션 변환 완료: ${normalized}`,
+            'UserExperienceService',
+        );
 
         return normalized as StackCategory;
     }
@@ -36,11 +69,24 @@ export class UserExperienceRepository {
      * @returns 유효한 Category 값
      * @throws Error 유효하지 않은 category 값일 경우
      */
-    validateCategory(category: string): Category {
-        if (!Object.values(Category).includes(category as Category)) {
-            throw new Error(`Invalid category: ${category}`);
+    validateCategory(category: string): UserExperienceEmployment {
+        if (
+            !Object.values(UserExperienceEmployment).includes(
+                category as UserExperienceEmployment,
+            )
+        ) {
+            this.logger.error(
+                `유효하지 않은 카테고리 값입니다: ${category}`,
+                'UserExperienceService',
+            );
+            throw new UserExperienceInvalidCategoryException();
         }
-        return category as Category;
+
+        this.logger.debug(
+            `카테고리 검증 완료: ${category}`,
+            'UserExperienceService',
+        );
+        return category as UserExperienceEmployment;
     }
 
     /**
@@ -55,8 +101,8 @@ export class UserExperienceRepository {
             | UpdateUserExperienceRequest
         )[],
         userId: number,
-    ): any[] {
-        return experiences.map((experience) => ({
+    ): TransformExperienceData[] {
+        const transformedExperience = experiences.map((experience) => ({
             ...experience,
             userId,
             position: this.validateAndNormalizePosition(experience.position), // Position 검증 및 표준화
@@ -65,6 +111,13 @@ export class UserExperienceRepository {
             endDate: experience.endDate ? new Date(experience.endDate) : null, // endDate 처리
             isFinished: !!experience.endDate, // endDate 유무로 결정
         }));
+
+        this.logger.debug(
+            `경험 데이터 변환 완료: ${JSON.stringify(transformedExperience)}`,
+            'UserExperienceService',
+        );
+
+        return transformedExperience;
     }
 
     /**
@@ -78,7 +131,6 @@ export class UserExperienceRepository {
             experiences: CreateUserExperienceRequest[];
         },
         userId: number,
-        prisma: Prisma.TransactionClient = this.prisma,
     ): Promise<void> {
         // 데이터 변환 및 검증
         const data = this.transformExperienceData(
@@ -87,9 +139,11 @@ export class UserExperienceRepository {
         );
 
         // Prisma의 createMany를 사용하여 데이터베이스에 삽입
-        await prisma.userExperience.createMany({
+        await this.prisma.userExperience.createMany({
             data,
         });
+
+        this.logger.debug('경험 생성 완료', 'UserExperienceService');
     }
 
     async updateUserExperience(
@@ -97,8 +151,7 @@ export class UserExperienceRepository {
         updateUserExperienceRequest?: {
             experiences: UpdateUserExperienceRequest[];
         },
-        prisma: Prisma.TransactionClient = this.prisma,
-    ): Promise<any> {
+    ): Promise<UpdateUserExperienceRequest[]> {
         if (
             !updateUserExperienceRequest ||
             !updateUserExperienceRequest.experiences
@@ -116,7 +169,11 @@ export class UserExperienceRepository {
         const operations = data.map((experience) => {
             // experience 객체에 id가 있다면 업데이트 처리
             if (experience.experienceId) {
-                return prisma.userExperience.update({
+                this.logger.debug(
+                    `경험 업데이트: id=${experience.experienceId}`,
+                    'UserExperienceService',
+                );
+                return this.prisma.userExperience.update({
                     where: { id: experience.experienceId },
                     data: {
                         position: experience.position,
@@ -129,7 +186,8 @@ export class UserExperienceRepository {
                 });
             } else {
                 // id가 없으면 새 레코드 생성 처리
-                return prisma.userExperience.create({
+                this.logger.debug('경험 생성', 'UserExperienceService');
+                return this.prisma.userExperience.create({
                     data: {
                         user: { connect: { id: userId } },
                         position: experience.position,
@@ -144,6 +202,10 @@ export class UserExperienceRepository {
         });
 
         await Promise.all(operations);
+
+        this.logger.debug('경험 업데이트 완료', 'UserExperienceService');
+
+        return updateUserExperienceRequest.experiences;
     }
 
     /**
@@ -154,23 +216,25 @@ export class UserExperienceRepository {
     async deleteUserExperience(
         userId: number,
         experienceId: number,
-        prisma: Prisma.TransactionClient = this.prisma,
     ): Promise<void> {
         // 해당 경력 데이터가 실제 존재하고 userId가 일치하는지 확인
-        const experience = await prisma.userExperience.findUnique({
+        const experience = await this.prisma.userExperience.findUnique({
             where: { id: experienceId },
             select: { userId: true },
         });
 
         if (!experience || experience.userId !== userId) {
             // 경력이 존재하지 않거나, 사용자가 소유한 경력이 아니라면 예외 발생
-            throw new NotFoundExperienceException();
+            this.logger.error('경험 삭제 실패', 'UserExperienceService');
+            throw new UserExperienceNotFoundExperienceException();
         }
 
         // 소프트 딜리트: isDeleted를 true로 업데이트
-        await prisma.userExperience.update({
+        await this.prisma.userExperience.update({
             where: { id: experienceId },
             data: { isDeleted: true },
         });
+
+        this.logger.debug('경험 삭제 완료', 'UserExperienceService');
     }
 }
