@@ -21,7 +21,6 @@ import { PrismaService } from '../../infra/prisma/prisma.service';
 import { ResumeService } from '../resumes/resume.service';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { AuthService } from '../auth/auth.service';
-import { UserEntity } from './entities/user.entity';
 import { GradeCategory } from './category/grade.category';
 import {
     PermissionRequest,
@@ -35,6 +34,7 @@ import { IndexUserRequest } from '../../common/dto/users/request/index.user.requ
 import { normalizeString } from '../../common/category/normalize';
 import { UserExperienceService } from '../userExperiences/userExperience.service';
 import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { UserDetail } from './types/user.detail.type';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -131,19 +131,10 @@ export class UserService {
 
             // 경력 생성
             if (createUserExperienceRequest) {
-                await prisma.userExperience.createMany({
-                    data: createUserExperienceRequest.experiences.map(
-                        (exp) => ({
-                            userId: newUser.id,
-                            position: exp.position,
-                            companyName: exp.companyName,
-                            startDate: new Date(exp.startDate),
-                            endDate: exp.endDate ? new Date(exp.endDate) : null,
-                            category: exp.category,
-                            isFinished: !!exp.endDate,
-                        }),
-                    ),
-                });
+                await this.userExperienceService.createUserExperience(
+                    createUserExperienceRequest,
+                    newUser.id,
+                );
             }
 
             this.logger.debug(
@@ -272,7 +263,7 @@ export class UserService {
             throw error;
         }
 
-        const user: UserEntity = await prisma.user.create({
+        const user: User = await prisma.user.create({
             data: {
                 ...createUserRequest,
                 mainPosition: normalizedMainPosition,
@@ -373,7 +364,7 @@ export class UserService {
         });
     }
 
-    async deleteUser(userId: number): Promise<User> {
+    async deleteUser(userId: number): Promise<UserDetail> {
         const user = await this.findById(userId);
 
         if (!user) {
@@ -391,7 +382,7 @@ export class UserService {
         return this.softDeleteUser(userId);
     }
 
-    async softDeleteUser(userId: number): Promise<UserEntity> {
+    async softDeleteUser(userId: number): Promise<User> {
         const user = await this.prisma.user.update({
             where: { id: userId },
             data: { isDeleted: true },
@@ -653,7 +644,7 @@ export class UserService {
             .map((user) => new GetUserResponse(user));
     }
 
-    async findAllProfiles(query: GetUserssQueryRequest): Promise<UserEntity[]> {
+    async findAllProfiles(query: GetUserssQueryRequest): Promise<UserDetail[]> {
         const { position, year, university, grade, offset, limit } = query;
 
         const filters: Record<string, any> = {};
@@ -740,15 +731,6 @@ export class UserService {
                         },
                         experiences: {
                             where: { isDeleted: false },
-                            select: {
-                                id: true,
-                                position: true,
-                                companyName: true,
-                                category: true,
-                                isFinished: true,
-                                startDate: true,
-                                endDate: true,
-                            },
                         },
                     },
                 })) || [];
@@ -823,7 +805,7 @@ export class UserService {
         );
     }
 
-    async findById(userId: number): Promise<UserEntity | null> {
+    async findById(userId: number): Promise<UserDetail | null> {
         // Prisma 쿼리 결과를 await로 받아와 UserEntity 타입으로 처리합니다.
         const user = (await this.prisma.user.findUnique({
             where: {
@@ -879,18 +861,9 @@ export class UserService {
                 },
                 experiences: {
                     where: { isDeleted: false },
-                    select: {
-                        id: true,
-                        position: true,
-                        companyName: true,
-                        category: true,
-                        isFinished: true,
-                        startDate: true,
-                        endDate: true,
-                    },
                 },
             },
-        })) as UserEntity | null;
+        })) as UserDetail | null;
 
         // user가 존재하면 후처리하여 projectTeam 및 studyTeam의 isDeleted가 true인 경우 null 처리
         if (user) {
@@ -922,7 +895,7 @@ export class UserService {
         userId: number,
         updateUserRequest: UpdateUserRequest,
         prisma: Prisma.TransactionClient = this.prisma,
-    ): Promise<UserEntity> {
+    ): Promise<User> {
         const updatedData = {
             ...updateUserRequest,
         } as Mutable<UpdateUserRequest>;
@@ -985,7 +958,7 @@ export class UserService {
             }),
         );
 
-        const user: UserEntity = await prisma.user.update({
+        const user: User = await prisma.user.update({
             where: { id: userId },
             data: filteredData,
         });
@@ -999,7 +972,7 @@ export class UserService {
         return user;
     }
 
-    async findOneByEmail(email: string): Promise<UserEntity | null> {
+    async findOneByEmail(email: string): Promise<User | null> {
         return this.prisma.user.findUnique({
             where: {
                 email,
