@@ -257,15 +257,7 @@ export class UserService {
             experiences: UpdateUserExperienceRequest[];
         },
     ): Promise<User> {
-        const user = await this.findById(userId);
-
-        if (!user) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new UserNotFoundException();
-        }
+        const user = await this.findUserOrFail(userId);
 
         this.logger.debug(
             '사용자 존재',
@@ -312,15 +304,7 @@ export class UserService {
     }
 
     async deleteUser(userId: number): Promise<UserDetail> {
-        const user = await this.findById(userId);
-
-        if (!user) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new UserNotFoundException();
-        }
+        await this.findUserOrFail(userId);
 
         this.logger.debug(
             '사용자 존재',
@@ -351,16 +335,7 @@ export class UserService {
     }
 
     async getUserInfo(userId: number): Promise<GetUserResponse> {
-        const userInfo = await this.findById(userId);
-
-        if (!userInfo) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new UserNotFoundException();
-        }
-
+        const userInfo = await this.findUserOrFail(userId);
         this.logger.debug('유저 서비스에서 사용자 정보 조회');
         return new GetUserResponse(userInfo);
     }
@@ -525,6 +500,7 @@ export class UserService {
         this.logger.error('테커가 아닌 사용자', {
             context: UserService.name,
         });
+        throw new UserNotFoundTecheerException();
     }
 
     async updateProfileImageByEmail(
@@ -629,67 +605,66 @@ export class UserService {
         );
 
         try {
-            const result =
-                (await this.prisma.user.findMany({
-                    where: {
-                        isDeleted: false,
-                        ...filters,
-                    },
-                    skip: offset || 0,
-                    take: limit || 10,
-                    orderBy: { name: 'asc' },
-                    include: {
-                        projectMembers: {
-                            where: {
-                                isDeleted: false,
-                                status: 'APPROVED',
-                            },
-                            include: {
-                                projectTeam: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        isDeleted: true, // 후처리용
-                                        resultImages: {
-                                            select: {
-                                                imageUrl: true,
-                                            },
+            const result = await this.prisma.user.findMany({
+                where: {
+                    isDeleted: false,
+                    ...filters,
+                },
+                skip: offset || 0,
+                take: limit || 10,
+                orderBy: { name: 'asc' },
+                include: {
+                    projectMembers: {
+                        where: {
+                            isDeleted: false,
+                            status: 'APPROVED',
+                        },
+                        include: {
+                            projectTeam: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    isDeleted: true, // 후처리용
+                                    resultImages: {
+                                        select: {
+                                            imageUrl: true,
                                         },
-                                        mainImages: {
-                                            select: {
-                                                imageUrl: true,
-                                            },
-                                            take: 1,
+                                    },
+                                    mainImages: {
+                                        select: {
+                                            imageUrl: true,
+                                        },
+                                        take: 1,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    studyMembers: {
+                        where: {
+                            isDeleted: false,
+                            status: 'APPROVED',
+                        },
+                        include: {
+                            studyTeam: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    isDeleted: true, // 후처리용
+                                    resultImages: {
+                                        select: {
+                                            imageUrl: true,
                                         },
                                     },
                                 },
                             },
                         },
-                        studyMembers: {
-                            where: {
-                                isDeleted: false,
-                                status: 'APPROVED',
-                            },
-                            include: {
-                                studyTeam: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        isDeleted: true, // 후처리용
-                                        resultImages: {
-                                            select: {
-                                                imageUrl: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        experiences: {
-                            where: { isDeleted: false },
-                        },
                     },
-                })) || [];
+                    experiences: {
+                        where: { isDeleted: false },
+                    },
+                },
+            });
 
             // 후처리: 각 사용자의 projectMembers와 studyMembers에서
             // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
@@ -734,7 +709,7 @@ export class UserService {
             '프로필 조회',
             JSON.stringify({ context: UserService.name }),
         );
-        const user = await this.findById(userId);
+        const user = await this.findUserOrFail(userId);
         return new GetUserResponse(user);
     }
 
@@ -742,15 +717,8 @@ export class UserService {
         userId: number,
         experienceId: number,
     ): Promise<void> {
-        const userInfo = await this.findById(userId);
+        await this.findUserOrFail(userId);
 
-        if (!userInfo) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new UserNotFoundException();
-        }
         this.logger.debug(
             '경력 삭제',
             JSON.stringify({ context: UserService.name }),
@@ -819,7 +787,7 @@ export class UserService {
                     where: { isDeleted: false },
                 },
             },
-        })) as UserDetail | null;
+        })) as UserDetail;
 
         // user가 존재하면 후처리하여 projectTeam 및 studyTeam의 isDeleted가 true인 경우 null 처리
         if (user) {
@@ -945,5 +913,14 @@ export class UserService {
             },
             data: { password: newPassword },
         });
+    }
+
+    private async findUserOrFail(userId: number): Promise<UserDetail> {
+        const user = await this.findById(userId);
+        if (!user) {
+            this.logger.debug('사용자 없음', { context: UserService.name });
+            throw new UserNotFoundException();
+        }
+        return user;
     }
 }
