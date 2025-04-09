@@ -15,8 +15,6 @@ export class BaseException extends HttpException {
 }
 
 export class ServerException extends BaseException {
-    readonly message: string;
-
     constructor() {
         super(ErrorCode.INTERNAL_SERVER_ERROR);
     }

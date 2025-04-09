@@ -1,12 +1,13 @@
-import {
-    ArgumentMetadata,
-    Injectable,
-    PipeTransform,
-    BadRequestException,
-} from '@nestjs/common';
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
+
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+
 import { CustomWinstonLogger } from '../logger/winston.logger';
+import {
+    GlobalInvalidDataTypeBody,
+    GlobalInvalidInputValueException,
+} from '../exception/global.exception';
 
 @Injectable()
 export class ParseJsonAndValidatePipe implements PipeTransform {
@@ -24,27 +25,26 @@ export class ParseJsonAndValidatePipe implements PipeTransform {
             return value;
         }
 
+        let parsedValue: unknown;
         try {
             this.logger.debug('Parsing JSON');
-            const parsedValue = JSON.parse(value);
+            parsedValue = JSON.parse(value);
             this.logger.debug('Parsed value:', parsedValue);
-
-            const object = plainToInstance(metatype, parsedValue);
-            const errors = await validate(object);
-
-            if (errors.length > 0) {
-                this.logger.error('Validation failed', { errors });
-                throw new BadRequestException(errors);
-            }
-
-            this.logger.debug('Validation succeeded');
-            return object;
         } catch (error) {
             this.logger.error('Error occurred during transformation', {
                 error,
             });
-            throw error; // Exception Filter로 전달
+            throw new GlobalInvalidDataTypeBody(); // Exception Filter로 전달
         }
+        const object = plainToInstance(metatype, parsedValue);
+        const errors = await validate(object);
+        if (errors.length > 0) {
+            this.logger.error('Validation failed', { errors });
+            throw new GlobalInvalidInputValueException();
+        }
+
+        this.logger.debug('Validation succeeded');
+        return object;
     }
 
     /**

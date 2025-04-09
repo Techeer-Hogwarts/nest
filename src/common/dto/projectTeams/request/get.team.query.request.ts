@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsBoolean, IsArray } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsOptional } from 'class-validator';
+import { TeamType } from '../../../category/teamCategory/teamType';
+import { IsTeamTypeArray } from '../../../decorator/teamType.decorator';
+import { PositionType } from '../../../category/teamCategory/projectPositionType';
+import { IsPositionArray } from '../../../decorator/projectPosition.decorator';
+import { TransformToBoolean } from '../../../decorator/transfrom.boolean.decorator';
 
 export class GetTeamQueryRequest {
     @ApiProperty({
@@ -10,11 +14,8 @@ export class GetTeamQueryRequest {
         example: ['project', 'study'],
     })
     @IsOptional()
-    @IsArray()
-    @Transform(({ value }) => {
-        return typeof value === 'string' ? [value] : value;
-    })
-    teamTypes?: string[];
+    @IsTeamTypeArray()
+    teamTypes?: TeamType[];
 
     @ApiProperty({
         description: '모집 상태 필터링',
@@ -23,12 +24,7 @@ export class GetTeamQueryRequest {
         example: true,
     })
     @IsOptional()
-    @IsBoolean()
-    @Transform(({ value }) => {
-        if (value === 'true') return true;
-        if (value === 'false') return false;
-        return value === true || value === false ? value : undefined;
-    })
+    @TransformToBoolean()
     isRecruited?: boolean;
 
     @ApiProperty({
@@ -38,12 +34,7 @@ export class GetTeamQueryRequest {
         example: true,
     })
     @IsOptional()
-    @IsBoolean()
-    @Transform(({ value }) => {
-        if (value === 'true') return true;
-        if (value === 'false') return false;
-        return value === true || value === false ? value : undefined;
-    })
+    @TransformToBoolean()
     isFinished?: boolean;
 
     // 모집중 페이지에서의 포지션 필터링
@@ -55,9 +46,6 @@ export class GetTeamQueryRequest {
         example: ['frontend', 'backend'],
     })
     @IsOptional()
-    @IsArray()
-    @Transform(({ value }) => {
-        return typeof value === 'string' ? [value] : value;
-    })
-    positions?: string[];
+    @IsPositionArray()
+    positions?: PositionType[];
 }
