@@ -1407,6 +1407,7 @@ export class ProjectTeamService {
                 name: true,
                 projectMember: {
                     where: {
+                        id: projectTeamId,
                         isDeleted: false,
                         isLeader: true,
                         status: MemberStatus.APPROVED,

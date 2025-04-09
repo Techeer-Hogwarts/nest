@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { IsBoolean, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { TeamRoleType } from '../../../category/teamCategory/teamRole.category';
+import { IsTeamRole } from '../../../decorator/teamRole.decorator';
 
 import { TeamRoleType } from '../../../category/teamCategory/teamRole.category';
 import { IsTeamRole } from '../../../decorator/teamRole.decorator';

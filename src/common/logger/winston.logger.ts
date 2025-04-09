@@ -85,15 +85,8 @@ export class CustomWinstonLogger implements LoggerService {
             context,
         });
     }
-    simpleError(error: ServerException, request: Request): void {
-        const logMessage = `[${request.method}] ${request.url} - ${error.constructor.name}: ${error.code} ${
-            Array.isArray(error.message)
-                ? error.message.join(', ')
-                : error.message
-        } (status: ${error.statusCode})`;
-        this.winstonLogger.error(logMessage);
-    }
-    bodyError(error: Error, err: BaseException, request: Request): void {
+
+    bodyError(exception: Error, err: BaseException, request: Request): void {
         const logMessage = `
 [ERROR] ${new Date().toISOString()}
 * ERROR CODE:    ${err.code ?? 'N/A'}
@@ -102,9 +95,8 @@ export class CustomWinstonLogger implements LoggerService {
 * PATH:          ${request?.url ?? 'N/A'}
 * METHOD:        ${request?.method ?? 'N/A'}
 * BODY:          ${JSON.stringify(this.sanitizeRequestBody(request?.body ?? {}), undefined, 2)}
-* STACK TRACE:   ${error?.stack ?? 'N/A'}
-━━━━━━━━━━━━━━━━
-        `;
+* STACK TRACE:   ${exception?.stack ?? 'N/A'}
+━━━━━━━━━━━━━━━━`;
         this.winstonLogger.error(logMessage);
     }
 

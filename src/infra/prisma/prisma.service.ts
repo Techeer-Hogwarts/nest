@@ -9,6 +9,7 @@ import {
     PostgresQueryCompiler,
 } from 'kysely';
 import { DB } from './db/types';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService
