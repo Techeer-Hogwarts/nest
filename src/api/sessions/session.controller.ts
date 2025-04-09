@@ -34,8 +34,10 @@ import {
     GetSessionsByUserDocs,
     DeleteSessionDocs,
     UpdateSessionDocs,
+    SessionControllerDocs,
 } from './session.docs';
 
+@SessionControllerDocs()
 @Controller('/sessions')
 export class SessionController {
     constructor(
