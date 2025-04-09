@@ -1,4 +1,4 @@
-import { Session } from '@prisma/client';
+import { Session, User } from '@prisma/client';
 
 interface UserInfo {
     name: string;
@@ -19,12 +19,10 @@ export class GetSessionResponse {
     readonly fileUrl: string | null;
     readonly likeCount: number;
     readonly viewCount: number;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
-    readonly nickname: string | null; // nullable 타입 반영
+
     readonly user: UserInfo;
 
-    constructor(session: Session & { user: UserInfo }) {
+    constructor(session: Session & { user: User }) {
         this.id = session.id;
         this.userId = session.userId;
         this.thumbnail = session.thumbnail;
@@ -37,6 +35,11 @@ export class GetSessionResponse {
         this.fileUrl = session.fileUrl;
         this.likeCount = session.likeCount;
         this.viewCount = session.viewCount;
-        this.user = session.user;
+
+        this.user = {
+            name: session.user.name,
+            nickname: session.user.nickname,
+            profileImage: session.user.profileImage,
+        };
     }
 }
