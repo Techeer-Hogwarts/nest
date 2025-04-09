@@ -25,6 +25,12 @@ export class UserNotFoundResumeException extends BaseException {
     }
 }
 
+export class UserAlreadyExistsException extends BaseException {
+    constructor() {
+        super(ErrorCode.USER_ALREADY_EXISTS);
+    }
+}
+
 export class UserUnauthorizedAdminException extends BaseException {
     constructor() {
         super(ErrorCode.USER_UNAUTHORIZED_ADMIN);

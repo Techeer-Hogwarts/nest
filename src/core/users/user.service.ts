@@ -1,36 +1,39 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import * as bcrypt from 'bcryptjs';
 
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { ResumeService } from '../resumes/resume.service';
-import { AuthService } from '../auth/auth.service';
-import { IndexService } from '../../infra/index/index.service';
-import { TaskService } from '../../core/task/task.service';
-import { UserExperienceService } from '../userExperiences/userExperience.service';
-
-import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
-import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
-import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
-import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
-import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
 import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
 import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
-
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
+import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { normalizeString } from '../../common/category/normalize';
 import { StackCategory } from '../../common/category/stack.category';
 
+import { TaskService } from '../../core/task/task.service';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+
+import { AuthService } from '../auth/auth.service';
+import { ResumeService } from '../resumes/resume.service';
+import { UserExperienceService } from '../userExperiences/userExperience.service';
+
 import {
-    Prisma,
-    User,
-    StatusCategory,
     PermissionRequest,
+    Prisma,
+    StatusCategory,
+    User,
 } from '@prisma/client';
+
+import { UserGrade } from './category/UserGrade';
 import { UserDetail } from './types/user.detail.type';
 import {
+    UserAlreadyExistsException,
     UserNotFoundException,
     UserNotFoundProfileImgException,
     UserNotFoundResumeException,
@@ -38,7 +41,6 @@ import {
     UserNotVerifiedEmailException,
     UserUnauthorizedAdminException,
 } from './exception/user.exception';
-import { UserGrade } from './category/UserGrade';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -210,6 +212,14 @@ export class UserService {
         this.logger.debug('사용자 학년 입력 완료', {
             validatedGrade,
         });
+
+        const existingUser = await prisma.user.findUnique({
+            where: { email: createUserRequest.email },
+        });
+
+        if (existingUser) {
+            throw new UserAlreadyExistsException();
+        }
 
         const user = await prisma.user.create({
             data: {

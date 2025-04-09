@@ -1,5 +1,5 @@
-import { IsString, IsUrl, IsOptional, IsBoolean, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsUrl, IsOptional, IsBoolean, IsInt } from 'class-validator';
 
 export class UpdateUserRequest {
     @IsInt()

@@ -340,6 +340,12 @@ export const ErrorCode = {
         message: '이력서 파일이 없습니다.',
     },
 
+    USER_ALREADY_EXISTS: {
+        code: 'USER_ALREADY_EXISTS',
+        status: HttpStatus.CONFLICT,
+        message: '이미 가입한 이메일입니다.',
+    },
+
     USER_UNAUTHORIZED_ADMIN: {
         code: 'USER_UNAUTHORIZED_ADMIN',
         status: HttpStatus.FORBIDDEN,
