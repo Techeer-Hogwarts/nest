@@ -30,7 +30,6 @@ import {
     StudyTeamGetAllData,
     StudyTeamGetAllResponse,
     TeamGetAllListResponse,
-    TeamGetAllResponse,
 } from '../../common/dto/projectTeams/response/get.allTeam.response';
 import { ProjectTeamLeadersAlert } from '../../common/dto/projectMembers/response/project.member.response.interface';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
