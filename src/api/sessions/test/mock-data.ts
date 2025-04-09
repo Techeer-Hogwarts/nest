@@ -1,4 +1,4 @@
-import { Session, User } from '@prisma/client';
+import { Session } from '@prisma/client';
 import { CreateSessionRequest } from '../../../common/dto/sessions/request/create.session.request';
 import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
 import { UpdateSessionRequest } from '../../../common/dto/sessions/request/update.session.request';
@@ -100,7 +100,7 @@ export const getSessionResponse: GetSessionResponse = new GetSessionResponse(
     session(),
 );
 
-export const sessionEntities: Session[] = [
+export const sessionEntities: SessionWithUser[] = [
     session({ id: 1 }),
     session({ id: 2 }),
 ];
@@ -110,7 +110,7 @@ export const paginationQueryDto: PaginationQueryDto = {
     limit: 10,
 };
 
-export const bestSessionEntities: Session[] = [
+export const bestSessionEntities: SessionWithUser[] = [
     session({
         id: 1,
         viewCount: 100,
@@ -140,7 +140,7 @@ export const bestSessionEntities: Session[] = [
 
 export const getBestSessionsResponse: GetSessionResponse[] =
     bestSessionEntities.map(
-        (session: Session & { user: User }) => new GetSessionResponse(session),
+        (session: SessionWithUser) => new GetSessionResponse(session),
     );
 
 export const getSessionsQueryRequest: GetSessionsQueryRequest = {
@@ -152,7 +152,7 @@ export const getSessionsQueryRequest: GetSessionsQueryRequest = {
 };
 
 export const getSessionListResponse: GetSessionResponse[] = sessionEntities.map(
-    (session: Session & { user: User }) => new GetSessionResponse(session),
+    (session: SessionWithUser) => new GetSessionResponse(session),
 );
 
 export const updateSessionRequest: UpdateSessionRequest = {
@@ -166,6 +166,6 @@ export const updateSessionRequest: UpdateSessionRequest = {
     fileUrl: 'https://example.com/update',
 };
 
-export const updatedSessionEntity: Session = session({
+export const updatedSessionEntity: SessionWithUser = session({
     ...updateSessionRequest,
 });
