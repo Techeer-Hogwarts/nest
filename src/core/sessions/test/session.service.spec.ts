@@ -1,43 +1,47 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Session } from '@prisma/client';
+
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+
 import { SessionService } from '../session.service';
-import { SessionRepository } from '../repository/session.repository';
-import { GetSessionResponse } from '../dto/response/get.session.response';
+
+import { CreateSessionResponse } from '../../../common/dto/sessions/response/create.session.response';
+import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
+
 import {
-    sessionEntity,
     createSessionRequest,
     getSessionResponse,
     updateSessionRequest,
     updatedSessionEntity,
-    sessionEntities,
     paginationQueryDto,
     bestSessionEntities,
     getBestSessionsResponse,
     getSessionsQueryRequest,
     createSessionResponse,
-} from './mock-data';
-import { SessionEntity } from '../entities/session.entity';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { CreateSessionResponse } from '../dto/response/create.session.response';
+    sessionEntities,
+    session,
+} from '../../../api/sessions/test/mock-data';
+
+import { PrismaService } from '../../../infra/prisma/prisma.service';
 
 describe('SessionService', (): void => {
     let service: SessionService;
-    let repository: SessionRepository;
+    let prismaService: PrismaService;
 
     beforeEach(async (): Promise<void> => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 SessionService,
                 {
-                    provide: SessionRepository,
+                    provide: PrismaService,
                     useValue: {
-                        findById: jest.fn(),
-                        createSession: jest.fn(),
-                        getSession: jest.fn(),
-                        getBestSessions: jest.fn(),
-                        getSessionList: jest.fn(),
-                        getSessionsByUser: jest.fn(),
-                        deleteSession: jest.fn(),
-                        updateSession: jest.fn(),
+                        session: {
+                            findUnique: jest.fn(),
+                            findMany: jest.fn(),
+                            create: jest.fn(),
+                            update: jest.fn(),
+                            delete: jest.fn(),
+                        },
                     },
                 },
                 {
@@ -51,7 +55,7 @@ describe('SessionService', (): void => {
         }).compile();
 
         service = module.get<SessionService>(SessionService);
-        repository = module.get<SessionRepository>(SessionRepository);
+        prismaService = module.get<PrismaService>(PrismaService);
     });
 
     it('should be defined', (): void => {
@@ -60,8 +64,8 @@ describe('SessionService', (): void => {
 
     describe('createSession', (): void => {
         it('should successfully create a session', async (): Promise<void> => {
-            jest.spyOn(repository, 'createSession').mockResolvedValue(
-                sessionEntity(),
+            jest.spyOn(prismaService.session, 'create').mockResolvedValue(
+                session(),
             );
 
             const result: CreateSessionResponse = await service.createSession(
@@ -70,31 +74,31 @@ describe('SessionService', (): void => {
             );
 
             expect(result).toEqual(createSessionResponse);
-            expect(repository.createSession).toHaveBeenCalledWith(
+            expect(prismaService.session.create).toHaveBeenCalledWith(
                 1,
                 createSessionRequest,
             );
-            expect(repository.createSession).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.create).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getSession', (): void => {
         it('should return a GetSessionDto when a session is found', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSession').mockResolvedValue(
-                sessionEntity(),
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                session(),
             );
 
             const result: GetSessionResponse = await service.getSession(1);
 
             expect(result).toEqual(getSessionResponse);
             expect(result).toBeInstanceOf(GetSessionResponse);
-            expect(repository.getSession).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.findUnique).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getBestSessions', (): void => {
         it('should return a list of GetSessionDto objects based on pagination query', async (): Promise<void> => {
-            jest.spyOn(repository, 'getBestSessions').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'findMany').mockResolvedValue(
                 bestSessionEntities,
             );
 
@@ -104,20 +108,20 @@ describe('SessionService', (): void => {
             expect(result).toEqual(getBestSessionsResponse);
             expect(
                 result.every(
-                    (item: SessionEntity): boolean =>
+                    (item: GetSessionResponse): boolean =>
                         item instanceof GetSessionResponse,
                 ),
             ).toBe(true);
-            expect(repository.getBestSessions).toHaveBeenCalledWith(
+            expect(prismaService.session.findMany).toHaveBeenCalledWith(
                 paginationQueryDto,
             );
-            expect(repository.getBestSessions).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getSessionList', (): void => {
         it('should return a list of GetSessionDto objects based on query', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSessionList').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'findMany').mockResolvedValue(
                 sessionEntities,
             );
 
@@ -127,7 +131,7 @@ describe('SessionService', (): void => {
 
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session: SessionEntity) => new GetSessionResponse(session),
+                    (session: Session) => new GetSessionResponse(session),
                 ),
             );
             expect(
@@ -136,30 +140,30 @@ describe('SessionService', (): void => {
                         item instanceof GetSessionResponse,
                 ),
             ).toBe(true);
-            expect(repository.getSessionList).toHaveBeenCalledWith(
+            expect(prismaService.session.findMany).toHaveBeenCalledWith(
                 getSessionsQueryRequest,
             );
-            expect(repository.getSessionList).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getSesisonsByUser', (): void => {
         it('should return a list of GetSessionDto objects for a specific user', async (): Promise<void> => {
-            jest.spyOn(repository, 'getSessionsByUser').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'findMany').mockResolvedValue(
                 sessionEntities,
             );
 
             const result: GetSessionResponse[] =
                 await service.getSessionsByUser(1, paginationQueryDto);
 
-            expect(repository.getSessionsByUser).toHaveBeenCalledWith(
+            expect(prismaService.session.findMany).toHaveBeenCalledWith(
                 1,
                 paginationQueryDto,
             );
-            expect(repository.getSessionsByUser).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session: SessionEntity) => new GetSessionResponse(session),
+                    (session: Session) => new GetSessionResponse(session),
                 ),
             );
             expect(
@@ -171,31 +175,35 @@ describe('SessionService', (): void => {
         });
     });
 
-    describe('deleteSession', () => {
-        it('should successfully delete a session', async () => {
-            const session = sessionEntity({ id: 100 });
+    describe('deleteSession', (): void => {
+        it('should successfully delete a session', async (): Promise<void> => {
+            const deletedSession = session({ id: 100 });
 
-            jest.spyOn(repository, 'findById').mockResolvedValue(session);
-            jest.spyOn(repository, 'deleteSession').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                deletedSession,
+            );
+            jest.spyOn(prismaService.session, 'delete').mockResolvedValue(
                 undefined,
             );
 
             await service.deleteSession(1, 100);
 
-            expect(repository.findById).toHaveBeenCalledWith(100);
-            expect(repository.findById).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.findUnique).toHaveBeenCalledWith(100);
+            expect(prismaService.session.findUnique).toHaveBeenCalledTimes(1);
 
-            expect(repository.deleteSession).toHaveBeenCalledWith(100);
-            expect(repository.deleteSession).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.delete).toHaveBeenCalledWith(100);
+            expect(prismaService.session.delete).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('updateSession', (): void => {
         it('should successfully update a session and return a GetSessionDto', async (): Promise<void> => {
-            const session = sessionEntity({ id: 100 });
+            const updatedSession = session({ id: 100 });
 
-            jest.spyOn(repository, 'findById').mockResolvedValue(session);
-            jest.spyOn(repository, 'updateSession').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                updatedSession,
+            );
+            jest.spyOn(prismaService.session, 'update').mockResolvedValue(
                 updatedSessionEntity,
             );
 
@@ -210,11 +218,11 @@ describe('SessionService', (): void => {
             );
             expect(result).toBeInstanceOf(CreateSessionResponse);
 
-            expect(repository.updateSession).toHaveBeenCalledWith(
+            expect(prismaService.session.update).toHaveBeenCalledWith(
                 100,
                 updateSessionRequest,
             );
-            expect(repository.updateSession).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.update).toHaveBeenCalledTimes(1);
         });
     });
 });
