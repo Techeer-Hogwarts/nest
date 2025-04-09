@@ -8,14 +8,14 @@ import {
     Patch,
     Post,
     Query,
-    Req,
     UploadedFile,
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionRequest, User } from '@prisma/client';
-import { Request } from 'express';
+
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
 import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
@@ -95,9 +95,8 @@ export class UserController {
     @UpdateUserDoc()
     async updateUser(
         @Body() updateUserRequest: UpdateUserWithExperienceRequest,
-        @Req() request: Request,
+        @CurrentUser() user: User,
     ): Promise<User> {
-        const user = request.user as any;
         const { updateRequest, experienceRequest } = updateUserRequest;
         this.logger.debug(
             '프로필 업데이트 요청 처리 중',
@@ -125,8 +124,7 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     @Delete()
     @DeleteUserDoc()
-    async deleteUser(@Req() request: Request): Promise<User> {
-        const user = request.user as any;
+    async deleteUser(@CurrentUser() user: User): Promise<User> {
         this.logger.debug(
             '회원 탈퇴 요청 처리 중',
             JSON.stringify({
@@ -145,8 +143,7 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     @Get()
     @GetUserInfoDoc()
-    async getUserInfo(@Req() request: Request): Promise<GetUserResponse> {
-        const user = request.user as any;
+    async getUserInfo(@CurrentUser() user: User): Promise<GetUserResponse> {
         this.logger.debug(
             '유저 정보 조회 요청 처리 중',
             JSON.stringify({
@@ -164,10 +161,9 @@ export class UserController {
     @Post('/permission/request')
     @RequestPermissionDoc()
     async requestPermission(
-        @Req() request: Request,
+        @CurrentUser() user: User,
         @Body() body: CreatePermissionRequest,
     ): Promise<PermissionRequest> {
-        const user = request.user as any;
         this.logger.debug(
             '권한 요청 요청 처리 중',
             JSON.stringify({
@@ -203,10 +199,9 @@ export class UserController {
     @Patch('/permission/approve')
     @ApprovePermissionDoc()
     async approvePermission(
-        @Req() request: Request,
+        @CurrentUser() user: User,
         @Body() body: ApprovePermissionRequest,
     ): Promise<{ updatedRequests: number }> {
-        const user = request.user as any; // 현재 로그인된 유저 (관리자)
         this.logger.debug('권한 승인 요청 처리 중', {
             user,
             body,
@@ -227,14 +222,14 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     @Patch('/profileImage')
     @GetProfileImageDoc()
-    async getProfileImage(@Req() request: Request): Promise<User> {
+    async getProfileImage(@CurrentUser() user: User): Promise<User> {
         this.logger.debug(
             '프로필 사진 동기화 요청 처리 중',
             JSON.stringify({
                 UserController: UserController.name,
             }),
         );
-        const result = await this.userService.updateProfileImage(request);
+        const result = await this.userService.updateProfileImage(user);
         this.logger.debug(
             '프로필 사진 동기화 완료',
             JSON.stringify(UserController.name),
@@ -246,10 +241,9 @@ export class UserController {
     @Patch('/nickname')
     @UpdateNicknameDoc()
     async updateNickname(
-        @Req() request: Request,
+        @CurrentUser() user: User,
         @Body('nickname') nickname: string,
     ): Promise<User> {
-        const user = request.user;
         this.logger.debug(
             '닉네임 업데이트 요청 처리 중',
             JSON.stringify({ nickname }),
@@ -296,10 +290,9 @@ export class UserController {
     @Delete('/experience/:experienceId')
     @DeleteUserExperienceDoc()
     async deleteUserExperience(
-        @Req() request: Request,
+        @CurrentUser() user: User,
         @Param('experienceId') experienceId: number,
     ): Promise<void> {
-        const user = request.user as any;
         this.logger.debug(
             '경력 삭제 요청 처리 중',
             JSON.stringify({ experienceId }),

@@ -3,17 +3,16 @@ import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import * as bcrypt from 'bcryptjs';
 
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
-import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
-import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
-import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
-import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
-import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
-import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { normalizeString } from '../../common/category/normalize';
 import { StackCategory } from '../../common/category/stack.category';
+
+import {
+    PermissionRequest,
+    Prisma,
+    StatusCategory,
+    User,
+} from '@prisma/client';
 
 import { TaskService } from '../../core/task/task.service';
 import { IndexService } from '../../infra/index/index.service';
@@ -23,15 +22,16 @@ import { AuthService } from '../auth/auth.service';
 import { ResumeService } from '../resumes/resume.service';
 import { UserExperienceService } from '../userExperiences/userExperience.service';
 
-import {
-    PermissionRequest,
-    Prisma,
-    StatusCategory,
-    User,
-} from '@prisma/client';
+import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
+import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
+import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
+import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
 
-import { UserGrade } from './category/UserGrade';
-import { UserDetail } from './types/user.detail.type';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+
 import {
     UserAlreadyExistsException,
     UserNotFoundException,
@@ -41,6 +41,9 @@ import {
     UserNotVerifiedEmailException,
     UserUnauthorizedAdminException,
 } from './exception/user.exception';
+
+import { UserGrade } from './category/UserGrade';
+import { UserDetail } from './types/user.detail.type';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -494,8 +497,8 @@ export class UserService {
         throw new UserNotFoundProfileImgException();
     }
 
-    async updateProfileImage(request: any): Promise<User> {
-        const { email } = request.user;
+    async updateProfileImage(user: User): Promise<User> {
+        const { email } = user;
         const { image, isTecheer } = await this.getProfileImageUrl(email);
 
         if (isTecheer === true) {
@@ -523,7 +526,7 @@ export class UserService {
         });
     }
 
-    async updateNickname(user: any, nickname: string): Promise<User> {
+    async updateNickname(user: User, nickname: string): Promise<User> {
         if (user.roleId !== 1 && user.roleId !== 2) {
             this.logger.error(
                 '권한 없음',
@@ -553,7 +556,9 @@ export class UserService {
         });
     }
 
-    async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {
+    async getAllProfiles(
+        query: GetUserssQueryRequest,
+    ): Promise<GetUserResponse[]> {
         this.logger.debug(
             '모든 프로필 조회 시작',
             JSON.stringify({
@@ -582,14 +587,18 @@ export class UserService {
         }
 
         return users
-            .filter((user) => user !== null && user !== undefined)
+            .filter(
+                (user): user is UserDetail =>
+                    user !== null && user !== undefined,
+            )
             .map((user) => new GetUserResponse(user));
     }
 
     async findAllProfiles(query: GetUserssQueryRequest): Promise<UserDetail[]> {
         const { position, year, university, grade, offset, limit } = query;
 
-        const filters: Record<string, any> = {};
+        const filters: Prisma.UserWhereInput = {};
+
         if (position) {
             filters.mainPosition = {
                 in: Array.isArray(position) ? position : [position],
