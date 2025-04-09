@@ -1,6 +1,5 @@
 import { Request } from 'express';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Session } from '@prisma/client';
 
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
@@ -106,7 +105,7 @@ describe('SessionController', () => {
         it('should return a list of best sessions based on popularity', async (): Promise<void> => {
             jest.spyOn(service, 'getBestSessions').mockResolvedValue(
                 sessionEntities.map(
-                    (session: Session) => new GetSessionResponse(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             );
 
@@ -114,7 +113,7 @@ describe('SessionController', () => {
 
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session: Session) => new GetSessionResponse(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             );
             expect(service.getBestSessions).toHaveBeenCalledTimes(1);
@@ -143,7 +142,7 @@ describe('SessionController', () => {
         it('should return a list of sessions for a specific user', async (): Promise<void> => {
             jest.spyOn(service, 'getSessionsByUser').mockResolvedValue(
                 sessionEntities.map(
-                    (session: Session) => new GetSessionResponse(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             );
 
@@ -154,7 +153,7 @@ describe('SessionController', () => {
 
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session: Session) => new GetSessionResponse(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             );
             expect(service.getSessionsByUser).toHaveBeenCalledWith(
