@@ -1,5 +1,9 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+
+export function SessionControllerDocs(): ClassDecorator {
+    return applyDecorators(ApiTags('sessions'));
+}
 
 export function PostSessionDocs(): MethodDecorator {
     return applyDecorators(
