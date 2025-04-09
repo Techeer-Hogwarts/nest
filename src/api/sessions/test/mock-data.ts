@@ -1,4 +1,4 @@
-import { Session } from '@prisma/client';
+import { Session, User } from '@prisma/client';
 import { CreateSessionRequest } from '../../../common/dto/sessions/request/create.session.request';
 import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
 import { UpdateSessionRequest } from '../../../common/dto/sessions/request/update.session.request';
@@ -140,7 +140,7 @@ export const bestSessionEntities: Session[] = [
 
 export const getBestSessionsResponse: GetSessionResponse[] =
     bestSessionEntities.map(
-        (session: Session) => new GetSessionResponse(session),
+        (session: Session & { user: User }) => new GetSessionResponse(session),
     );
 
 export const getSessionsQueryRequest: GetSessionsQueryRequest = {
@@ -152,7 +152,7 @@ export const getSessionsQueryRequest: GetSessionsQueryRequest = {
 };
 
 export const getSessionListResponse: GetSessionResponse[] = sessionEntities.map(
-    (session: Session) => new GetSessionResponse(session),
+    (session: Session & { user: User }) => new GetSessionResponse(session),
 );
 
 export const updateSessionRequest: UpdateSessionRequest = {
