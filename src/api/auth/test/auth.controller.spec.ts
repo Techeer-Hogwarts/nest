@@ -1,115 +1,173 @@
-// import { Test, TestingModule } from '@nestjs/testing';
-// import { AuthController } from '../auth.controller';
-// import { AuthService } from '../auth.service';
-// import { BadRequestException } from '@nestjs/common';
-// import { UserRepository } from '../../users/repository/user.repository';
-// import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { CanActivate } from '@nestjs/common';
+import { Response } from 'express';
+import { Test, TestingModule } from '@nestjs/testing';
 
-// describe('AuthController', () => {
-//     let authController: AuthController;
-//     let authService: AuthService;
-//     let logger: CustomWinstonLogger;
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 
-//     beforeEach(async () => {
-//         const module: TestingModule = await Test.createTestingModule({
-//             controllers: [AuthController],
-//             providers: [
-//                 {
-//                     provide: AuthService,
-//                     useValue: {
-//                         sendVerificationEmail: jest.fn(),
-//                         verifyCode: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: UserRepository,
-//                     useValue: {
-//                         findById: jest.fn(),
-//                         createPermissionRequest: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: CustomWinstonLogger,
-//                     useValue: {
-//                         log: jest.fn(),
-//                         error: jest.fn(),
-//                         debug: jest.fn(),
-//                     },
-//                 },
-//             ],
-//         }).compile();
+import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
 
-//         authController = module.get<AuthController>(AuthController);
-//         authService = module.get<AuthService>(AuthService);
-//         logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
-//     });
+import { AuthService } from '../../../core/auth/auth.service';
 
-//     it('AuthController가 정의되어 있어야 한다', () => {
-//         expect(authController).toBeDefined();
-//     });
+import { AuthController } from '../auth.controller';
 
-//     describe('sendVerificationEmail', () => {
-//         it('이메일 전송이 성공해야 한다', async () => {
-//             const email = 'test@test.com';
+import { LoginRequest } from '../../../common/dto/auth/request/login.request';
+import { ResetPasswordRequest } from '../../../common/dto/auth/request/reset.password.request';
+import { SendEmailCodeRequest } from '../../../common/dto/auth/request/send.emailCode.request';
+import { VerifyEmailCodeRequest } from '../../../common/dto/auth/request/verify.emailCode.request';
 
-//             // sendVerificationEmail 메서드 모킹
-//             (authService.sendVerificationEmail as jest.Mock).mockResolvedValue(
-//                 undefined,
-//             );
+class MockJwtAuthGuard implements CanActivate {
+    canActivate(): boolean {
+        return true;
+    }
+}
 
-//             await authController.sendVerificationEmail(email);
+describe('AuthController', () => {
+    let authController: AuthController;
+    let authService: Partial<Record<keyof AuthService, jest.Mock>>;
+    let logger: Partial<Record<keyof CustomWinstonLogger, jest.Mock>>;
 
-//             // 메서드 호출 여부 확인
-//             expect(authService.sendVerificationEmail).toHaveBeenCalledWith(
-//                 email,
-//             );
-//             expect(logger.debug).toHaveBeenCalledWith(
-//                 '인증 코드를 전송하였습니다.',
-//                 'AuthController',
-//             );
-//         });
-//     });
+    beforeEach(async () => {
+        authService = {
+            sendVerificationEmail: jest.fn(),
+            verifyCode: jest.fn(),
+            login: jest.fn(),
+            resetPassword: jest.fn(),
+        };
 
-//     describe('verifyCode', () => {
-//         it('인증 코드가 일치하면 성공해야 한다', async () => {
-//             const email = 'test@test.com';
-//             const code = '123456';
+        logger = {
+            debug: jest.fn(),
+        };
 
-//             // verifyCode 성공 경우 모킹
-//             (authService.verifyCode as jest.Mock).mockResolvedValue(true);
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [AuthController],
+            providers: [
+                {
+                    provide: AuthService,
+                    useValue: authService,
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: logger,
+                },
+            ],
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useClass(MockJwtAuthGuard)
+            .compile();
 
-//             await authController.verifyCode(email, code);
+        authController = module.get<AuthController>(AuthController);
+    });
 
-//             // 메서드 호출 확인
-//             expect(authService.verifyCode).toHaveBeenCalledWith(email, code);
+    describe('sendVerificationEmail', () => {
+        it('이메일 인증 코드를 요청한다', async () => {
+            const dto: SendEmailCodeRequest = { email: 'test@test.com' };
 
-//             // logger.debug 호출 확인
-//             expect(logger.debug).toHaveBeenCalledWith(
-//                 '이메일 인증이 완료되었습니다.',
-//                 'AuthController',
-//             );
-//         });
+            await authController.sendVerificationEmail(dto);
 
-//         it('인증 코드가 일치하지 않으면 BadRequestException이 발생해야 한다', async () => {
-//             const email = 'test@test.com';
-//             const code = 'wrongCode';
+            expect(authService.sendVerificationEmail).toHaveBeenCalledWith(
+                dto.email,
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '인증 코드를 전송하였습니다.',
+                'AuthController',
+            );
+        });
+    });
 
-//             // verifyCode 실패 경우 모킹
-//             (authService.verifyCode as jest.Mock).mockImplementation(() => {
-//                 throw new BadRequestException('인증 코드가 일치하지 않습니다.');
-//             });
+    describe('verifyCode', () => {
+        it('이메일 인증 코드를 검증한다', async () => {
+            const dto: VerifyEmailCodeRequest = {
+                email: 'test@test.com',
+                code: '123456',
+            };
 
-//             await expect(
-//                 authController.verifyCode(email, code),
-//             ).rejects.toThrow(
-//                 new BadRequestException('인증 코드가 일치하지 않습니다.'),
-//             );
+            await authController.verifyCode(dto);
 
-//             // 메서드 호출 여부 확인
-//             expect(authService.verifyCode).toHaveBeenCalledWith(email, code);
+            expect(authService.verifyCode).toHaveBeenCalledWith(
+                dto.email,
+                dto.code,
+            );
+            expect(logger.debug).toHaveBeenCalledWith(
+                '이메일 인증이 완료되었습니다.',
+                'AuthController',
+            );
+        });
+    });
 
-//             // logger.debug가 호출되지 않았음을 확인
-//             expect(logger.debug).not.toHaveBeenCalled();
-//         });
-//     });
-// });
+    describe('login', () => {
+        it('로그인 시 토큰을 반환하고 쿠키에 설정한다', async () => {
+            const dto: LoginRequest = {
+                email: 'test@test.com',
+                password: '123456',
+            };
+            const response = {
+                cookie: jest.fn(),
+            } as unknown as Response;
+
+            authService.login!.mockResolvedValue({
+                accessToken: 'accessToken',
+                refreshToken: 'refreshToken',
+            });
+
+            const result = await authController.login(dto, response);
+
+            expect(authService.login).toHaveBeenCalledWith(
+                dto.email,
+                dto.password,
+            );
+            expect(response.cookie).toHaveBeenCalledTimes(2);
+            expect(result).toEqual({
+                accessToken: 'accessToken',
+                refreshToken: 'refreshToken',
+            });
+            expect(logger.debug).toHaveBeenCalledWith(
+                '로그인이 완료되었습니다.',
+                'AuthController',
+            );
+        });
+    });
+
+    describe('logout', () => {
+        it('로그아웃 시 쿠키를 제거한다', async () => {
+            const response = {
+                cookie: jest.fn(),
+            } as unknown as Response;
+
+            await authController.logout(response);
+
+            expect(response.cookie).toHaveBeenCalledWith('access_token', '', {
+                maxAge: 0,
+            });
+            expect(response.cookie).toHaveBeenCalledWith('refresh_token', '', {
+                maxAge: 0,
+            });
+            expect(logger.debug).toHaveBeenCalledWith(
+                '로그아웃에 성공하였습니다.',
+                'AuthController',
+            );
+        });
+    });
+
+    describe('resetPassword', () => {
+        it('이메일 인증 후 비밀번호를 변경한다', async () => {
+            const dto: ResetPasswordRequest = {
+                email: 'test@test.com',
+                code: '123456',
+                newPassword: 'newPassword',
+            };
+
+            await authController.resetPassword(dto);
+
+            expect(authService.resetPassword).toHaveBeenCalledWith(
+                dto.email,
+                dto.code,
+                dto.newPassword,
+            );
+
+            expect(logger.debug).toHaveBeenCalledWith(
+                '비밀번호를 재설정했습니다.',
+                'AuthController',
+            );
+        });
+    });
+});

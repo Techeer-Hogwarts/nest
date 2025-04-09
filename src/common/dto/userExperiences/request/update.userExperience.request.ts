@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
     IsDateString,
     IsString,
@@ -5,7 +6,6 @@ import {
     IsOptional,
     IsInt,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserExperienceRequest {
     @IsInt()
@@ -14,7 +14,7 @@ export class UpdateUserExperienceRequest {
         example: 1,
         description: '경력 ID',
     })
-    readonly experienceId: number;
+    readonly experienceId?: number;
 
     @IsString()
     @IsOptional()
