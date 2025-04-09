@@ -108,3 +108,7 @@ export type StudyTeamGetAllData = {
     recruitNum: number;
     createdAt: Date;
 };
+
+export interface TeamGetAllListResponse {
+    allTeams: TeamGetAllResponse[];
+}
