@@ -30,12 +30,19 @@ export class SessionService {
         private readonly indexService: IndexService,
     ) {}
 
-    async findById(sessionId: number): Promise<Session | null> {
-        return this.prisma.session.findUnique({
+    async findById(sessionId: number): Promise<Session> {
+        const session = await this.prisma.session.findUnique({
             where: {
                 id: sessionId,
             },
+            include: {
+                user: true,
+            },
         });
+        if (!session) {
+            throw new SessionNotFoundException();
+        }
+        return session;
     }
 
     async createSession(
@@ -73,6 +80,9 @@ export class SessionService {
                 data: {
                     viewCount: { increment: 1 }, // 조회수 증가
                 },
+                include: {
+                    user: true,
+                },
             });
             // 인덱스 업데이트
             const indexProject = new IndexSessionRequest(session);
@@ -82,7 +92,7 @@ export class SessionService {
             );
             await this.indexService.createIndex('session', indexProject);
             return new GetSessionResponse(session);
-        } catch {
+        } catch (error) {
             this.logger.error(
                 `세션 게시물을 찾을 수 없음`,
                 SessionService.name,
@@ -110,6 +120,9 @@ export class SessionService {
             },
             take: limit,
             skip: offset,
+            include: {
+                user: true,
+            },
         });
 
         const sortedSessions = sessions
@@ -143,6 +156,9 @@ export class SessionService {
             orderBy: {
                 title: 'asc',
             },
+            include: {
+                user: true,
+            },
         });
 
         this.logger.debug(
@@ -166,6 +182,9 @@ export class SessionService {
             },
             skip: offset,
             take: limit,
+            include: {
+                user: true,
+            },
         });
 
         this.logger.debug(
