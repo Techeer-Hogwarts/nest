@@ -29,7 +29,7 @@ import {
     ProjectTeamGetAllResponse,
     StudyTeamGetAllData,
     StudyTeamGetAllResponse,
-    TeamGetAllResponse,
+    TeamGetAllListResponse,
 } from '../../common/dto/projectTeams/response/get.allTeam.response';
 import { ProjectTeamLeadersAlert } from '../../common/dto/projectMembers/response/project.member.response.interface';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
@@ -1219,7 +1219,7 @@ export class ProjectTeamService {
      **/
     async getAllTeams(
         getTeamQueryRequest: GetTeamQueryRequest = {},
-    ): Promise<TeamGetAllResponse[]> {
+    ): Promise<TeamGetAllListResponse> {
         const { teamTypes, isRecruited, isFinished, positions } =
             getTeamQueryRequest;
 
@@ -1306,7 +1306,11 @@ export class ProjectTeamService {
 
         const teamResponse = [...projectResponses, ...studyResponses];
 
-        return teamResponse.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+        return {
+            allTeams: teamResponse
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name, 'ko')),
+        };
     }
 
     private getPositionFilter(

@@ -257,9 +257,7 @@ export class StudyTeamService {
         if (!studyTeam) {
             throw new StudyMemberNotFoundException();
         }
-        if (studyTeam.studyMember.length === 0) {
-            throw new StudyMemberNotFoundException();
-        }
+
         this.logger.debug(
             '스터디 pk로 지원자 전체 조회: 스터디 팀 지원자 조회 완료',
         );

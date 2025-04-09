@@ -35,7 +35,7 @@ import {
     ProjectTeamDetailResponse,
     ProjectTeamListResponse,
 } from '../../common/dto/projectTeams/response/get.projectTeam.response';
-import { TeamGetAllResponse } from '../../common/dto/projectTeams/response/get.allTeam.response';
+import { TeamGetAllListResponse } from '../../common/dto/projectTeams/response/get.allTeam.response';
 
 import { ProjectTeamService } from '../../core/projectTeams/projectTeam.service';
 
@@ -94,7 +94,7 @@ export class ProjectTeamController {
     async getAllTeams(
         @Query(new ValidationPipe({ transform: true }))
         getTeamQueryRequest: GetTeamQueryRequest,
-    ): Promise<TeamGetAllResponse[]> {
+    ): Promise<TeamGetAllListResponse> {
         return await this.projectTeamService.getAllTeams(getTeamQueryRequest);
     }
 
