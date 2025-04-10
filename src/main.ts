@@ -99,9 +99,9 @@ async function bootstrap(): Promise<void> {
         SwaggerModule.setup('api/v1/docs', app, document);
 
         customLogger.log('Swagger 모듈 설정이 완료되었습니다.');
-
+        const jsonBodyPipe = app.get(JsonBodyPipe);
         app.useGlobalPipes(
-            new JsonBodyPipe(),
+            jsonBodyPipe,
             new ValidationPipe({
                 transform: true, // DTO에서 정의한 타입으로 자동 변환
                 forbidNonWhitelisted: true, // DTO에 없는 값이 들어오면 예외 발생
