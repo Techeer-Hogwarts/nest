@@ -542,6 +542,7 @@ export class ProjectTeamService {
                 return await tx.projectTeam.update({
                     where: {
                         id: projectTeamId,
+                        isDeleted: false,
                     },
                     data: {
                         ...updateData,
@@ -1223,6 +1224,10 @@ export class ProjectTeamService {
         //거절된 경우 사용자 알림 전송 (결과: REJECT)
         const projectTeam =
             await this.findManyProjectTeamLeaders(projectTeamId);
+        this.logger.debug(
+            'reader: ',
+            JSON.stringify(projectTeam.projectMember),
+        );
         const alertPayloads = mapToTeamLeaderAlertPayload(
             TeamType.PROJECT,
             projectTeamId,
