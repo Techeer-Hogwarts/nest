@@ -38,6 +38,7 @@ import {
 } from './session.docs';
 
 @SessionControllerDocs()
+@UseGuards(JwtAuthGuard)
 @Controller('/sessions')
 export class SessionController {
     constructor(
@@ -45,7 +46,6 @@ export class SessionController {
         private readonly logger: CustomWinstonLogger,
     ) {}
 
-    @UseGuards(JwtAuthGuard)
     @Post()
     @PostSessionDocs()
     async createSession(
@@ -69,7 +69,6 @@ export class SessionController {
         return result;
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get('/best')
     @GetBestSessionsDocs()
     async getBestSessions(
@@ -80,15 +79,23 @@ export class SessionController {
             SessionController.name,
         );
 
-        const result = await this.sessionService.getBestSessions(query);
-        this.logger.debug(
-            `세션 인기글 목록 조회 처리 완료`,
-            SessionController.name,
-        );
-        return result;
+        try {
+            const result = await this.sessionService.getBestSessions(query);
+            this.logger.debug(
+                `세션 인기글 목록 조회 처리 완료`,
+                SessionController.name,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `세션 인기글 목록 조회 실패 - query: ${JSON.stringify(query)}, error: ${error.message}`,
+                error.stack,
+                SessionController.name,
+            );
+            throw error; // NestJS의 예외 처리 흐름 유지
+        }
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get()
     @GetSessionListDocs()
     async getSessionList(
@@ -107,7 +114,6 @@ export class SessionController {
         return result;
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get(':sessionId')
     @GetSessionDocs()
     async getSession(
@@ -126,7 +132,6 @@ export class SessionController {
         return result;
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get('/user/:userId')
     @GetSessionsByUserDocs()
     async getSessionsByUser(
@@ -138,18 +143,26 @@ export class SessionController {
             SessionController.name,
         );
 
-        const result = await this.sessionService.getSessionsByUser(
-            userId,
-            query,
-        );
-        this.logger.debug(
-            `유저 별 세션 게시물 목록 조회 처리 완료`,
-            SessionController.name,
-        );
-        return result;
+        try {
+            const result = await this.sessionService.getSessionsByUser(
+                userId,
+                query,
+            );
+            this.logger.debug(
+                `유저 별 세션 게시물 목록 조회 처리 완료`,
+                SessionController.name,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `유저 별 세션 게시물 목록 조회 실패 - userId: ${userId}, query: ${JSON.stringify(query)}, error: ${error.message}`,
+                error.stack,
+                SessionController.name,
+            );
+            throw error;
+        }
     }
 
-    @UseGuards(JwtAuthGuard)
     @Delete(':sessionId')
     @DeleteSessionDocs()
     async deleteSession(
@@ -169,7 +182,6 @@ export class SessionController {
         );
     }
 
-    @UseGuards(JwtAuthGuard)
     @Patch(':sessionId')
     @UpdateSessionDocs()
     async updateSession(
