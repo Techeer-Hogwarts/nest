@@ -1246,7 +1246,7 @@ export class ProjectTeamService {
             );
         });
 
-        this.logger.debug('지원자 거절 완료 (ID: ${applicantId})');
+        this.logger.debug(`지원자 거절 완료 (ID: ${applicantId})`);
         return new ProjectApplicantResponse(rejectedApplicant);
     }
 
