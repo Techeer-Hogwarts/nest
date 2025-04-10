@@ -5,6 +5,7 @@ import {
     GlobalInvalidDataTypeBody,
     GlobalInvalidInputValueException,
 } from '../exception/global.exception';
+import { GlobalLogger } from '../logger/global.logger';
 
 const PRIMITIVE_TYPES: PrimitiveConstructor[] = [
     String,
@@ -36,6 +37,7 @@ export class JsonBodyPipe implements PipeTransform<string, Promise<unknown>> {
         const instance = plainToInstance(metatype, parsed);
         const errors = await validate(instance);
         if (errors.length > 0) {
+            GlobalLogger.error(errors);
             throw new GlobalInvalidInputValueException();
         }
 

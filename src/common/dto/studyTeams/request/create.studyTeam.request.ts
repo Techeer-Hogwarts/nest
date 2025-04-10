@@ -67,6 +67,7 @@ export class CreateStudyTeamRequest {
     rule: string;
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         example: true,
@@ -75,6 +76,7 @@ export class CreateStudyTeamRequest {
     isFinished: boolean;
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         example: true,
@@ -83,6 +85,7 @@ export class CreateStudyTeamRequest {
     isRecruited: boolean;
 
     @IsNotEmpty()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 3,
