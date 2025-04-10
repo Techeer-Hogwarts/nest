@@ -34,6 +34,7 @@ export class SessionService {
         const session = await this.prisma.session.findUnique({
             where: {
                 id: sessionId,
+                isDeleted: false,
             },
             include: {
                 user: true,
