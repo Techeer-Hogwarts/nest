@@ -5,9 +5,6 @@ import { MemberStatus } from '../category/teamCategory/member.category';
 import { GetStudyTeamResponse } from '../dto/studyTeams/response/get.studyTeam.response';
 import { CreateStudyAlertRequest } from '../dto/alert/request/create.study.alert.request';
 import { TeamType } from '../category/teamCategory/teamType';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-
-const logger = new CustomWinstonLogger();
 
 export function mapToTeamLeaderAlertPayload(
     type: TeamType,
@@ -17,15 +14,6 @@ export function mapToTeamLeaderAlertPayload(
     applicantEmail: string,
     statusResult: MemberStatus,
 ): CreatePersonalAlertRequest[] {
-    logger.debug(
-        'mapToTeamLeaderAlertPayload',
-        type,
-        teamId,
-        teamName,
-        teamLeaders,
-        applicantEmail,
-        statusResult,
-    );
     return teamLeaders.map((leader, index) => ({
         type: type,
         teamId: teamId,
@@ -41,12 +29,6 @@ export function mapToProjectTeamAlertPayload(
     leaderNames: string[],
     leaderEmails: string[],
 ): CreateProjectAlertRequest {
-    logger.debug(
-        'mapToProjectTeamAlertPayload',
-        response,
-        leaderNames,
-        leaderEmails,
-    );
     return {
         id: response.id,
         type: TeamType.PROJECT,
