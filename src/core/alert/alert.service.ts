@@ -37,6 +37,7 @@ export class AlertService {
             this.logger.debug('User alert sent successfully!');
         } catch (error) {
             this.logger.error('Error sending user alert:', error);
+            throw error;
         }
     }
 }
