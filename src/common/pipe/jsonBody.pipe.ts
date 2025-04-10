@@ -5,7 +5,7 @@ import {
     GlobalInvalidDataTypeBody,
     GlobalInvalidInputValueException,
 } from '../exception/global.exception';
-import { GlobalLogger } from '../logger/global.logger';
+import { CustomWinstonLogger } from '../logger/winston.logger';
 
 const PRIMITIVE_TYPES: PrimitiveConstructor[] = [
     String,
@@ -17,6 +17,8 @@ const PRIMITIVE_TYPES: PrimitiveConstructor[] = [
 
 @Injectable()
 export class JsonBodyPipe implements PipeTransform<string, Promise<unknown>> {
+    constructor(private readonly logger: CustomWinstonLogger) {}
+
     async transform(
         value: string,
         metadata: ArgumentMetadata,
@@ -31,13 +33,14 @@ export class JsonBodyPipe implements PipeTransform<string, Promise<unknown>> {
         try {
             parsed = typeof value === 'string' ? JSON.parse(value) : value;
         } catch {
+            this.logger.error('JsonBodyPipe InvalidBody', parsed);
             throw new GlobalInvalidDataTypeBody();
         }
 
         const instance = plainToInstance(metatype, parsed);
         const errors = await validate(instance);
         if (errors.length > 0) {
-            GlobalLogger.error(errors);
+            this.logger.error('JsonBodyPipe InvalidInstance', errors);
             throw new GlobalInvalidInputValueException();
         }
 

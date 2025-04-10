@@ -58,7 +58,7 @@ export class CustomWinstonLogger implements LoggerService {
             case 'warn':
                 return '33'; // Yellow
             case 'debug':
-                return '34'; // Blue
+                return '38;5;159'; // Blue
             case 'verbose':
                 return '32'; // Green
             default:

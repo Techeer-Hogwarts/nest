@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsNotEmpty, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 export class StudyMemberInfoRequest {
     @IsNotEmpty()
+    @Type(() => Number)
     @IsNumber()
     @ApiProperty({
         description: '사용자 ID',
@@ -10,6 +12,7 @@ export class StudyMemberInfoRequest {
     userId: number;
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         description: '리더 여부',

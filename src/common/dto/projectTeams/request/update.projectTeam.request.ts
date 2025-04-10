@@ -45,6 +45,7 @@ export class UpdateProjectTeamRequest {
     projectExplain: string;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 3,
@@ -53,6 +54,7 @@ export class UpdateProjectTeamRequest {
     frontendNum: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 2,
@@ -61,6 +63,7 @@ export class UpdateProjectTeamRequest {
     backendNum: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 1,
@@ -69,6 +72,7 @@ export class UpdateProjectTeamRequest {
     devopsNum: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 1,
@@ -77,6 +81,7 @@ export class UpdateProjectTeamRequest {
     fullStackNum: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 1,
@@ -93,6 +98,7 @@ export class UpdateProjectTeamRequest {
     recruitExplain: string;
 
     @IsOptional()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         example: false,
@@ -101,6 +107,7 @@ export class UpdateProjectTeamRequest {
     isFinished: boolean;
 
     @IsOptional()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         example: true,
@@ -131,6 +138,7 @@ export class UpdateProjectTeamRequest {
 
     @IsOptional()
     @IsArray()
+    @Type(() => Number)
     @ApiProperty({
         example: [1, 2, 3],
         description: '삭제할 메인 이미지 ID 배열',
@@ -139,6 +147,7 @@ export class UpdateProjectTeamRequest {
 
     @IsOptional()
     @IsArray()
+    @Type(() => Number)
     @ApiProperty({
         example: [1, 2, 3],
         description: '삭제할 이미지 ID 배열',
@@ -147,6 +156,7 @@ export class UpdateProjectTeamRequest {
 
     @IsOptional()
     @IsArray()
+    @Type(() => Number)
     @ApiProperty({
         example: [1, 2, 3],
         description: '삭제할 멤버 ID 배열',
