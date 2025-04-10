@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsNumber } from 'class-validator';
+import {
+    IsBoolean,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+
 export class StudyMemberInfoRequest {
     @IsNotEmpty()
     @Type(() => Number)
@@ -19,4 +26,17 @@ export class StudyMemberInfoRequest {
         example: true,
     })
     isLeader: boolean;
+
+    @IsOptional()
+    @IsString()
+    name?: string;
+
+    @IsOptional()
+    @IsString()
+    profileImage?: string;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    id?: number;
 }
