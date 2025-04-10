@@ -920,7 +920,10 @@ export class ProjectTeamService {
             MemberStatus.PENDING,
         );
 
-        this.logger.debug('apply: sendSlack 시작');
+        this.logger.debug(
+            'apply: sendSlack 시작',
+            JSON.stringify(alertPayloads),
+        );
         await Promise.all(
             alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
@@ -981,7 +984,10 @@ export class ProjectTeamService {
             MemberStatus.CANCELLED,
         );
 
-        this.logger.debug('cancel: sendSlack 시작');
+        this.logger.debug(
+            'cancel: sendSlack 시작',
+            JSON.stringify(alertPayloads),
+        );
         await Promise.all(
             alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
@@ -1160,7 +1166,10 @@ export class ProjectTeamService {
             MemberStatus.APPROVED,
         );
 
-        this.logger.debug('accept: sendSlack 시작');
+        this.logger.debug(
+            'accept: sendSlack 시작',
+            JSON.stringify(alertPayloads),
+        );
         await Promise.all(
             alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
@@ -1223,7 +1232,10 @@ export class ProjectTeamService {
             MemberStatus.REJECT,
         );
 
-        this.logger.debug('reject: sendSlack 시작');
+        this.logger.debug(
+            'reject: sendSlack 시작',
+            JSON.stringify(alertPayloads),
+        );
         await Promise.all(
             alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
