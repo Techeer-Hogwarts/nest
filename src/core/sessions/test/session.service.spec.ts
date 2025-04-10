@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Session } from '@prisma/client';
 
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { SessionNotFoundException } from '../exception/session.exception';
 
 import { SessionService } from '../session.service';
 
@@ -15,7 +15,6 @@ import {
     updatedSessionEntity,
     paginationQueryDto,
     bestSessionEntities,
-    getBestSessionsResponse,
     getSessionsQueryRequest,
     createSessionResponse,
     sessionEntities,
@@ -23,6 +22,7 @@ import {
 } from '../../../api/sessions/test/mock-data';
 
 import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { IndexService } from '../../../infra/index/index.service';
 
 describe('SessionService', (): void => {
     let service: SessionService;
@@ -51,6 +51,14 @@ describe('SessionService', (): void => {
                         error: jest.fn(),
                     },
                 },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        updateIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
@@ -62,6 +70,47 @@ describe('SessionService', (): void => {
         expect(service).toBeDefined();
     });
 
+    describe('findById', (): void => {
+        it('should return a session when a session is found', async (): Promise<void> => {
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                session(),
+            );
+
+            const result = await service.findById(100);
+
+            expect(result).toEqual(session());
+            expect(prismaService.session.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: {
+                    user: true,
+                },
+            });
+        });
+
+        it('should throw an error when a session is not found', async (): Promise<void> => {
+            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+                null,
+            );
+
+            await expect(service.findById(100)).rejects.toThrow(
+                SessionNotFoundException,
+            );
+
+            expect(prismaService.session.findUnique).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                    isDeleted: false,
+                },
+                include: {
+                    user: true,
+                },
+            });
+        });
+    });
+
     describe('createSession', (): void => {
         it('should successfully create a session', async (): Promise<void> => {
             jest.spyOn(prismaService.session, 'create').mockResolvedValue(
@@ -69,30 +118,43 @@ describe('SessionService', (): void => {
             );
 
             const result: CreateSessionResponse = await service.createSession(
-                1,
+                100,
                 createSessionRequest,
             );
 
             expect(result).toEqual(createSessionResponse);
-            expect(prismaService.session.create).toHaveBeenCalledWith(
-                1,
-                createSessionRequest,
-            );
+            expect(prismaService.session.create).toHaveBeenCalledWith({
+                data: {
+                    ...createSessionRequest,
+                    userId: 100,
+                },
+            });
             expect(prismaService.session.create).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getSession', (): void => {
         it('should return a GetSessionDto when a session is found', async (): Promise<void> => {
-            jest.spyOn(prismaService.session, 'findUnique').mockResolvedValue(
+            jest.spyOn(prismaService.session, 'update').mockResolvedValue(
                 session(),
             );
 
-            const result: GetSessionResponse = await service.getSession(1);
+            const result: GetSessionResponse = await service.getSession(100);
 
             expect(result).toEqual(getSessionResponse);
             expect(result).toBeInstanceOf(GetSessionResponse);
-            expect(prismaService.session.findUnique).toHaveBeenCalledTimes(1);
+            expect(prismaService.session.update).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                },
+                data: {
+                    viewCount: { increment: 1 },
+                },
+                include: {
+                    user: true,
+                },
+            });
+            expect(prismaService.session.update).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -105,16 +167,37 @@ describe('SessionService', (): void => {
             const result: GetSessionResponse[] =
                 await service.getBestSessions(paginationQueryDto);
 
-            expect(result).toEqual(getBestSessionsResponse);
+            const expectedResponse = bestSessionEntities
+                .filter(
+                    (session) => session.viewCount > 0 || session.likeCount > 0,
+                )
+                .sort(
+                    (a, b) =>
+                        b.viewCount +
+                        b.likeCount * 10 -
+                        (a.viewCount + a.likeCount * 10),
+                )
+                .map((session) => new GetSessionResponse(session));
+
+            expect(result).toEqual(expectedResponse);
             expect(
                 result.every(
                     (item: GetSessionResponse): boolean =>
                         item instanceof GetSessionResponse,
                 ),
             ).toBe(true);
-            expect(prismaService.session.findMany).toHaveBeenCalledWith(
-                paginationQueryDto,
-            );
+            expect(prismaService.session.findMany).toHaveBeenCalledWith({
+                where: {
+                    createdAt: {
+                        gte: expect.any(Date),
+                    },
+                },
+                include: {
+                    user: true,
+                },
+                take: paginationQueryDto.limit,
+                skip: paginationQueryDto.offset,
+            });
             expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
         });
     });
@@ -131,7 +214,7 @@ describe('SessionService', (): void => {
 
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session: Session) => new GetSessionResponse(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             );
             expect(
@@ -140,9 +223,25 @@ describe('SessionService', (): void => {
                         item instanceof GetSessionResponse,
                 ),
             ).toBe(true);
-            expect(prismaService.session.findMany).toHaveBeenCalledWith(
-                getSessionsQueryRequest,
-            );
+            expect(prismaService.session.findMany).toHaveBeenCalledWith({
+                where: {
+                    ...(getSessionsQueryRequest.category && {
+                        category: getSessionsQueryRequest.category,
+                    }),
+                    ...(getSessionsQueryRequest.date && {
+                        date: { in: getSessionsQueryRequest.date },
+                    }),
+                    ...(getSessionsQueryRequest.position && {
+                        position: { in: getSessionsQueryRequest.position },
+                    }),
+                },
+                include: { user: true },
+                skip: getSessionsQueryRequest.offset,
+                take: getSessionsQueryRequest.limit,
+                orderBy: {
+                    title: 'asc',
+                },
+            });
             expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
         });
     });
@@ -154,18 +253,22 @@ describe('SessionService', (): void => {
             );
 
             const result: GetSessionResponse[] =
-                await service.getSessionsByUser(1, paginationQueryDto);
+                await service.getSessionsByUser(100, paginationQueryDto);
 
-            expect(prismaService.session.findMany).toHaveBeenCalledWith(
-                1,
-                paginationQueryDto,
-            );
-            expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
             expect(result).toEqual(
                 sessionEntities.map(
-                    (session: Session) => new GetSessionResponse(session),
+                    (session) => new GetSessionResponse(session),
                 ),
             );
+            expect(prismaService.session.findMany).toHaveBeenCalledWith({
+                where: {
+                    userId: 100,
+                },
+                include: { user: true },
+                skip: paginationQueryDto.offset,
+                take: paginationQueryDto.limit,
+            });
+            expect(prismaService.session.findMany).toHaveBeenCalledTimes(1);
             expect(
                 result.every(
                     (item: GetSessionResponse): boolean =>
@@ -188,10 +291,11 @@ describe('SessionService', (): void => {
 
             await service.deleteSession(1, 100);
 
-            expect(prismaService.session.findUnique).toHaveBeenCalledWith(100);
-            expect(prismaService.session.findUnique).toHaveBeenCalledTimes(1);
-
-            expect(prismaService.session.delete).toHaveBeenCalledWith(100);
+            expect(prismaService.session.delete).toHaveBeenCalledWith({
+                where: {
+                    id: 100,
+                },
+            });
             expect(prismaService.session.delete).toHaveBeenCalledTimes(1);
         });
     });
@@ -218,10 +322,10 @@ describe('SessionService', (): void => {
             );
             expect(result).toBeInstanceOf(CreateSessionResponse);
 
-            expect(prismaService.session.update).toHaveBeenCalledWith(
-                100,
-                updateSessionRequest,
-            );
+            expect(prismaService.session.update).toHaveBeenCalledWith({
+                where: { id: 100 },
+                data: updateSessionRequest,
+            });
             expect(prismaService.session.update).toHaveBeenCalledTimes(1);
         });
     });
