@@ -33,7 +33,7 @@ import {
 } from './exception/studyTeam.exception';
 import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
 
-import { AlertServcie } from '../alert/alert.service';
+import { AlertService } from '../alert/alert.service';
 import { StudyMemberService } from '../studyMembers/studyMember.service';
 import {
     mapToStudyAlertPayload,
@@ -48,7 +48,7 @@ export class StudyTeamService {
         private readonly studyMemberService: StudyMemberService,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
-        private readonly alertService: AlertServcie,
+        private readonly alertService: AlertService,
         private readonly prisma: PrismaService,
         private readonly indexService: IndexService,
     ) {}

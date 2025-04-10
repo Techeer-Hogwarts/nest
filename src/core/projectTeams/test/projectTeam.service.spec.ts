@@ -22,7 +22,7 @@ import {
     ProjectMemberInvalidActiveRequesterException,
     ProjectMemberNotFoundException,
 } from '../../projectMembers/exception/projectMember.exception';
-import { AlertServcie } from '../../alert/alert.service';
+import { AlertService } from '../../alert/alert.service';
 import { ProjectTeamService } from '../projectTeam.service';
 import {
     ProjectTeamAlreadyApprovedException,
@@ -92,7 +92,7 @@ describe('ProjectTeamService', () => {
                     },
                 },
                 {
-                    provide: AlertServcie,
+                    provide: AlertService,
                     useValue: {
                         sendSlackAlert: jest.fn(),
                         sendUserAlert: jest.fn(),
@@ -678,7 +678,7 @@ describe('ProjectTeamService', () => {
             ).mockResolvedValue();
             jest.spyOn(
                 projectMemberService,
-                'findManyActiveProjectMembers',
+                'findAllProjectMembers',
             ).mockResolvedValue([
                 {
                     id: 1,
@@ -771,7 +771,7 @@ describe('ProjectTeamService', () => {
             beforeEach(async () => {
                 jest.spyOn(
                     projectMemberService,
-                    'findManyActiveProjectMembers',
+                    'findAllProjectMembers',
                 ).mockResolvedValue([
                     {
                         id: 1,
@@ -798,7 +798,7 @@ describe('ProjectTeamService', () => {
             it('삭제되는 멤버를 다시 삭제요청을 하는 경우 ProjectMemberNotFoundException 예외가 발생한다.', async () => {
                 jest.spyOn(
                     projectMemberService,
-                    'findManyActiveProjectMembers',
+                    'findAllProjectMembers',
                 ).mockResolvedValue([
                     {
                         id: 1,
@@ -874,7 +874,7 @@ describe('ProjectTeamService', () => {
             it('success', async () => {
                 jest.spyOn(
                     projectMemberService,
-                    'findManyActiveProjectMembers',
+                    'findAllProjectMembers',
                 ).mockResolvedValue([
                     {
                         id: 1,
@@ -935,7 +935,7 @@ describe('ProjectTeamService', () => {
                 ]);
                 jest.spyOn(
                     projectMemberService,
-                    'findManyActiveProjectMembers',
+                    'findAllProjectMembers',
                 ).mockResolvedValue([
                     {
                         id: 1,
@@ -993,7 +993,7 @@ describe('ProjectTeamService', () => {
         beforeEach(async () => {
             jest.spyOn(
                 projectMemberService,
-                'findManyActiveProjectMembers',
+                'findAllProjectMembers',
             ).mockResolvedValue([
                 {
                     id: 1,

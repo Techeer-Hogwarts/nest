@@ -42,7 +42,7 @@ import { AwsService } from '../../infra/awsS3/aws.service';
 import { IndexService } from '../../infra/index/index.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
-import { AlertServcie } from '../alert/alert.service';
+import { AlertService } from '../alert/alert.service';
 import { ProjectMemberService } from '../projectMembers/projectMember.service';
 import {
     ProjectMemberInvalidTeamRoleException,
@@ -72,7 +72,7 @@ export class ProjectTeamService {
         private readonly prisma: PrismaService,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
-        private readonly alertService: AlertServcie,
+        private readonly alertService: AlertService,
         private readonly indexService: IndexService,
     ) {}
 
@@ -348,7 +348,10 @@ export class ProjectTeamService {
         projectTeamId: number,
     ): Promise<ProjectTeamDetailResponse> {
         const project = await this.prisma.projectTeam.update({
-            where: { id: projectTeamId },
+            where: {
+                id: projectTeamId,
+                isDeleted: false,
+            },
             data: {
                 viewCount: {
                     increment: 1,
@@ -460,7 +463,7 @@ export class ProjectTeamService {
             members.map((member) => new ExistingProjectMemberResponse(member));
 
         const { toActive, toInactive, toIncoming } =
-            this.determineStudyMemberUpdates(
+            this.determineProjectMemberUpdates(
                 existingProjectMembers,
                 projectMemberToUpdate,
                 deleteMembers,
@@ -490,6 +493,7 @@ export class ProjectTeamService {
         const prevResultImages = await this.prisma.projectResultImage.findMany({
             where: {
                 projectTeamId: projectTeamId,
+                isDeleted: false,
             },
             select: { id: true },
         });
@@ -536,7 +540,9 @@ export class ProjectTeamService {
                     tx,
                 );
                 return await tx.projectTeam.update({
-                    where: { id: projectTeamId },
+                    where: {
+                        id: projectTeamId,
+                    },
                     data: {
                         ...updateData,
                         resultImages: {
@@ -571,6 +577,7 @@ export class ProjectTeamService {
                                     isLeader: member.isLeader,
                                     teamRole: member.teamRole,
                                     isDeleted: false,
+                                    status: MemberStatus.APPROVED,
                                 },
                             })),
                         },
@@ -580,7 +587,10 @@ export class ProjectTeamService {
                         mainImages: true,
                         teamStacks: { include: { stack: true } },
                         projectMember: {
-                            where: { isDeleted: false },
+                            where: {
+                                isDeleted: false,
+                                status: MemberStatus.APPROVED,
+                            },
                             include: { user: true },
                         },
                     },
@@ -635,7 +645,7 @@ export class ProjectTeamService {
      * toActive 멤버들의 상태가 변경될 수 있다.
      * 업데이트와 삭제가 중복되는 경우는 허용되면 안 된다.
      * **/
-    private determineStudyMemberUpdates(
+    private determineProjectMemberUpdates(
         existingProjectMembers: ExistingProjectMemberResponse[],
         projectMembersToUpdate: ProjectMemberInfoRequest[],
         deleteMembers: number[],
@@ -698,8 +708,8 @@ export class ProjectTeamService {
         );
         if (
             deleteIds.size !== toInactive.length ||
-            toActive.length + toInactive.length - toIncoming.length !==
-                existingProjectMembers.length
+            toActive.length + toIncoming.length !==
+                projectMembersToUpdate.length
         ) {
             throw new ProjectTeamMissingUpdateMemberException();
         }
@@ -785,7 +795,7 @@ export class ProjectTeamService {
 
         // 인덱스 삭제
         await this.indexService.deleteIndex(
-            'project',
+            TeamType.PROJECT,
             String(projectResponse.id),
         );
 
@@ -910,11 +920,16 @@ export class ProjectTeamService {
             MemberStatus.PENDING,
         );
 
+        this.logger.debug('apply: sendSlack 시작');
         await Promise.all(
-            alertPayloads.flatMap((payload) => {
+            alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
             }),
-        );
+        ).catch((e) => {
+            this.logger.error(
+                `알림 전송 실패: ${e}\nPayloads: ${JSON.stringify(alertPayloads, null, 2)}`,
+            );
+        });
 
         return new ProjectApplicantResponse(appliedApplicant);
     }
@@ -966,11 +981,16 @@ export class ProjectTeamService {
             MemberStatus.CANCELLED,
         );
 
+        this.logger.debug('cancel: sendSlack 시작');
         await Promise.all(
-            alertPayloads.flatMap((payload) => {
+            alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
             }),
-        );
+        ).catch((e) => {
+            this.logger.error(
+                `알림 전송 실패: ${e}\nPayloads: ${JSON.stringify(alertPayloads, null, 2)}`,
+            );
+        });
 
         this.logger.debug('프로젝트 지원 취소 완료');
         return new ProjectMemberResponse(canceledApplication);
@@ -1140,11 +1160,16 @@ export class ProjectTeamService {
             MemberStatus.APPROVED,
         );
 
+        this.logger.debug('accept: sendSlack 시작');
         await Promise.all(
-            alertPayloads.flatMap((payload) => {
+            alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
             }),
-        );
+        ).catch((e) => {
+            this.logger.error(
+                `알림 전송 실패: ${e}\nPayloads: ${JSON.stringify(alertPayloads, null, 2)}`,
+            );
+        });
 
         this.logger.debug(`지원자 승인 완료 (ID: ${applicantId})`);
         return new ProjectApplicantResponse({
@@ -1198,11 +1223,16 @@ export class ProjectTeamService {
             MemberStatus.REJECT,
         );
 
+        this.logger.debug('reject: sendSlack 시작');
         await Promise.all(
-            alertPayloads.flatMap((payload) => {
+            alertPayloads.map((payload) => {
                 return this.alertService.sendUserAlert(payload);
             }),
-        );
+        ).catch((e) => {
+            this.logger.error(
+                `알림 전송 실패: ${e}\nPayloads: ${JSON.stringify(alertPayloads, null, 2)}`,
+            );
+        });
 
         this.logger.debug('지원자 거절 완료 (ID: ${applicantId})');
         return new ProjectApplicantResponse(rejectedApplicant);
