@@ -10,7 +10,6 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { StudyMemberInfoRequest } from '../../studyMembers/request/info.studyMember.request';
-import { ParseJsonArray } from '../../../decorator/transform.parseJson.decorator';
 
 export class CreateStudyTeamRequest {
     @IsNotEmpty()

@@ -24,8 +24,10 @@ export class JsonBodyPipe implements PipeTransform<string, Promise<unknown>> {
         metadata: ArgumentMetadata,
     ): Promise<unknown> {
         const { metatype } = metadata;
-        this.logger.debug('JsonBodyPipe value', value);
-        this.logger.debug('JsonBodyPipe dto', metatype.name);
+        this.logger.debug(
+            `[JsonBodyPipe] Metadata - type: ${metadata.type}, data: ${metadata.data}, metatype: ${metatype?.name}`,
+        );
+        this.logger.debug(`[JsonBodyPipe] Raw value: ${JSON.stringify(value)}`);
         if (!metatype || this.isPrimitive(metatype)) {
             return value;
         }
@@ -39,17 +41,18 @@ export class JsonBodyPipe implements PipeTransform<string, Promise<unknown>> {
             throw new GlobalInvalidDataTypeBody();
         }
 
-        const instance = plainToInstance(metatype, parsed, {
-            enableImplicitConversion: true,
-        });
+        const instance = plainToInstance(metatype, parsed);
         const errors = await validate(instance);
         if (errors.length > 0) {
             this.logger.error(
-                'JsonBodyPipe InvalidInstance',
-                errors.map((e) => ({
-                    property: e.property,
-                    constraints: e.constraints,
-                })),
+                '[JsonBodyPipe] Validation failed:\n' +
+                    JSON.stringify(
+                        errors.map((e) => ({
+                            property: e.property,
+                            constraints: e.constraints,
+                            children: e.children,
+                        })),
+                    ),
             );
             throw new GlobalInvalidInputValueException();
         }
