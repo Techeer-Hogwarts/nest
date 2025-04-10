@@ -104,7 +104,6 @@ export class CreateStudyTeamRequest {
 
     @IsArray()
     @ArrayNotEmpty()
-    @ParseJsonArray()
     @ValidateNested({ each: true })
     @Type(() => StudyMemberInfoRequest)
     @ApiProperty({ type: [StudyMemberInfoRequest] })

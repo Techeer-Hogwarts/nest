@@ -39,7 +39,9 @@ export class JsonBodyPipe implements PipeTransform<string, Promise<unknown>> {
             throw new GlobalInvalidDataTypeBody();
         }
 
-        const instance = plainToInstance(metatype, parsed);
+        const instance = plainToInstance(metatype, parsed, {
+            enableImplicitConversion: true,
+        });
         const errors = await validate(instance);
         if (errors.length > 0) {
             this.logger.error(
