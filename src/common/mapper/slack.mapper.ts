@@ -17,14 +17,15 @@ export function mapToTeamLeaderAlertPayload(
     applicantEmail: string,
     statusResult: MemberStatus,
 ): CreatePersonalAlertRequest[] {
-    logger.debug('mapToTeamLeaderAlertPayload', {
+    logger.debug(
+        'mapToTeamLeaderAlertPayload',
         type,
         teamId,
         teamName,
         teamLeaders,
         applicantEmail,
         statusResult,
-    });
+    );
     return teamLeaders.map((leader, index) => ({
         type: type,
         teamId: teamId,
@@ -40,11 +41,12 @@ export function mapToProjectTeamAlertPayload(
     leaderNames: string[],
     leaderEmails: string[],
 ): CreateProjectAlertRequest {
-    logger.debug('mapToProjectTeamAlertPayload', {
+    logger.debug(
+        'mapToProjectTeamAlertPayload',
         response,
         leaderNames,
         leaderEmails,
-    });
+    );
     return {
         id: response.id,
         type: TeamType.PROJECT,
