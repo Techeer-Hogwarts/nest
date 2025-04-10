@@ -65,6 +65,11 @@ export const mockCreateProjectTeamRequest = {
             isLeader: false,
             teamRole: TeamRole.FULL_STACK,
         },
+        {
+            userId: 2,
+            isLeader: false,
+            teamRole: TeamRole.INVALID,
+        },
     ],
     teamStacks: [
         {

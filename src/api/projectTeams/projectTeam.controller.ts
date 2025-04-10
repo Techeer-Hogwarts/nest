@@ -25,7 +25,7 @@ import { RequestUser } from '../../common/dto/users/request/user.interface';
 
 import { AddProjectMemberRequest } from '../../common/dto/projectMembers/request/add.projectMember.request';
 import { CreateProjectMemberRequest } from '../../common/dto/projectMembers/request/create.projectMember.request';
-import { UpdateApplicantStatusRequest } from '../../common/dto/projectTeams/request/update.applicantStatus.request';
+import { UpdateProjectApplicantStatusRequest } from '../../common/dto/projectTeams/request/update.applicantStatus.request';
 import { CreateProjectTeamRequest } from '../../common/dto/projectTeams/request/create.projectTeam.request';
 import { GetTeamQueryRequest } from '../../common/dto/projectTeams/request/get.team.query.request';
 import { UpdateProjectTeamRequest } from '../../common/dto/projectTeams/request/update.projectTeam.request';
@@ -227,7 +227,8 @@ export class ProjectTeamController {
     @UseGuards(JwtAuthGuard)
     @AcceptApplicantDoc()
     async acceptApplicant(
-        @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
+        @Body()
+        updateApplicantStatusRequest: UpdateProjectApplicantStatusRequest,
         @User() requestUser: RequestUser,
     ): Promise<ProjectApplicantResponse> {
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
@@ -242,7 +243,8 @@ export class ProjectTeamController {
     @UseGuards(JwtAuthGuard)
     @RejectApplicantDoc()
     async rejectApplicant(
-        @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
+        @Body()
+        updateApplicantStatusRequest: UpdateProjectApplicantStatusRequest,
         @User() requestUser: RequestUser,
     ): Promise<ProjectApplicantResponse> {
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;

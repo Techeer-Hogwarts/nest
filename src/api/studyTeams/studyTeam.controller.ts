@@ -26,7 +26,7 @@ import { StudyTeamInvalidUserException } from '../../core/studyTeams/exception/s
 
 import { JsonBodyToDTO } from '../../common/decorator/JsonBodyToDTO';
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
-import { UpdateApplicantStatusRequest } from '../../common/dto/studyTeams/request/update.applicantStatus.request';
+import { UpdateStudyApplicantStatusRequest } from '../../common/dto/studyTeams/request/update.applicantStatus.request';
 import { AddMemberToStudyTeamRequest } from '../../common/dto/studyMembers/request/add.studyMember.request';
 import { UpdateStudyTeamRequest } from '../../common/dto/studyTeams/request/update.studyTeam.request';
 import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
@@ -309,9 +309,9 @@ export class StudyTeamController {
         summary: '스터디 지원 수락',
         description: '스터디 지원을 수락합니다.',
     })
-    @ApiBody({ type: UpdateApplicantStatusRequest })
+    @ApiBody({ type: UpdateStudyApplicantStatusRequest })
     async acceptApplicant(
-        @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
+        @Body() updateApplicantStatusRequest: UpdateStudyApplicantStatusRequest,
         @Req() request: Request,
     ): Promise<StudyApplicantResponse> {
         this.logger.debug('스터디 팀 지원자 수락 시작');
@@ -329,9 +329,9 @@ export class StudyTeamController {
         summary: '스터디 지원 거절',
         description: '스터디 지원을 거절합니다.',
     })
-    @ApiBody({ type: UpdateApplicantStatusRequest })
+    @ApiBody({ type: UpdateStudyApplicantStatusRequest })
     async rejectApplicant(
-        @Body() updateApplicantStatusRequest: UpdateApplicantStatusRequest,
+        @Body() updateApplicantStatusRequest: UpdateStudyApplicantStatusRequest,
         @Req() request: Request,
     ): Promise<StudyApplicantResponse> {
         this.logger.debug('스터디 팀 지원자 거절 시작');
