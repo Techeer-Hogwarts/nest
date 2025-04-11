@@ -140,11 +140,7 @@ export class StudyTeamService {
                 resultImages: true,
             },
         });
-        // study.studyMember.forEach((member) => {
-        //     if (member.user) {
-        //         member.user.profileImage = profileImage;
-        //     }
-        // });
+
         // 응답 객체 생성
         const createdStudyTeam = new GetStudyTeamResponse(study);
         this.logger.debug('스터디 팀 생성: 생성 성공');
