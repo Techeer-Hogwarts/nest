@@ -90,12 +90,12 @@ export class SessionService {
                 },
             });
             // 인덱스 업데이트
-            const indexProject = new IndexSessionRequest(session);
+            const indexSession = new IndexSessionRequest(session);
             this.logger.debug(
                 `조회수 증가 후 인덱스 업데이트 요청`,
                 SessionService.name,
             );
-            await this.indexService.createIndex('session', indexProject);
+            await this.indexService.createIndex('session', indexSession);
             return new GetSessionResponse(session);
         } catch (error) {
             this.logger.error(
