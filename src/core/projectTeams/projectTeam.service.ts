@@ -57,7 +57,6 @@ import {
     ProjectTeamInvalidRecruitNumException,
     ProjectTeamInvalidTeamRoleException,
     ProjectTeamInvalidTeamStackException,
-    ProjectTeamInvalidUpdateMemberException,
     ProjectTeamMainImageException,
     ProjectTeamMissingLeaderException,
     ProjectTeamMissingMainImageException,
