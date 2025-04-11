@@ -78,7 +78,10 @@ export class StudyTeamController {
                         studyMember: [
                             {
                                 userId: 1,
+                                name: 'name',
                                 isLeader: true,
+                                profileImage: 'https://test.com',
+                                id: 1,
                             },
                         ],
                         profileImage: 'profileImage.jpg',

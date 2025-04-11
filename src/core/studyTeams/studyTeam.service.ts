@@ -13,6 +13,7 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
+import { UpdateStudyTeamMember } from '../../common/dto/studyTeams/response/update.studyTeam.response.interface';
 
 import { AwsService } from '../../infra/awsS3/aws.service';
 import { IndexService } from '../../infra/index/index.service';
@@ -30,6 +31,8 @@ import {
     StudyTeamAlreadyRejectMemberException,
     StudyTeamInvalidUserException,
     StudyTeamNotActiveMemberException,
+    StudyTeamDuplicateDeleteUpdateException,
+    StudyTeamClosedRecruitException,
 } from './exception/studyTeam.exception';
 import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
 
@@ -86,7 +89,7 @@ export class StudyTeamService {
         this.logger.debug('스터디 팀 생성: request data 검증 완료');
 
         const studyMembers = createStudyTeamRequest.studyMember;
-        const { profileImage, ...teamData } = createStudyTeamRequest;
+        const { ...teamData } = createStudyTeamRequest;
 
         /** 1. 스터디 멤버에 해당하는 사용자 존재 여부 체크 **/
         const studyMemberIds = studyMembers.map((member) => member.userId);
@@ -140,11 +143,7 @@ export class StudyTeamService {
                 resultImages: true,
             },
         });
-        study.studyMember.forEach((member) => {
-            if (member.user) {
-                member.user.profileImage = profileImage;
-            }
-        });
+
         // 응답 객체 생성
         const createdStudyTeam = new GetStudyTeamResponse(study);
         this.logger.debug('스터디 팀 생성: 생성 성공');
@@ -546,33 +545,52 @@ export class StudyTeamService {
         studyMembersToUpdate: StudyMemberInfoRequest[],
         deleteMembers: number[],
     ): {
-        toActive: ExistingStudyMemberResponse[];
-        toInactive: ExistingStudyMemberResponse[];
+        toActive: UpdateStudyTeamMember[];
+        toInactive: UpdateStudyTeamMember[];
         toIncoming: StudyMemberInfoRequest[];
     } {
-        const updateIds = new Set(
-            studyMembersToUpdate.map((member) => member.userId),
+        // updateId: user PK
+        const updateMemberMap = new Map(
+            studyMembersToUpdate.map((up) => [up.userId, up]),
         );
-        if (deleteMembers.some((m) => updateIds.has(m))) {
-            throw new StudyTeamInvalidUpdateMemberException();
-        }
+        // deleteMemberId: studyMember PK
+        const deleteIds = new Set(deleteMembers);
 
-        const deleteIds = new Set(deleteMembers.map((id) => id));
-        const toInactive: ExistingStudyMemberResponse[] = [];
-        const toActive: ExistingStudyMemberResponse[] = [];
+        const toInactive: UpdateStudyTeamMember[] = [];
+        const toActive: UpdateStudyTeamMember[] = [];
 
-        existingStudyMembers.forEach((existing) => {
-            if (deleteIds.has(existing.userId)) {
-                toInactive.push(existing);
-            } else if (updateIds.has(existing.userId)) {
-                toActive.push(existing);
-                updateIds.delete(existing.userId);
+        for (const existing of existingStudyMembers) {
+            const update = updateMemberMap.get(existing.userId);
+            const isDelete = deleteIds.has(existing.id);
+
+            if (isDelete) {
+                if (existing.isDeleted) {
+                    throw new StudyMemberNotFoundException();
+                }
+                if (update) {
+                    throw new StudyTeamDuplicateDeleteUpdateException();
+                }
+                toInactive.push({
+                    id: existing.id,
+                    userId: existing.userId,
+                    isLeader: existing.isLeader,
+                });
+                continue;
             }
-        });
+
+            if (update) {
+                toActive.push({
+                    id: existing.id,
+                    userId: existing.userId,
+                    isLeader: update.isLeader,
+                });
+                updateMemberMap.delete(existing.userId);
+            }
+        }
 
         // update 멤버에서 기존 멤버가 빠지면 신규 멤버만 남는다.
         const toIncoming = studyMembersToUpdate.filter((member) =>
-            updateIds.has(member.userId),
+            updateMemberMap.has(member.userId),
         );
         this.logger.debug(
             'toUpdate: ',
@@ -813,6 +831,10 @@ export class StudyTeamService {
             throw new StudyTeamNotFoundException();
         }
 
+        if (studyTeam.recruitNum < 1) {
+            throw new StudyTeamClosedRecruitException();
+        }
+
         const studyTeamLeaders = studyTeam.studyMember;
         if (studyTeamLeaders.length === 0) {
             this.logger.error('스터디 팀 리더를 찾을 수 없습니다.');
@@ -825,6 +847,7 @@ export class StudyTeamService {
             createStudyMemberRequest,
             user.id,
         );
+
         this.logger.debug('스터디 지원: 지원자 업데이트 완료');
 
         // 지원 생성 후, 리더들에게 지원 알림 전송 (지원 상태: PENDING)

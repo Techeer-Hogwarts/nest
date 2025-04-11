@@ -48,7 +48,6 @@ export class ProjectTeamDuplicateDeleteUpdateException extends BaseException {
         super(ErrorCode.PROJECT_TEAM_DUPLICATE_DELETE_UPDATE);
     }
 }
-
 export class ProjectTeamRecruitmentEndedException extends BaseException {
     constructor() {
         super(ErrorCode.PROJECT_TEAM_RECRUITMENT_ENDED);
@@ -58,6 +57,12 @@ export class ProjectTeamRecruitmentEndedException extends BaseException {
 export class ProjectTeamInvalidTeamRoleException extends BaseException {
     constructor() {
         super(ErrorCode.PROJECT_TEAM_INVALID_TEAM_ROLE);
+    }
+}
+
+export class ProjectTeamInvalidUpdateMemberException extends BaseException {
+    constructor() {
+        super(ErrorCode.PROJECT_TEAM_INVALID_UPDATE_MEMBER);
     }
 }
 

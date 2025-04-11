@@ -127,6 +127,11 @@ export const ErrorCode = {
         status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 팀 역할입니다.',
     },
+    PROJECT_TEAM_INVALID_UPDATE_MEMBER: {
+        code: 'PROJECT_TEAM_INVALID_UPDATE_MEMBER',
+        status: HttpStatus.BAD_REQUEST,
+        message: '업데이트 멤버가 유효하지 않습니다.',
+    },
     PROJECT_TEAM_INVALID_APPLICANT: {
         code: 'PROJECT_TEAM_INVALID_APPLICANT',
         status: HttpStatus.BAD_REQUEST,
@@ -224,6 +229,21 @@ export const ErrorCode = {
         code: 'STUDY_TEAM_NOT_ACTIVE_MEMBER',
         status: HttpStatus.BAD_REQUEST,
         message: '스터디 팀 활동 중인 멤버가 아닙니다.',
+    },
+    STUDY_TEAM_DUPLICATE_DELETE_UPDATE: {
+        code: 'STUDY_TEAM_DUPLICATE_DELETE_UPDATE',
+        status: HttpStatus.BAD_REQUEST,
+        message: '스터디 삭제 멤버와 업데이트 멤버가 중복됩니다.',
+    },
+    STUDY_TEAM_ALREADY_APPLIED: {
+        code: 'STUDY_TEAM_ALREADY_APPLIED',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이미 지원한 팀입니다.',
+    },
+    STUDY_TEAM_CLOSED_RECRUIT: {
+        code: 'STUDY_TEAM_CLOSED_RECRUIT',
+        status: HttpStatus.BAD_REQUEST,
+        message: '모집이 종료된 스터디입니다.',
     },
     /** TeamStack **/
     /** UserExperience **/

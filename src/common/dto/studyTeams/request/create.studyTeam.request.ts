@@ -12,13 +12,13 @@ import { Type } from 'class-transformer';
 import { StudyMemberInfoRequest } from '../../studyMembers/request/info.studyMember.request';
 
 export class CreateStudyTeamRequest {
-    @IsNotEmpty()
-    @IsString()
-    @ApiProperty({
-        example: 'example.image.png',
-        description: '프로필 이미지',
-    })
-    profileImage: string;
+    // @IsNotEmpty()
+    // @IsString()
+    // @ApiProperty({
+    //     example: 'example.image.png',
+    //     description: '프로필 이미지',
+    // })
+    // profileImage: string;
 
     @IsNotEmpty()
     @IsString()
@@ -67,6 +67,7 @@ export class CreateStudyTeamRequest {
     rule: string;
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         example: true,
@@ -75,6 +76,7 @@ export class CreateStudyTeamRequest {
     isFinished: boolean;
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     @ApiProperty({
         example: true,
@@ -83,6 +85,7 @@ export class CreateStudyTeamRequest {
     isRecruited: boolean;
 
     @IsNotEmpty()
+    @Type(() => Number)
     @IsInt()
     @ApiProperty({
         example: 3,

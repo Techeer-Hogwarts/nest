@@ -655,42 +655,45 @@ export class ProjectTeamService {
         toInactive: ExistingProjectMemberResponse[];
         toIncoming: ProjectMemberInfoRequest[];
     } {
-        const updateMemberMap = new Map<number, ProjectMemberInfoRequest>();
-        projectMembersToUpdate.forEach((member) =>
-            updateMemberMap.set(member.userId, member),
+        // updateId: user PK
+        const updateMemberMap = new Map(
+            projectMembersToUpdate.map((up) => [up.userId, up]),
         );
-        const deleteIds = new Set(deleteMembers.map((id) => id));
+        // deleteMemberId: studyMember PK
+        const deleteIds = new Set(deleteMembers);
         const toInactive: ExistingProjectMemberResponse[] = [];
         const toActive: ExistingProjectMemberResponse[] = [];
 
-        existingProjectMembers.forEach((existing) => {
-            if (deleteIds.has(existing.id)) {
+        for (const existing of existingProjectMembers) {
+            const update = updateMemberMap.get(existing.userId);
+            const isDelete = deleteIds.has(existing.id);
+
+            if (isDelete) {
                 if (existing.isDeleted) {
                     throw new ProjectMemberNotFoundException();
                 }
+                if (update) {
+                    throw new ProjectTeamDuplicateDeleteUpdateException();
+                }
                 toInactive.push(existing);
-            } else if (updateMemberMap.has(existing.userId)) {
-                const updateMember = updateMemberMap.get(existing.userId);
+                continue;
+            }
+            if (update) {
                 toActive.push({
                     id: existing.id,
                     userId: existing.userId,
                     status: existing.status,
                     isDeleted: existing.isDeleted,
-                    teamRole: updateMember.teamRole,
-                    isLeader: updateMember.isLeader,
+                    teamRole: update.teamRole,
+                    isLeader: update.isLeader,
                 });
                 updateMemberMap.delete(existing.userId);
             }
-        });
-
-        if (toActive.some((m) => deleteIds.has(m.id))) {
-            throw new ProjectTeamDuplicateDeleteUpdateException();
         }
-
-        // update 멤버에서 기존 멤버가 빠지면 신규 멤버만 남는다.
         const toIncoming = projectMembersToUpdate.filter((member) =>
             updateMemberMap.has(member.userId),
         );
+
         this.logger.debug(
             'toUpdate: ',
             projectMembersToUpdate.map((member) => member.userId),
