@@ -613,7 +613,6 @@ export class StudyTeamService {
             deleteIds.size !== toInactive.length ||
             toActive.length + toIncoming.length !==
                 studyMembersToUpdate.length ||
-            toActive.length + deleteIds.size !== studyMembersToUpdate.length
         ) {
             throw new StudyTeamInvalidUpdateMemberException();
         }
