@@ -86,7 +86,7 @@ export class StudyTeamService {
         this.logger.debug('스터디 팀 생성: request data 검증 완료');
 
         const studyMembers = createStudyTeamRequest.studyMember;
-        const { profileImage, ...teamData } = createStudyTeamRequest;
+        const { ...teamData } = createStudyTeamRequest;
 
         /** 1. 스터디 멤버에 해당하는 사용자 존재 여부 체크 **/
         const studyMemberIds = studyMembers.map((member) => member.userId);
@@ -140,11 +140,11 @@ export class StudyTeamService {
                 resultImages: true,
             },
         });
-        study.studyMember.forEach((member) => {
-            if (member.user) {
-                member.user.profileImage = profileImage;
-            }
-        });
+        // study.studyMember.forEach((member) => {
+        //     if (member.user) {
+        //         member.user.profileImage = profileImage;
+        //     }
+        // });
         // 응답 객체 생성
         const createdStudyTeam = new GetStudyTeamResponse(study);
         this.logger.debug('스터디 팀 생성: 생성 성공');

@@ -12,13 +12,13 @@ import { Type } from 'class-transformer';
 import { StudyMemberInfoRequest } from '../../studyMembers/request/info.studyMember.request';
 
 export class CreateStudyTeamRequest {
-    @IsNotEmpty()
-    @IsString()
-    @ApiProperty({
-        example: 'example.image.png',
-        description: '프로필 이미지',
-    })
-    profileImage: string;
+    // @IsNotEmpty()
+    // @IsString()
+    // @ApiProperty({
+    //     example: 'example.image.png',
+    //     description: '프로필 이미지',
+    // })
+    // profileImage: string;
 
     @IsNotEmpty()
     @IsString()
