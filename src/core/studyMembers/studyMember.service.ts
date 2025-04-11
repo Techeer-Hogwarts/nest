@@ -12,8 +12,8 @@ import { StudyMemberStatus } from './category/StudyMemberStatus';
 
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
-
 import {
     ApplicantSummaryResponse,
     ApplicantDetailResponse,
@@ -23,7 +23,6 @@ import {
     StudyLeadersMailResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
-import { MemberStatus } from '../../common/category/teamCategory/member.category';
 
 @Injectable()
 export class StudyMemberService {
@@ -92,12 +91,9 @@ export class StudyMemberService {
     async cancelStudyApplication(
         studyMemberId: number,
     ): Promise<StudyMemberResponse> {
-        const cancelledStudyMember = await this.prisma.studyMember.update({
+        const cancelledStudyMember = await this.prisma.studyMember.delete({
             where: {
                 id: studyMemberId,
-            },
-            data: {
-                isDeleted: true,
             },
             include: {
                 user: {
