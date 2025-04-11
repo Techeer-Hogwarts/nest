@@ -13,6 +13,7 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
+import { UpdateStudyTeamMember } from '../../common/dto/studyTeams/response/update.studyTeam.response.interface';
 
 import { AwsService } from '../../infra/awsS3/aws.service';
 import { IndexService } from '../../infra/index/index.service';
@@ -542,33 +543,54 @@ export class StudyTeamService {
         studyMembersToUpdate: StudyMemberInfoRequest[],
         deleteMembers: number[],
     ): {
-        toActive: ExistingStudyMemberResponse[];
-        toInactive: ExistingStudyMemberResponse[];
+        toActive: UpdateStudyTeamMember[];
+        toInactive: UpdateStudyTeamMember[];
         toIncoming: StudyMemberInfoRequest[];
     } {
-        const updateIds = new Set(
-            studyMembersToUpdate.map((member) => member.userId),
+        // updateId: user PK
+        const updateMemberMap = new Map(
+            studyMembersToUpdate.map((up) => [up.userId, up]),
         );
-        if (deleteMembers.some((m) => updateIds.has(m))) {
+        // deleteMemberId: studyMember PK
+        const deleteIds = new Set(deleteMembers);
+
+        const toInactive: UpdateStudyTeamMember[] = [];
+        const toActive: UpdateStudyTeamMember[] = [];
+
+        for (const existing of existingStudyMembers) {
+            const update = updateMemberMap.get(existing.userId);
+            const isDelete = deleteIds.has(existing.id);
+
+            if (isDelete) {
+                if (existing.isDeleted) {
+                    throw new StudyMemberNotFoundException();
+                }
+                if (update) {
+                    throw new StudyTeamInvalidUpdateMemberException();
+                }
+                toInactive.push({
+                    id: existing.id,
+                    userId: existing.userId,
+                    isLeader: existing.isLeader,
+                });
+                continue;
+            }
+
+            if (update) {
+                toActive.push({
+                    id: existing.id,
+                    userId: existing.userId,
+                    isLeader: update.isLeader,
+                });
+                updateMemberMap.delete(existing.userId);
+                continue;
+            }
             throw new StudyTeamInvalidUpdateMemberException();
         }
 
-        const deleteIds = new Set(deleteMembers.map((id) => id));
-        const toInactive: ExistingStudyMemberResponse[] = [];
-        const toActive: ExistingStudyMemberResponse[] = [];
-
-        existingStudyMembers.forEach((existing) => {
-            if (deleteIds.has(existing.userId)) {
-                toInactive.push(existing);
-            } else if (updateIds.has(existing.userId)) {
-                toActive.push(existing);
-                updateIds.delete(existing.userId);
-            }
-        });
-
         // update 멤버에서 기존 멤버가 빠지면 신규 멤버만 남는다.
         const toIncoming = studyMembersToUpdate.filter((member) =>
-            updateIds.has(member.userId),
+            updateMemberMap.has(member.userId),
         );
         this.logger.debug(
             'toUpdate: ',
@@ -589,7 +611,9 @@ export class StudyTeamService {
         );
         if (
             deleteIds.size !== toInactive.length ||
-            toActive.length + toIncoming.length !== studyMembersToUpdate.length
+            toActive.length + toIncoming.length !==
+                studyMembersToUpdate.length ||
+            toActive.length + deleteIds.size !== studyMembersToUpdate.length
         ) {
             throw new StudyTeamInvalidUpdateMemberException();
         }
