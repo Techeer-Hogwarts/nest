@@ -217,9 +217,8 @@ export class ProjectMemberService {
             if (!applicant) {
                 throw new ProjectMemberNotFoundException();
             }
-            return await tx.projectMember.update({
+            return await tx.projectMember.delete({
                 where: { id: applicant.id },
-                data: { isDeleted: true },
                 include: { user: true },
             });
         });

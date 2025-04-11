@@ -689,9 +689,7 @@ export class ProjectTeamService {
                     isLeader: update.isLeader,
                 });
                 updateMemberMap.delete(existing.userId);
-                continue;
             }
-            throw new ProjectTeamDuplicateDeleteUpdateException();
         }
         const toIncoming = projectMembersToUpdate.filter((member) =>
             updateMemberMap.has(member.userId),

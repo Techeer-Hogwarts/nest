@@ -32,6 +32,7 @@ import {
     StudyTeamInvalidUserException,
     StudyTeamNotActiveMemberException,
     StudyTeamDuplicateDeleteUpdateException,
+    StudyTeamClosedRecruitException,
 } from './exception/studyTeam.exception';
 import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
 
@@ -584,9 +585,7 @@ export class StudyTeamService {
                     isLeader: update.isLeader,
                 });
                 updateMemberMap.delete(existing.userId);
-                continue;
             }
-            throw new StudyTeamInvalidUpdateMemberException();
         }
 
         // update 멤버에서 기존 멤버가 빠지면 신규 멤버만 남는다.
@@ -832,6 +831,10 @@ export class StudyTeamService {
             throw new StudyTeamNotFoundException();
         }
 
+        if (studyTeam.recruitNum < 1) {
+            throw new StudyTeamClosedRecruitException();
+        }
+
         const studyTeamLeaders = studyTeam.studyMember;
         if (studyTeamLeaders.length === 0) {
             this.logger.error('스터디 팀 리더를 찾을 수 없습니다.');
@@ -844,6 +847,7 @@ export class StudyTeamService {
             createStudyMemberRequest,
             user.id,
         );
+
         this.logger.debug('스터디 지원: 지원자 업데이트 완료');
 
         // 지원 생성 후, 리더들에게 지원 알림 전송 (지원 상태: PENDING)

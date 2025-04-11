@@ -1,9 +1,15 @@
 import { ErrorCode } from '../../../common/exception/errorCode';
 import { BaseException } from '../../../common/exception/base.exception';
 
-export class StudyTeamBadRequestException extends BaseException {
+export class StudyTeamClosedRecruitException extends BaseException {
     constructor() {
-        super(ErrorCode.STUDY_TEAM_INVALID_RECRUIT_NUM);
+        super(ErrorCode.STUDY_TEAM_CLOSED_RECRUIT);
+    }
+}
+
+export class StudyTeamAlreadyAppliedException extends BaseException {
+    constructor() {
+        super(ErrorCode.STUDY_TEAM_ALREADY_APPLIED);
     }
 }
 

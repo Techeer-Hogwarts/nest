@@ -235,6 +235,16 @@ export const ErrorCode = {
         status: HttpStatus.BAD_REQUEST,
         message: '스터디 삭제 멤버와 업데이트 멤버가 중복됩니다.',
     },
+    STUDY_TEAM_ALREADY_APPLIED: {
+        code: 'STUDY_TEAM_ALREADY_APPLIED',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이미 지원한 팀입니다.',
+    },
+    STUDY_TEAM_CLOSED_RECRUIT: {
+        code: 'STUDY_TEAM_CLOSED_RECRUIT',
+        status: HttpStatus.BAD_REQUEST,
+        message: '모집이 종료된 스터디입니다.',
+    },
     /** TeamStack **/
     /** UserExperience **/
     USER_EXPERIENCE_INVALID_POSITION: {
