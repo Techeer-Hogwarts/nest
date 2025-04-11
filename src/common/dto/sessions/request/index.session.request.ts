@@ -1,4 +1,4 @@
-import { SessionEntity } from '../../../../core/sessions/entities/session.entity';
+import { Session } from '@prisma/client';
 
 export class IndexSessionRequest {
     readonly date: string;
@@ -9,7 +9,7 @@ export class IndexSessionRequest {
     readonly title: string;
     readonly viewCount: string;
 
-    constructor(session: SessionEntity) {
+    constructor(session: Session) {
         this.date = session.date;
         this.id = String(session.id);
         this.likeCount = String(session.likeCount);
