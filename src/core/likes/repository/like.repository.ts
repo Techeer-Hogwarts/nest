@@ -124,47 +124,33 @@ export class LikeRepository {
         userId: number,
         getLikeListRequest: GetLikeListRequest,
     ): Promise<T[]> {
-        const { category, offset, limit }: GetLikeListRequest =
-            getLikeListRequest;
-        const tableName = `"${this.contentTableMap[category].name}"`;
+        const { category, offset = 0, limit = 10 } = getLikeListRequest;
         this.logger.debug(
-            `좋아요 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}, tableName: ${tableName}`,
+            `좋아요 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}`,
             LikeRepository.name,
         );
+
+        const tableName = `"${this.contentTableMap[category].name}"`;
         const result = await this.prisma.$queryRaw<T[]>(
             Prisma.sql`
-            SELECT l.*, c.*
-            FROM "Like" l
-            LEFT JOIN ${Prisma.raw(tableName)} c ON l."contentId" = c."id"
-            WHERE l."userId" = ${userId}
-              AND l."category" = ${category}
-              AND l."isDeleted" = false
-            ORDER BY l."createdAt" DESC
-            LIMIT ${limit} OFFSET ${offset}
-        `,
+                SELECT c.*, u.*
+                FROM "Like" l
+                LEFT JOIN ${Prisma.raw(tableName)} c ON l."contentId" = c."id"
+                LEFT JOIN "User" u ON c."userId" = u."id"
+                WHERE l."userId" = ${userId}
+                AND l."category" = ${category}
+                AND l."isDeleted" = false
+                ORDER BY l."createdAt" DESC
+                LIMIT ${limit} OFFSET ${offset}
+            `,
         );
+
         this.logger.debug(
-            `${result.length} 개의 좋아요 목록 조회 성공`,
+            `${result.length}개의 좋아요 목록 조회 성공`,
             LikeRepository.name,
         );
-        return await Promise.all(
-            result.map(async (content) => {
-                if ('userId' in content && content.userId) {
-                    // userId가 존재하는 경우만 유저 정보 조회
-                    this.logger.debug(`유저 정보 추가`, LikeRepository.name);
-                    const user = await this.prisma.user.findUnique({
-                        where: {
-                            id: content.userId,
-                        },
-                    });
-                    return {
-                        ...content,
-                        user,
-                    };
-                }
-                return content; // userId가 없는 경우 그대로 반환
-            }),
-        );
+
+        return result;
     }
 
     async getLikeCount(

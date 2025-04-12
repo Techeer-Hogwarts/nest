@@ -42,6 +42,17 @@ export const ErrorCode = {
     /** Blog **/
     /** Bookmark **/
     /** Event **/
+    EVENT_NOT_FOUND: {
+        code: 'EVENT_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '이벤트를 찾을 수 없습니다.',
+    },
+    EVENT_FORBIDDEN: {
+        code: 'EVENT_FORBIDDEN',
+        status: HttpStatus.FORBIDDEN,
+        message: '이벤트에 대한 권한이 없습니다.',
+    },
+
     /** GoogleDrive **/
     /** Like **/
     /** ProjectMember **/

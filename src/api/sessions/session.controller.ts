@@ -11,17 +11,21 @@ import {
     Req,
     UseGuards,
 } from '@nestjs/common';
-import { SessionService } from '../../core/sessions/session.service';
-import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
+import { Request } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
-import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
-import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-import { Request } from 'express';
+
+import { SessionService } from '../../core/sessions/session.service';
+
+import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
+import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
+import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
+
 import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 
 @ApiTags('sessions')
 @Controller('/sessions')
@@ -41,7 +45,7 @@ export class SessionController {
         @Body() createSessionRequest: CreateSessionRequest,
         @Req() request: Request,
     ): Promise<CreateSessionResponse> {
-        const user = request.user as any;
+        const user = request.user as { id: number };
         this.logger.debug(
             `세션 게시물 생성 요청 처리 중 - userId: ${user.id}`,
             SessionController.name,
@@ -160,7 +164,7 @@ export class SessionController {
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Req() request: Request,
     ): Promise<void> {
-        const user = request.user as any;
+        const user = request.user as { id: number };
         this.logger.debug(
             `세션 게시물 삭제 요청 처리 중 - userId: ${user.id}, sessionId: ${sessionId}`,
             SessionController.name,
@@ -184,7 +188,7 @@ export class SessionController {
         @Body() updateSessionRequest: UpdateSessionRequest,
         @Req() request: Request,
     ): Promise<CreateSessionResponse> {
-        const user = request.user as any;
+        const user = request.user as { id: number };
         this.logger.debug(
             `세션 게시물 수정 요청 처리 중 - userId: ${user.id}, sessionId: ${sessionId}`,
             SessionController.name,

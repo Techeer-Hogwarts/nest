@@ -1,24 +1,42 @@
 import { Injectable } from '@nestjs/common';
-import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
-import { SessionRepository } from './repository/session.repository';
-import { SessionEntity } from './entities/session.entity';
-import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
-import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
-import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
-import { ForbiddenAccessException } from '../../common/exception/custom.exception';
-import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
+import { Prisma } from '@prisma/client';
+
+import {
+    ForbiddenAccessException,
+    NotFoundSessionException,
+} from '../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { IndexService } from '../../infra/index/index.service';
+
+import { PrismaService } from '../../infra/prisma/prisma.service';
+
+import { Session } from '@prisma/client';
+
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
+
+import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
+import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
+import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
 import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
+
+import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
+import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 
 @Injectable()
 export class SessionService {
     constructor(
-        private readonly sessionRepository: SessionRepository,
+        private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
         private readonly indexService: IndexService,
     ) {}
+
+    async findById(sessionId: number): Promise<Session | null> {
+        return this.prisma.session.findUnique({
+            where: {
+                id: sessionId,
+            },
+        });
+    }
 
     async createSession(
         userId: number,
@@ -26,28 +44,51 @@ export class SessionService {
     ): Promise<CreateSessionResponse> {
         this.logger.debug(`세션 게시물 생성 중`, SessionService.name);
 
-        const sessionEntity: SessionEntity =
-            await this.sessionRepository.createSession(
+        const session = await this.prisma.session.create({
+            data: {
                 userId,
-                createSessionRequest,
-            );
-        return new CreateSessionResponse(sessionEntity);
+                ...createSessionRequest,
+            },
+        });
+        // 인덱스 업데이트
+        const indexSession = new IndexSessionRequest(session);
+        this.logger.debug(
+            `세션 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+            SessionService.name,
+        );
+        await this.indexService.createIndex<IndexSessionRequest>(
+            'session',
+            indexSession,
+        );
+        return new CreateSessionResponse(session as Session);
     }
 
     async getSession(sessionId: number): Promise<GetSessionResponse> {
         this.logger.debug(`단일 세션 게시물 조회 중`, SessionService.name);
-
-        const sessionEntity: SessionEntity =
-            await this.sessionRepository.getSession(sessionId);
-
-        // 인덱스 업데이트
-        const indexProject = new IndexSessionRequest(sessionEntity);
-        this.logger.debug(
-            `조회수 증가 후 인덱스 업데이트 요청`,
-            SessionService.name,
-        );
-        await this.indexService.createIndex('session', indexProject);
-        return new GetSessionResponse(sessionEntity);
+        try {
+            const session = await this.prisma.session.update({
+                where: {
+                    id: sessionId,
+                },
+                data: {
+                    viewCount: { increment: 1 }, // 조회수 증가
+                },
+            });
+            // 인덱스 업데이트
+            const indexProject = new IndexSessionRequest(session);
+            this.logger.debug(
+                `조회수 증가 후 인덱스 업데이트 요청`,
+                SessionService.name,
+            );
+            await this.indexService.createIndex('session', indexProject);
+            return new GetSessionResponse(session as Session);
+        } catch {
+            this.logger.error(
+                `세션 게시물을 찾을 수 없음`,
+                SessionService.name,
+            );
+            throw new NotFoundSessionException();
+        }
     }
 
     async getBestSessions(
@@ -55,14 +96,33 @@ export class SessionService {
     ): Promise<GetSessionResponse[]> {
         this.logger.debug(`인기 세션 게시물 조회 중`, SessionService.name);
 
-        const sessions: SessionEntity[] =
-            await this.sessionRepository.getBestSessions(query);
-        this.logger.debug(
-            `인기 세션 게시물 조회 완료 - 조회된 개수: ${sessions.length}`,
-            SessionService.name,
-        );
-        return sessions.map(
-            (session: SessionEntity) => new GetSessionResponse(session),
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
+        // 2주 계산
+        const twoWeeksAgo: Date = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+        // SQL 쿼리
+        const sessions = await this.prisma.session.findMany({
+            where: {
+                createdAt: {
+                    gte: twoWeeksAgo,
+                },
+            },
+            take: limit,
+            skip: offset,
+        });
+
+        const sortedSessions = sessions
+            .filter((session) => session.viewCount > 0 || session.likeCount > 0) // 조회수 또는 좋아요가 0보다 큰 세션만 필터링
+            .sort(
+                (a, b) =>
+                    b.viewCount +
+                    b.likeCount * 10 -
+                    (a.viewCount + a.likeCount * 10),
+            );
+
+        return sortedSessions.map(
+            (session) => new GetSessionResponse(session as Session),
         );
     }
 
@@ -71,14 +131,29 @@ export class SessionService {
     ): Promise<GetSessionResponse[]> {
         this.logger.debug(`세션 게시물 목록 조회 중`, SessionService.name);
 
-        const sessions: SessionEntity[] =
-            await this.sessionRepository.getSessionList(query);
+        const { category, date, position, offset = 0, limit = 10 } = query;
+
+        const sessions = await this.prisma.session.findMany({
+            where: {
+                ...(category && { category }),
+                ...(date && date.length > 0 && { date: { in: date } }),
+                ...(position &&
+                    position.length > 0 && { position: { in: position } }),
+            },
+            skip: offset,
+            take: limit,
+            orderBy: {
+                title: 'asc',
+            },
+        });
+
         this.logger.debug(
             `세션 게시물 목록 조회 완료 - 조회된 개수: ${sessions.length}`,
             SessionService.name,
         );
+
         return sessions.map(
-            (session: SessionEntity) => new GetSessionResponse(session),
+            (session) => new GetSessionResponse(session as Session),
         );
     }
 
@@ -88,21 +163,29 @@ export class SessionService {
     ): Promise<GetSessionResponse[]> {
         this.logger.debug(`유저 별 세션 게시물 조회 중`, SessionService.name);
 
-        const sessions: SessionEntity[] =
-            await this.sessionRepository.getSessionsByUser(userId, query);
+        const { offset = 0, limit = 10 }: PaginationQueryDto = query;
+        const sessions = await this.prisma.session.findMany({
+            where: {
+                userId: userId,
+            },
+            skip: offset,
+            take: limit,
+        });
+
         this.logger.debug(
             `유저 별 세션 게시물 조회 완료 - 조회된 개수: ${sessions.length}`,
             SessionService.name,
         );
+
         return sessions.map(
-            (session: SessionEntity) => new GetSessionResponse(session),
+            (session) => new GetSessionResponse(session as Session),
         );
     }
 
     async deleteSession(userId: number, sessionId: number): Promise<void> {
         this.logger.debug(`세션 게시물 삭제 중`, SessionService.name);
 
-        const session = await this.sessionRepository.findById(sessionId);
+        const session = await this.findById(sessionId);
 
         if (session.userId !== userId) {
             this.logger.error(
@@ -112,7 +195,30 @@ export class SessionService {
             throw new ForbiddenAccessException();
         }
 
-        return this.sessionRepository.deleteSession(sessionId);
+        try {
+            await this.prisma.session.delete({
+                where: {
+                    id: sessionId,
+                },
+            });
+            this.logger.debug(
+                `세션 삭제 후 인덱스 삭제 요청 - sessionId: ${sessionId}`,
+                SessionService.name,
+            );
+            await this.indexService.deleteIndex('session', String(sessionId));
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.error(
+                    `세션 게시물을 찾을 수 없음`,
+                    SessionService.name,
+                );
+                throw new NotFoundSessionException();
+            }
+            throw error;
+        }
     }
 
     async updateSession(
@@ -122,7 +228,14 @@ export class SessionService {
     ): Promise<CreateSessionResponse> {
         this.logger.debug(`세션 게시물 수정 중`, SessionService.name);
 
-        const session = await this.sessionRepository.findById(sessionId);
+        const session = await this.findById(sessionId);
+        if (!session) {
+            this.logger.error(
+                '세션 게시물을 찾을 수 없음',
+                SessionService.name,
+            );
+            throw new NotFoundSessionException();
+        }
 
         if (session.userId !== userId) {
             this.logger.error(
@@ -132,11 +245,36 @@ export class SessionService {
             throw new ForbiddenAccessException();
         }
 
-        const updatedSession: SessionEntity =
-            await this.sessionRepository.updateSession(
-                sessionId,
-                updateSessionRequest,
+        try {
+            const updatedSession = await this.prisma.session.update({
+                where: {
+                    id: sessionId,
+                },
+                data: updateSessionRequest,
+            });
+            // 인덱스 업데이트
+            const indexSession = new IndexSessionRequest(updatedSession);
+            this.logger.debug(
+                `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                SessionService.name,
             );
-        return new CreateSessionResponse(updatedSession);
+            await this.indexService.createIndex<IndexSessionRequest>(
+                'session',
+                indexSession,
+            );
+            return new CreateSessionResponse(updatedSession as Session);
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.error(
+                    `세션 게시물을 찾을 수 없음`,
+                    SessionService.name,
+                );
+                throw new NotFoundSessionException();
+            }
+            throw error;
+        }
     }
 }
