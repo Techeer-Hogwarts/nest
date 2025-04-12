@@ -21,6 +21,9 @@ import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.s
 import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 
+import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
+import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
+
 @Injectable()
 export class SessionService {
     constructor(
