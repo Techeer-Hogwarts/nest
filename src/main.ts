@@ -22,6 +22,7 @@ async function bootstrap(): Promise<void> {
                         /^null$/,
                         /^https:\/\/api\.techeerzip\.cloud$/,
                         /^https:\/\/(?:.*\.)?yje\.kr$/,
+                        /^https:\/\/techeerzip\.cloud$/,
                     ];
 
                     if (
