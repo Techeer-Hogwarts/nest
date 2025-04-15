@@ -1,5 +1,4 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import kyselyExtension from 'prisma-extension-kysely';
 import {
     Kysely,
@@ -8,6 +7,7 @@ import {
     PostgresQueryCompiler,
 } from 'kysely';
 import { DB } from './db/types';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService

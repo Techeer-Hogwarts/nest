@@ -24,7 +24,7 @@ import { UpdateProfileImageRequest } from '../../common/dto/users/request/update
 import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
 import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ParseJsonAndValidatePipe } from '../../common/validation/ParseJsonAndValidatePipe';
+import { ParseJsonAndValidatePipe } from '../../common/validation/parseJsonAndValidatePipe';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PermissionRequest, User } from '@prisma/client';
 

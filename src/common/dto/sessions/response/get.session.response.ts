@@ -1,4 +1,4 @@
-import { Session, User } from '@prisma/client';
+import { Session } from '@prisma/client';
 
 type SessionWithUser = Session & { user: User };
 
@@ -11,31 +11,29 @@ export class GetSessionResponse {
     readonly date: string;
     readonly position: string;
     readonly category: string;
-    readonly videoUrl: string;
-    readonly fileUrl: string;
+    readonly videoUrl: string | null;
+    readonly fileUrl: string | null;
     readonly likeCount: number;
     readonly viewCount: number;
+    readonly createdAt: Date;
+    readonly updatedAt: Date;
+    readonly nickname: string | null; // nullable 타입 반영
 
-    readonly user: { name: string; nickname: string; profileImage: string };
-
-    constructor(sessionEntity: SessionWithUser) {
-        this.id = sessionEntity.id;
-        this.userId = sessionEntity.userId;
-        this.thumbnail = sessionEntity.thumbnail;
-        this.title = sessionEntity.title;
-        this.presenter = sessionEntity.presenter;
-        this.date = sessionEntity.date;
-        this.position = sessionEntity.position;
-        this.category = sessionEntity.category;
-        this.videoUrl = sessionEntity.videoUrl;
-        this.fileUrl = sessionEntity.fileUrl;
-        this.likeCount = sessionEntity.likeCount;
-        this.viewCount = sessionEntity.viewCount;
-
-        this.user = {
-            name: sessionEntity.user.name,
-            nickname: sessionEntity.user.nickname,
-            profileImage: sessionEntity.user.profileImage,
-        };
+    constructor(session: Session & { user?: { nickname?: string | null } }) {
+        this.id = session.id;
+        this.userId = session.userId;
+        this.thumbnail = session.thumbnail;
+        this.title = session.title;
+        this.presenter = session.presenter;
+        this.date = session.date;
+        this.position = session.position;
+        this.category = session.category;
+        this.videoUrl = session.videoUrl;
+        this.fileUrl = session.fileUrl;
+        this.likeCount = session.likeCount;
+        this.viewCount = session.viewCount;
+        this.createdAt = session.createdAt;
+        this.updatedAt = session.updatedAt;
+        this.nickname = session.user?.nickname ?? null; // 안전한 null 처리
     }
 }

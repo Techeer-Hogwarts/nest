@@ -13,6 +13,7 @@ import {
     StudyApplicantResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
+import { UpdateStudyTeamMember } from '../../common/dto/studyTeams/response/update.studyTeam.response.interface';
 
 import { AwsService } from '../../infra/awsS3/aws.service';
 import { IndexService } from '../../infra/index/index.service';
@@ -30,16 +31,19 @@ import {
     StudyTeamAlreadyRejectMemberException,
     StudyTeamInvalidUserException,
     StudyTeamNotActiveMemberException,
+    StudyTeamDuplicateDeleteUpdateException,
+    StudyTeamClosedRecruitException,
 } from './exception/studyTeam.exception';
 import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
 
-import { AlertServcie } from '../alert/alert.service';
+import { AlertService } from '../alert/alert.service';
 import { StudyMemberService } from '../studyMembers/studyMember.service';
-
 import {
     mapToStudyAlertPayload,
-    mapToStudyLeaderAlertPayload,
-} from './mapper/StudyTeamMapper';
+    mapToTeamLeaderAlertPayload,
+} from '../../common/mapper/slack.mapper';
+import { TeamType } from '../../common/category/teamCategory/teamType';
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
 
 @Injectable()
 export class StudyTeamService {
@@ -47,7 +51,7 @@ export class StudyTeamService {
         private readonly studyMemberService: StudyMemberService,
         private readonly awsService: AwsService,
         private readonly logger: CustomWinstonLogger,
-        private readonly alertService: AlertServcie,
+        private readonly alertService: AlertService,
         private readonly prisma: PrismaService,
         private readonly indexService: IndexService,
     ) {}
@@ -85,7 +89,7 @@ export class StudyTeamService {
         this.logger.debug('스터디 팀 생성: request data 검증 완료');
 
         const studyMembers = createStudyTeamRequest.studyMember;
-        const { profileImage, ...teamData } = createStudyTeamRequest;
+        const { ...teamData } = createStudyTeamRequest;
 
         /** 1. 스터디 멤버에 해당하는 사용자 존재 여부 체크 **/
         const studyMemberIds = studyMembers.map((member) => member.userId);
@@ -97,7 +101,7 @@ export class StudyTeamService {
         this.logger.debug('스터디 팀 생성: user 확인 완료');
 
         /** 2. 파일 업로드 처리 **/
-        const resultImageUrls = await this.processImagesUploadToS3(
+        const resultImageUrls = await this.awsService.uploadImagesToS3(
             files,
             'study-teams',
             'study-team',
@@ -139,11 +143,7 @@ export class StudyTeamService {
                 resultImages: true,
             },
         });
-        study.studyMember.forEach((member) => {
-            if (member.user) {
-                member.user.profileImage = profileImage;
-            }
-        });
+
         // 응답 객체 생성
         const createdStudyTeam = new GetStudyTeamResponse(study);
         this.logger.debug('스터디 팀 생성: 생성 성공');
@@ -224,21 +224,6 @@ export class StudyTeamService {
         }
     }
 
-    private async processImagesUploadToS3(
-        files: Express.Multer.File[],
-        folderName: string,
-        urlPrefix: string,
-    ): Promise<string[]> {
-        if (!files || files.length < 1) {
-            return [];
-        }
-        return await this.awsService.uploadImagesToS3(
-            files,
-            folderName,
-            urlPrefix,
-        );
-    }
-
     /** 스터디 지원자 조회 **/
     async getApplicants(
         studyTeamId: number,
@@ -271,9 +256,7 @@ export class StudyTeamService {
         if (!studyTeam) {
             throw new StudyMemberNotFoundException();
         }
-        if (studyTeam.studyMember.length === 0) {
-            throw new StudyMemberNotFoundException();
-        }
+
         this.logger.debug(
             '스터디 pk로 지원자 전체 조회: 스터디 팀 지원자 조회 완료',
         );
@@ -319,7 +302,7 @@ export class StudyTeamService {
             let imageUrls: string[] = [];
             try {
                 if (files.length > 0) {
-                    imageUrls = await this.processImagesUploadToS3(
+                    imageUrls = await this.awsService.uploadImagesToS3(
                         files,
                         'study-teams',
                         'study-team',
@@ -562,33 +545,52 @@ export class StudyTeamService {
         studyMembersToUpdate: StudyMemberInfoRequest[],
         deleteMembers: number[],
     ): {
-        toActive: ExistingStudyMemberResponse[];
-        toInactive: ExistingStudyMemberResponse[];
+        toActive: UpdateStudyTeamMember[];
+        toInactive: UpdateStudyTeamMember[];
         toIncoming: StudyMemberInfoRequest[];
     } {
-        const updateIds = new Set(
-            studyMembersToUpdate.map((member) => member.userId),
+        // updateId: user PK
+        const updateMemberMap = new Map(
+            studyMembersToUpdate.map((up) => [up.userId, up]),
         );
-        if (deleteMembers.some((m) => updateIds.has(m))) {
-            throw new StudyTeamInvalidUpdateMemberException();
-        }
+        // deleteMemberId: studyMember PK
+        const deleteIds = new Set(deleteMembers);
 
-        const deleteIds = new Set(deleteMembers.map((id) => id));
-        const toInactive: ExistingStudyMemberResponse[] = [];
-        const toActive: ExistingStudyMemberResponse[] = [];
+        const toInactive: UpdateStudyTeamMember[] = [];
+        const toActive: UpdateStudyTeamMember[] = [];
 
-        existingStudyMembers.forEach((existing) => {
-            if (deleteIds.has(existing.userId)) {
-                toInactive.push(existing);
-            } else if (updateIds.has(existing.userId)) {
-                toActive.push(existing);
-                updateIds.delete(existing.userId);
+        for (const existing of existingStudyMembers) {
+            const update = updateMemberMap.get(existing.userId);
+            const isDelete = deleteIds.has(existing.id);
+
+            if (isDelete) {
+                if (existing.isDeleted) {
+                    throw new StudyMemberNotFoundException();
+                }
+                if (update) {
+                    throw new StudyTeamDuplicateDeleteUpdateException();
+                }
+                toInactive.push({
+                    id: existing.id,
+                    userId: existing.userId,
+                    isLeader: existing.isLeader,
+                });
+                continue;
             }
-        });
+
+            if (update) {
+                toActive.push({
+                    id: existing.id,
+                    userId: existing.userId,
+                    isLeader: update.isLeader,
+                });
+                updateMemberMap.delete(existing.userId);
+            }
+        }
 
         // update 멤버에서 기존 멤버가 빠지면 신규 멤버만 남는다.
         const toIncoming = studyMembersToUpdate.filter((member) =>
-            updateIds.has(member.userId),
+            updateMemberMap.has(member.userId),
         );
         this.logger.debug(
             'toUpdate: ',
@@ -829,6 +831,10 @@ export class StudyTeamService {
             throw new StudyTeamNotFoundException();
         }
 
+        if (studyTeam.recruitNum < 1) {
+            throw new StudyTeamClosedRecruitException();
+        }
+
         const studyTeamLeaders = studyTeam.studyMember;
         if (studyTeamLeaders.length === 0) {
             this.logger.error('스터디 팀 리더를 찾을 수 없습니다.');
@@ -841,15 +847,17 @@ export class StudyTeamService {
             createStudyMemberRequest,
             user.id,
         );
+
         this.logger.debug('스터디 지원: 지원자 업데이트 완료');
 
         // 지원 생성 후, 리더들에게 지원 알림 전송 (지원 상태: PENDING)
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             user.email,
-            StudyMemberStatus.PENDING,
+            MemberStatus.PENDING,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -908,12 +916,13 @@ export class StudyTeamService {
 
         /** 스터디 리더들에게 지원 취소 슬랙 전송 **/
         const studyTeamLeaders = studyTeam.studyMember;
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             user.email,
-            StudyMemberStatus.CANCELLED,
+            MemberStatus.CANCELLED,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -1055,12 +1064,13 @@ export class StudyTeamService {
             await this.studyMemberService.getAllStudyLeadersEmailByTeamId(
                 studyTeamId,
             );
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             applicantEmail.email,
-            StudyMemberStatus.CANCELLED,
+            MemberStatus.APPROVED,
         );
         await Promise.all(
             alertPayloads.map((payload) =>
@@ -1079,7 +1089,7 @@ export class StudyTeamService {
         applicantId: number,
     ): Promise<StudyApplicantResponse> {
         /** 예외 종류
-         * 1. active 멤버만 지원자 거절할 수 있다.(isDelete: true, status: APPROVED)
+         * 1. active 멤버만 지원자 거절할 수 있다.(isDelete: false, status: APPROVED)
          * 2. 이미 APPROVED 상태이면 거절할 수 없다.
          * 3. 이미 지원 취소한 상태(isDeleted: true)이면 거절할 수 없다.
          * 4. 이미 거절한 상태(status: REJECT)이면 거절할 수 없다.
@@ -1134,12 +1144,13 @@ export class StudyTeamService {
         });
 
         const studyTeamLeaders = studyTeam.studyMember;
-        const alertPayloads = mapToStudyLeaderAlertPayload(
+        const alertPayloads = mapToTeamLeaderAlertPayload(
+            TeamType.STUDY,
             studyTeamId,
             studyTeam.name,
             studyTeamLeaders,
             applicant.email,
-            StudyMemberStatus.CANCELLED,
+            MemberStatus.REJECT,
         );
         await Promise.all(
             alertPayloads.map((payload) =>

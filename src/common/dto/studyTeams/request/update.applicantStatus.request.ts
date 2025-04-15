@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsNotEmpty } from 'class-validator';
 
-export class UpdateApplicantStatusRequest {
+export class UpdateStudyApplicantStatusRequest {
     @IsInt()
     @IsNotEmpty()
     @ApiProperty({

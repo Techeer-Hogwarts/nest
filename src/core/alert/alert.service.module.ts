@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AlertServcie } from './alert.service';
+import { AlertService } from './alert.service';
 
 @Module({
     imports: [],
-    providers: [AlertServcie],
-    exports: [AlertServcie],
+    providers: [AlertService],
+    exports: [AlertService],
 })
 export class AlertServiceModule {}
