@@ -244,16 +244,22 @@ export class SessionService {
         }
 
         try {
-            await this.prisma.session.delete({
-                where: {
-                    id: sessionId,
-                },
+            await this.prisma.$transaction(async (tx) => {
+                await tx.session.delete({
+                    where: {
+                        id: sessionId,
+                    },
+                });
+                this.logger.debug(
+                    `세션 삭제 후 인덱스 삭제 요청 - sessionId: ${sessionId}`,
+                    SessionService.name,
+                );
+
+                await this.indexService.deleteIndex(
+                    'session',
+                    String(sessionId),
+                );
             });
-            this.logger.debug(
-                `세션 삭제 후 인덱스 삭제 요청 - sessionId: ${sessionId}`,
-                SessionService.name,
-            );
-            await this.indexService.deleteIndex('session', String(sessionId));
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
