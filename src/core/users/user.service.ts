@@ -42,7 +42,7 @@ import {
     UserUnauthorizedAdminException,
 } from './exception/user.exception';
 
-import { UserGrade } from './category/UserGrade';
+import { UserGrade } from './category/userGrade';
 import { UserDetail } from './types/user.detail.type';
 
 type Mutable<T> = {
