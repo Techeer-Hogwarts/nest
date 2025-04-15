@@ -1,18 +1,23 @@
+import { of } from 'rxjs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../user.service';
-import { AuthService } from '../../auth/auth.service';
+import { User } from '@prisma/client';
 import { HttpService } from '@nestjs/axios';
-import { ResumeService } from '../../resumes/resume.service';
-import { TaskService } from '../../task/task.service';
+
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
+import { CreateUserRequest } from '../../../common/dto/users/request/create.user.request';
+import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
+import { GetUserssQueryRequest } from '../../../common/dto/users/request/get.user.query.request';
+import { UpdateUserRequest } from '../../../common/dto/users/request/update.user.request';
+
 import { IndexService } from '../../../infra/index/index.service';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { TaskService } from '../../task/task.service';
+
+import { UserService } from '../user.service';
+import { AuthService } from '../../auth/auth.service';
+import { ResumeService } from '../../resumes/resume.service';
 import { UserExperienceService } from '../../userExperiences/userExperience.service';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { of } from 'rxjs';
-import { User } from '@prisma/client';
-import { CreateUserRequest } from '../../../common/dto/users/request/create.user.request';
-import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
-import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
 
 import {
     UserNotVerifiedEmailException,
@@ -20,9 +25,8 @@ import {
     UserNotFoundResumeException,
     UserNotFoundException,
 } from '../exception/user.exception';
-import { UpdateUserRequest } from 'src/common/dto/users/request/update.user.request';
+
 import { UserDetail } from '../types/user.detail.type';
-import { GetUserssQueryRequest } from '../../../common/dto/users/request/get.user.query.request';
 
 describe('UserService', () => {
     let userService: UserService;

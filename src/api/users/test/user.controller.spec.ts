@@ -1,15 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserController } from '../user.controller';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { User } from '@prisma/client';
-import { CreateUserWithResumeRequest } from '../../../common/dto/users/request/create.user.with.resume.request';
-import { UpdateUserWithExperienceRequest } from '../../../common/dto/users/request/update.user.with.experience.request';
-import { CreatePermissionRequest } from '../../../common/dto/users/request/create.permission.request';
+
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { ApprovePermissionRequest } from '../../../common/dto/users/request/approve.permission.request';
+import { CreatePermissionRequest } from '../../../common/dto/users/request/create.permission.request';
+import { CreateUserWithResumeRequest } from '../../../common/dto/users/request/create.user.with.resume.request';
 import { GetUserssQueryRequest } from '../../../common/dto/users/request/get.user.query.request';
+import { UpdateUserWithExperienceRequest } from '../../../common/dto/users/request/update.user.with.experience.request';
+
 import { GetUserResponse } from '../../../common/dto/users/response/get.user.response';
+
 import { UserService } from '../../../core/users/user.service';
-import { UserDetail } from 'src/core/users/types/user.detail.type';
+
+import { UserController } from '../user.controller';
+
+import { UserDetail } from '../../../core/users/types/user.detail.type';
 
 describe('UserController', () => {
     let controller: UserController;

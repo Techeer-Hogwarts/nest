@@ -15,19 +15,21 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionRequest, User } from '@prisma/client';
 
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { ParseJsonAndValidatePipe } from '../../common/validation/ParseJsonAndValidatePipe';
 import { CurrentUser } from '../../common/decorators/user.decorator';
+
+import { JwtAuthGuard } from '../../core/auth/jwt.guard';
+
+import { UserService } from '../../core/users/user.service';
 
 import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
 import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
 import { CreateUserWithResumeRequest } from '../../common/dto/users/request/create.user.with.resume.request';
 import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
 import { UpdateUserWithExperienceRequest } from '../../common/dto/users/request/update.user.with.experience.request';
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
-import { ParseJsonAndValidatePipe } from '../../common/validation/ParseJsonAndValidatePipe';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
-import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-import { UserService } from '../../core/users/user.service';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
 
 import {
     ApprovePermissionDoc,
