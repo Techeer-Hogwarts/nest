@@ -54,24 +54,31 @@ export class SessionService {
         createSessionRequest: CreateSessionRequest,
     ): Promise<CreateSessionResponse> {
         this.logger.debug(`세션 게시물 생성 중`, SessionService.name);
-
-        const session = await this.prisma.session.create({
-            data: {
-                userId,
-                ...createSessionRequest,
-            },
-        });
-        // 인덱스 업데이트
-        const indexSession = new IndexSessionRequest(session);
-        this.logger.debug(
-            `세션 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
-            SessionService.name,
-        );
-        await this.indexService.createIndex<IndexSessionRequest>(
-            'session',
-            indexSession,
-        );
-        return new CreateSessionResponse(session);
+        try {
+            const session = await this.prisma.session.create({
+                data: {
+                    userId,
+                    ...createSessionRequest,
+                },
+            });
+            // 인덱스 업데이트
+            const indexSession = new IndexSessionRequest(session);
+            this.logger.debug(
+                `세션 생성 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                SessionService.name,
+            );
+            await this.indexService.createIndex<IndexSessionRequest>(
+                'session',
+                indexSession,
+            );
+            return new CreateSessionResponse(session);
+        } catch (error) {
+            this.logger.error(
+                `세션 게시물 생성 중 오류 발생: ${error}`,
+                SessionService.name,
+            );
+            throw error;
+        }
     }
 
     async getSession(sessionId: number): Promise<GetSessionResponse> {
@@ -290,30 +297,26 @@ export class SessionService {
 
         try {
             const updatedSession = await this.prisma.$transaction(async (tx) => {
-                    const updated = await tx.session.update({
-                        where: {
-                            id: sessionId,
-                        },
-                        data: updateSessionRequest,
-                    });
-                    // 인덱스 업데이트
-                    const indexSession = new IndexSessionRequest(
-                        updatedSession,
-                    );
-                    this.logger.debug(
-                        `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
-                        SessionService.name,
-                    );
+                const updated = await tx.session.update({
+                    where: {
+                        id: sessionId,
+                    },
+                    data: updateSessionRequest,
+                });
+                // 인덱스 업데이트
+                const indexSession = new IndexSessionRequest(updated);
+                this.logger.debug(
+                    `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                    SessionService.name,
+                );
 
-                    await this.indexService.createIndex<IndexSessionRequest>(
-                        'session',
-                        indexSession,
-                    );
+                await this.indexService.createIndex<IndexSessionRequest>(
+                    'session',
+                    indexSession,
+                );
 
-                    return updated;
-                },
-            );
-
+                return updated;
+            });
             return new CreateSessionResponse(updatedSession);
         } catch (error) {
             if (
