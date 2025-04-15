@@ -164,29 +164,37 @@ export class SessionService {
 
         const { category, date, position, offset = 0, limit = 10 } = query;
 
-        const sessions = await this.prisma.session.findMany({
-            where: {
-                ...(category && { category }),
-                ...(date && date.length > 0 && { date: { in: date } }),
-                ...(position &&
-                    position.length > 0 && { position: { in: position } }),
-            },
-            skip: offset,
-            take: limit,
-            orderBy: {
-                title: 'asc',
-            },
-            include: {
-                user: true,
-            },
-        });
+        try {
+            const sessions = await this.prisma.session.findMany({
+                where: {
+                    ...(category && { category }),
+                    ...(date && date.length > 0 && { date: { in: date } }),
+                    ...(position &&
+                        position.length > 0 && { position: { in: position } }),
+                },
+                skip: offset,
+                take: limit,
+                orderBy: {
+                    title: 'asc',
+                },
+                include: {
+                    user: true,
+                },
+            });
 
-        this.logger.debug(
-            `세션 게시물 목록 조회 완료 - 조회된 개수: ${sessions.length}`,
-            SessionService.name,
-        );
+            this.logger.debug(
+                `세션 게시물 목록 조회 완료 - 조회된 개수: ${sessions.length}`,
+                SessionService.name,
+            );
 
-        return sessions.map((session) => new GetSessionResponse(session));
+            return sessions.map((session) => new GetSessionResponse(session));
+        } catch (error) {
+            this.logger.error(
+                `세션 게시물 목록 조회 중 오류 발생: ${error.message}`,
+                SessionService.name,
+            );
+            throw error;
+        }
     }
 
     async getSessionsByUser(
