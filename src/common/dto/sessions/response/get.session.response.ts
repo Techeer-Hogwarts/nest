@@ -19,24 +19,27 @@ export class GetSessionResponse {
     readonly fileUrl: string | null;
     readonly likeCount: number;
     readonly viewCount: number;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
-    readonly nickname: string | null; // nullable 타입 반영
-    readonly user: UserInfo;
 
-    constructor(session: Session & { user: UserInfo }) {
-        this.id = session.id;
-        this.userId = session.userId;
-        this.thumbnail = session.thumbnail;
-        this.title = session.title;
-        this.presenter = session.presenter;
-        this.date = session.date;
-        this.position = session.position;
-        this.category = session.category;
-        this.videoUrl = session.videoUrl;
-        this.fileUrl = session.fileUrl;
-        this.likeCount = session.likeCount;
-        this.viewCount = session.viewCount;
-        this.user = session.user;
+    readonly user: { name: string; nickname: string; profileImage: string };
+
+    constructor(sessionEntity: SessionEntity) {
+        this.id = sessionEntity.id;
+        this.userId = sessionEntity.userId;
+        this.thumbnail = sessionEntity.thumbnail;
+        this.title = sessionEntity.title;
+        this.presenter = sessionEntity.presenter;
+        this.date = sessionEntity.date;
+        this.position = sessionEntity.position;
+        this.category = sessionEntity.category;
+        this.videoUrl = sessionEntity.videoUrl;
+        this.fileUrl = sessionEntity.fileUrl;
+        this.likeCount = sessionEntity.likeCount;
+        this.viewCount = sessionEntity.viewCount;
+
+        this.user = {
+            name: sessionEntity.user.name,
+            nickname: sessionEntity.user.nickname,
+            profileImage: sessionEntity.user.profileImage,
+        };
     }
 }
