@@ -293,22 +293,31 @@ export class SessionService {
         }
 
         try {
-            const updatedSession = await this.prisma.session.update({
-                where: {
-                    id: sessionId,
+            const updatedSession = await this.prisma.$transaction(async (tx) => {
+                    const updated = await tx.session.update({
+                        where: {
+                            id: sessionId,
+                        },
+                        data: updateSessionRequest,
+                    });
+                    // 인덱스 업데이트
+                    const indexSession = new IndexSessionRequest(
+                        updatedSession,
+                    );
+                    this.logger.debug(
+                        `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                        SessionService.name,
+                    );
+
+                    await this.indexService.createIndex<IndexSessionRequest>(
+                        'session',
+                        indexSession,
+                    );
+
+                    return updated;
                 },
-                data: updateSessionRequest,
-            });
-            // 인덱스 업데이트
-            const indexSession = new IndexSessionRequest(updatedSession);
-            this.logger.debug(
-                `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
-                SessionService.name,
             );
-            await this.indexService.createIndex<IndexSessionRequest>(
-                'session',
-                indexSession,
-            );
+
             return new CreateSessionResponse(updatedSession);
         } catch (error) {
             if (
