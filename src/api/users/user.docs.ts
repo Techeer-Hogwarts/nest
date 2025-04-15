@@ -59,7 +59,7 @@ export function SignUpDoc(): MethodDecorator {
                                     isLft: {
                                         type: 'boolean',
                                         example: false,
-                                        description: 'LFT 여부',
+                                        description: '매칭 여부',
                                     },
                                     githubUrl: {
                                         type: 'string',
@@ -97,7 +97,7 @@ export function SignUpDoc(): MethodDecorator {
                                     },
                                     school: {
                                         type: 'string',
-                                        example: 'Hogwarts',
+                                        example: '인천대학교',
                                         description: '학교 이름',
                                     },
                                     grade: {
@@ -175,7 +175,7 @@ export function SignUpDoc(): MethodDecorator {
                                     },
                                     position: {
                                         type: 'string',
-                                        example: 'BACKEND',
+                                        example: 'Backend',
                                         description: '포지션',
                                     },
                                     title: {

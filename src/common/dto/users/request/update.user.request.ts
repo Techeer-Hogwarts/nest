@@ -21,7 +21,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Hogwarts School of Witchcraft and Wizardry',
+        example: '인천대학교',
         description: '학교 이름',
     })
     readonly school: string;
@@ -29,7 +29,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: '휴학중 or 1학년',
+        example: '1학년',
         description: '학년',
     })
     readonly grade: string;
