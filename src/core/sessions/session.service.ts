@@ -121,7 +121,16 @@ export class SessionService {
                     createdAt: {
                         gte: twoWeeksAgo,
                     },
+                    OR: [{ viewCount: { gt: 0 } }, { likeCount: { gt: 0 } }],
                 },
+                orderBy: [
+                    {
+                        likeCount: 'desc',
+                    },
+                    {
+                        viewCount: 'desc',
+                    },
+                ],
                 take: limit,
                 skip: offset,
                 include: {
@@ -129,25 +138,12 @@ export class SessionService {
                 },
             });
 
-            const sortedSessions = sessions
-                .filter(
-                    (session) => session.viewCount > 0 || session.likeCount > 0,
-                )
-                .sort(
-                    (a, b) =>
-                        b.viewCount +
-                        b.likeCount * 10 -
-                        (a.viewCount + a.likeCount * 10),
-                );
-
             this.logger.debug(
-                `인기 세션 게시물 조회 완료 - 조회된 개수: ${sortedSessions.length}`,
+                `인기 세션 게시물 조회 완료 - 조회된 개수: ${sessions.length}`,
                 SessionService.name,
             );
 
-            return sortedSessions.map(
-                (session) => new GetSessionResponse(session),
-            );
+            return sessions.map((session) => new GetSessionResponse(session));
         } catch (error) {
             this.logger.error(
                 `인기 세션 게시물 조회 중 오류 발생: ${error}`,
