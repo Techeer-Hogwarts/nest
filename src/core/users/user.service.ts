@@ -617,7 +617,7 @@ export class UserService {
                 },
                 skip: offset || 0,
                 take: limit || 10,
-                orderBy: { name: 'asc' },
+                orderBy: { year: 'asc' },
                 include: {
                     projectMembers: {
                         where: {
