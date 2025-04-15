@@ -16,7 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionRequest, User } from '@prisma/client';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { CurrentUser } from '../../common/decorators/user.decorator';
+import { CurrentUser } from '../../common/decorator/user.decorator';
 
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 
