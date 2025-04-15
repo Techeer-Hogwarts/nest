@@ -180,10 +180,7 @@ export class UserService {
             //     }),
             // );
 
-            this.logger.debug(
-                '회원가입 완료',
-                JSON.stringify({ context: UserService.name }),
-            );
+            this.logger.debug('회원가입 완료', { context: UserService.name });
             // 트랜잭션 내에서 생성된 사용자 반환
             return newUser;
         });
@@ -559,30 +556,19 @@ export class UserService {
     async getAllProfiles(
         query: GetUserssQueryRequest,
     ): Promise<GetUserResponse[]> {
-        this.logger.debug(
-            '모든 프로필 조회 시작',
-            JSON.stringify({
-                query,
-                context: UserService.name,
-            }),
-        );
+        this.logger.debug('모든 프로필 조회 시작', {
+            query,
+            context: UserService.name,
+        });
 
         const users = (await this.findAllProfiles(query)) || [];
 
-        this.logger.debug(
-            '모든 프로필 조회 중',
-            JSON.stringify({
-                context: UserService.name,
-            }),
-        );
+        this.logger.debug('모든 프로필 조회 중', { context: UserService.name });
 
         if (!Array.isArray(users)) {
-            this.logger.debug(
-                '조회된 프로필이 없습니다.',
-                JSON.stringify({
-                    context: UserService.name,
-                }),
-            );
+            this.logger.debug('조회된 프로필이 없습니다.', {
+                context: UserService.name,
+            });
             return [];
         }
 
@@ -724,10 +710,7 @@ export class UserService {
     }
 
     async getProfile(userId: number): Promise<GetUserResponse> {
-        this.logger.debug(
-            '프로필 조회',
-            JSON.stringify({ context: UserService.name }),
-        );
+        this.logger.debug('프로필 조회', { context: UserService.name });
         const user = await this.findUserOrFail(userId);
         return new GetUserResponse(user);
     }
@@ -934,7 +917,7 @@ export class UserService {
         });
     }
 
-    private async findUserOrFail(userId: number): Promise<UserDetail> {
+    async findUserOrFail(userId: number): Promise<UserDetail> {
         const user = await this.findById(userId);
         if (!user) {
             this.logger.debug('사용자 없음', { context: UserService.name });
