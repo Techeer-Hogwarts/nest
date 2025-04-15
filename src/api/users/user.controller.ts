@@ -16,7 +16,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionRequest, User } from '@prisma/client';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { ParseJsonAndValidatePipe } from '../../common/validation/ParseJsonAndValidatePipe';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
@@ -58,7 +57,7 @@ export class UserController {
     @SignUpDoc()
     @UseInterceptors(FileInterceptor('file'))
     async signUp(
-        @Body('createUserWithResumeRequest', ParseJsonAndValidatePipe)
+        @Body('createUserWithResumeRequest')
         createUserWithResumeRequest: CreateUserWithResumeRequest,
         @UploadedFile() file: Express.Multer.File,
     ): Promise<User> {

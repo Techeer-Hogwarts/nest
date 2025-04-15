@@ -16,6 +16,7 @@ import {
 } from './exception/userExperience.exception';
 
 import { UserExperienceEmployment } from './category/userExperienceEmployment';
+import { Prisma } from '@prisma/client';
 
 interface TransformExperienceData {
     userId: number;
@@ -128,6 +129,7 @@ export class UserExperienceService {
             experiences: CreateUserExperienceRequest[];
         },
         userId: number,
+        prisma: Prisma.TransactionClient,
     ): Promise<void> {
         // 데이터 변환 및 검증
         const data = this.transformExperienceData(
@@ -136,7 +138,7 @@ export class UserExperienceService {
         );
 
         // Prisma의 createMany를 사용하여 데이터베이스에 삽입
-        await this.prisma.userExperience.createMany({
+        await prisma.userExperience.createMany({
             data,
         });
 

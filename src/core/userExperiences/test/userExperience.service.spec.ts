@@ -157,7 +157,7 @@ describe('UserExperienceService', () => {
                 ],
             };
 
-            await service.createUserExperience(req, 1);
+            await service.createUserExperience(req, 1, prisma);
 
             expect(prisma.userExperience.createMany).toHaveBeenCalledWith({
                 data: expect.arrayContaining([

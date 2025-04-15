@@ -132,6 +132,7 @@ export class UserService {
                 await this.userExperienceService.createUserExperience(
                     createUserExperienceRequest,
                     newUser.id,
+                    prisma,
                 );
             }
 
