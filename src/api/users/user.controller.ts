@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionRequest, User } from '@prisma/client';
 
-import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { CurrentUser } from '../../common/decorators/user.decorator';
 
 import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
 import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
