@@ -4,7 +4,6 @@ import { lastValueFrom } from 'rxjs';
 import * as bcrypt from 'bcryptjs';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { StackCategory } from '../../common/category/stack.category';
 
 import {
     PermissionRequest,
@@ -43,7 +42,11 @@ import {
     UserUnauthorizedAdminException,
 } from './exception/user.exception';
 
-import { UserGrade } from './category/userGrade';
+import {
+    isStackCategory,
+    StackCategory,
+} from '../../common/category/stack.category';
+import { isUserGrade, UserGrade } from './category/userGrade';
 import { UserDetail } from './types/user.detail.type';
 
 type Mutable<T> = {
@@ -245,20 +248,17 @@ export class UserService {
     }
 
     validatePosition(position: string): StackCategory {
-        if (
-            !position ||
-            !Object.values(StackCategory).includes(position as StackCategory)
-        ) {
+        if (!isStackCategory(position)) {
             throw new UserInvalidPositionException();
         }
-        return position as StackCategory;
+        return position;
     }
 
     validateGrade(grade: string): UserGrade {
-        if (!Object.values(UserGrade).includes(grade as UserGrade)) {
+        if (!isUserGrade(grade)) {
             throw new UserInvalidGradeException();
         }
-        return grade as UserGrade;
+        return grade;
     }
 
     async updateUserProfile(
