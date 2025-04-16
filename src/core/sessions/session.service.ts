@@ -88,6 +88,7 @@ export class SessionService {
                 const updated = await tx.session.update({
                     where: {
                         id: sessionId,
+                        isDeleted: false,
                     },
                     data: {
                         viewCount: { increment: 1 }, // 조회수 증가
@@ -303,6 +304,7 @@ export class SessionService {
                 const updated = await tx.session.update({
                     where: {
                         id: sessionId,
+                        isDeleted: false,
                     },
                     data: updateSessionRequest,
                 });
