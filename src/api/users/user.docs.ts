@@ -87,12 +87,12 @@ export function SignUpDoc(): MethodDecorator {
                                     },
                                     mainPosition: {
                                         type: 'string',
-                                        example: 'Backend',
+                                        example: 'BACKEND',
                                         description: '주요 직무',
                                     },
                                     subPosition: {
                                         type: 'string',
-                                        example: 'Frontend',
+                                        example: 'FRONTEND',
                                         description: '부차적 직무',
                                     },
                                     school: {
@@ -127,7 +127,7 @@ export function SignUpDoc(): MethodDecorator {
                                             properties: {
                                                 position: {
                                                     type: 'string',
-                                                    example: 'Backend',
+                                                    example: 'BACKEND',
                                                     description: '직무',
                                                 },
                                                 companyName: {
@@ -175,7 +175,7 @@ export function SignUpDoc(): MethodDecorator {
                                     },
                                     position: {
                                         type: 'string',
-                                        example: 'Backend',
+                                        example: 'BACKEND',
                                         description: '포지션',
                                     },
                                     title: {

@@ -4,7 +4,6 @@ import { lastValueFrom } from 'rxjs';
 import * as bcrypt from 'bcryptjs';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { normalizeString } from '../../common/category/normalize';
 import { StackCategory } from '../../common/category/stack.category';
 
 import {
@@ -34,10 +33,12 @@ import { GetUserResponse } from '../../common/dto/users/response/get.user.respon
 
 import {
     UserAlreadyExistsException,
+    UserInvalidGradeException,
+    UserInvalidPositionException,
     UserNotFoundException,
     UserNotFoundProfileImgException,
     UserNotFoundResumeException,
-    UserNotFoundTecheerException,
+    UserNotTecheerException,
     UserNotVerifiedEmailException,
     UserUnauthorizedAdminException,
 } from './exception/user.exception';
@@ -94,7 +95,7 @@ export class UserService {
             this.logger.error('테커가 아닌 사용자', {
                 context: UserService.name,
             });
-            throw new UserNotFoundTecheerException();
+            throw new UserNotTecheerException();
         }
 
         // 비밀번호 해싱
@@ -192,20 +193,20 @@ export class UserService {
         profileImage: string,
         prisma: Prisma.TransactionClient,
     ): Promise<User> {
-        const normalizedMainPosition = this.validateAndNormalizePosition(
+        const validatedMainPosition = this.validatePosition(
             createUserRequest.mainPosition,
         );
         this.logger.debug('사용자 메인 포지션 입력 완료', {
-            normalizedMainPosition,
+            validatedMainPosition,
         });
 
-        let normalizedSubPosition: StackCategory | null = null;
+        let validatedSubPosition: StackCategory | null = null;
         if (createUserRequest.subPosition) {
-            normalizedSubPosition = this.validateAndNormalizePosition(
+            validatedSubPosition = this.validatePosition(
                 createUserRequest.subPosition,
             );
             this.logger.debug('사용자 서브 포지션 입력 완료', {
-                normalizedSubPosition,
+                validatedSubPosition,
             });
         }
 
@@ -225,8 +226,8 @@ export class UserService {
         const user = await prisma.user.create({
             data: {
                 ...createUserRequest,
-                mainPosition: normalizedMainPosition,
-                subPosition: normalizedSubPosition,
+                mainPosition: validatedMainPosition,
+                subPosition: validatedSubPosition,
                 grade: validatedGrade,
                 roleId: 3,
                 profileImage,
@@ -243,20 +244,19 @@ export class UserService {
         return user;
     }
 
-    validateAndNormalizePosition(position: string): StackCategory {
-        const normalized = normalizeString(position);
+    validatePosition(position: string): StackCategory {
         if (
-            !normalized ||
-            !Object.values(StackCategory).includes(normalized as StackCategory)
+            !position ||
+            !Object.values(StackCategory).includes(position as StackCategory)
         ) {
-            throw new Error(`유효하지 않은 포지션 입력: ${position}`);
+            throw new UserInvalidPositionException();
         }
-        return normalized as StackCategory;
+        return position as StackCategory;
     }
 
     validateGrade(grade: string): UserGrade {
         if (!Object.values(UserGrade).includes(grade as UserGrade)) {
-            throw new Error(`유효하지 않은 학년 입력: ${grade}`);
+            throw new UserInvalidGradeException();
         }
         return grade as UserGrade;
     }
@@ -511,7 +511,7 @@ export class UserService {
         this.logger.error('테커가 아닌 사용자', {
             context: UserService.name,
         });
-        throw new UserNotFoundTecheerException();
+        throw new UserNotTecheerException();
     }
 
     async updateProfileImageByEmail(
@@ -829,7 +829,7 @@ export class UserService {
 
         try {
             if (updateUserRequest.mainPosition) {
-                updatedData.mainPosition = this.validateAndNormalizePosition(
+                updatedData.mainPosition = this.validatePosition(
                     updateUserRequest.mainPosition,
                 );
             }
@@ -841,7 +841,7 @@ export class UserService {
             );
 
             if (updateUserRequest.subPosition) {
-                updatedData.subPosition = this.validateAndNormalizePosition(
+                updatedData.subPosition = this.validatePosition(
                     updateUserRequest.subPosition,
                 );
             }

@@ -13,7 +13,7 @@ export class UserNotFoundException extends BaseException {
     }
 }
 
-export class UserNotFoundTecheerException extends BaseException {
+export class UserNotTecheerException extends BaseException {
     constructor() {
         super(ErrorCode.USER_NOT_TECHEER);
     }
@@ -21,7 +21,7 @@ export class UserNotFoundTecheerException extends BaseException {
 
 export class UserNotFoundResumeException extends BaseException {
     constructor() {
-        super(ErrorCode.USER_NOT_FOUND_RESUME);
+        super(ErrorCode.USER_NOT_RESUME);
     }
 }
 
@@ -40,5 +40,17 @@ export class UserUnauthorizedAdminException extends BaseException {
 export class UserNotFoundProfileImgException extends BaseException {
     constructor() {
         super(ErrorCode.USER_PROFILE_IMG_FAIL);
+    }
+}
+
+export class UserInvalidPositionException extends BaseException {
+    constructor() {
+        super(ErrorCode.USER_INVALID_POSITION);
+    }
+}
+
+export class UserInvalidGradeException extends BaseException {
+    constructor() {
+        super(ErrorCode.USER_INVALID_GRADE);
     }
 }

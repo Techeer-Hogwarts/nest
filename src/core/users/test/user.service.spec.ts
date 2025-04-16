@@ -21,7 +21,7 @@ import { UserExperienceService } from '../../userExperiences/userExperience.serv
 
 import {
     UserNotVerifiedEmailException,
-    UserNotFoundTecheerException,
+    UserNotTecheerException,
     UserNotFoundResumeException,
     UserNotFoundException,
 } from '../exception/user.exception';
@@ -123,8 +123,8 @@ describe('UserService', () => {
         velogUrl: 'https://velog.io/@test',
         mediumUrl: 'https://medium.com/@test',
         tistoryUrl: 'https://test.tistory.com',
-        mainPosition: 'Backend',
-        subPosition: 'Frontend',
+        mainPosition: 'BACKEND',
+        subPosition: 'FRONTEND',
         school: '인천대학교',
         grade: '4학년',
     };
@@ -133,7 +133,7 @@ describe('UserService', () => {
         id: 1,
         email: 'test@example.com',
         password: 'Passw0rd!',
-        mainPosition: 'Backend',
+        mainPosition: 'BACKEND',
         subPosition: null,
         grade: '1학년',
         name: null,
@@ -179,7 +179,7 @@ describe('UserService', () => {
             );
 
             await expect(userService.signUp(createUserRequest)).rejects.toThrow(
-                UserNotFoundTecheerException,
+                UserNotTecheerException,
             );
             expect(logger.error).toHaveBeenCalledWith(
                 '테커가 아닌 사용자',
@@ -236,7 +236,7 @@ describe('UserService', () => {
                 {
                     url: 'https://example.com/이력서.pdf',
                     category: 'PORTFOLIO',
-                    position: 'Backend',
+                    position: 'BACKEND',
                     title: '스타트업',
                     isMain: true,
                 } as CreateResumeRequest,
@@ -450,7 +450,7 @@ describe('UserService', () => {
                 year: 6,
                 isLft: false,
                 school: '인천대학교',
-                mainPosition: 'Backend',
+                mainPosition: 'BACKEND',
                 grade: '3학년',
                 githubUrl: 'https://github.com/test',
                 mediumUrl: 'https://medium.com/@test',

@@ -303,13 +303,11 @@ export const ErrorCode = {
         status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 포지션입니다.',
     },
-
     USER_EXPERIENCE_INVALID_CATEGORY: {
         code: 'USER_EXPERIENCE_INVALID_CATEGORY',
         status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 카테고리입니다.',
     },
-
     USER_EXPERIENCE_NOT_FOUND: {
         code: 'USER_EXPERIENCE_NOT_FOUND',
         status: HttpStatus.NOT_FOUND,
@@ -321,41 +319,45 @@ export const ErrorCode = {
         status: HttpStatus.UNAUTHORIZED,
         message: '이메일 인증이 완료되지 않았습니다.',
     },
-
     USER_NOT_FOUND: {
         code: 'USER_NOT_FOUND',
         status: HttpStatus.NOT_FOUND,
         message: '사용자를 찾을 수 없습니다.',
     },
-
     USER_NOT_TECHEER: {
         code: 'USER_NOT_TECHEER',
         status: HttpStatus.BAD_REQUEST,
         message: '테커가 아닌 사용자입니다.',
     },
-
-    USER_NOT_FOUND_RESUME: {
+    USER_NOT_RESUME: {
         code: 'USER_NOT_FOUND_RESUME',
         status: HttpStatus.BAD_REQUEST,
         message: '이력서 파일이 없습니다.',
     },
-
     USER_ALREADY_EXISTS: {
         code: 'USER_ALREADY_EXISTS',
         status: HttpStatus.CONFLICT,
         message: '이미 가입한 이메일입니다.',
     },
-
     USER_UNAUTHORIZED_ADMIN: {
         code: 'USER_UNAUTHORIZED_ADMIN',
         status: HttpStatus.FORBIDDEN,
         message: '관리자 권한이 없습니다.',
     },
-
     USER_PROFILE_IMG_FAIL: {
         code: 'USER_PROFILE_IMG_FAIL',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
         message: '프로필 이미지를 가져오지 못했습니다.',
+    },
+    USER_INVALID_POSITION: {
+        code: 'USER_INVALID_POSITION',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 포지션 입력입니다.',
+    },
+    USER_INVALID_GRADE: {
+        code: 'USER_INVALID_GRADE',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 학년 입력입니다.',
     },
     /** Global**/
     INTERNAL_SERVER_ERROR: {

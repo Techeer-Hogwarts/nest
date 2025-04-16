@@ -37,7 +37,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Backend',
+        example: 'BACKEND',
         description: '주요 직무',
     })
     readonly mainPosition: string;
@@ -45,7 +45,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Frontend',
+        example: 'FRONTEND',
         description: '부차적 직무 (선택 사항)',
         required: false,
     })
