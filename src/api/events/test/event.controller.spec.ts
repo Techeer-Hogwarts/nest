@@ -7,7 +7,7 @@ import { EventService } from '../../../core/events/event.service';
 
 import { EventController } from '../event.controller';
 
-import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
+import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
 
 import {
     createEventRequest,
