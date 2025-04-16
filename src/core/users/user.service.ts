@@ -562,29 +562,17 @@ export class UserService {
             context: UserService.name,
         });
 
-        const users = (await this.findAllProfiles(query)) || [];
+        const users = await this.findAllProfiles(query);
 
-        this.logger.debug('모든 프로필 조회 중', { context: UserService.name });
-
-        if (!Array.isArray(users)) {
-            this.logger.debug('조회된 프로필이 없습니다.', {
-                context: UserService.name,
-            });
-            return [];
-        }
-
-        return users
-            .filter(
-                (user): user is UserDetail =>
-                    user !== null && user !== undefined,
-            )
-            .map((user) => new GetUserResponse(user));
+        return users.map((user) => new GetUserResponse(user));
     }
 
     async findAllProfiles(query: GetUserssQueryRequest): Promise<UserDetail[]> {
         const { position, year, university, grade, offset, limit } = query;
 
-        const filters: Prisma.UserWhereInput = {};
+        const filters: Prisma.UserWhereInput = {
+            isDeleted: false,
+        };
 
         if (position) {
             filters.mainPosition = {
@@ -610,104 +598,88 @@ export class UserService {
             JSON.stringify(filters, null, 2),
         );
 
-        try {
-            const result = await this.prisma.user.findMany({
-                where: {
-                    isDeleted: false,
-                    ...filters,
-                },
-                skip: offset || 0,
-                take: limit || 10,
-                orderBy: { year: 'asc' },
-                include: {
-                    projectMembers: {
-                        where: {
-                            isDeleted: false,
-                            status: 'APPROVED',
-                        },
-                        include: {
-                            projectTeam: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    isDeleted: true, // 후처리용
-                                    resultImages: {
-                                        select: {
-                                            imageUrl: true,
-                                        },
+        const result = await this.prisma.user.findMany({
+            where: filters,
+            skip: offset || 0,
+            take: limit || 10,
+            orderBy: { year: 'asc' },
+            include: {
+                projectMembers: {
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
+                    include: {
+                        projectTeam: {
+                            select: {
+                                id: true,
+                                name: true,
+                                isDeleted: true, // 후처리용
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true,
                                     },
-                                    mainImages: {
-                                        select: {
-                                            imageUrl: true,
-                                        },
-                                        take: 1,
+                                },
+                                mainImages: {
+                                    select: {
+                                        imageUrl: true,
+                                    },
+                                    take: 1,
+                                },
+                            },
+                        },
+                    },
+                },
+                studyMembers: {
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
+                    include: {
+                        studyTeam: {
+                            select: {
+                                id: true,
+                                name: true,
+                                isDeleted: true, // 후처리용
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true,
                                     },
                                 },
                             },
                         },
                     },
-                    studyMembers: {
-                        where: {
-                            isDeleted: false,
-                            status: 'APPROVED',
-                        },
-                        include: {
-                            studyTeam: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    isDeleted: true, // 후처리용
-                                    resultImages: {
-                                        select: {
-                                            imageUrl: true,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    experiences: {
-                        where: { isDeleted: false },
-                    },
                 },
-            });
+                experiences: {
+                    where: { isDeleted: false },
+                },
+            },
+        });
 
-            // 후처리: 각 사용자의 projectMembers와 studyMembers에서
-            // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
-            result.forEach((user) => {
-                if (user.projectMembers) {
-                    user.projectMembers = user.projectMembers.map((pm) => {
-                        if (pm.projectTeam && pm.projectTeam.isDeleted) {
-                            return {
-                                ...pm,
-                                projectTeam: null,
-                            };
-                        }
-                        return pm;
-                    });
-                }
-                if (user.studyMembers) {
-                    user.studyMembers = user.studyMembers.map((sm) => {
-                        if (sm.studyTeam && sm.studyTeam.isDeleted) {
-                            return {
-                                ...sm,
-                                studyTeam: null,
-                            };
-                        }
-                        return sm;
-                    });
-                }
-            });
-
-            this.logger.debug('조회 성공');
-            return result;
-        } catch (error) {
-            this.logger.error(
-                'findAllProfiles 쿼리 실패',
-                JSON.stringify(error, null, 2),
-            );
+        if (result.length === 0) {
+            this.logger.debug('프로필 조회 결과 없음');
             return [];
         }
+
+        // 후처리: 각 사용자의 projectMembers와 studyMembers에서
+        // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
+        result.forEach((user) => {
+            user.projectMembers =
+                user.projectMembers?.map((pm) => ({
+                    ...pm,
+                    projectTeam: pm.projectTeam?.isDeleted
+                        ? null
+                        : pm.projectTeam,
+                })) ?? [];
+
+            user.studyMembers =
+                user.studyMembers?.map((sm) => ({
+                    ...sm,
+                    studyTeam: sm.studyTeam?.isDeleted ? null : sm.studyTeam,
+                })) ?? [];
+        });
+        this.logger.debug('조회 성공');
+        return result;
     }
 
     async getProfile(userId: number): Promise<GetUserResponse> {
@@ -733,7 +705,6 @@ export class UserService {
     }
 
     async findById(userId: number): Promise<UserDetail | null> {
-        // Prisma 쿼리 결과를 await로 받아와 UserEntity 타입으로 처리합니다.
         const user = (await this.prisma.user.findUnique({
             where: {
                 id: userId,
