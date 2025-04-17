@@ -658,7 +658,6 @@ export class UserService {
 
         if (result.length === 0) {
             this.logger.debug('프로필 조회 결과 없음');
-            return [];
         }
 
         // 후처리: 각 사용자의 projectMembers와 studyMembers에서
