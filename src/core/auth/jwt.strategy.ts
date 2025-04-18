@@ -1,16 +1,13 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import {
-    forwardRef,
-    Inject,
-    Injectable,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 
 import { User } from '@prisma/client';
 
 import { UserService } from '../users/user.service';
+
+import { AuthUnauthorizedException } from './exception/auth.exception';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -32,7 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         // 토큰에서 사용자 ID 추출 후 사용자 정보 검증
         const user = await this.userService.findById(payload.id);
         if (!user) {
-            throw new UnauthorizedException('존재하지 않는 사용자입니다.');
+            throw new AuthUnauthorizedException();
         }
         return user; // 사용자 정보를 반환하여 request.user에 저장
     }

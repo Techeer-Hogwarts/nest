@@ -38,6 +38,11 @@ export const ErrorCode = {
         status: HttpStatus.BAD_REQUEST,
         message: '테커 회원이 아닙니다.',
     },
+    AUTH_UNAUTHORIZED: {
+        code: 'AUTH_UNAUTHORIZED',
+        status: HttpStatus.UNAUTHORIZED,
+        message: '로그인이 필요합니다.',
+    },
     /** AwsS3 **/
     /** Blog **/
     /** Bookmark **/
