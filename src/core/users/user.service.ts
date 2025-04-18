@@ -704,7 +704,7 @@ export class UserService {
     }
 
     async findById(userId: number): Promise<UserDetail | null> {
-        const user = (await this.prisma.user.findUnique({
+        const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
                 isDeleted: false,
@@ -760,7 +760,7 @@ export class UserService {
                     where: { isDeleted: false },
                 },
             },
-        })) as UserDetail;
+        });
 
         // user가 존재하면 후처리하여 projectTeam 및 studyTeam의 isDeleted가 true인 경우 null 처리
         if (user) {
