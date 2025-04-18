@@ -42,3 +42,9 @@ export class AuthNotTecheerException extends BaseException {
         super(ErrorCode.AUTH_NOT_TECHEER);
     }
 }
+
+export class AuthUnauthorizedException extends BaseException {
+    constructor() {
+        super(ErrorCode.AUTH_UNAUTHORIZED);
+    }
+}

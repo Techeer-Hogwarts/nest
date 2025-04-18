@@ -1,246 +1,281 @@
-// import { Test, TestingModule } from '@nestjs/testing';
-// import { UserController } from '../user.controller';
-// import { UserService } from '../user.service';
-// import { CustomWinstonLogger } from '../../../global/logger/winston.logger';
-// import { Request } from 'express';
-// import { PermissionRequest, User } from '@prisma/client';
-// import { UserRepository } from '../repository/user.repository';
+import { Test, TestingModule } from '@nestjs/testing';
+import { User } from '@prisma/client';
 
-// describe('UserController', () => {
-//     let userController: UserController;
-//     let userService: UserService;
-//     let logger: CustomWinstonLogger;
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { ApprovePermissionRequest } from '../../../common/dto/users/request/approve.permission.request';
+import { CreatePermissionRequest } from '../../../common/dto/users/request/create.permission.request';
+import { CreateUserWithResumeRequest } from '../../../common/dto/users/request/create.user.with.resume.request';
+import { GetUserssQueryRequest } from '../../../common/dto/users/request/get.user.query.request';
+import { UpdateUserWithExperienceRequest } from '../../../common/dto/users/request/update.user.with.experience.request';
 
-//     beforeEach(async () => {
-//         const module: TestingModule = await Test.createTestingModule({
-//             controllers: [UserController],
-//             providers: [
-//                 {
-//                     provide: UserService,
-//                     useValue: {
-//                         signUp: jest.fn(),
-//                         updateUserProfile: jest.fn(),
-//                         deleteUser: jest.fn(),
-//                         getUserInfo: jest.fn(),
-//                         requestPermission: jest.fn(),
-//                         getPermissionRequests: jest.fn(),
-//                         approvePermission: jest.fn(),
-//                         updateProfileImage: jest.fn(),
-//                         updateNickname: jest.fn(),
-//                         getAllProfiles: jest.fn(),
-//                         getProfile: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: CustomWinstonLogger,
-//                     useValue: {
-//                         debug: jest.fn(),
-//                         error: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: UserRepository,
-//                     useValue: {
-//                         findById: jest.fn(),
-//                         createUser: jest.fn(),
-//                         updateUserProfile: jest.fn(),
-//                         deleteUser: jest.fn(),
-//                     },
-//                 },
-//             ],
-//         }).compile();
+import { GetUserResponse } from '../../../common/dto/users/response/get.user.response';
 
-//         userController = module.get<UserController>(UserController);
-//         userService = module.get<UserService>(UserService);
-//         logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
-//     });
+import { UserService } from '../../../core/users/user.service';
 
-//     it('should be defined', () => {
-//         expect(userController).toBeDefined();
-//     });
+import { UserController } from '../user.controller';
 
-//     describe('signUp', () => {
-//         it('should call signUp service method and return user', async () => {
-//             const mockUser: User = {
-//                 id: 1,
-//                 email: 'test@test.com',
-//                 password: 'hashedPassword',
-//                 name: 'Test User',
-//                 year: 6,
-//                 isLft: false,
-//                 githubUrl: 'https://github.com/test',
-//                 velogUrl: 'https://velog.io/test',
-//                 mediumUrl: 'https://medium.com/test',
-//                 tistoryUrl: 'https://tistory.com/test',
-//                 mainPosition: 'Backend',
-//                 subPosition: 'Frontend',
-//                 school: 'Hogwarts',
-//                 grade: '1학년',
-//                 profileImage: 'http://image.com',
-//                 isDeleted: false,
-//                 roleId: 1,
-//                 isAuth: true,
-//                 nickname: 'Tester',
-//                 stack: ['JavaScript', 'NestJS'],
-//                 createdAt: new Date(),
-//                 updatedAt: new Date(),
-//             };
-//             const mockFile = {
-//                 buffer: Buffer.from('test'),
-//             } as Express.Multer.File;
+import { UserDetail } from '../../../core/users/types/user.detail.type';
 
-//             jest.spyOn(userService, 'signUp').mockResolvedValue(mockUser);
+describe('UserController', () => {
+    let controller: UserController;
+    let userService: jest.Mocked<UserService>;
+    let logger: jest.Mocked<CustomWinstonLogger>;
 
-//             const result = await userController.signUp(
-//                 {
-//                     createUserRequest: {
-//                         email: 'test@test.com',
-//                         password: 'password123',
-//                         name: 'Test User',
-//                         year: 6,
-//                         githubUrl: 'https://github.com/test',
-//                         mainPosition: 'Backend',
-//                         school: 'Hogwarts',
-//                         grade: '1학년',
-//                         isLft: false,
-//                         velogUrl: 'https://velog.io/test',
-//                         mediumUrl: 'https://medium.com/test',
-//                         tistoryUrl: 'https://tistory.com/test',
-//                     },
-//                     createResumeRequest: {
-//                         category: 'PORTFOLIO',
-//                         position: 'Backend',
-//                         title: 'My Resume',
-//                         isMain: true,
-//                         url: 'https://example.com/resume.pdf',
-//                     },
-//                     createUserExperienceRequest: {
-//                         experiences: [
-//                             {
-//                                 position: 'Backend Developer',
-//                                 companyName: 'Company A',
-//                                 startDate: '2020-01-01',
-//                                 endDate: '2020-12-31',
-//                                 category: 'Intern',
-//                             },
-//                         ],
-//                     },
-//                 },
-//                 mockFile,
-//             );
-//             expect(logger.debug).toHaveBeenCalledWith(
-//                 '회원가입 요청 처리 중',
-//                 expect.objectContaining({
-//                     createUserRequest: expect.any(Object),
-//                     createUserExperienceRequest: expect.any(Object),
-//                     createResumeRequest: expect.any(Object),
-//                     UserController: 'UserController',
-//                 }),
-//             );
-//             expect(userService.signUp).toHaveBeenCalledWith(
-//                 {
-//                     email: 'test@test.com',
-//                     password: 'password123',
-//                     name: 'Test User',
-//                     year: 6,
-//                     githubUrl: 'https://github.com/test',
-//                     mainPosition: 'Backend',
-//                     school: 'Hogwarts',
-//                     grade: '1학년',
-//                     isLft: false,
-//                     velogUrl: 'https://velog.io/test',
-//                     mediumUrl: 'https://medium.com/test',
-//                     tistoryUrl: 'https://tistory.com/test',
-//                 },
-//                 mockFile,
-//                 {
-//                     category: 'PORTFOLIO',
-//                     position: 'Backend',
-//                     title: 'My Resume',
-//                     isMain: true,
-//                     url: 'https://example.com/resume.pdf',
-//                 },
-//                 {
-//                     experiences: [
-//                         {
-//                             position: 'Backend Developer',
-//                             companyName: 'Company A',
-//                             startDate: '2020-01-01',
-//                             endDate: '2020-12-31',
-//                             category: 'Intern',
-//                         },
-//                     ],
-//                 },
-//             );
-//             expect(result).toEqual(mockUser);
-//         });
-//     });
+    const mockUser: User = {
+        id: 1,
+        email: 'test@example.com',
+        password: 'Passw0rd!',
+        mainPosition: 'Backend',
+        subPosition: null,
+        grade: '4학년',
+        name: '김테커',
+        year: 4,
+        school: '인천대학교',
+        velogUrl: '',
+        tistoryUrl: '',
+        mediumUrl: '',
+        githubUrl: '',
+        nickname: null,
+        isDeleted: false,
+        profileImage: '',
+        roleId: 2,
+        isAuth: true,
+        isLft: false,
+        stack: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
 
-//     describe('deleteUser', () => {
-//         it('should call deleteUser service method and return deleted user', async () => {
-//             const mockUser: User = {
-//                 id: 1,
-//                 email: 'test@test.com',
-//                 password: 'hashedPassword',
-//                 name: 'Test User',
-//                 year: 6,
-//                 isLft: false,
-//                 githubUrl: 'https://github.com/test',
-//                 velogUrl: 'https://velog.io/test',
-//                 mediumUrl: 'https://medium.com/test',
-//                 tistoryUrl: 'https://tistory.com/test',
-//                 mainPosition: 'Backend',
-//                 subPosition: 'Frontend',
-//                 school: 'Hogwarts',
-//                 grade: '1학년',
-//                 profileImage: 'http://image.com',
-//                 isDeleted: true,
-//                 roleId: 1,
-//                 isAuth: true,
-//                 nickname: 'Tester',
-//                 stack: ['JavaScript', 'NestJS'],
-//                 createdAt: new Date(),
-//                 updatedAt: new Date(),
-//             };
+    const mockUserDetail: UserDetail = {
+        ...mockUser,
+        projectMembers: [],
+        studyMembers: [],
+        experiences: [],
+    };
 
-//             jest.spyOn(userService, 'deleteUser').mockResolvedValue(mockUser);
+    const mockUserResponse = new GetUserResponse(mockUserDetail);
 
-//             const mockRequest = {
-//                 user: { id: 1 },
-//             } as unknown as Request;
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [UserController],
+            providers: [
+                {
+                    provide: UserService,
+                    useValue: {
+                        signUp: jest.fn(),
+                        updateUserProfile: jest.fn(),
+                        deleteUser: jest.fn(),
+                        getUserInfo: jest.fn(),
+                        requestPermission: jest.fn(),
+                        getPermissionRequests: jest.fn(),
+                        approvePermission: jest.fn(),
+                        updateProfileImage: jest.fn(),
+                        updateNickname: jest.fn(),
+                        getAllProfiles: jest.fn(),
+                        getProfile: jest.fn(),
+                        deleteUserExperience: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                        log: jest.fn(),
+                    },
+                },
+            ],
+        }).compile();
 
-//             const result = await userController.deleteUser(mockRequest);
+        controller = module.get<UserController>(UserController);
+        userService = module.get(UserService);
+        logger = module.get(CustomWinstonLogger);
+    });
 
-//             expect(userService.deleteUser).toHaveBeenCalledWith(1);
-//             expect(result).toEqual(mockUser);
-//         });
-//     });
+    it('회원가입을 요청한다', async () => {
+        const createUserWithResume: CreateUserWithResumeRequest = {
+            createUserRequest: {
+                email: 'test@test.com',
+                password: 'Passw0rd!',
+                name: '김테커',
+                year: 4,
+                isLft: false,
+                githubUrl: '',
+                velogUrl: '',
+                mediumUrl: '',
+                tistoryUrl: '',
+                mainPosition: 'Backend',
+                subPosition: 'Frontend',
+                school: '인천대학교',
+                grade: '3학년',
+            },
+            createResumeRequest: {
+                url: 'https://example.com/이력서.pdf',
+                title: '스타트업',
+                category: 'PORTFOLIO',
+                position: 'Backend',
+                isMain: true,
+            },
+            createUserExperienceRequest: {
+                experiences: [],
+            },
+        };
 
-//     describe('requestPermission', () => {
-//         it('should call requestPermission service method and return permission request', async () => {
-//             const mockPermissionRequest: PermissionRequest = {
-//                 id: 1,
-//                 userId: 1,
-//                 requestedRoleId: 2,
-//                 status: 'PENDING',
-//                 createdAt: new Date(),
-//                 updatedAt: new Date(),
-//             };
+        const file = {
+            buffer: Buffer.from('이력서'),
+            originalname: '이력서.pdf',
+        } as Express.Multer.File;
 
-//             jest.spyOn(userService, 'requestPermission').mockResolvedValue(
-//                 mockPermissionRequest,
-//             );
+        userService.signUp.mockResolvedValue(mockUser);
 
-//             const mockRequest = {
-//                 user: { id: 1 },
-//             } as unknown as Request;
+        const result = await controller.signUp(createUserWithResume, file);
 
-//             const result = await userController.requestPermission(mockRequest, {
-//                 roleId: 2,
-//             });
+        expect(userService.signUp).toHaveBeenCalledWith(
+            createUserWithResume.createUserRequest,
+            file,
+            createUserWithResume.createResumeRequest,
+            createUserWithResume.createUserExperienceRequest,
+        );
+        expect(logger.debug).toHaveBeenCalledWith(
+            '회원가입 요청 처리 중',
+            expect.objectContaining({
+                createUserRequest: createUserWithResume.createUserRequest,
+            }),
+        );
+        expect(logger.debug).toHaveBeenCalledWith(
+            `회원가입 완료: ${mockUser.id}`,
+            JSON.stringify('UserController'),
+        );
+        expect(result.id).toBe(mockUser.id);
+    });
 
-//             expect(userService.requestPermission).toHaveBeenCalledWith(1, 2);
-//             expect(result).toEqual(mockPermissionRequest);
-//         });
-//     });
-// });
+    it('프로필을 업데이트한다', async () => {
+        const updateUserWithExperience: UpdateUserWithExperienceRequest = {
+            updateRequest: {
+                year: 4,
+                isLft: false,
+                school: '인천대학교',
+                mainPosition: 'Backend',
+                grade: '3학년',
+                githubUrl: 'https://github.com/test',
+                mediumUrl: 'https://medium.com/@test',
+                velogUrl: 'https://velog.io/@test',
+                tistoryUrl: 'https://test.tistory.com',
+            },
+            experienceRequest: {
+                experiences: [],
+            },
+        };
+
+        userService.updateUserProfile.mockResolvedValue(mockUser);
+        const result = await controller.updateUser(
+            updateUserWithExperience,
+            mockUser,
+        );
+
+        expect(userService.updateUserProfile).toHaveBeenCalledWith(
+            mockUser.id,
+            updateUserWithExperience.updateRequest,
+            { experiences: [] },
+        );
+        expect(logger.debug).toHaveBeenCalledWith(
+            `프로필 업데이트 완료: ${mockUser.id}`,
+            JSON.stringify('UserController'),
+        );
+        expect(result.id).toBe(mockUser.id);
+    });
+
+    it('회원 탈퇴를 요청한다', async () => {
+        userService.deleteUser.mockResolvedValue(mockUser);
+
+        const result = await controller.deleteUser(mockUser);
+        expect(userService.deleteUser).toHaveBeenCalledWith(mockUser.id);
+        expect(result.id).toBe(mockUser.id);
+    });
+
+    it('유저 정보를 조회한다', async () => {
+        userService.getUserInfo.mockResolvedValue({
+            ...mockUser,
+        } as unknown as GetUserResponse);
+
+        const result = await controller.getUserInfo(mockUser);
+        expect(userService.getUserInfo).toHaveBeenCalledWith(mockUser.id);
+        expect(result).toBeDefined();
+    });
+
+    it('권한 요청을 처리한다', async () => {
+        const createPermission: CreatePermissionRequest = { roleId: 2 };
+        userService.requestPermission.mockResolvedValue({
+            id: 1,
+            userId: mockUser.id,
+            requestedRoleId: 2,
+            status: 'PENDING',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const result = await controller.requestPermission(
+            mockUser,
+            createPermission,
+        );
+        expect(result.requestedRoleId).toBe(2);
+    });
+
+    it('권한 요청 목록을 조회한다', async () => {
+        userService.getPermissionRequests.mockResolvedValue([]);
+        const result = await controller.getPermissionRequests();
+        expect(result).toEqual([]);
+    });
+
+    it('권한 요청을 승인한다', async () => {
+        const approvePermission: ApprovePermissionRequest = {
+            userId: 2,
+            newRoleId: 1,
+        };
+
+        userService.approvePermission.mockResolvedValue({ updatedRequests: 1 });
+
+        const result = await controller.approvePermission(
+            mockUser,
+            approvePermission,
+        );
+        expect(result.updatedRequests).toBe(1);
+    });
+
+    it('프로필 이미지를 동기화한다', async () => {
+        userService.updateProfileImage.mockResolvedValue(mockUser);
+        const result = await controller.getProfileImage(mockUser);
+        expect(result.id).toBe(mockUser.id);
+    });
+
+    it('닉네임을 수정한다', async () => {
+        userService.updateNickname.mockResolvedValue(mockUser);
+        const result = await controller.updateNickname(mockUser, '김김테커');
+        expect(result.id).toBe(mockUser.id);
+    });
+
+    it('모든 유저 프로필을 조회한다', async () => {
+        const query: GetUserssQueryRequest = {
+            offset: 0,
+            limit: 10,
+        };
+        userService.getAllProfiles.mockResolvedValue([mockUserResponse]);
+        const result = await controller.getAllProfiles(query);
+        expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('특정 유저 프로필을 조회한다', async () => {
+        userService.getProfile.mockResolvedValue(mockUserResponse);
+        const result = await controller.getProfile(1);
+        expect(result.id).toBe(1);
+    });
+
+    it('사용자 경력을 삭제한다', async () => {
+        userService.deleteUserExperience.mockResolvedValue(undefined);
+        await controller.deleteUserExperience(mockUser, 10);
+        expect(userService.deleteUserExperience).toHaveBeenCalledWith(
+            mockUser.id,
+            10,
+        );
+    });
+});

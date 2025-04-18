@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
     IsString,
     IsNumber,
@@ -7,7 +8,6 @@ import {
     Matches,
     IsEmail,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserRequest {
     @IsString()

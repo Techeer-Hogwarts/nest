@@ -11,11 +11,11 @@ export class UpdateUserExperienceListRequest {
         example: [
             {
                 experienceId: 1,
-                position: 'Backend',
+                position: 'BACKEND',
                 companyName: 'CrowdStrike',
                 startDate: '2021-01-01',
                 endDate: '2021-06-01',
-                category: 'intern',
+                category: '인턴',
             },
         ],
     })

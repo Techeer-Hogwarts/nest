@@ -6,13 +6,13 @@ import { StackCategory } from '../../../common/category/stack.category';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { UserExperienceService } from '../userExperience.service';
 
-import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
-
 import {
     UserExperienceInvalidCategoryException,
     UserExperienceInvalidPositionException,
     UserExperienceNotFoundExperienceException,
 } from '../exception/userExperience.exception';
+
+import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
 
 import { UserExperienceEmployment } from '../category/userExperienceEmployment';
 
@@ -157,7 +157,7 @@ describe('UserExperienceService', () => {
                 ],
             };
 
-            await service.createUserExperience(req, 1);
+            await service.createUserExperience(req, 1, prisma);
 
             expect(prisma.userExperience.createMany).toHaveBeenCalledWith({
                 data: expect.arrayContaining([
