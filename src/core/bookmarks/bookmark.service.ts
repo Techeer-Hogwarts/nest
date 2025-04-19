@@ -66,10 +66,9 @@ export class BookmarkService {
     > {
         switch (getBookmarkListRequest.category) {
             case 'SESSION': {
-                const contents = await this.bookmarkRepository.getBookmarkList<Session & { user: User }>(
-                    userId,
-                    getBookmarkListRequest,
-                );
+                const contents = await this.bookmarkRepository.getBookmarkList<
+                    Session & { user: User }
+                >(userId, getBookmarkListRequest);
                 this.logger.debug(
                     `${contents.length}개의 세션 북마크 목록 조회 성공 후 GetSessionResponse로 변환 중`,
                     BookmarkService.name,

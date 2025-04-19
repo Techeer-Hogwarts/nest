@@ -200,6 +200,16 @@ export const ErrorCode = {
     },
     /** Resumes **/
     /** Session **/
+    SESSION_NOT_FOUND: {
+        code: 'SESSION_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '세션을 찾을 수 없습니다.',
+    },
+    SESSION_FORBIDDEN: {
+        code: 'SESSION_FORBIDDEN',
+        status: HttpStatus.FORBIDDEN,
+        message: '해당 세션에 대한 권한이 없습니다.',
+    },
     /** Stack **/
 
     /** StudyMember **/
