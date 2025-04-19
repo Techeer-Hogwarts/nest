@@ -1,23 +1,22 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-    SessionNotFoundException,
-    SessionForbiddenException,
-} from './exception/session.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import {
+    SessionForbiddenException,
+    SessionNotFoundException,
+} from './exception/session.exception';
 
 import { IndexService } from '../../infra/index/index.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
-import { Prisma } from '@prisma/client';
-import { Session } from '@prisma/client';
+import { Prisma, Session } from '@prisma/client';
 
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 
 import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
-import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
 import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
 import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
+import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
 
 import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
@@ -297,28 +296,30 @@ export class SessionService {
         }
 
         try {
-            const updatedSession = await this.prisma.$transaction(async (tx) => {
-                const updated = await tx.session.update({
-                    where: {
-                        id: sessionId,
-                        isDeleted: false,
-                    },
-                    data: updateSessionRequest,
-                });
-                // 인덱스 업데이트
-                const indexSession = new IndexSessionRequest(updated);
-                this.logger.debug(
-                    `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
-                    SessionService.name,
-                );
+            const updatedSession = await this.prisma.$transaction(
+                async (tx) => {
+                    const updated = await tx.session.update({
+                        where: {
+                            id: sessionId,
+                            isDeleted: false,
+                        },
+                        data: updateSessionRequest,
+                    });
+                    // 인덱스 업데이트
+                    const indexSession = new IndexSessionRequest(updated);
+                    this.logger.debug(
+                        `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                        SessionService.name,
+                    );
 
-                await this.indexService.createIndex<IndexSessionRequest>(
-                    'session',
-                    indexSession,
-                );
+                    await this.indexService.createIndex<IndexSessionRequest>(
+                        'session',
+                        indexSession,
+                    );
 
-                return updated;
-            });
+                    return updated;
+                },
+            );
             return new CreateSessionResponse(updatedSession);
         } catch (error) {
             if (
