@@ -1,26 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 
+import { Prisma, Session } from '@prisma/client';
+
+import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
+import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
+import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
+import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
+import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
+import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 import {
     ForbiddenAccessException,
     NotFoundSessionException,
 } from '../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { IndexService } from '../../infra/index/index.service';
-
-import { PrismaService } from '../../infra/prisma/prisma.service';
-
-import { Session } from '@prisma/client';
-
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
-
-import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
-import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
-import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
-import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
-
-import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
-import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 @Injectable()
 export class SessionService {

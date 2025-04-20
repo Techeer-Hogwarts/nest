@@ -1,5 +1,5 @@
-import { ErrorCode } from '../../../common/exception/errorCode';
 import { BaseException } from '../../../common/exception/base.exception';
+import { ErrorCode } from '../../../common/exception/errorCode';
 
 export class LikeInvalidCategoryException extends BaseException {
     constructor() {

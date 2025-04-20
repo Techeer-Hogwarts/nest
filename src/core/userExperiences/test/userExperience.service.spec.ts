@@ -1,20 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { StackCategory } from '../../../common/category/stack.category';
-
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { UserExperienceService } from '../userExperience.service';
-
 import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
-
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { UserExperienceEmployment } from '../category/userExperienceEmployment';
 import {
     UserExperienceInvalidCategoryException,
     UserExperienceInvalidPositionException,
     UserExperienceNotFoundExperienceException,
 } from '../exception/userExperience.exception';
-
-import { UserExperienceEmployment } from '../category/userExperienceEmployment';
+import { UserExperienceService } from '../userExperience.service';
 
 describe('UserExperienceService', () => {
     let service: UserExperienceService;

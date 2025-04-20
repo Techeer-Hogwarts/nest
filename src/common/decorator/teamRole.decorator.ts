@@ -1,10 +1,12 @@
+import { applyDecorators } from '@nestjs/common';
+
+import { Transform } from 'class-transformer';
 import { registerDecorator, ValidationOptions } from 'class-validator';
+
 import {
     isTeamRole,
     setTeamRole,
 } from '../category/teamCategory/teamRole.category';
-import { applyDecorators } from '@nestjs/common';
-import { Transform } from 'class-transformer';
 
 export function IsTeamRole(
     validationOptions?: ValidationOptions,

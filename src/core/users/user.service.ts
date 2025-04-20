@@ -1,40 +1,44 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
-import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
-import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
-import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
-import * as bcrypt from 'bcryptjs';
 import { HttpService } from '@nestjs/axios';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
+
+import * as bcrypt from 'bcryptjs';
 import { lastValueFrom } from 'rxjs';
-import {
-    NotVerifiedEmailException,
-    NotFoundProfileImageException,
-    UnauthorizedAdminException,
-    NotFoundTecheerException,
-    NotFoundUserException,
-    NotFoundResumeException,
-} from '../../common/exception/custom.exception';
-import { TaskService } from '../../core/task/task.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { ResumeService } from '../resumes/resume.service';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { AuthService } from '../auth/auth.service';
-import { UserEntity } from './entities/user.entity';
-import { GradeCategory } from './category/grade.category';
+
 import {
     PermissionRequest,
     Prisma,
     StatusCategory,
     User,
 } from '@prisma/client';
-import { IndexService } from '../../infra/index/index.service';
-import { StackCategory } from '../../common/category/stack.category';
-import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
+
+import { GradeCategory } from './category/grade.category';
+import { UserEntity } from './entities/user.entity';
+
 import { normalizeString } from '../../common/category/normalize';
-import { UserExperienceService } from '../userExperiences/userExperience.service';
+import { StackCategory } from '../../common/category/stack.category';
+import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
 import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
+import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
+import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
+import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+import {
+    NotFoundProfileImageException,
+    NotFoundResumeException,
+    NotFoundTecheerException,
+    NotFoundUserException,
+    NotVerifiedEmailException,
+    UnauthorizedAdminException,
+} from '../../common/exception/custom.exception';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
+import { ResumeService } from '../resumes/resume.service';
+import { TaskService } from '../task/task.service';
+import { UserExperienceService } from '../userExperiences/userExperience.service';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];

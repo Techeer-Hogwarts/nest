@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsNumber } from 'class-validator';
+
 import { Type } from 'class-transformer';
+import { IsBoolean, IsIn, IsNumber } from 'class-validator';
+
 import {
     INTERACTABLE_CONTENT_TYPES,
     InteractableContentType,

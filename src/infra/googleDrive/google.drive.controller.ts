@@ -4,9 +4,10 @@ import {
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common';
-import { GoogleDriveService } from './google.drive.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { GoogleDriveService } from './google.drive.service';
 
 @ApiTags('drive')
 @Controller('drive')

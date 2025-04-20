@@ -1,39 +1,34 @@
 import { Injectable } from '@nestjs/common';
 
-import { CreateInteractableContentTableMap } from '../../common/types/content.type.for.interaction.table.map';
-import { CreateLikeRequest } from '../../common/dto/likes/request/create.like.request';
-import { GetLikeListRequest } from '../../common/dto/likes/request/get.like-list.request';
-import { GetLikeResponse } from '../../common/dto/likes/response/get.like.response';
-import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
-import { GetProjectTeamListResponse } from '../../common/dto/projectTeams/response/get.projectTeamList.response';
-import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
-import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
-import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
-import {
-    isInteractableContentType,
-    InteractableContentType,
-} from '../../common/types/content.type.for.interaction';
-import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { IndexService } from '../../infra/index/index.service';
-
-import { Blog } from '@prisma/client';
-import { ProjectTeam } from '@prisma/client';
-import { Resume } from '@prisma/client';
-import { Session } from '@prisma/client';
-import { StudyTeam } from '@prisma/client';
+import { Blog, ProjectTeam, Resume, Session, StudyTeam } from '@prisma/client';
 
 import {
     LikeContentNotFoundException,
+    LikeDatabaseOperationException,
     LikeDuplicateRequestException,
     LikeInvalidCategoryException,
-    LikeInvalidUserIdException,
-    LikeDatabaseOperationException,
     LikeInvalidContentIdException,
+    LikeInvalidUserIdException,
     LikeTransactionFailedException,
 } from './exception/like.exception';
+
+import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
+import { CreateLikeRequest } from '../../common/dto/likes/request/create.like.request';
+import { GetLikeListRequest } from '../../common/dto/likes/request/get.like-list.request';
+import { GetLikeResponse } from '../../common/dto/likes/response/get.like.response';
+import { GetProjectTeamListResponse } from '../../common/dto/projectTeams/response/get.projectTeamList.response';
+import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
+import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
+import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
+import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import {
+    InteractableContentType,
+    isInteractableContentType,
+} from '../../common/types/content.type.for.interaction';
+import { CreateInteractableContentTableMap } from '../../common/types/content.type.for.interaction.table.map';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 @Injectable()
 export class LikeService {

@@ -1,32 +1,35 @@
 import {
-    Controller,
-    Post,
-    Patch,
-    Get,
-    Delete,
     Body,
-    Req,
-    UseGuards,
-    Query,
+    Controller,
+    Delete,
+    Get,
     Param,
+    Patch,
+    Post,
+    Query,
+    Req,
     UploadedFile,
+    UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
-import { UserService } from '../../core/users/user.service';
-import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { CreateUserWithResumeRequest } from '../../common/dto/users/request/create.user.with.resume.request';
-import { UpdateUserWithExperienceRequest } from '../../common/dto/users/request/update.user.with.experience.request';
-import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
-import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
-import { UpdateProfileImageRequest } from '../../common/dto/users/request/update.profile.image.request';
-import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ParseJsonAndValidatePipe } from '../../common/validation/parseJsonAndValidatePipe';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { Request } from 'express';
+
 import { PermissionRequest, User } from '@prisma/client';
+
+import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
+import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
+import { CreateUserWithResumeRequest } from '../../common/dto/users/request/create.user.with.resume.request';
+import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
+import { UpdateProfileImageRequest } from '../../common/dto/users/request/update.profile.image.request';
+import { UpdateUserWithExperienceRequest } from '../../common/dto/users/request/update.user.with.experience.request';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { ParseJsonAndValidatePipe } from '../../common/validation/parseJsonAndValidatePipe';
+import { JwtAuthGuard } from '../../core/auth/jwt.guard';
+import { UserService } from '../../core/users/user.service';
 
 @ApiTags('users')
 @Controller('/users')

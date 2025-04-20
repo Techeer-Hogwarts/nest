@@ -1,18 +1,17 @@
 import tracing from './trace';
 tracing.start();
 
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import * as cookieParser from 'cookie-parser';
 import * as basicAuth from 'express-basic-auth';
 
+import { AppModule } from './app.module';
 import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import { CustomWinstonLogger } from './common/logger/winston.logger';
 import { JsonBodyPipe } from './common/pipe/jsonBody.pipe';
-
 import { PrismaService } from './infra/prisma/prisma.service';
 
 async function bootstrap(): Promise<void> {
