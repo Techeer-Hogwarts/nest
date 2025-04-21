@@ -1,19 +1,19 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RabbitMQService } from '../../infra/rabbitmq/rabbitmq.service';
 import { RedisService } from '../../infra/redis/redis.service';
-import { BlogRepository } from '../../core/blogs/repository/blog.repository';
 import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
 import { BlogPostDto } from '../../common/dto/blogs/request/post.blog.request';
 import { BlogCategory } from '../../core/blogs/category/blog.category';
 import { Cron } from '@nestjs/schedule';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { BlogService } from '../blogs/blog.service';
 
 @Injectable()
 export class TaskService implements OnModuleInit {
     constructor(
         private readonly rabbitMQService: RabbitMQService,
         private readonly redisService: RedisService,
-        private readonly blogRepository: BlogRepository,
+        private readonly blogService: BlogService,
         private readonly logger: CustomWinstonLogger,
     ) {}
 
@@ -76,7 +76,7 @@ export class TaskService implements OnModuleInit {
      */
     @Cron('0 3 * * *')
     async requestDailyUpdate(): Promise<void> {
-        const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
+        const userBlogUrls = await this.blogService.getAllUserBlogUrl();
         this.logger.debug(
             `userBlogUrls: ${JSON.stringify(userBlogUrls)}`,
             TaskService.name,
@@ -128,7 +128,7 @@ export class TaskService implements OnModuleInit {
             `필터링한 블로그 생성 요청 중 - posts: ${JSON.stringify(blogs.posts)}`,
             TaskService.name,
         );
-        await this.blogRepository.createBlog(blogs);
+        await this.blogService.createBlog(blogs);
         this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
         await this.redisService.deleteTask(taskId);
     }
@@ -192,7 +192,7 @@ export class TaskService implements OnModuleInit {
             `신규 유저의 블로그 생성 요청 중 - posts: ${blogs.posts}`,
             TaskService.name,
         );
-        await this.blogRepository.createBlog(blogs);
+        await this.blogService.createBlog(blogs);
         this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
         await this.redisService.deleteTask(taskId);
     }
@@ -228,7 +228,7 @@ export class TaskService implements OnModuleInit {
             `외부 블로그 생성 요청 중 - posts: ${post}`,
             TaskService.name,
         );
-        await this.blogRepository.createBlog(post);
+        await this.blogService.createBlog(post);
         this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
         await this.redisService.deleteTask(taskId);
     }
