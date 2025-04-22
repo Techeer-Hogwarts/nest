@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import {
     Blog,
@@ -19,12 +19,17 @@ import { GetProjectTeamListResponse } from '../../common/dto/projectTeams/respon
 import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
-import {
-    BadRequestCategoryException,
-    DuplicateStatusException,
-} from '../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+
+import {
+    BookmarkContentNotFoundException,
+    BookmarkDuplicateStatusException,
+    BookmarkInvalidCategoryException,
+    BookmarkTransactionFailedException,
+    BookmarkDatabaseOperationException,
+    BookmarkDataTransformationFailedException,
+} from './exception/bookmark.exception';
 
 @Injectable()
 export class BookmarkService {
@@ -41,21 +46,29 @@ export class BookmarkService {
         contentId: number,
         category: string,
     ): Promise<boolean> {
-        this.logger.debug(
-            `콘텐츠 저장 여부 조회 시작 - contentId: ${contentId}, category: ${category}`,
-            BookmarkService.name,
-        );
-        const content = await this.contentTableMap[category].table.findUnique({
-            where: {
-                id: contentId,
-                isDeleted: false,
-            },
-        });
-        this.logger.debug(
-            `콘텐츠 저장 여부 조회 성공 : ${content !== null}`,
-            BookmarkService.name,
-        );
-        return content !== null;
+        try {
+            this.logger.debug(
+                `콘텐츠 저장 여부 조회 시작 - contentId: ${contentId}, category: ${category}`,
+                BookmarkService.name,
+            );
+            const content = await this.contentTableMap[category].table.findUnique({
+                where: {
+                    id: contentId,
+                    isDeleted: false,
+                },
+            });
+            this.logger.debug(
+                `콘텐츠 저장 여부 조회 성공 : ${content !== null}`,
+                BookmarkService.name,
+            );
+            return content !== null;
+        } catch (error) {
+            this.logger.error(
+                `콘텐츠 저장 여부 조회 실패 - contentId: ${contentId}, category: ${category}, error: ${error.message}`,
+                BookmarkService.name,
+            );
+            throw new BookmarkContentNotFoundException();
+        }
     }
 
     async toggleBookmark(
@@ -71,68 +84,91 @@ export class BookmarkService {
 
         const isContentExist = await this.isContentExist(contentId, category);
         if (!isContentExist) {
-            this.logger.error(
-                `해당 콘텐츠를 찾을 수 없습니다. contentId: ${contentId}, category: ${category}`,
-                BookmarkService.name,
-            );
-            throw new NotFoundException('해당 콘텐츠를 찾을 수 없습니다.');
+            throw new BookmarkContentNotFoundException();
         }
 
-        return this.prisma.$transaction(
-            async (prisma): Promise<GetBookmarkResponse> => {
-                const existingBookmark = await prisma.bookmark.findUnique({
-                    where: {
-                        userId_contentId_category: {
-                            userId,
-                            contentId,
-                            category,
+        try {
+            return await this.prisma.$transaction(
+                async (prisma): Promise<GetBookmarkResponse> => {
+                    const existingBookmark = await prisma.bookmark.findUnique({
+                        where: {
+                            userId_contentId_category: {
+                                userId,
+                                contentId,
+                                category,
+                            },
                         },
-                    },
-                });
-                if (
-                    existingBookmark &&
-                    existingBookmark.isDeleted === !bookmarkStatus
-                ) {
-                    this.logger.error(
-                        '북마크 상태가 동일함 (중복 요청)',
+                    });
+                    if (
+                        existingBookmark &&
+                        existingBookmark.isDeleted === !bookmarkStatus
+                    ) {
+                        this.logger.error(
+                            '북마크 상태가 동일함 (중복 요청)',
+                            BookmarkService.name,
+                        );
+                        throw new BookmarkDuplicateStatusException();
+                    }
+                    this.logger.debug(
+                        `북마크 상태 변경: ${bookmarkStatus}`,
                         BookmarkService.name,
                     );
-                    throw new DuplicateStatusException();
-                }
-                this.logger.debug(
-                    `북마크 상태 변경: ${bookmarkStatus}`,
-                    BookmarkService.name,
-                );
-                const bookmark = await prisma.bookmark.upsert({
-                    where: {
-                        userId_contentId_category: {
+                    const bookmark = await prisma.bookmark.upsert({
+                        where: {
+                            userId_contentId_category: {
+                                userId,
+                                contentId,
+                                category,
+                            },
+                        },
+                        update: { isDeleted: !bookmarkStatus },
+                        create: {
                             userId,
                             contentId,
                             category,
+                            isDeleted: !bookmarkStatus,
                         },
-                    },
-                    update: { isDeleted: !bookmarkStatus },
-                    create: {
-                        userId,
-                        contentId,
-                        category,
-                        isDeleted: !bookmarkStatus,
-                    },
-                });
-                this.logger.debug(
-                    `북마크 상태 변경 성공 후 GetBookmarkResponse로 변환 중`,
-                    BookmarkService.name,
-                );
-                return new GetBookmarkResponse(bookmark);
-            },
-        );
+                    });
+                    this.logger.debug(
+                        `북마크 상태 변경 성공 후 GetBookmarkResponse로 변환 중`,
+                        BookmarkService.name,
+                    );
+                    return new GetBookmarkResponse(bookmark);
+                },
+            );
+        } catch (error) {
+            if (error instanceof BookmarkDuplicateStatusException) {
+                throw error;
+            }
+            this.logger.error(
+                `북마크 트랜잭션 실패 - userId: ${userId}, contentId: ${contentId}, category: ${category}, error: ${error.message}`,
+                BookmarkService.name,
+            );
+            throw new BookmarkTransactionFailedException();
+        }
     }
 
-    async getBookmarkList<T extends Record<string, any>>(
+    async getBookmarkList(
         userId: number,
         getBookmarkListRequest: GetBookmarkListRequest,
-    ): Promise<T[]> {
+    ): Promise<
+        | GetSessionResponse[]
+        | GetBlogResponse[]
+        | GetResumeResponse[]
+        | GetProjectTeamListResponse[]
+        | GetStudyTeamListResponse[]
+    > {
         const { category, offset = 0, limit = 10 } = getBookmarkListRequest;
+
+        // 카테고리 유효성 검사
+        if (!this.contentTableMap[category]) {
+            this.logger.error(
+                `잘못된 카테고리 요청 - category: ${category}`,
+                BookmarkService.name,
+            );
+            throw new BookmarkInvalidCategoryException();
+        }
+
         this.logger.debug(
             `북마크 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}`,
             BookmarkService.name,
@@ -146,135 +182,102 @@ export class BookmarkService {
             LEFT JOIN "User" u ON c."userId" = u."id"
         `;
 
-        if (category === 'PROJECT') {
-            query = Prisma.sql`
-                SELECT c.*, u.*, 
-                    json_agg(ri.*) as "resultImages",
-                    json_agg(ts.*) as "teamStacks"
-                FROM "Bookmark" b
-                LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
-                LEFT JOIN "User" u ON c."userId" = u."id"
-                LEFT JOIN "ResultImage" ri ON c."id" = ri."projectTeamId"
-                LEFT JOIN "TeamStack" ts ON c."id" = ts."projectTeamId"
-                WHERE b."userId" = ${userId}
-                AND b."category" = ${category}
-                AND b."isDeleted" = false
-                GROUP BY c."id", u."id"
-                ORDER BY b."createdAt" DESC
-                LIMIT ${limit} OFFSET ${offset}
-            `;
-        } else if (category === 'STUDY') {
-            query = Prisma.sql`
-                SELECT c.*, u.*, 
-                    json_agg(ri.*) as "resultImages"
-                FROM "Bookmark" b
-                LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
-                LEFT JOIN "User" u ON c."userId" = u."id"
-                LEFT JOIN "ResultImage" ri ON c."id" = ri."studyTeamId"
-                WHERE b."userId" = ${userId}
-                AND b."category" = ${category}
-                AND b."isDeleted" = false
-                GROUP BY c."id", u."id"
-                ORDER BY b."createdAt" DESC
-                LIMIT ${limit} OFFSET ${offset}
-            `;
-        } else {
-            query = Prisma.sql`
-                ${query}
-                WHERE b."userId" = ${userId}
-                AND b."category" = ${category}
-                AND b."isDeleted" = false
-                ORDER BY b."createdAt" DESC
-                LIMIT ${limit} OFFSET ${offset}
-            `;
-        }
+        try {
+            if (category === 'PROJECT') {
+                query = Prisma.sql`
+                    SELECT c.*, u.*, 
+                        json_agg(ri.*) as "resultImages",
+                        json_agg(ts.*) as "teamStacks"
+                    FROM "Bookmark" b
+                    LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
+                    LEFT JOIN "User" u ON c."userId" = u."id"
+                    LEFT JOIN "ResultImage" ri ON c."id" = ri."projectTeamId"
+                    LEFT JOIN "TeamStack" ts ON c."id" = ts."projectTeamId"
+                    WHERE b."userId" = ${userId}
+                    AND b."category" = ${category}
+                    AND b."isDeleted" = false
+                    GROUP BY c."id", u."id"
+                    ORDER BY b."createdAt" DESC
+                    LIMIT ${limit} OFFSET ${offset}
+                `;
+            } else if (category === 'STUDY') {
+                query = Prisma.sql`
+                    SELECT c.*, u.*, 
+                        json_agg(ri.*) as "resultImages"
+                    FROM "Bookmark" b
+                    LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
+                    LEFT JOIN "User" u ON c."userId" = u."id"
+                    LEFT JOIN "ResultImage" ri ON c."id" = ri."studyTeamId"
+                    WHERE b."userId" = ${userId}
+                    AND b."category" = ${category}
+                    AND b."isDeleted" = false
+                    GROUP BY c."id", u."id"
+                    ORDER BY b."createdAt" DESC
+                    LIMIT ${limit} OFFSET ${offset}
+                `;
+            } else {
+                query = Prisma.sql`
+                    ${query}
+                    WHERE b."userId" = ${userId}
+                    AND b."category" = ${category}
+                    AND b."isDeleted" = false
+                    ORDER BY b."createdAt" DESC
+                    LIMIT ${limit} OFFSET ${offset}
+                `;
+            }
 
-        const result = await this.prisma.$queryRaw<T[]>(query);
+            const result = await this.prisma.$queryRaw(query);
 
-        this.logger.debug(
-            `${result.length}개의 북마크 목록 조회 성공`,
-            BookmarkService.name,
-        );
+            if (!result) {
+                this.logger.error(
+                    `북마크 목록 조회 실패 - userId: ${userId}, category: ${category}`,
+                    BookmarkService.name,
+                );
+                throw new BookmarkDatabaseOperationException();
+            }
 
-        return result;
-    }
-
-    async getBookmarkListWithResponse(
-        userId: number,
-        getBookmarkListRequest: GetBookmarkListRequest,
-    ): Promise<
-        | GetSessionResponse[]
-        | GetBlogResponse[]
-        | GetResumeResponse[]
-        | GetProjectTeamListResponse[]
-        | GetStudyTeamListResponse[]
-    > {
-        switch (getBookmarkListRequest.category) {
-            case 'SESSION': {
-                const contents = await this.getBookmarkList<
-                    Session & { user: User }
-                >(userId, getBookmarkListRequest);
-                this.logger.debug(
-                    `${contents.length}개의 세션 북마크 목록 조회 성공 후 GetSessionResponse로 변환 중`,
+            try {
+                switch (category) {
+                    case 'SESSION':
+                        return (result as (Session & { user: User })[]).map(
+                            (content) => new GetSessionResponse(content),
+                        );
+                    case 'BLOG':
+                        return (result as (Blog & { user: User })[]).map(
+                            (content) => new GetBlogResponse(content),
+                        );
+                    case 'RESUME':
+                        return (result as (Resume & { user: User })[]).map(
+                            (content) => new GetResumeResponse(content),
+                        );
+                    case 'PROJECT':
+                        return (result as (ProjectTeam & { user: User; resultImages: any[]; teamStacks: any[] })[]).map(
+                            (content) => new GetProjectTeamListResponse(content),
+                        );
+                    case 'STUDY':
+                        return (result as (StudyTeam & { user: User; resultImages: any[] })[]).map(
+                            (content) => new GetStudyTeamListResponse(content),
+                        );
+                    default:
+                        throw new BookmarkInvalidCategoryException();
+                }
+            } catch (error) {
+                this.logger.error(
+                    `데이터 변환 실패 - userId: ${userId}, category: ${category}, error: ${error.message}`,
                     BookmarkService.name,
                 );
-                return contents.map(
-                    (content) => new GetSessionResponse(content),
-                );
+                throw new BookmarkDataTransformationFailedException();
             }
-            case 'BLOG': {
-                const contents = await this.getBookmarkList<
-                    Blog & { user: User }
-                >(userId, getBookmarkListRequest);
-                this.logger.debug(
-                    `${contents.length}개의 블로그 북마크 목록 조회 성공 후 GetBlogResponse로 변환 중`,
-                    BookmarkService.name,
-                );
-                return contents.map((content) => new GetBlogResponse(content));
+        } catch (error) {
+            if (error instanceof BookmarkInvalidCategoryException ||
+                error instanceof BookmarkDataTransformationFailedException) {
+                throw error;
             }
-            case 'RESUME': {
-                const contents = await this.getBookmarkList<
-                    Resume & { user: User }
-                >(userId, getBookmarkListRequest);
-                this.logger.debug(
-                    `${contents.length}개의 이력서 북마크 목록 조회 성공 후 GetResumeResponse로 변환 중`,
-                    BookmarkService.name,
-                );
-                return contents.map(
-                    (content) => new GetResumeResponse(content),
-                );
-            }
-            case 'PROJECT': {
-                const contents = await this.getBookmarkList<
-                    ProjectTeam & {
-                        user: User;
-                        resultImages: any[];
-                        teamStacks: any[];
-                    }
-                >(userId, getBookmarkListRequest);
-                this.logger.debug(
-                    `${contents.length}개의 프로젝트 북마크 목록 조회 성공 후 GetProjectResponse 변환 중`,
-                    BookmarkService.name,
-                );
-                return contents.map(
-                    (content) => new GetProjectTeamListResponse(content),
-                );
-            }
-            case 'STUDY': {
-                const contents = await this.getBookmarkList<
-                    StudyTeam & { user: User; resultImages: any[] }
-                >(userId, getBookmarkListRequest);
-                this.logger.debug(
-                    `${contents.length}개의 스터디 북마크 목록 조회 성공 후 GetStudyResponse 변환 중`,
-                    BookmarkService.name,
-                );
-                return contents.map(
-                    (content) => new GetStudyTeamListResponse(content),
-                );
-            }
-            default:
-                this.logger.error(`잘못된 카테고리 요청`, BookmarkService.name);
-                throw new BadRequestCategoryException();
+            this.logger.error(
+                `북마크 목록 조회 중 오류 발생 - userId: ${userId}, category: ${category}, error: ${error.message}`,
+                BookmarkService.name,
+            );
+            throw new BookmarkDatabaseOperationException();
         }
     }
 }
