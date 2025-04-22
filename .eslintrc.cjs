@@ -18,7 +18,7 @@ module.exports = {
         node: true,
         jest: true,
     },
-    ignorePatterns: ['.eslintrc.js', 'dist/**'],
+    ignorePatterns: ['.eslintrc.js', '.eslintrc.cjs', 'dist/**'],
     settings: {
         'import/resolver': {
             typescript: {},
@@ -57,6 +57,7 @@ module.exports = {
         'import/order': [
             'error',
             {
+                // import 순서 정리 
                 groups: [
                     ['builtin', 'external'],
                     ['parent', 'sibling'],
