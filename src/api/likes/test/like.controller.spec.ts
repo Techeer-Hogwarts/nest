@@ -14,7 +14,6 @@ import {
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
 import { LikeService } from '../../../core/likes/like.service';
-import { UserRepository } from '../../../core/users/repository/user.repository';
 import { LikeController } from '../like.controller';
 
 describe('LikeController', () => {
@@ -35,10 +34,6 @@ describe('LikeController', () => {
                 {
                     provide: JwtService,
                     useValue: mock<JwtService>(),
-                },
-                {
-                    provide: UserRepository,
-                    useValue: mock<UserRepository>(),
                 },
                 {
                     provide: CustomWinstonLogger,
