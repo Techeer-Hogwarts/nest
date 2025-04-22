@@ -136,6 +136,7 @@ async function bootstrap(): Promise<void> {
         await app.listen(8000);
         customLogger.log('애플리케이션이 포트 8000에서 작동 중입니다.');
     } catch (error) {
+        throw new Error(`부트스트랩 중 오류 발생: ${error.message}`);
         process.exit(1);
     }
 }
