@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { BlogEntity } from '../blogs/entities/blog.entity';
 import { ResumeEntity } from '../resumes/entities/resume.entity';
 import { Session } from '@prisma/client';
 import { BookmarkRepository } from './repository/bookmark.repository';
@@ -7,7 +6,10 @@ import { CreateBookmarkRequest } from '../../common/dto/bookmarks/request/create
 import { GetBookmarkListRequest } from '../../common/dto/bookmarks/request/get.bookmark-list.request';
 import { GetBookmarkResponse } from '../../common/dto/bookmarks/response/get.bookmark.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
-import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
+import {
+    BlogWithUser,
+    GetBlogResponse,
+} from '../../common/dto/blogs/response/get.blog.response';
 import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { GetProjectTeamListResponse } from '../../common/dto/projectTeams/response/get.projectTeamList.response';
@@ -78,8 +80,8 @@ export class BookmarkService {
                 );
             }
             case 'BLOG': {
-                const contents: BlogEntity[] =
-                    await this.bookmarkRepository.getBookmarkList<BlogEntity>(
+                const contents: BlogWithUser[] =
+                    await this.bookmarkRepository.getBookmarkList<BlogWithUser>(
                         userId,
                         getBookmarkListRequest,
                     );
@@ -88,7 +90,7 @@ export class BookmarkService {
                     BookmarkService.name,
                 );
                 return contents.map(
-                    (content: BlogEntity) => new GetBlogResponse(content),
+                    (content: BlogWithUser) => new GetBlogResponse(content),
                 );
             }
             case 'RESUME': {

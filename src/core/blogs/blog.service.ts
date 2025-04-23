@@ -1,17 +1,24 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
+import { Prisma, Blog } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { NotFoundBlogException } from '../../common/exception/custom.exception';
 import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
-import { TaskService } from '../task/task.service';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+
+import {
+    GetBlogResponse,
+    BlogWithUser,
+} from '../../common/dto/blogs/response/get.blog.response';
+
+import { IndexBlogRequest } from '../../common/dto/blogs/request/index.blog.request';
+
+import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
+
 import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { IndexBlogRequest } from 'src/common/dto/blogs/request/index.blog.request';
 import { IndexService } from 'src/infra/index/index.service';
-import { Prisma } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { NotFoundBlogException } from 'src/common/exception/custom.exception';
-import { BlogEntity } from './entities/blog.entity';
-import { CrawlingBlogResponse } from 'src/common/dto/blogs/response/crawling.blog.response';
+import { TaskService } from '../task/task.service';
 
 @Injectable()
 export class BlogService {
@@ -102,7 +109,7 @@ export class BlogService {
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
         this.logger.debug(`2주 전 날짜: ${twoWeeksAgo}`, BlogService.name);
         // SQL 쿼리
-        const blogs = await this.prisma.$queryRaw<BlogEntity[]>(Prisma.sql`
+        const blogs = await this.prisma.$queryRaw<Blog[]>(Prisma.sql`
                     SELECT * FROM "Blog"
                     WHERE "isDeleted" = false
                         AND "date" >= ${twoWeeksAgo}
@@ -187,7 +194,7 @@ export class BlogService {
 
     async deleteBlog(blogId: number): Promise<GetBlogResponse> {
         this.logger.debug(`블로그 ID ${blogId} 삭제 요청`, BlogService.name);
-        const deletedBlog: BlogEntity = await this.prisma.blog.update({
+        const deletedBlog: BlogWithUser = await this.prisma.blog.update({
             where: {
                 id: blogId,
                 isDeleted: false, // 이미 삭제된 블로그는 제외
@@ -247,7 +254,7 @@ export class BlogService {
         );
         const blogPromises = posts.map(async (post) => {
             try {
-                const blog: BlogEntity = await this.prisma.blog.create({
+                const blog: BlogWithUser = await this.prisma.blog.create({
                     data: {
                         userId,
                         ...post,
