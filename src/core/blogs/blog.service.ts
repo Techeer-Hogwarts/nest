@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { Prisma, Blog } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
@@ -108,31 +108,32 @@ export class BlogService {
         const twoWeeksAgo: Date = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
         this.logger.debug(`2주 전 날짜: ${twoWeeksAgo}`, BlogService.name);
-        // SQL 쿼리
-        const blogs = await this.prisma.$queryRaw<Blog[]>(Prisma.sql`
-                    SELECT * FROM "Blog"
-                    WHERE "isDeleted" = false
-                        AND "date" >= ${twoWeeksAgo}
-                    ORDER BY ("viewCount" + "likeCount" * 10) DESC
-                    LIMIT ${limit} OFFSET ${offset}
-                `);
-        // User 정보 추가 조회
-        const blogsWithUser = await Promise.all(
-            blogs.map(async (blog) => {
-                const user = await this.prisma.user.findUnique({
-                    where: { id: blog.userId },
-                });
-                return {
-                    ...blog,
-                    user,
-                }; // blog 객체에 user 추가
-            }),
-        );
+        const blogs = await this.prisma.blog.findMany({
+            where: {
+                isDeleted: false,
+                date: {
+                    gte: twoWeeksAgo,
+                },
+            },
+            include: {
+                user: true,
+            },
+        });
+        const bestBlogs = blogs
+            .sort(
+                (a, b) =>
+                    b.viewCount +
+                    b.likeCount * 10 -
+                    (a.viewCount + a.likeCount * 10),
+            )
+            .slice(offset, offset + limit);
+
         this.logger.debug(
-            `${blogs.length}개의 인기글 블로그 엔티티 목록 조회 성공 - ${JSON.stringify(blogs)}`,
+            `${bestBlogs.length}개의 인기글 블로그 엔티티 목록 조회 성공 - ${JSON.stringify(bestBlogs)}`,
             BlogService.name,
         );
-        return blogsWithUser.map((blog) => new GetBlogResponse(blog));
+
+        return bestBlogs.map((blog) => new GetBlogResponse(blog));
     }
 
     async getBlog(blogId: number): Promise<GetBlogResponse> {
