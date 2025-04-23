@@ -13,13 +13,12 @@ import { ApiTags } from '@nestjs/swagger';
 
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
-
 import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
-
 import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
+import { User } from '../../common/decorator/user.decorator';
+import { RequestUser } from '../../common/dto/users/request/user.interface';
 
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-
 import { BlogService } from '../../core/blogs/blog.service';
 
 import {
@@ -31,8 +30,6 @@ import {
     GetBlogsByUserDoc,
     IncreaseBlogViewCountDoc,
 } from './blog.docs';
-import { User } from 'src/common/decorator/user.decorator';
-import { RequestUser } from 'src/common/dto/users/request/user.interface';
 
 @ApiTags('blogs')
 @Controller('/blogs')
