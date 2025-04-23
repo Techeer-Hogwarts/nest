@@ -7,13 +7,12 @@ import {
     Post,
     Put,
     Query,
-    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
+
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 
 import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
 
@@ -22,6 +21,7 @@ import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.respon
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 
 import { BlogService } from '../../core/blogs/blog.service';
+
 import {
     CreateSharedBlogDoc,
     DeleteBlogDoc,
@@ -31,6 +31,8 @@ import {
     GetBlogsByUserDoc,
     IncreaseBlogViewCountDoc,
 } from './blog.docs';
+import { User } from 'src/common/decorator/user.decorator';
+import { RequestUser } from 'src/common/dto/users/request/user.interface';
 
 @ApiTags('blogs')
 @Controller('/blogs')
@@ -44,15 +46,14 @@ export class BlogController {
     @Post()
     @CreateSharedBlogDoc()
     async createSharedBlog(
-        @Req() request: Request,
+        @User() requestUser: RequestUser,
         @Query('url') url: string,
     ): Promise<void> {
-        const user = request.user as any;
         this.logger.debug(
-            `외부 블로그 게시 요청 처리 중 - userId: ${user.id}, url: ${url}`,
+            `외부 블로그 게시 요청 처리 중 - userId: ${requestUser.id}, url: ${url}`,
             BlogController.name,
         );
-        await this.blogService.createSharedBlog(user.id, url);
+        await this.blogService.createSharedBlog(requestUser.id, url);
         this.logger.debug(
             `외부 블로그 게시 요청 처리 완료`,
             BlogController.name,
