@@ -2,23 +2,22 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { NotFoundBlogException } from '../../common/exception/custom.exception';
 import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
-
-import {
-    GetBlogResponse,
-    BlogWithUser,
-} from '../../common/dto/blogs/response/get.blog.response';
-
 import { IndexBlogRequest } from '../../common/dto/blogs/request/index.blog.request';
-
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
+import {
+    BlogWithUser,
+    GetBlogResponse,
+} from '../../common/dto/blogs/response/get.blog.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
-import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { IndexService } from 'src/infra/index/index.service';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+
 import { TaskService } from '../task/task.service';
+
+import { BlogNotFoundException } from './exception/blog.exception';
 
 @Injectable()
 export class BlogService {
@@ -147,6 +146,15 @@ export class BlogService {
                 user: true,
             },
         });
+
+        if (!blog) {
+            this.logger.warn(
+                `블로그 조회 실패 - 존재하지 않는 blogId: ${blogId}`,
+                BlogService.name,
+            );
+            throw new BlogNotFoundException();
+        }
+
         this.logger.debug(
             `단일 블로그 엔티티 목록 조회 성공 후 GetBlogResponse로 변환 중`,
             BlogService.name,
@@ -183,7 +191,7 @@ export class BlogService {
                     `블로그 조회수 증가 실패 - 존재하지 않는 blogId: ${blogId}`,
                     BlogService.name,
                 );
-                throw new NotFoundBlogException();
+                throw new BlogNotFoundException();
             }
             this.logger.error(
                 `블로그 조회수 증가 중 예기치 않은 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
