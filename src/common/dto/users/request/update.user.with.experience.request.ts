@@ -1,7 +1,8 @@
-import { UpdateUserRequest } from './update.user.request';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
+
+import { UpdateUserRequest } from './update.user.request';
 import { UpdateUserExperienceListRequest } from '../../userExperiences/request/update.userExperience.list.request';
 
 export class UpdateUserWithExperienceRequest {
