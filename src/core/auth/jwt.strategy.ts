@@ -8,6 +8,8 @@ import { User } from '@prisma/client';
 
 import { AuthUnauthorizedException } from './exception/auth.exception';
 
+import { User } from '@prisma/client';
+
 import { UserService } from '../users/user.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
