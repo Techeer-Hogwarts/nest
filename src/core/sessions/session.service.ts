@@ -60,6 +60,7 @@ export class SessionService {
                     ...createSessionRequest,
                 },
             });
+
             // 인덱스 업데이트
             const indexSession = new IndexSessionRequest(session);
             this.logger.debug(
