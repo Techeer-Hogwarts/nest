@@ -11,7 +11,7 @@ import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { IndexService } from '../../../infra/index/index.service';
 
 import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
-import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
+import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
 
 import {
     createEventRequest,
