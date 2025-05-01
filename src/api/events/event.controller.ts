@@ -12,7 +12,13 @@ import {
     UseGuards,
 } from '@nestjs/common';
 
-import { Request } from 'express';
+import { EventService } from '../../core/events/event.service';
+
+import { CreateEventRequest } from '../../common/dto/events/request/create.event.request';
+import { GetEventListQueryRequest } from '../../common/dto/events/request/get.event.query.request';
+
+import { CreateEventResponse } from '../../common/dto/events/response/create.event.response';
+import { GetEventResponse } from '../../common/dto/events/response/get.event.response';
 
 import {
     CreateEventDoc,

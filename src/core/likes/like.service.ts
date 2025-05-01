@@ -27,6 +27,7 @@ import {
     isInteractableContentType,
 } from '../../common/types/content.type.for.interaction';
 import { CreateInteractableContentTableMap } from '../../common/types/content.type.for.interaction.table.map';
+
 import { IndexService } from '../../infra/index/index.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
