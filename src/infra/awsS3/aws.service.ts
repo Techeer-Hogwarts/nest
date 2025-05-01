@@ -9,6 +9,8 @@ import { VALID_IMAGE_EXTENSIONS } from './aws.valid-extensions';
 
 import { NotApprovedFileExtension } from '../../common/exception/custom.exception';
 
+import { NotApprovedFileExtension } from '../../common/exception/custom.exception';
+
 @Injectable()
 export class AwsService {
     s3Client: S3Client;

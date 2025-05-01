@@ -28,8 +28,6 @@ import { LikeService } from '../../core/likes/like.service';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { LikeService } from '../../core/likes/like.service';
 
-import { GetLikeListDoc, PostLikeDoc } from './like.docs';
-
 @ApiTags('likes')
 @Controller('/likes')
 export class LikeController {
