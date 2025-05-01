@@ -182,9 +182,7 @@ export class BookmarkService {
                     return result.map(
                         (row) =>
                             new GetSessionResponse(
-                                row as unknown as Session & {
-                                    user?: { nickname?: string | null };
-                                },
+                                row as unknown as Session & { user: User },
                             ),
                     );
                 }
