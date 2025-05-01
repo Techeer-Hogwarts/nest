@@ -30,7 +30,7 @@ export class SessionService {
     ) {}
 
     async findById(sessionId: number): Promise<Session> {
-        const session = await this.prisma.session.findUnique({
+        const session = await this.prisma.session.findFirst({
             where: {
                 id: sessionId,
                 isDeleted: false,
@@ -60,6 +60,7 @@ export class SessionService {
                     ...createSessionRequest,
                 },
             });
+
             // 인덱스 업데이트
             const indexSession = new IndexSessionRequest(session);
             this.logger.debug(
@@ -247,22 +248,17 @@ export class SessionService {
         }
 
         try {
-            await this.prisma.$transaction(async (tx) => {
-                await tx.session.delete({
-                    where: {
-                        id: sessionId,
-                    },
-                });
-                this.logger.debug(
-                    `세션 삭제 후 인덱스 삭제 요청 - sessionId: ${sessionId}`,
-                    SessionService.name,
-                );
-
-                await this.indexService.deleteIndex(
-                    'session',
-                    String(sessionId),
-                );
+            await this.prisma.session.delete({
+                where: {
+                    id: sessionId,
+                },
             });
+            this.logger.debug(
+                `세션 삭제 후 인덱스 삭제 요청 - sessionId: ${sessionId}`,
+                SessionService.name,
+            );
+
+            await this.indexService.deleteIndex('session', String(sessionId));
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -296,30 +292,24 @@ export class SessionService {
         }
 
         try {
-            const updatedSession = await this.prisma.$transaction(
-                async (tx) => {
-                    const updated = await tx.session.update({
-                        where: {
-                            id: sessionId,
-                            isDeleted: false,
-                        },
-                        data: updateSessionRequest,
-                    });
-                    // 인덱스 업데이트
-                    const indexSession = new IndexSessionRequest(updated);
-                    this.logger.debug(
-                        `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
-                        SessionService.name,
-                    );
-
-                    await this.indexService.createIndex<IndexSessionRequest>(
-                        'session',
-                        indexSession,
-                    );
-
-                    return updated;
+            const updatedSession = await this.prisma.session.update({
+                where: {
+                    id: sessionId,
                 },
+                data: updateSessionRequest,
+            });
+            // 인덱스 업데이트
+            const indexSession = new IndexSessionRequest(updatedSession);
+            this.logger.debug(
+                `세션 수정 후 인덱스 업데이트 요청 - ${JSON.stringify(indexSession)}`,
+                SessionService.name,
             );
+
+            await this.indexService.createIndex<IndexSessionRequest>(
+                'session',
+                indexSession,
+            );
+
             return new CreateSessionResponse(updatedSession);
         } catch (error) {
             if (

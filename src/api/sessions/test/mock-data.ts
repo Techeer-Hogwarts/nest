@@ -1,9 +1,9 @@
 import { Session } from '@prisma/client';
 import { CreateSessionRequest } from '../../../common/dto/sessions/request/create.session.request';
-import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
-import { UpdateSessionRequest } from '../../../common/dto/sessions/request/update.session.request';
 import { GetSessionsQueryRequest } from '../../../common/dto/sessions/request/get.session.query.request';
+import { UpdateSessionRequest } from '../../../common/dto/sessions/request/update.session.request';
 import { CreateSessionResponse } from '../../../common/dto/sessions/response/create.session.response';
+import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
 import { PaginationQueryDto } from '../../../common/pagination/pagination.query.dto';
 
 const fixedDate: Date = new Date('2024-09-24T10:00:00Z');
