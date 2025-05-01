@@ -47,8 +47,8 @@ type Mutable<T> = {
 @Injectable()
 export class UserService {
     constructor(
-        @Inject(forwardRef(() => ResumeService))
         private readonly resumeService: ResumeService,
+        @Inject(forwardRef(() => AuthService))
         private readonly authService: AuthService,
         private readonly httpService: HttpService,
         private readonly taskService: TaskService,
@@ -56,7 +56,7 @@ export class UserService {
         private readonly indexService: IndexService,
         private readonly userExperienceService: UserExperienceService,
         private readonly logger: CustomWinstonLogger,
-    ) {}
+    ) { }
 
     async signUp(
         createUserRequest: CreateUserRequest,
