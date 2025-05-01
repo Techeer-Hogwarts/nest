@@ -30,7 +30,7 @@ export class SessionService {
     ) {}
 
     async findById(sessionId: number): Promise<Session> {
-        const session = await this.prisma.session.findUnique({
+        const session = await this.prisma.session.findFirst({
             where: {
                 id: sessionId,
                 isDeleted: false,
