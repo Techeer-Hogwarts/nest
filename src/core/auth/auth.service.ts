@@ -1,3 +1,7 @@
+import * as bcrypt from 'bcryptjs';
+import * as nodemailer from 'nodemailer';
+import { ConfigService } from '@nestjs/config';
+
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

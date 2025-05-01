@@ -10,7 +10,7 @@ import {
 export class CreateUserExperienceRequest {
     @IsString()
     @ApiProperty({
-        example: 'Backend',
+        example: 'BACKEND',
         description: '직무',
     })
     readonly position: string;

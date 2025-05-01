@@ -1,4 +1,4 @@
-import { UserEntity } from '../../../../core/users/entities/user.entity';
+import { User } from '@prisma/client';
 
 export class IndexUserRequest {
     readonly email: string;
@@ -10,7 +10,7 @@ export class IndexUserRequest {
     readonly stack: string[];
     readonly year: string;
 
-    constructor(user: UserEntity) {
+    constructor(user: User) {
         this.email = user.email;
         this.grade = user.grade;
         this.id = String(user.id);

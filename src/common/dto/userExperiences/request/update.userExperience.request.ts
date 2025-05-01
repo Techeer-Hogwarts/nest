@@ -20,7 +20,7 @@ export class UpdateUserExperienceRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Backend',
+        example: 'BACKEND',
         description: '직무',
     })
     readonly position: string;
@@ -53,7 +53,7 @@ export class UpdateUserExperienceRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'intern',
+        example: '인턴',
         description: '인턴, 정규직, 계약직 등',
     })
     readonly category: string;

@@ -71,7 +71,7 @@ export class ProjectTeamController {
         @JsonBodyToDTO(CreateProjectTeamRequest)
         createProjectTeamRequest: CreateProjectTeamRequest,
         @UploadedFiles() files: Express.Multer.File[],
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectTeamDetailResponse> {
         this.logger.debug(' createProject 엔드포인트 호출');
         if (!requestUser) {
@@ -100,7 +100,7 @@ export class ProjectTeamController {
     @UseGuards(JwtAuthGuard)
     @GetUserProjectsDoc()
     async getUserProjects(
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectTeamListResponse[]> {
         const userId = requestUser.id;
         this.logger.debug(`요청한 유저 ID: ${userId}`);
@@ -139,7 +139,7 @@ export class ProjectTeamController {
             mainImages?: Express.Multer.File[];
             resultImages?: Express.Multer.File[];
         },
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectTeamDetailResponse> {
         if (!requestUser) throw new NotFoundUserException();
         return await this.projectTeamService.updateProjectTeam(
@@ -156,7 +156,7 @@ export class ProjectTeamController {
     @CloseProjectDoc()
     async closeProject(
         @Param('projectTeamId') projectTeamId: number,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectTeamDetailResponse> {
         return await this.projectTeamService.closeProject(
             projectTeamId,
@@ -169,7 +169,7 @@ export class ProjectTeamController {
     @DeleteProjectDoc()
     async deleteProject(
         @Param('projectTeamId') projectTeamId: number,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectTeamDetailResponse> {
         return await this.projectTeamService.deleteProject(
             projectTeamId,
@@ -192,7 +192,7 @@ export class ProjectTeamController {
     @ApplyToProjectDoc()
     async applyToProject(
         @Body() createProjectMemberRequest: CreateProjectMemberRequest,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectApplicantResponse> {
         return await this.projectTeamService.applyToProject(
             createProjectMemberRequest,
@@ -205,7 +205,7 @@ export class ProjectTeamController {
     @CancelApplicationDoc()
     async cancelApplication(
         @Param('projectTeamId') projectTeamId: number,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectMemberResponse> {
         return await this.projectTeamService.cancelApplication(
             projectTeamId,
@@ -227,7 +227,7 @@ export class ProjectTeamController {
     async acceptApplicant(
         @Body()
         updateApplicantStatusRequest: UpdateProjectApplicantStatusRequest,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectApplicantResponse> {
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
         return await this.projectTeamService.acceptApplicant(
@@ -243,7 +243,7 @@ export class ProjectTeamController {
     async rejectApplicant(
         @Body()
         updateApplicantStatusRequest: UpdateProjectApplicantStatusRequest,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectApplicantResponse> {
         const { projectTeamId, applicantId } = updateApplicantStatusRequest;
         return await this.projectTeamService.rejectApplicant(
@@ -258,7 +258,7 @@ export class ProjectTeamController {
     @AddMemberToProjectTeamDoc()
     async addMemberToProjectTeam(
         @Body() addProjectMemberRequest: AddProjectMemberRequest,
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
     ): Promise<ProjectMemberResponse> {
         return await this.projectTeamService.addMemberToProjectTeam(
             requestUser.id,

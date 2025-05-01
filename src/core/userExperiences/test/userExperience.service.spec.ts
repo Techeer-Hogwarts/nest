@@ -1,16 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { StackCategory } from '../../../common/category/stack.category';
-import { CreateUserExperienceRequest } from '../../../common/dto/userExperiences/request/create.userExperience.request';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { UserExperienceEmployment } from '../category/userExperienceEmployment';
+import { UserExperienceService } from '../userExperience.service';
+
 import {
     UserExperienceInvalidCategoryException,
     UserExperienceInvalidPositionException,
     UserExperienceNotFoundExperienceException,
 } from '../exception/userExperience.exception';
-import { UserExperienceService } from '../userExperience.service';
 
 describe('UserExperienceService', () => {
     let service: UserExperienceService;
@@ -153,7 +151,7 @@ describe('UserExperienceService', () => {
                 ],
             };
 
-            await service.createUserExperience(req, 1);
+            await service.createUserExperience(req, 1, prisma);
 
             expect(prisma.userExperience.createMany).toHaveBeenCalledWith({
                 data: expect.arrayContaining([

@@ -28,7 +28,7 @@ export class CreateResumeRequest {
 
     @IsString()
     @ApiProperty({
-        example: 'BACKEND',
+        example: 'Backend',
         description: '이력서 포지션',
     })
     readonly position: string;

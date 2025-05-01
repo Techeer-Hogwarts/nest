@@ -3,6 +3,9 @@ import { Inject, Injectable, forwardRef } from '@nestjs/common';
 
 import * as bcrypt from 'bcryptjs';
 import { lastValueFrom } from 'rxjs';
+import * as bcrypt from 'bcryptjs';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
 import {
     PermissionRequest,
@@ -11,34 +14,42 @@ import {
     User,
 } from '@prisma/client';
 
-import { GradeCategory } from './category/grade.category';
-import { UserEntity } from './entities/user.entity';
+import { TaskService } from '../../core/task/task.service';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
-import { normalizeString } from '../../common/category/normalize';
-import { StackCategory } from '../../common/category/stack.category';
+import { AuthService } from '../auth/auth.service';
+import { ResumeService } from '../resumes/resume.service';
+import { UserExperienceService } from '../userExperiences/userExperience.service';
+
 import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
-import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
 import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
 import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
 import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
 import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+
 import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+
 import {
-    NotFoundProfileImageException,
-    NotFoundResumeException,
-    NotFoundTecheerException,
-    NotFoundUserException,
-    NotVerifiedEmailException,
-    UnauthorizedAdminException,
-} from '../../common/exception/custom.exception';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { IndexService } from '../../infra/index/index.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { AuthService } from '../auth/auth.service';
-import { ResumeService } from '../resumes/resume.service';
-import { TaskService } from '../task/task.service';
-import { UserExperienceService } from '../userExperiences/userExperience.service';
+    UserAlreadyExistsException,
+    UserInvalidGradeException,
+    UserInvalidPositionException,
+    UserNotFoundException,
+    UserNotFoundProfileImgException,
+    UserNotFoundResumeException,
+    UserNotTecheerException,
+    UserNotVerifiedEmailException,
+    UserUnauthorizedAdminException,
+} from './exception/user.exception';
+
+import {
+    isStackCategory,
+    StackCategory,
+} from '../../common/category/stack.category';
+import { isUserGrade, UserGrade } from './category/userGrade';
+import { UserDetail } from './types/user.detail.type';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -74,7 +85,7 @@ export class UserService {
             this.logger.error('이메일 인증 실패', {
                 context: UserService.name,
             });
-            throw new NotVerifiedEmailException();
+            throw new UserNotVerifiedEmailException();
         }
         this.logger.debug(
             '이메일 인증 완료',
@@ -89,7 +100,7 @@ export class UserService {
             this.logger.error('테커가 아닌 사용자', {
                 context: UserService.name,
             });
-            throw new NotFoundTecheerException();
+            throw new UserNotTecheerException();
         }
 
         // 비밀번호 해싱
@@ -122,32 +133,13 @@ export class UserService {
                 }),
             );
 
-            const userExists = await prisma.user.findUnique({
-                where: { id: newUser.id },
-            });
-
-            if (!userExists) {
-                this.logger.error('유저 아이디 생성 실패', {
-                    userId: newUser.id,
-                });
-                throw new Error('사용자 생성 실패');
-            }
-
             // 경력 생성
             if (createUserExperienceRequest) {
-                await prisma.userExperience.createMany({
-                    data: createUserExperienceRequest.experiences.map(
-                        (exp) => ({
-                            userId: newUser.id,
-                            position: exp.position,
-                            companyName: exp.companyName,
-                            startDate: new Date(exp.startDate),
-                            endDate: exp.endDate ? new Date(exp.endDate) : null,
-                            category: exp.category,
-                            isFinished: !!exp.endDate,
-                        }),
-                    ),
-                });
+                await this.userExperienceService.createUserExperience(
+                    createUserExperienceRequest,
+                    newUser.id,
+                    prisma,
+                );
             }
 
             this.logger.debug(
@@ -160,7 +152,7 @@ export class UserService {
                 this.logger.error('이력서 파일이 없습니다.', {
                     context: UserService.name,
                 });
-                throw new NotFoundResumeException(); // 혹은 BadRequestException으로 변경 가능
+                throw new UserNotFoundResumeException(); // 혹은 BadRequestException으로 변경 가능
             }
 
             // 이력서 저장
@@ -195,10 +187,7 @@ export class UserService {
             //     }),
             // );
 
-            this.logger.debug(
-                '회원가입 완료',
-                JSON.stringify({ context: UserService.name }),
-            );
+            this.logger.debug('회원가입 완료', { context: UserService.name });
             // 트랜잭션 내에서 생성된 사용자 반환
             return newUser;
         });
@@ -209,78 +198,41 @@ export class UserService {
         profileImage: string,
         prisma: Prisma.TransactionClient,
     ): Promise<User> {
-        let normalizedMainPosition: StackCategory;
+        const validatedMainPosition = this.validatePosition(
+            createUserRequest.mainPosition,
+        );
+        this.logger.debug('사용자 메인 포지션 입력 완료', {
+            validatedMainPosition,
+        });
 
-        try {
-            normalizedMainPosition = this.validateAndNormalizePosition(
-                createUserRequest.mainPosition,
-            );
-            this.logger.debug(
-                '사용자 메인 포지션 입력 완료',
-                JSON.stringify({
-                    normalizedMainPosition,
-                }),
-            );
-        } catch (error) {
-            this.logger.debug(
-                '유효하지 않은 메인 포지션 입력',
-                JSON.stringify({
-                    mainPosition: createUserRequest.mainPosition,
-                    error: error.message,
-                }),
-            );
-            throw error;
-        }
-
-        let normalizedSubPosition: StackCategory | null = null;
+        let validatedSubPosition: StackCategory | null = null;
         if (createUserRequest.subPosition) {
-            try {
-                normalizedSubPosition = this.validateAndNormalizePosition(
-                    createUserRequest.subPosition,
-                );
-                this.logger.debug(
-                    '사용자 서브 포지션 입력 완료',
-                    JSON.stringify({
-                        normalizedSubPosition,
-                    }),
-                );
-            } catch (error) {
-                this.logger.error(
-                    '유효하지 않은 서브 포지션 입력',
-                    JSON.stringify({
-                        subPosition: createUserRequest.subPosition,
-                        error: error.message,
-                    }),
-                );
-                throw error;
-            }
+            validatedSubPosition = this.validatePosition(
+                createUserRequest.subPosition,
+            );
+            this.logger.debug('사용자 서브 포지션 입력 완료', {
+                validatedSubPosition,
+            });
         }
 
-        let validatedGrade: GradeCategory;
-        try {
-            validatedGrade = this.validateGrade(createUserRequest.grade);
-            this.logger.debug(
-                '사용자 학년 입력 완료',
-                JSON.stringify({
-                    validatedGrade,
-                }),
-            );
-        } catch (error) {
-            this.logger.error(
-                '유효하지 않은 학년 입력',
-                JSON.stringify({
-                    grade: createUserRequest.grade,
-                    error: error.message,
-                }),
-            );
-            throw error;
+        const validatedGrade = this.validateGrade(createUserRequest.grade);
+        this.logger.debug('사용자 학년 입력 완료', {
+            validatedGrade,
+        });
+
+        const existingUser = await prisma.user.findUnique({
+            where: { email: createUserRequest.email },
+        });
+
+        if (existingUser) {
+            throw new UserAlreadyExistsException();
         }
 
-        const user: UserEntity = await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 ...createUserRequest,
-                mainPosition: normalizedMainPosition,
-                subPosition: normalizedSubPosition,
+                mainPosition: validatedMainPosition,
+                subPosition: validatedSubPosition,
                 grade: validatedGrade,
                 roleId: 3,
                 profileImage,
@@ -297,22 +249,18 @@ export class UserService {
         return user;
     }
 
-    validateAndNormalizePosition(position: string): StackCategory {
-        const normalized = normalizeString(position);
-        if (
-            !normalized ||
-            !Object.values(StackCategory).includes(normalized as StackCategory)
-        ) {
-            throw new Error(`유효하지 않은 포지션 입력: ${position}`);
+    validatePosition(position: string): StackCategory {
+        if (!isStackCategory(position)) {
+            throw new UserInvalidPositionException();
         }
-        return normalized as StackCategory;
+        return position;
     }
 
-    validateGrade(grade: string): GradeCategory {
-        if (!Object.values(GradeCategory).includes(grade as GradeCategory)) {
-            throw new Error(`유효하지 않은 학년 입력: ${grade}`);
+    validateGrade(grade: string): UserGrade {
+        if (!isUserGrade(grade)) {
+            throw new UserInvalidGradeException();
         }
-        return grade as GradeCategory;
+        return grade;
     }
 
     async updateUserProfile(
@@ -322,15 +270,7 @@ export class UserService {
             experiences: UpdateUserExperienceRequest[];
         },
     ): Promise<User> {
-        const user = await this.findById(userId);
-
-        if (!user) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new NotFoundUserException();
-        }
+        const user = await this.findUserOrFail(userId);
 
         this.logger.debug(
             '사용자 존재',
@@ -338,29 +278,29 @@ export class UserService {
         );
 
         return this.prisma.$transaction(async (prisma) => {
-            let updatedUser: User | null = null;
-            let updatedExperiences: UpdateUserExperienceRequest[] | null = null;
+            const updatedUser = updateUserRequest
+                ? await this.validateAndUpdateUser(
+                      userId,
+                      updateUserRequest,
+                      prisma,
+                  )
+                : null;
 
-            if (updateUserRequest) {
-                updatedUser = await this.validateAndUpdateUser(
-                    userId,
-                    updateUserRequest,
-                    prisma,
-                );
+            if (updatedUser) {
                 this.logger.debug(
                     '사용자 정보 업데이트 완료',
-                    JSON.stringify({
-                        context: UserService.name,
-                    }),
+                    JSON.stringify({ context: UserService.name }),
                 );
             }
 
-            if (updateUserExperienceRequest) {
-                updatedExperiences =
-                    await this.userExperienceService.updateUserExperience(
-                        userId,
-                        updateUserExperienceRequest,
-                    );
+            const updatedExperiences = updateUserExperienceRequest
+                ? await this.userExperienceService.updateUserExperience(
+                      userId,
+                      updateUserExperienceRequest,
+                  )
+                : null;
+
+            if (updatedExperiences) {
                 this.logger.debug(
                     '경력 정보 업데이트 완료',
                     JSON.stringify({
@@ -370,23 +310,14 @@ export class UserService {
             }
 
             return {
-                ...user,
-                ...(updatedUser ? updatedUser : {}),
+                ...(updatedUser ?? user),
                 experiences: updatedExperiences || user.experiences || [],
             };
         });
     }
 
-    async deleteUser(userId: number): Promise<User> {
-        const user = await this.findById(userId);
-
-        if (!user) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new NotFoundUserException();
-        }
+    async deleteUser(userId: number): Promise<UserDetail> {
+        await this.findUserOrFail(userId);
 
         this.logger.debug(
             '사용자 존재',
@@ -395,28 +326,29 @@ export class UserService {
         return this.softDeleteUser(userId);
     }
 
-    async softDeleteUser(userId: number): Promise<UserEntity> {
-        const user = await this.prisma.user.update({
-            where: { id: userId },
-            data: { isDeleted: true },
-        });
-        // 인덱스 업데이트
-        this.logger.debug(`유저 삭제 후 인덱스 삭제 요청 - userId: ${userId}`);
-        await this.indexService.deleteIndex('user', String(userId));
-        return user;
+    async softDeleteUser(userId: number): Promise<User> {
+        try {
+            const user = await this.prisma.user.update({
+                where: { id: userId },
+                data: { isDeleted: true },
+            });
+
+            this.logger.debug(
+                `유저 삭제 후 인덱스 삭제 요청 - userId: ${userId}`,
+            );
+            await this.indexService.deleteIndex('user', String(userId));
+            return user;
+        } catch (error) {
+            this.logger.error('유저 삭제 실패', {
+                context: UserService.name,
+                userId,
+            });
+            throw error;
+        }
     }
 
     async getUserInfo(userId: number): Promise<GetUserResponse> {
-        const userInfo = await this.findById(userId);
-
-        if (!userInfo) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new NotFoundUserException();
-        }
-
+        const userInfo = await this.findUserOrFail(userId);
         this.logger.debug('유저 서비스에서 사용자 정보 조회');
         return new GetUserResponse(userInfo);
     }
@@ -472,7 +404,7 @@ export class UserService {
                 '권한 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new UnauthorizedAdminException();
+            throw new UserUnauthorizedAdminException();
         }
 
         // 사용자 역할 업데이트
@@ -526,8 +458,7 @@ export class UserService {
     async getProfileImageUrl(
         email: string,
     ): Promise<{ image: string; isTecheer: boolean }> {
-        const updateUrl =
-            'https://techeer-029051b54345.herokuapp.com/api/v1/profile/picture';
+        const updateUrl = process.env.PROFILE_IMG_URL;
         const secret = process.env.SLACK;
 
         const response = await lastValueFrom(
@@ -563,11 +494,11 @@ export class UserService {
                 context: UserService.name,
             }),
         );
-        throw new NotFoundProfileImageException();
+        throw new UserNotFoundProfileImgException();
     }
 
-    async updateProfileImage(request: any): Promise<User> {
-        const { email } = request.user;
+    async updateProfileImage(user: User): Promise<User> {
+        const { email } = user;
         const { image, isTecheer } = await this.getProfileImageUrl(email);
 
         if (isTecheer === true) {
@@ -582,6 +513,7 @@ export class UserService {
         this.logger.error('테커가 아닌 사용자', {
             context: UserService.name,
         });
+        throw new UserNotTecheerException();
     }
 
     async updateProfileImageByEmail(
@@ -594,13 +526,13 @@ export class UserService {
         });
     }
 
-    async updateNickname(user: any, nickname: string): Promise<User> {
+    async updateNickname(user: User, nickname: string): Promise<User> {
         if (user.roleId !== 1 && user.roleId !== 2) {
             this.logger.error(
                 '권한 없음',
                 JSON.stringify({ context: UserService.name }),
             );
-            throw new UnauthorizedAdminException();
+            throw new UserUnauthorizedAdminException();
         }
 
         this.logger.debug(
@@ -624,43 +556,26 @@ export class UserService {
         });
     }
 
-    async getAllProfiles(query: GetUserssQueryRequest): Promise<any> {
-        this.logger.debug(
-            '모든 프로필 조회 시작',
-            JSON.stringify({
-                query,
-                context: UserService.name,
-            }),
-        );
+    async getAllProfiles(
+        query: GetUserssQueryRequest,
+    ): Promise<GetUserResponse[]> {
+        this.logger.debug('모든 프로필 조회 시작', {
+            query,
+            context: UserService.name,
+        });
 
-        const users = (await this.findAllProfiles(query)) || [];
+        const users = await this.findAllProfiles(query);
 
-        this.logger.debug(
-            '모든 프로필 조회 중',
-            JSON.stringify({
-                context: UserService.name,
-            }),
-        );
-
-        if (!Array.isArray(users)) {
-            this.logger.debug(
-                '조회된 프로필이 없습니다.',
-                JSON.stringify({
-                    context: UserService.name,
-                }),
-            );
-            return [];
-        }
-
-        return users
-            .filter((user) => user !== null && user !== undefined)
-            .map((user) => new GetUserResponse(user));
+        return users.map((user) => new GetUserResponse(user));
     }
 
-    async findAllProfiles(query: GetUserssQueryRequest): Promise<UserEntity[]> {
+    async findAllProfiles(query: GetUserssQueryRequest): Promise<UserDetail[]> {
         const { position, year, university, grade, offset, limit } = query;
 
-        const filters: Record<string, any> = {};
+        const filters: Prisma.UserWhereInput = {
+            isDeleted: false,
+        };
+
         if (position) {
             filters.mainPosition = {
                 in: Array.isArray(position) ? position : [position],
@@ -685,122 +600,92 @@ export class UserService {
             JSON.stringify(filters, null, 2),
         );
 
-        try {
-            const result =
-                (await this.prisma.user.findMany({
+        const result = await this.prisma.user.findMany({
+            where: filters,
+            skip: offset || 0,
+            take: limit || 10,
+            orderBy: { year: 'asc' },
+            include: {
+                projectMembers: {
                     where: {
                         isDeleted: false,
-                        ...filters,
+                        status: 'APPROVED',
                     },
-                    skip: offset || 0,
-                    take: limit || 10,
-                    orderBy: { name: 'asc' },
                     include: {
-                        projectMembers: {
-                            where: {
-                                isDeleted: false,
-                                status: 'APPROVED',
-                            },
-                            include: {
-                                projectTeam: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        isDeleted: true, // 후처리용
-                                        resultImages: {
-                                            select: {
-                                                imageUrl: true,
-                                            },
-                                        },
-                                        mainImages: {
-                                            select: {
-                                                imageUrl: true,
-                                            },
-                                            take: 1,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        studyMembers: {
-                            where: {
-                                isDeleted: false,
-                                status: 'APPROVED',
-                            },
-                            include: {
-                                studyTeam: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        isDeleted: true, // 후처리용
-                                        resultImages: {
-                                            select: {
-                                                imageUrl: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        experiences: {
-                            where: { isDeleted: false },
+                        projectTeam: {
                             select: {
                                 id: true,
-                                position: true,
-                                companyName: true,
-                                category: true,
-                                isFinished: true,
-                                startDate: true,
-                                endDate: true,
+                                name: true,
+                                isDeleted: true, // 후처리용
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true,
+                                    },
+                                },
+                                mainImages: {
+                                    select: {
+                                        imageUrl: true,
+                                    },
+                                    take: 1,
+                                },
                             },
                         },
                     },
-                })) || [];
+                },
+                studyMembers: {
+                    where: {
+                        isDeleted: false,
+                        status: 'APPROVED',
+                    },
+                    include: {
+                        studyTeam: {
+                            select: {
+                                id: true,
+                                name: true,
+                                isDeleted: true, // 후처리용
+                                resultImages: {
+                                    select: {
+                                        imageUrl: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                experiences: {
+                    where: { isDeleted: false },
+                },
+            },
+        });
 
-            // 후처리: 각 사용자의 projectMembers와 studyMembers에서
-            // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
-            result.forEach((user) => {
-                if (user.projectMembers) {
-                    user.projectMembers = user.projectMembers.map((pm) => {
-                        if (pm.projectTeam && pm.projectTeam.isDeleted) {
-                            return {
-                                ...pm,
-                                projectTeam: null,
-                            };
-                        }
-                        return pm;
-                    });
-                }
-                if (user.studyMembers) {
-                    user.studyMembers = user.studyMembers.map((sm) => {
-                        if (sm.studyTeam && sm.studyTeam.isDeleted) {
-                            return {
-                                ...sm,
-                                studyTeam: null,
-                            };
-                        }
-                        return sm;
-                    });
-                }
-            });
-
-            this.logger.debug('조회 성공');
-            return result;
-        } catch (error) {
-            this.logger.error(
-                'findAllProfiles 쿼리 실패',
-                JSON.stringify(error, null, 2),
-            );
-            return [];
+        if (result.length === 0) {
+            this.logger.debug('프로필 조회 결과 없음');
         }
+
+        // 후처리: 각 사용자의 projectMembers와 studyMembers에서
+        // 관련 팀(projectTeam, studyTeam)이 삭제된 경우 null 처리
+        result.forEach((user) => {
+            user.projectMembers =
+                user.projectMembers?.map((pm) => ({
+                    ...pm,
+                    projectTeam: pm.projectTeam?.isDeleted
+                        ? null
+                        : pm.projectTeam,
+                })) ?? [];
+
+            user.studyMembers =
+                user.studyMembers?.map((sm) => ({
+                    ...sm,
+                    studyTeam: sm.studyTeam?.isDeleted ? null : sm.studyTeam,
+                })) ?? [];
+        });
+        this.logger.debug('조회 성공');
+        return result;
     }
 
     async getProfile(userId: number): Promise<GetUserResponse> {
-        this.logger.debug(
-            '프로필 조회',
-            JSON.stringify({ context: UserService.name }),
-        );
-        const user = await this.findById(userId);
+        this.logger.debug('프로필 조회', { context: UserService.name });
+        const user = await this.findUserOrFail(userId);
         return new GetUserResponse(user);
     }
 
@@ -808,15 +693,8 @@ export class UserService {
         userId: number,
         experienceId: number,
     ): Promise<void> {
-        const userInfo = await this.findById(userId);
+        await this.findUserOrFail(userId);
 
-        if (!userInfo) {
-            this.logger.debug(
-                '사용자 없음',
-                JSON.stringify({ context: UserService.name }),
-            );
-            throw new NotFoundUserException();
-        }
         this.logger.debug(
             '경력 삭제',
             JSON.stringify({ context: UserService.name }),
@@ -827,9 +705,8 @@ export class UserService {
         );
     }
 
-    async findById(userId: number): Promise<UserEntity | null> {
-        // Prisma 쿼리 결과를 await로 받아와 UserEntity 타입으로 처리합니다.
-        const user = (await this.prisma.user.findUnique({
+    async findById(userId: number): Promise<UserDetail | null> {
+        const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
                 isDeleted: false,
@@ -883,18 +760,9 @@ export class UserService {
                 },
                 experiences: {
                     where: { isDeleted: false },
-                    select: {
-                        id: true,
-                        position: true,
-                        companyName: true,
-                        category: true,
-                        isFinished: true,
-                        startDate: true,
-                        endDate: true,
-                    },
                 },
             },
-        })) as UserEntity | null;
+        });
 
         // user가 존재하면 후처리하여 projectTeam 및 studyTeam의 isDeleted가 true인 경우 null 처리
         if (user) {
@@ -926,14 +794,14 @@ export class UserService {
         userId: number,
         updateUserRequest: UpdateUserRequest,
         prisma: Prisma.TransactionClient = this.prisma,
-    ): Promise<UserEntity> {
+    ): Promise<User> {
         const updatedData = {
             ...updateUserRequest,
         } as Mutable<UpdateUserRequest>;
 
         try {
             if (updateUserRequest.mainPosition) {
-                updatedData.mainPosition = this.validateAndNormalizePosition(
+                updatedData.mainPosition = this.validatePosition(
                     updateUserRequest.mainPosition,
                 );
             }
@@ -945,7 +813,7 @@ export class UserService {
             );
 
             if (updateUserRequest.subPosition) {
-                updatedData.subPosition = this.validateAndNormalizePosition(
+                updatedData.subPosition = this.validatePosition(
                     updateUserRequest.subPosition,
                 );
             }
@@ -989,7 +857,7 @@ export class UserService {
             }),
         );
 
-        const user: UserEntity = await prisma.user.update({
+        const user: User = await prisma.user.update({
             where: { id: userId },
             data: filteredData,
         });
@@ -1003,7 +871,7 @@ export class UserService {
         return user;
     }
 
-    async findOneByEmail(email: string): Promise<UserEntity | null> {
+    async findOneByEmail(email: string): Promise<User | null> {
         return this.prisma.user.findUnique({
             where: {
                 email,
@@ -1020,5 +888,14 @@ export class UserService {
             },
             data: { password: newPassword },
         });
+    }
+
+    async findUserOrFail(userId: number): Promise<UserDetail> {
+        const user = await this.findById(userId);
+        if (!user) {
+            this.logger.debug('사용자 없음', { context: UserService.name });
+            throw new UserNotFoundException();
+        }
+        return user;
     }
 }
