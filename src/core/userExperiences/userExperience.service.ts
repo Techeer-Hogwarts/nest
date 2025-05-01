@@ -16,6 +16,7 @@ import {
 } from './exception/userExperience.exception';
 
 import { UserExperienceEmployment } from './category/userExperienceEmployment';
+import { Prisma } from '@prisma/client';
 
 interface TransformExperienceData {
     userId: number;
@@ -34,7 +35,6 @@ export class UserExperienceService {
         private readonly prisma: PrismaService,
         private readonly logger: CustomWinstonLogger,
     ) {}
-
     /**
      * Position 값 검증 및 표준화
      * @param position 입력 position 값
@@ -59,7 +59,6 @@ export class UserExperienceService {
             `포지션 변환 완료: ${normalized}`,
             'UserExperienceService',
         );
-
         return normalized as StackCategory;
     }
 
@@ -111,7 +110,6 @@ export class UserExperienceService {
             endDate: experience.endDate ? new Date(experience.endDate) : null, // endDate 처리
             isFinished: !!experience.endDate, // endDate 유무로 결정
         }));
-
         this.logger.debug(
             `경험 데이터 변환 완료: ${JSON.stringify(transformedExperience)}`,
             'UserExperienceService',
@@ -131,6 +129,7 @@ export class UserExperienceService {
             experiences: CreateUserExperienceRequest[];
         },
         userId: number,
+        prismaTransaction: Prisma.TransactionClient,
     ): Promise<void> {
         // 데이터 변환 및 검증
         const data = this.transformExperienceData(
@@ -139,7 +138,7 @@ export class UserExperienceService {
         );
 
         // Prisma의 createMany를 사용하여 데이터베이스에 삽입
-        await this.prisma.userExperience.createMany({
+        await prismaTransaction.userExperience.createMany({
             data,
         });
 
@@ -202,7 +201,6 @@ export class UserExperienceService {
         });
 
         await Promise.all(operations);
-
         this.logger.debug('경험 업데이트 완료', 'UserExperienceService');
 
         return updateUserExperienceRequest.experiences;
