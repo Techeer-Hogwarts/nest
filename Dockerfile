@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Dependency 설치
 COPY package*.json ./
+COPY tsconfig.json ./
 
 RUN npm install && npm cache clean --force
 
@@ -12,15 +13,14 @@ RUN npm install && npm cache clean --force
 COPY . .
 
 # Prisma 클라이언트 생성
-RUN npx prisma generate --schema=./prisma/schema.prisma
-# && npm run build \
-# && npx tsc prisma/seed.ts --outDir dist/prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma 
 
 # 빌드
 RUN npm run build
 
 # TypeScript 컴파일 (seed.ts 파일을 JavaScript로 변환)
-RUN npx tsc prisma/seed.ts --outDir dist/prisma
+RUN npx tsc -p tsconfig.json
+
 
 # 베포용 빌드 이미지 스테이지
 FROM node:20-alpine3.20

@@ -1,5 +1,5 @@
 {
-  "compilerOptions": {
+    "compilerOptions": {
       "module": "commonjs",
       "declaration": true,
       "removeComments": true,
@@ -19,7 +19,18 @@
       "noFallthroughCasesInSwitch": false,
       "moduleResolution": "node",
       "paths": {
-          "@nestjs/*": ["node_modules/@nestjs/*"]
+        "@nestjs/*": ["node_modules/@nestjs/*"]
       }
+    },
+    "include": [
+      "src/**/*.ts",
+      "prisma/seed.ts"
+    ],
+    "exclude": [
+      "node_modules",
+      "**/*.spec.ts",
+      "**/__tests__/**",
+      "test"
+    ]
   }
-}
+  
