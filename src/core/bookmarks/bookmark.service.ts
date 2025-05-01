@@ -1,15 +1,26 @@
 import { Injectable } from '@nestjs/common';
 
 import {
-    Blog,
     Prisma,
-    ProjectTeam,
+    Blog,
     Resume,
     Session,
-    StudyTeam,
     User,
+    ProjectTeam,
+    StudyTeam,
+    ProjectResultImage,
+    TeamStack,
+    StudyResultImage,
 } from '@prisma/client';
 
+import {
+    BookmarkContentNotFoundException,
+    BookmarkDuplicateStatusException,
+    BookmarkTransactionFailedException,
+    BookmarkDatabaseOperationException,
+} from './exception/bookmark.exception';
+
+import { ContentCategory } from '../../common/category/content.category';
 import { CreateContentTableMap } from '../../common/category/content.category.table.map';
 import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
 import { CreateBookmarkRequest } from '../../common/dto/bookmarks/request/create.bookmark.request';
@@ -21,15 +32,6 @@ import { GetSessionResponse } from '../../common/dto/sessions/response/get.sessi
 import { GetStudyTeamListResponse } from '../../common/dto/studyTeams/response/get.studyTeamList.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PrismaService } from '../../infra/prisma/prisma.service';
-
-import {
-    BookmarkContentNotFoundException,
-    BookmarkDuplicateStatusException,
-    BookmarkInvalidCategoryException,
-    BookmarkTransactionFailedException,
-    BookmarkDatabaseOperationException,
-    BookmarkDataTransformationFailedException,
-} from './exception/bookmark.exception';
 
 @Injectable()
 export class BookmarkService {
@@ -51,7 +53,9 @@ export class BookmarkService {
                 `콘텐츠 저장 여부 조회 시작 - contentId: ${contentId}, category: ${category}`,
                 BookmarkService.name,
             );
-            const content = await this.contentTableMap[category].table.findUnique({
+            const content = await this.contentTableMap[
+                category
+            ].table.findUnique({
                 where: {
                     id: contentId,
                     isDeleted: false,
@@ -150,7 +154,7 @@ export class BookmarkService {
 
     async getBookmarkList(
         userId: number,
-        getBookmarkListRequest: GetBookmarkListRequest,
+        { category, offset = 0, limit = 10 }: GetBookmarkListRequest,
     ): Promise<
         | GetSessionResponse[]
         | GetBlogResponse[]
@@ -158,123 +162,168 @@ export class BookmarkService {
         | GetProjectTeamListResponse[]
         | GetStudyTeamListResponse[]
     > {
-        const { category, offset = 0, limit = 10 } = getBookmarkListRequest;
-
-        // 카테고리 유효성 검사
-        if (!this.contentTableMap[category]) {
-            this.logger.error(
-                `잘못된 카테고리 요청 - category: ${category}`,
-                BookmarkService.name,
-            );
-            throw new BookmarkInvalidCategoryException();
-        }
-
-        this.logger.debug(
-            `북마크 목록 조회 시작 - userId: ${userId}, category: ${category}, offset: ${offset}, limit: ${limit}`,
-            BookmarkService.name,
-        );
-
-        const tableName = `"${this.contentTableMap[category].name}"`;
-        let query = Prisma.sql`
-            SELECT c.*, u.*
-            FROM "Bookmark" b
-            LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
-            LEFT JOIN "User" u ON c."userId" = u."id"
-        `;
-
         try {
-            if (category === 'PROJECT') {
-                query = Prisma.sql`
-                    SELECT c.*, u.*, 
-                        json_agg(ri.*) as "resultImages",
-                        json_agg(ts.*) as "teamStacks"
-                    FROM "Bookmark" b
-                    LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
-                    LEFT JOIN "User" u ON c."userId" = u."id"
-                    LEFT JOIN "ResultImage" ri ON c."id" = ri."projectTeamId"
-                    LEFT JOIN "TeamStack" ts ON c."id" = ts."projectTeamId"
-                    WHERE b."userId" = ${userId}
-                    AND b."category" = ${category}
-                    AND b."isDeleted" = false
-                    GROUP BY c."id", u."id"
-                    ORDER BY b."createdAt" DESC
-                    LIMIT ${limit} OFFSET ${offset}
-                `;
-            } else if (category === 'STUDY') {
-                query = Prisma.sql`
-                    SELECT c.*, u.*, 
-                        json_agg(ri.*) as "resultImages"
-                    FROM "Bookmark" b
-                    LEFT JOIN ${Prisma.raw(tableName)} c ON b."contentId" = c."id"
-                    LEFT JOIN "User" u ON c."userId" = u."id"
-                    LEFT JOIN "ResultImage" ri ON c."id" = ri."studyTeamId"
-                    WHERE b."userId" = ${userId}
-                    AND b."category" = ${category}
-                    AND b."isDeleted" = false
-                    GROUP BY c."id", u."id"
-                    ORDER BY b."createdAt" DESC
-                    LIMIT ${limit} OFFSET ${offset}
-                `;
-            } else {
-                query = Prisma.sql`
-                    ${query}
-                    WHERE b."userId" = ${userId}
-                    AND b."category" = ${category}
-                    AND b."isDeleted" = false
-                    ORDER BY b."createdAt" DESC
-                    LIMIT ${limit} OFFSET ${offset}
-                `;
-            }
+            switch (category) {
+                case ContentCategory.SESSION: {
+                    const result = await this.prisma.$queryRaw<
+                        (Prisma.JsonObject & { user: Prisma.JsonObject })[]
+                    >(Prisma.sql`
+                SELECT c.*, u.*
+                FROM "Bookmark" b
+                LEFT JOIN "Session" c ON b."contentId" = c."id"
+                LEFT JOIN "User" u ON c."userId" = u."id"
+                WHERE b."userId" = ${userId}
+                AND b."category" = ${category}
+                AND b."isDeleted" = false
+                ORDER BY b."createdAt" DESC
+                LIMIT ${limit} OFFSET ${offset}
+              `);
 
-            const result = await this.prisma.$queryRaw(query);
-
-            if (!result) {
-                this.logger.error(
-                    `북마크 목록 조회 실패 - userId: ${userId}, category: ${category}`,
-                    BookmarkService.name,
-                );
-                throw new BookmarkDatabaseOperationException();
-            }
-
-            try {
-                switch (category) {
-                    case 'SESSION':
-                        return (result as (Session & { user: User })[]).map(
-                            (content) => new GetSessionResponse(content),
-                        );
-                    case 'BLOG':
-                        return (result as (Blog & { user: User })[]).map(
-                            (content) => new GetBlogResponse(content),
-                        );
-                    case 'RESUME':
-                        return (result as (Resume & { user: User })[]).map(
-                            (content) => new GetResumeResponse(content),
-                        );
-                    case 'PROJECT':
-                        return (result as (ProjectTeam & { user: User; resultImages: any[]; teamStacks: any[] })[]).map(
-                            (content) => new GetProjectTeamListResponse(content),
-                        );
-                    case 'STUDY':
-                        return (result as (StudyTeam & { user: User; resultImages: any[] })[]).map(
-                            (content) => new GetStudyTeamListResponse(content),
-                        );
-                    default:
-                        throw new BookmarkInvalidCategoryException();
+                    return result.map(
+                        (row) =>
+                            new GetSessionResponse(
+                                row as unknown as Session & {
+                                    user?: { nickname?: string | null };
+                                },
+                            ),
+                    );
                 }
-            } catch (error) {
-                this.logger.error(
-                    `데이터 변환 실패 - userId: ${userId}, category: ${category}, error: ${error.message}`,
-                    BookmarkService.name,
-                );
-                throw new BookmarkDataTransformationFailedException();
+
+                case ContentCategory.BLOG: {
+                    const result = await this.prisma.$queryRaw<
+                        (Prisma.JsonObject & { user: Prisma.JsonObject })[]
+                    >(Prisma.sql`
+                SELECT c.*, u.*
+                FROM "Bookmark" b
+                LEFT JOIN "Blog" c ON b."contentId" = c."id"
+                LEFT JOIN "User" u ON c."userId" = u."id"
+                WHERE b."userId" = ${userId}
+                AND b."category" = ${category}
+                AND b."isDeleted" = false
+                ORDER BY b."createdAt" DESC
+                LIMIT ${limit} OFFSET ${offset}
+              `);
+
+                    return result.map(
+                        (row) =>
+                            new GetBlogResponse(
+                                row as unknown as Blog & { user: User },
+                            ),
+                    );
+                }
+
+                case ContentCategory.RESUME: {
+                    const result = await this.prisma.$queryRaw<
+                        (Prisma.JsonObject & { user: Prisma.JsonObject })[]
+                    >(Prisma.sql`
+                      SELECT c.*, u.*
+                      FROM "Bookmark" b
+                      LEFT JOIN "Resume" c ON b."contentId" = c."id"
+                      INNER JOIN "User" u ON c."userId" = u."id"
+                      WHERE b."userId" = ${userId}
+                      AND b."category" = ${category}
+                      AND b."isDeleted" = false
+                      ORDER BY b."createdAt" DESC
+                      LIMIT ${limit} OFFSET ${offset}
+                    `);
+
+                    return result.map((row) => {
+                        const resume = row as any;
+                        resume.user = {
+                            id: resume.userId,
+                            name: resume.name,
+                            nickname: resume.nickname,
+                            profileImage: resume.profileImage,
+                            year: resume.year,
+                            mainPosition: resume.mainPosition,
+                            subPosition: resume.subPosition,
+                            school: resume.school,
+                            grade: resume.grade,
+                            email: resume.email,
+                            githubUrl: resume.githubUrl,
+                            mediumUrl: resume.mediumUrl,
+                            tistoryUrl: resume.tistoryUrl,
+                            velogUrl: resume.velogUrl,
+                            roleId: resume.roleId,
+                        };
+                        return new GetResumeResponse(
+                            resume as Resume & { user: User },
+                        );
+                    });
+                }
+
+                case ContentCategory.PROJECT: {
+                    const result = await this.prisma.$queryRaw<
+                        (Prisma.JsonObject & {
+                            resultImages: Prisma.JsonArray;
+                            teamStacks: Prisma.JsonArray;
+                        })[]
+                    >(Prisma.sql`
+                        SELECT c.*, 
+                          COALESCE(json_agg(DISTINCT ri.*) FILTER (WHERE ri."id" IS NOT NULL), '[]') AS "resultImages",
+                          COALESCE(json_agg(DISTINCT ts.*) FILTER (WHERE ts."id" IS NOT NULL), '[]') AS "teamStacks"
+                        FROM "Bookmark" b
+                        LEFT JOIN "ProjectTeam" c ON b."contentId" = c."id"
+                        LEFT JOIN "ProjectResultImage" ri ON c."id" = ri."projectTeamId"
+                        LEFT JOIN "TeamStack" ts ON c."id" = ts."projectTeamId"
+                        WHERE b."userId" = ${userId}
+                        AND b."category" = ${category}
+                        AND b."isDeleted" = false
+                        GROUP BY c."id"
+                        ORDER BY MAX(b."createdAt") DESC
+                        LIMIT ${limit} OFFSET ${offset}
+                    `);
+
+                    return result.map(
+                        (row) =>
+                            new GetProjectTeamListResponse(
+                                row as unknown as ProjectTeam & {
+                                    resultImages: ProjectResultImage[];
+                                    teamStacks: TeamStack[];
+                                },
+                            ),
+                    );
+                }
+
+                case ContentCategory.STUDY: {
+                    const result = await this.prisma.$queryRaw<
+                        (Prisma.JsonObject & {
+                            resultImages: Prisma.JsonArray;
+                        })[]
+                    >(Prisma.sql`
+                        SELECT c.*, 
+                          COALESCE(json_agg(DISTINCT ri.*) FILTER (WHERE ri."id" IS NOT NULL), '[]') AS "resultImages"
+                        FROM "Bookmark" b
+                        LEFT JOIN "StudyTeam" c ON b."contentId" = c."id"
+                        LEFT JOIN "StudyResultImage" ri ON c."id" = ri."studyTeamId"
+                        WHERE b."userId" = ${userId}
+                        AND b."category" = ${category}
+                        AND b."isDeleted" = false
+                        GROUP BY c."id"
+                        ORDER BY MAX(b."createdAt") DESC
+                        LIMIT ${limit} OFFSET ${offset}
+                    `);
+
+                    return result.map(
+                        (row) =>
+                            new GetStudyTeamListResponse(
+                                row as unknown as StudyTeam & {
+                                    resultImages: StudyResultImage[];
+                                },
+                            ),
+                    );
+                }
+
+                default:
+                    this.logger.error(
+                        `잘못된 카테고리 요청 - ${category}`,
+                        BookmarkService.name,
+                    );
+                    throw new BookmarkDatabaseOperationException();
             }
         } catch (error) {
-            if (error instanceof BookmarkInvalidCategoryException ||
-                error instanceof BookmarkDataTransformationFailedException) {
-                throw error;
-            }
             this.logger.error(
-                `북마크 목록 조회 중 오류 발생 - userId: ${userId}, category: ${category}, error: ${error.message}`,
+                `북마크 목록 조회 실패 - category: ${category}, error: ${error.message}`,
                 BookmarkService.name,
             );
             throw new BookmarkDatabaseOperationException();
