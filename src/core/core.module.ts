@@ -15,7 +15,7 @@ import { TaskServiceModule } from './task/taskService.module';
 import { UserExperienceServiceModule } from './userExperiences/userExperience.service.module';
 import { UserServiceModule } from './users/user.service.module';
 
-import { InfraModule } from 'src/infra/infra.module';
+import { InfraModule } from '../infra/infra.module';
 
 @Module({
     imports: [

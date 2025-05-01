@@ -13,7 +13,7 @@ import { StudyTeamControllerModule } from './studyTeams/studyTeams.controller.mo
 import { TaskControllerModule } from './task/task.controller.module';
 import { UserControllerModule } from './users/user.controller.module';
 
-import { CoreModule } from 'src/core/core.module';
+import { CoreModule } from '../core/core.module';
 
 @Module({
     imports: [

@@ -1,5 +1,6 @@
-import { Global, Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
+import { Global, Module } from '@nestjs/common';
+
 import { UserService } from './user.service';
 
 import { ResumeServiceModule } from '../resumes/resume.service.module';
@@ -17,4 +18,4 @@ import { UserExperienceServiceModule } from '../userExperiences/userExperience.s
     providers: [UserService],
     exports: [UserService],
 })
-export class UserServiceModule { }
+export class UserServiceModule {}
