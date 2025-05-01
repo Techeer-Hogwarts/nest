@@ -1,4 +1,3 @@
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     Controller,
     Delete,
@@ -11,13 +10,16 @@ import {
     Req,
     UseGuards,
 } from '@nestjs/common';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+
 import { Request } from 'express';
+
+import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
+import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { BlogService } from '../../core/blogs/blog.service';
-import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
-import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
 
 @ApiTags('blogs')
 @Controller('/blogs')

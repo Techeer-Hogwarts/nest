@@ -1,3 +1,5 @@
+import { Exclude } from 'class-transformer';
+
 import {
     ProjectTeam,
     ProjectMember,
@@ -6,7 +8,6 @@ import {
     ProjectMainImage,
     StatusCategory,
 } from '@prisma/client';
-import { Exclude } from 'class-transformer';
 
 // 상세 조회용 DTO
 export class ProjectTeamDetailResponse {

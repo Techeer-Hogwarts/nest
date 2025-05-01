@@ -1,6 +1,8 @@
-import { StackCategory } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+
 import { IsEnum, IsString } from 'class-validator';
+
+import { StackCategory } from '@prisma/client';
 
 export class CreateStacksRequest {
     @ApiProperty({ enum: StackCategory })

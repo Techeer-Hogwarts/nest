@@ -1,5 +1,4 @@
-import { Event } from '@prisma/client';
-import { User } from '@prisma/client';
+import { Event, User } from '@prisma/client';
 
 export class GetEventResponse {
     readonly id: number;

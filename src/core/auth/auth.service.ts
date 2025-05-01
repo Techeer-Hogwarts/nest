@@ -1,20 +1,14 @@
-import * as bcrypt from 'bcryptjs';
-import * as nodemailer from 'nodemailer';
-import { ConfigService } from '@nestjs/config';
-
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { lastValueFrom } from 'rxjs';
-import Redis from 'ioredis';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import * as bcrypt from 'bcryptjs';
+import Redis from 'ioredis';
+import * as nodemailer from 'nodemailer';
+import { lastValueFrom } from 'rxjs';
 
 import { User } from '@prisma/client';
-
-import { UserService } from '../users/user.service';
-
-import { LoginResponse } from '../../common/dto/auth/response/login.response';
 
 import {
     AuthInvalidCodeException,
@@ -25,8 +19,12 @@ import {
     AuthProfileImageNotFoundException,
     AuthVerificationFailedException,
 } from './exception/auth.exception';
-import { ServerException } from '../../common/exception/base.exception';
 import { authEmailTemplate } from './template/auth.template';
+
+import { LoginResponse } from '../../common/dto/auth/response/login.response';
+import { ServerException } from '../../common/exception/base.exception';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { UserService } from '../users/user.service';
 
 @Injectable()
 export class AuthService {

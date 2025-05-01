@@ -1,4 +1,5 @@
 import { ContentCategory } from './content.category';
+
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
 type ContentTableMap = Record<ContentCategory, { table: any; name: string }>;

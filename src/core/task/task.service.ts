@@ -1,12 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+
+import { BlogPostDto } from '../../common/dto/blogs/request/post.blog.request';
+import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { RabbitMQService } from '../../infra/rabbitmq/rabbitmq.service';
 import { RedisService } from '../../infra/redis/redis.service';
-import { BlogRepository } from '../../core/blogs/repository/blog.repository';
-import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
-import { BlogPostDto } from '../../common/dto/blogs/request/post.blog.request';
-import { BlogCategory } from '../../core/blogs/category/blog.category';
-import { Cron } from '@nestjs/schedule';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { BlogCategory } from '../blogs/category/blog.category';
+import { BlogRepository } from '../blogs/repository/blog.repository';
 
 @Injectable()
 export class TaskService implements OnModuleInit {

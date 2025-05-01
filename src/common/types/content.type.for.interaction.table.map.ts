@@ -1,5 +1,6 @@
-import { PrismaService } from '../../infra/prisma/prisma.service';
 import { InteractableContentType } from './content.type.for.interaction';
+
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 type InteractableContentTableMap = {
     [K in InteractableContentType]: {

@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import {
     IsDateString,
+    IsOptional,
     IsString,
     ValidateIf,
-    IsOptional,
 } from 'class-validator';
 
 export class CreateUserExperienceRequest {

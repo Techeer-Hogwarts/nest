@@ -1,7 +1,9 @@
 // mock-data.ts
 
-import { ProjectTeam, StatusCategory } from '@prisma/client';
 import { Readable } from 'stream';
+
+import { ProjectTeam, StatusCategory } from '@prisma/client';
+
 import { TeamRole } from '../../../common/category/teamCategory/teamRole.category';
 import { UpdateProjectTeamRequest } from '../../../common/dto/projectTeams/request/update.projectTeam.request';
 

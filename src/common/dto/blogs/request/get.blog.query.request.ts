@@ -1,8 +1,10 @@
-import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+
 import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+
 import { BlogCategory } from '../../../../core/blogs/category/blog.category';
-import { normalizeString } from '../../../../common/category/normalize';
+import { normalizeString } from '../../../category/normalize';
 
 export class GetBlogsQueryRequest {
     @ApiPropertyOptional({

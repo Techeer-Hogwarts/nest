@@ -1,3 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+import { Type } from 'class-transformer';
 import {
     IsString,
     IsNotEmpty,
@@ -9,10 +12,9 @@ import {
     ArrayNotEmpty,
     ValidateNested,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ProjectMemberInfoRequest } from '../../projectMembers/request/info.projectMember.request';
+
 import { ParseJsonArray } from '../../../decorator/transform.parseJson.decorator';
+import { ProjectMemberInfoRequest } from '../../projectMembers/request/info.projectMember.request';
 
 export class CreateProjectTeamRequest {
     @IsNotEmpty()
