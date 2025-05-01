@@ -19,9 +19,6 @@ export class GetSessionResponse {
     readonly fileUrl: string | null;
     readonly likeCount: number;
     readonly viewCount: number;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
-    readonly nickname: string | null; // nullable 타입 반영
 
     readonly user: UserInfo;
 

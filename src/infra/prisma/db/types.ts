@@ -6,7 +6,7 @@ export type Generated<T> =
         : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type { StatusCategory, StackCategory } from "./enums";
+import type { StatusCategory, StackCategory } from './enums';
 
 export type Blog = {
     id: Generated<number>;
