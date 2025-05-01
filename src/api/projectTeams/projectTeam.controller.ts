@@ -35,7 +35,7 @@ import {
 } from './projectTeam.docs';
 
 import { JsonBodyToDTO } from '../../common/decorator/JsonBodyToDTO';
-import { User } from '../../common/decorator/user.decorator';
+import { CurrentUser } from '../../common/decorator/user.decorator';
 import { AddProjectMemberRequest } from '../../common/dto/projectMembers/request/add.projectMember.request';
 import { CreateProjectMemberRequest } from '../../common/dto/projectMembers/request/create.projectMember.request';
 import { ProjectMemberResponse } from '../../common/dto/projectMembers/response/get.projectMembers.response';

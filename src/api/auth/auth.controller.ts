@@ -1,9 +1,5 @@
 import { Body, Controller, Patch, Post, Res, UseGuards } from '@nestjs/common';
-
 import { ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
-
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 
 import { Response } from 'express';
 

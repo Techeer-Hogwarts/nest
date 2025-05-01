@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { Prisma } from '@prisma/client';
+
 import { UserExperienceEmployment } from './category/userExperienceEmployment';
 import {
     UserExperienceInvalidCategoryException,
@@ -7,8 +9,12 @@ import {
     UserExperienceNotFoundExperienceException,
 } from './exception/userExperience.exception';
 
-import { UserExperienceEmployment } from './category/userExperienceEmployment';
-import { Prisma } from '@prisma/client';
+import { normalizeString } from '../../common/category/normalize';
+import { StackCategory } from '../../common/category/stack.category';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 interface TransformExperienceData {
     userId: number;
