@@ -179,12 +179,29 @@ export class BookmarkService {
                 LIMIT ${limit} OFFSET ${offset}
               `);
 
-                    return result.map(
-                        (row) =>
-                            new GetSessionResponse(
-                                row as unknown as Session & { user: User },
-                            ),
-                    );
+                    return result.map((row) => {
+                        const session = row as any;
+                        session.user = {
+                            id: session.userId,
+                            name: session.name,
+                            nickname: session.nickname,
+                            profileImage: session.profileImage,
+                            year: session.year,
+                            mainPosition: session.mainPosition,
+                            subPosition: session.subPosition,
+                            school: session.school,
+                            grade: session.grade,
+                            email: session.email,
+                            githubUrl: session.githubUrl,
+                            mediumUrl: session.mediumUrl,
+                            tistoryUrl: session.tistoryUrl,
+                            velogUrl: session.velogUrl,
+                            roleId: session.roleId,
+                        };
+                        return new GetSessionResponse(
+                            session as Session & { user: User },
+                        );
+                    });
                 }
 
                 case ContentCategory.BLOG: {
@@ -202,12 +219,29 @@ export class BookmarkService {
                 LIMIT ${limit} OFFSET ${offset}
               `);
 
-                    return result.map(
-                        (row) =>
-                            new GetBlogResponse(
-                                row as unknown as Blog & { user: User },
-                            ),
-                    );
+                    return result.map((row) => {
+                        const blog = row as any;
+                        blog.user = {
+                            id: blog.userId,
+                            name: blog.name,
+                            nickname: blog.nickname,
+                            profileImage: blog.profileImage,
+                            year: blog.year,
+                            mainPosition: blog.mainPosition,
+                            subPosition: blog.subPosition,
+                            school: blog.school,
+                            grade: blog.grade,
+                            email: blog.email,
+                            githubUrl: blog.githubUrl,
+                            mediumUrl: blog.mediumUrl,
+                            tistoryUrl: blog.tistoryUrl,
+                            velogUrl: blog.velogUrl,
+                            roleId: blog.roleId,
+                        };
+                        return new GetBlogResponse(
+                            blog as Blog & { user: User },
+                        );
+                    });
                 }
 
                 case ContentCategory.RESUME: {
