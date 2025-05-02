@@ -43,6 +43,7 @@ export function GetBestBlogsDoc(): MethodDecorator {
         ApiResponse({
             description: '인기 블로그 목록 조회 성공',
             type: GetBlogResponse,
+            isArray: true,
         }),
     );
 }
@@ -57,6 +58,7 @@ export function GetBlogListDoc(): MethodDecorator {
         ApiResponse({
             description: '블로그 목록 조회 성공',
             type: GetBlogResponse,
+            isArray: true,
         }),
     );
 }
@@ -70,6 +72,7 @@ export function GetBlogsByUserDoc(): MethodDecorator {
         ApiResponse({
             description: '유저 블로그 목록 조회 성공',
             type: GetBlogResponse,
+            isArray: true,
         }),
     );
 }
