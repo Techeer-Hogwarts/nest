@@ -205,43 +205,43 @@ export class BlogService {
     async deleteBlog(blogId: number): Promise<GetBlogResponse> {
         this.logger.debug(`블로그 ID ${blogId} 삭제 요청`, BlogService.name);
 
-    try {
-        const deletedBlog: BlogWithUser = await this.prisma.blog.update({
-            where: {
-                id: blogId,
-                isDeleted: false, // 이미 삭제된 블로그는 제외
-            },
-            data: {
-                isDeleted: true, // soft delete 처리
-            },
-            include: {
-                user: true,
-            },
-        });
+        try {
+            const deletedBlog: BlogWithUser = await this.prisma.blog.update({
+                where: {
+                    id: blogId,
+                    isDeleted: false, // 이미 삭제된 블로그는 제외
+                },
+                data: {
+                    isDeleted: true, // soft delete 처리
+                },
+                include: {
+                    user: true,
+                },
+            });
 
-        this.logger.debug(`블로그 삭제 성공 후 GetBlogResponse로 변환 중`, BlogService.name);
+            this.logger.debug(`블로그 삭제 성공 후 GetBlogResponse로 변환 중`, BlogService.name);
 
-        await this.indexService.deleteIndex('blog', String(blogId));
+            await this.indexService.deleteIndex('blog', String(blogId));
 
-        return new GetBlogResponse(deletedBlog);
-    } catch (error) {
-        if (
-            error instanceof PrismaClientKnownRequestError &&
-            error.code === 'P2025'
-        ) {
-            this.logger.warn(
-                `블로그 삭제 실패 - 존재하지 않거나 이미 삭제된 blogId: ${blogId}`,
+            return new GetBlogResponse(deletedBlog);
+        } catch (error) {
+            if (
+                error instanceof PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                this.logger.warn(
+                    `블로그 삭제 실패 - 존재하지 않거나 이미 삭제된 blogId: ${blogId}`,
+                    BlogService.name,
+                );
+                throw new BlogNotFoundException();
+            }
+
+            this.logger.error(
+                `블로그 삭제 중 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
                 BlogService.name,
             );
-            throw new BlogNotFoundException();
+            throw error;
         }
-
-        this.logger.error(
-            `블로그 삭제 중 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
-            BlogService.name,
-        );
-        throw error;
-    }
     }
 
     async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {

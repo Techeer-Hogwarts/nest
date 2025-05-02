@@ -122,6 +122,10 @@ describe('BlogService', () => {
         it('블로그의 조회수를 증가시킨다', async () => {
             prismaService.blog.update.mockResolvedValue({ viewCount: 11 });
             await blogService.increaseBlogViewCount(1);
+            expect(prismaService.blog.update).toHaveBeenCalledWith({
+                where: { id: 1 },
+                data: { viewCount: { increment: 1 } }
+            });
         });
     });
 
@@ -166,6 +170,11 @@ describe('BlogService', () => {
             const result = await blogService.deleteBlog(1);
             expect(result).toBeDefined();
         });
+
+        it('존재하지 않는 블로그 삭제 시 예외를 던진다', async () => {
+           prismaService.blog.update.mockRejectedValueOnce(new Error('Blog not found'));
+           await expect(blogService.deleteBlog(999)).rejects.toThrow();
+       });
     });
 
     describe('createBlog', () => {
