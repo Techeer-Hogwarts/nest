@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 
@@ -169,12 +170,29 @@ describe('BlogService', () => {
             prismaService.blog.update.mockResolvedValue(mockBlog);
             const result = await blogService.deleteBlog(1);
             expect(result).toBeDefined();
+            expect(prismaService.blog.update).toHaveBeenCalledWith({
+                where: { id: 1, isDeleted: false },
+                data: { isDeleted: true },
+                include: { user: true },
+            });
+            expect(logger.debug).toHaveBeenCalled();
         });
 
         it('존재하지 않는 블로그 삭제 시 예외를 던진다', async () => {
-           prismaService.blog.update.mockRejectedValueOnce(new Error('Blog not found'));
-           await expect(blogService.deleteBlog(999)).rejects.toThrow();
-       });
+            const prismaError = new PrismaClientKnownRequestError('Record to update not found', {
+                code: 'P2025',
+                clientVersion: '4.x.x',
+            } as any);
+    
+            prismaService.blog.update.mockRejectedValueOnce(prismaError);
+    
+            await expect(blogService.deleteBlog(999)).rejects.toThrow(BlogNotFoundException);
+            expect(logger.warn).toHaveBeenCalledWith(
+                '블로그 삭제 실패 - 존재하지 않거나 이미 삭제된 blogId: 999',
+                'BlogService',
+            );
+        });
+    
     });
 
     describe('createBlog', () => {
