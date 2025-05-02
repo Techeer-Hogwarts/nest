@@ -60,7 +60,7 @@ export class BlogController {
     @Put('/:blogId')
     @IncreaseBlogViewCountDoc()
     async increaseBlogViewCount(
-        @Param('blogId') blogId: number,
+        @Param('blogId', ParseIntPipe) blogId: number,
     ): Promise<void> {
         this.logger.debug(`블로그 조회수 증가 처리 중`, BlogController.name);
         await this.blogService.increaseBlogViewCount(blogId);
