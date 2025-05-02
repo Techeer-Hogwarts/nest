@@ -195,7 +195,7 @@ export class BlogService {
                 throw new BlogNotFoundException();
             }
             this.logger.error(
-                `블로그 조회수 증가 중 예기치 않은 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
+                `블로그 조회수 증가 중 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
                 BlogService.name,
             );
             throw error;
@@ -204,6 +204,8 @@ export class BlogService {
 
     async deleteBlog(blogId: number): Promise<GetBlogResponse> {
         this.logger.debug(`블로그 ID ${blogId} 삭제 요청`, BlogService.name);
+
+    try {
         const deletedBlog: BlogWithUser = await this.prisma.blog.update({
             where: {
                 id: blogId,
@@ -216,13 +218,30 @@ export class BlogService {
                 user: true,
             },
         });
-        this.logger.debug(
-            `블로그 삭제 성공 후 GetBlogResponse로 변환 중`,
-            BlogService.name,
-        );
+
+        this.logger.debug(`블로그 삭제 성공 후 GetBlogResponse로 변환 중`, BlogService.name);
+
         await this.indexService.deleteIndex('blog', String(blogId));
 
         return new GetBlogResponse(deletedBlog);
+    } catch (error) {
+        if (
+            error instanceof PrismaClientKnownRequestError &&
+            error.code === 'P2025'
+        ) {
+            this.logger.warn(
+                `블로그 삭제 실패 - 존재하지 않거나 이미 삭제된 blogId: ${blogId}`,
+                BlogService.name,
+            );
+            throw new BlogNotFoundException();
+        }
+
+        this.logger.error(
+            `블로그 삭제 중 오류 발생 - blogId: ${blogId}, error: ${error.message}`,
+            BlogService.name,
+        );
+        throw error;
+    }
     }
 
     async getAllUserBlogUrl(): Promise<{ id: number; blogUrls: string[] }[]> {
