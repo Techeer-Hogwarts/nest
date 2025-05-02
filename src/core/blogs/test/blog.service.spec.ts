@@ -4,7 +4,7 @@ import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
 
 import { GetBlogsQueryRequest } from '../../../common/dto/blogs/request/get.blog.query.request';
 
-import { CrawlingBlogResponse } from 'src/common/dto/blogs/response/crawling.blog.response';
+import { CrawlingBlogResponse } from '../../../common/dto/blogs/response/crawling.blog.response';
 
 import { BlogService } from '../blog.service';
 import { IndexService } from '../../../infra/index/index.service';
