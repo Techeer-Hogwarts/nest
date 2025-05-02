@@ -1,13 +1,14 @@
-import {
-    IsString,
-    IsNumber,
-    IsUrl,
-    IsOptional,
-    IsBoolean,
-    Matches,
-    IsEmail,
-} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+import {
+    IsBoolean,
+    IsEmail,
+    IsNumber,
+    IsOptional,
+    IsString,
+    IsUrl,
+    Matches,
+} from 'class-validator';
 
 export class CreateUserRequest {
     @IsString()

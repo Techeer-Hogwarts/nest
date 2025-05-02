@@ -1,4 +1,4 @@
-import { User, Resume } from '@prisma/client';
+import { Resume, User } from '@prisma/client';
 
 type ResumeWithUser = Resume & { user: User };
 

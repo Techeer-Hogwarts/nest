@@ -1,4 +1,4 @@
-import { StatusCategory, StudyTeam, User, StudyMember } from '@prisma/client';
+import { StatusCategory, StudyMember, StudyTeam, User } from '@prisma/client';
 
 export class StudyMemberEntity implements StudyMember {
     id: number;

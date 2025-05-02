@@ -1,18 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { LikeController } from '../like.controller';
-import { LikeService } from '../../../core/likes/like.service';
-import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
 import { JwtService } from '@nestjs/jwt';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { mock } from 'jest-mock-extended';
-import { UserRepository } from '../../../core/users/repository/user.repository';
+
 import {
-    request,
     createLikeRequest,
-    getLikeResponse,
     getLikeListRequest,
+    getLikeResponse,
+    request,
     resumeMockResponse,
 } from './mock-data';
+
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
+import { LikeService } from '../../../core/likes/like.service';
+import { LikeController } from '../like.controller';
 
 describe('LikeController', () => {
     let controller: LikeController;
@@ -32,10 +34,6 @@ describe('LikeController', () => {
                 {
                     provide: JwtService,
                     useValue: mock<JwtService>(),
-                },
-                {
-                    provide: UserRepository,
-                    useValue: mock<UserRepository>(),
                 },
                 {
                     provide: CustomWinstonLogger,

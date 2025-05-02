@@ -1,28 +1,28 @@
 import { Injectable } from '@nestjs/common';
+
 import { StatusCategory } from '@prisma/client';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { StudyMemberNotFoundException } from './exception/study-member.exception';
-import {
-    StudyTeamAlreadyActiveMemberException,
-    StudyTeamAlreadyAppliedException,
-    StudyTeamMissingLeaderException,
-} from '../studyTeams/exception/studyTeam.exception';
 import { StudyMemberStatus } from './category/StudyMemberStatus';
-
-import { PrismaService } from '../../infra/prisma/prisma.service';
+import { StudyMemberNotFoundException } from './exception/study-member.exception';
 
 import { MemberStatus } from '../../common/category/teamCategory/member.category';
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
 import {
-    ApplicantSummaryResponse,
     ApplicantDetailResponse,
+    ApplicantSummaryResponse,
 } from '../../common/dto/studyMembers/response/get.applicant.studyMember.response';
 import {
     StudyApplicantResponse,
     StudyLeadersMailResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import {
+    StudyTeamAlreadyActiveMemberException,
+    StudyTeamAlreadyAppliedException,
+    StudyTeamMissingLeaderException,
+} from '../studyTeams/exception/studyTeam.exception';
 
 @Injectable()
 export class StudyMemberService {

@@ -1,5 +1,6 @@
-import { IsString, IsUrl, IsOptional, IsBoolean, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+import { IsString, IsUrl, IsOptional, IsBoolean, IsInt } from 'class-validator';
 
 export class UpdateUserRequest {
     @IsInt()
@@ -21,7 +22,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Hogwarts School of Witchcraft and Wizardry',
+        example: '인천대학교',
         description: '학교 이름',
     })
     readonly school: string;
@@ -29,7 +30,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: '휴학중 or 1학년',
+        example: '1학년',
         description: '학년',
     })
     readonly grade: string;
@@ -37,7 +38,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Backend',
+        example: 'BACKEND',
         description: '주요 직무',
     })
     readonly mainPosition: string;
@@ -45,7 +46,7 @@ export class UpdateUserRequest {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Frontend',
+        example: 'FRONTEND',
         description: '부차적 직무 (선택 사항)',
         required: false,
     })

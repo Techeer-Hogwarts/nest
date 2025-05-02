@@ -1,22 +1,20 @@
 import { Injectable } from '@nestjs/common';
+
 import { Event } from '@prisma/client';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-
 import {
-    EventNotFoundException,
     EventForbiddenException,
+    EventNotFoundException,
 } from './exception/event.exception';
-
-import { IndexService } from '../../infra/index/index.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
 
 import { CreateEventRequest } from '../../common/dto/events/request/create.event.request';
 import { GetEventListQueryRequest } from '../../common/dto/events/request/get.event.query.request';
 import { IndexEventRequest } from '../../common/dto/events/request/index.event.request';
-
-import { CreateEventResponse } from '../../common/dto/events/response/create.event.response';
+import { CreateEventResponse } from '../../common/dto/events/response/create.event.response';
 import { GetEventResponse } from '../../common/dto/events/response/get.event.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 @Injectable()
 export class EventService {

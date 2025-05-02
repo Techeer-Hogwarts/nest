@@ -1,4 +1,4 @@
-import { StudyTeam, StudyMember, StudyResultImage } from '@prisma/client';
+import { StudyMember, StudyResultImage, StudyTeam } from '@prisma/client';
 
 export class StudyTeamEntity implements StudyTeam {
     id: number;

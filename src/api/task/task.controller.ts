@@ -1,7 +1,8 @@
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Controller, Param, Post, Query } from '@nestjs/common';
-import { TaskService } from '../../core/task/task.service';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { TaskService } from '../../core/task/task.service';
 
 @ApiTags('tasks (dev)')
 @Controller('/tasks')

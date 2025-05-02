@@ -15,7 +15,7 @@ import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
 import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
-import { User } from '../../common/decorator/user.decorator';
+import { CurrentUser } from '../../common/decorator/user.decorator';
 import { RequestUser } from '../../common/dto/users/request/user.interface';
 
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
@@ -43,7 +43,7 @@ export class BlogController {
     @Post()
     @CreateSharedBlogDoc()
     async createSharedBlog(
-        @User() requestUser: RequestUser,
+        @CurrentUser() requestUser: RequestUser,
         @Query('url') url: string,
     ): Promise<void> {
         this.logger.debug(

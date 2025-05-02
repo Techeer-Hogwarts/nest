@@ -1,26 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import {
-    EventForbiddenException,
-    EventNotFoundException,
-} from '../exception/event.exception';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-
-import { EventService } from '../event.service';
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { IndexService } from '../../../infra/index/index.service';
-
-import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
-import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
-
-import {
     createEventRequest,
     createEventResponse,
     getEventListQueryRequest,
     getEventResponse,
-    updateEventRequest,
     mockEvent,
+    updateEventRequest,
 } from '../../../api/events/test/mock-data';
+import { CreateEventResponse } from '../../../common/dto/events/response/create.event.response';
+import { GetEventResponse } from '../../../common/dto/events/response/get.event.response';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { IndexService } from '../../../infra/index/index.service';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { EventService } from '../event.service';
+import {
+    EventForbiddenException,
+    EventNotFoundException,
+} from '../exception/event.exception';
 
 describe('EventService', (): void => {
     let service: EventService;

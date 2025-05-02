@@ -11,23 +11,32 @@ import {
     Req,
     UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { Request } from 'express';
+
+import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
+import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
+import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
+import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
+import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-
 import { SessionService } from '../../core/sessions/session.service';
 
-import { CreateSessionRequest } from '../../common/dto/sessions/request/create.session.request';
-import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
-import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.session.query.request';
+import {
+    PostSessionDocs,
+    GetBestSessionsDocs,
+    GetSessionListDocs,
+    GetSessionDocs,
+    GetSessionsByUserDocs,
+    DeleteSessionDocs,
+    UpdateSessionDocs,
+    SessionControllerDocs,
+} from './session.docs';
 
-import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
-import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
-
-@ApiTags('sessions')
+@SessionControllerDocs()
+@UseGuards(JwtAuthGuard)
 @Controller('/sessions')
 export class SessionController {
     constructor(
@@ -35,12 +44,8 @@ export class SessionController {
         private readonly logger: CustomWinstonLogger,
     ) {}
 
-    @UseGuards(JwtAuthGuard)
     @Post()
-    @ApiOperation({
-        summary: '세션 게시물 생성',
-        description: '새로운 세션 게시물을 생성합니다.',
-    })
+    @PostSessionDocs()
     async createSession(
         @Body() createSessionRequest: CreateSessionRequest,
         @Req() request: Request,
@@ -62,12 +67,8 @@ export class SessionController {
         return result;
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get('/best')
-    @ApiOperation({
-        summary: '세션 게시물의 인기글 목록 조회',
-        description: '(조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
-    })
+    @GetBestSessionsDocs()
     async getBestSessions(
         @Query() query: PaginationQueryDto,
     ): Promise<GetSessionResponse[]> {
@@ -76,20 +77,25 @@ export class SessionController {
             SessionController.name,
         );
 
-        const result = await this.sessionService.getBestSessions(query);
-        this.logger.debug(
-            `세션 인기글 목록 조회 처리 완료`,
-            SessionController.name,
-        );
-        return result;
+        try {
+            const result = await this.sessionService.getBestSessions(query);
+            this.logger.debug(
+                `세션 인기글 목록 조회 처리 완료`,
+                SessionController.name,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `세션 인기글 목록 조회 실패 - query: ${JSON.stringify(query)}, error: ${error.message}`,
+                error.stack,
+                SessionController.name,
+            );
+            throw error; // NestJS의 예외 처리 흐름 유지
+        }
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get()
-    @ApiOperation({
-        summary: '세션 게시물 목록 조회 및 검색',
-        description: '세션 게시물을 조회하고 검색합니다.',
-    })
+    @GetSessionListDocs()
     async getSessionList(
         @Query() query: GetSessionsQueryRequest,
     ): Promise<GetSessionResponse[]> {
@@ -106,12 +112,8 @@ export class SessionController {
         return result;
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get(':sessionId')
-    @ApiOperation({
-        summary: '단일 세션 게시물 조회',
-        description: '지정된 ID의 세션 게시물을 조회합니다.',
-    })
+    @GetSessionDocs()
     async getSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
     ): Promise<GetSessionResponse> {
@@ -128,12 +130,8 @@ export class SessionController {
         return result;
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get('/user/:userId')
-    @ApiOperation({
-        summary: '유저 별 세션 게시물 목록 조회',
-        description: '지정된 유저의 세션 게시물 목록을 조회합니다.',
-    })
+    @GetSessionsByUserDocs()
     async getSessionsByUser(
         @Param('userId', ParseIntPipe) userId: number,
         @Query() query: PaginationQueryDto,
@@ -143,23 +141,28 @@ export class SessionController {
             SessionController.name,
         );
 
-        const result = await this.sessionService.getSessionsByUser(
-            userId,
-            query,
-        );
-        this.logger.debug(
-            `유저 별 세션 게시물 목록 조회 처리 완료`,
-            SessionController.name,
-        );
-        return result;
+        try {
+            const result = await this.sessionService.getSessionsByUser(
+                userId,
+                query,
+            );
+            this.logger.debug(
+                `유저 별 세션 게시물 목록 조회 처리 완료`,
+                SessionController.name,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(
+                `유저 별 세션 게시물 목록 조회 실패 - userId: ${userId}, query: ${JSON.stringify(query)}, error: ${error.message}`,
+                error.stack,
+                SessionController.name,
+            );
+            throw error;
+        }
     }
 
-    @UseGuards(JwtAuthGuard)
     @Delete(':sessionId')
-    @ApiOperation({
-        summary: '세션 게시물 삭제',
-        description: '지정된 ID의 세션 게시물을 삭제합니다.',
-    })
+    @DeleteSessionDocs()
     async deleteSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Req() request: Request,
@@ -177,12 +180,8 @@ export class SessionController {
         );
     }
 
-    @UseGuards(JwtAuthGuard)
     @Patch(':sessionId')
-    @ApiOperation({
-        summary: '세션 게시물 수정',
-        description: '지정된 ID의 세션 게시물을 수정합니다.',
-    })
+    @UpdateSessionDocs()
     async updateSession(
         @Param('sessionId', ParseIntPipe) sessionId: number,
         @Body() updateSessionRequest: UpdateSessionRequest,

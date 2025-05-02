@@ -1,15 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import {
     IsDateString,
+    IsOptional,
     IsString,
     ValidateIf,
-    IsOptional,
 } from 'class-validator';
 
 export class CreateUserExperienceRequest {
     @IsString()
     @ApiProperty({
-        example: 'Backend',
+        example: 'BACKEND',
         description: '직무',
     })
     readonly position: string;

@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+
 import { StackCategory } from '@prisma/client';
+
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { StackEntity } from '../entities/stack.entity';
 
 @Injectable()

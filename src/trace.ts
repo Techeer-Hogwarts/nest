@@ -1,15 +1,17 @@
 'use strict';
 
-import { PrismaInstrumentation } from '@prisma/instrumentation';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
-import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
+import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+
+import { PrismaInstrumentation } from '@prisma/instrumentation';
+
 import { CustomWinstonLogger } from './common/logger/winston.logger';
 
 const logger = new CustomWinstonLogger();

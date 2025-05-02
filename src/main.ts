@@ -1,18 +1,17 @@
 import tracing from './trace';
 tracing.start();
 
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import * as cookieParser from 'cookie-parser';
 import * as basicAuth from 'express-basic-auth';
 
+import { AppModule } from './app.module';
 import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import { CustomWinstonLogger } from './common/logger/winston.logger';
 import { JsonBodyPipe } from './common/pipe/jsonBody.pipe';
-
 import { PrismaService } from './infra/prisma/prisma.service';
 
 async function bootstrap(): Promise<void> {
@@ -137,6 +136,7 @@ async function bootstrap(): Promise<void> {
         await app.listen(8000);
         customLogger.log('애플리케이션이 포트 8000에서 작동 중입니다.');
     } catch (error) {
+        throw new Error(`부트스트랩 중 오류 발생: ${error.message}`);
         process.exit(1);
     }
 }

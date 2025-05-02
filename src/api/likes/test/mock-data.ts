@@ -1,5 +1,7 @@
 import { Request } from 'express';
+
 import { Like, User } from '@prisma/client';
+
 import { CreateLikeRequest } from '../../../common/dto/likes/request/create.like.request';
 import { GetLikeListRequest } from '../../../common/dto/likes/request/get.like-list.request';
 import { GetLikeResponse } from '../../../common/dto/likes/response/get.like.response';

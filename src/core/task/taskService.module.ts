@@ -1,9 +1,12 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { RedisModule } from '../../infra/redis/redis.module';
-import { RabbitMQModule } from '../../infra/rabbitmq/rabbitmq.module';
-import { BlogServiceModule } from '../blogs/blog.service.module';
+
 import { ScheduleModule } from '@nestjs/schedule';
+
 import { TaskService } from './task.service';
+
+import { RabbitMQModule } from '../../infra/rabbitmq/rabbitmq.module';
+import { RedisModule } from '../../infra/redis/redis.module';
+import { BlogServiceModule } from '../blogs/blog.service.module';
 
 @Module({
     imports: [

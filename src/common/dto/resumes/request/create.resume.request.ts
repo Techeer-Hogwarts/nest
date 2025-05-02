@@ -1,14 +1,16 @@
-import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+
+import { Transform } from 'class-transformer';
 import {
+    IsBoolean,
     IsEnum,
+    IsOptional,
     IsString,
     IsUrl,
-    IsOptional,
-    IsBoolean,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+
 import { ResumeCategory } from '../../../../core/resumes/category/resume.category';
-import { normalizeString } from '../../../../common/category/normalize';
+import { normalizeString } from '../../../category/normalize';
 
 export class CreateResumeRequest {
     @IsOptional()
@@ -26,7 +28,7 @@ export class CreateResumeRequest {
 
     @IsString()
     @ApiProperty({
-        example: 'BACKEND',
+        example: 'Backend',
         description: '이력서 포지션',
     })
     readonly position: string;

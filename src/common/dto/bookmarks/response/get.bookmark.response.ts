@@ -1,11 +1,11 @@
-import { BookmarkEntity } from '../../../../core/bookmarks/entities/bookmark.entity';
+import { Bookmark } from '@prisma/client';
 
 export class GetBookmarkResponse {
     readonly contentId: number;
     readonly category: string;
     readonly bookmarkStatus: boolean;
 
-    constructor(bookmarkEntity: BookmarkEntity) {
+    constructor(bookmarkEntity: Bookmark) {
         this.contentId = bookmarkEntity.contentId;
         this.category = bookmarkEntity.category;
         this.bookmarkStatus = !bookmarkEntity.isDeleted;

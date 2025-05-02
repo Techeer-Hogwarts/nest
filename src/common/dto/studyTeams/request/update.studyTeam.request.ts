@@ -1,13 +1,15 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+import { Type } from 'class-transformer';
 import {
-    IsString,
-    IsOptional,
+    IsArray,
     IsBoolean,
     IsInt,
-    IsArray,
+    IsOptional,
+    IsString,
     ValidateNested,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+
 import { StudyMemberInfoRequest } from '../../studyMembers/request/info.studyMember.request';
 
 export class UpdateStudyTeamRequest {
