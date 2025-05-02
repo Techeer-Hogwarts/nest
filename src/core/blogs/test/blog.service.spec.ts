@@ -183,7 +183,7 @@ describe('BlogService', () => {
             prismaService.blog.create.mockRejectedValueOnce(
                 new Error('DB insert error'),
             );
-            await blogService.createBlog(mockCrawlingBlogDto);
+            await expect(blogService.createBlog(mockCrawlingBlogDto)).resolves.not.toThrow();
             expect(logger.error).toHaveBeenCalled();
         });
     });
