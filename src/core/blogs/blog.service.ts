@@ -1,24 +1,22 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
+import { BlogNotFoundException } from './exception/blog.exception';
 
 import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
 import { IndexBlogRequest } from '../../common/dto/blogs/request/index.blog.request';
-
+import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
 import {
     BlogWithUser,
     GetBlogResponse,
 } from '../../common/dto/blogs/response/get.blog.response';
-import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
-
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { IndexService } from '../../infra/index/index.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { TaskService } from '../task/task.service';
-
-import { BlogNotFoundException } from './exception/blog.exception';
 
 @Injectable()
 export class BlogService {
@@ -115,25 +113,22 @@ export class BlogService {
                     gte: twoWeeksAgo,
                 },
             },
+            orderBy: {
+                viewCount: 'desc',
+            },
+            skip: offset,
+            take: limit,
             include: {
                 user: true,
             },
         });
-        const bestBlogs = blogs
-            .sort(
-                (a, b) =>
-                    b.viewCount +
-                    b.likeCount * 10 -
-                    (a.viewCount + a.likeCount * 10),
-            )
-            .slice(offset, offset + limit);
 
         this.logger.debug(
-            `${bestBlogs.length}개의 인기글 블로그 엔티티 목록 조회 성공 - ${JSON.stringify(bestBlogs)}`,
+            `${blogs.length}개의 인기글 블로그 엔티티 목록 조회 성공 - ${JSON.stringify(blogs)}`,
             BlogService.name,
         );
 
-        return bestBlogs.map((blog) => new GetBlogResponse(blog));
+        return blogs.map((blog) => new GetBlogResponse(blog));
     }
 
     async getBlog(blogId: number): Promise<GetBlogResponse> {
@@ -219,7 +214,10 @@ export class BlogService {
                 },
             });
 
-            this.logger.debug(`블로그 삭제 성공 후 GetBlogResponse로 변환 중`, BlogService.name);
+            this.logger.debug(
+                `블로그 삭제 성공 후 GetBlogResponse로 변환 중`,
+                BlogService.name,
+            );
 
             await this.indexService.deleteIndex('blog', String(blogId));
 

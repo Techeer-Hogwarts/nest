@@ -37,8 +37,7 @@ export function GetBestBlogsDoc(): MethodDecorator {
     return applyDecorators(
         ApiOperation({
             summary: '블로그 게시물의 인기글 목록 조회',
-            description:
-                '2주간의 글 중 (조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
+            description: '2주간의 글 중 조회수를 기준으로 인기글을 조회합니다.',
         }),
         ApiResponse({
             description: '인기 블로그 목록 조회 성공',

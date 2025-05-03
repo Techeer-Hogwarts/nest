@@ -1,19 +1,16 @@
 import { CanActivate } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { User } from '@prisma/client';
 
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { RequestUser } from '../../../common/dto/users/request/user.interface';
-
-import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
-
-import { BlogController } from '../blog.controller';
-
-import { BlogService } from '../../../core/blogs/blog.service';
-
 import { GetBlogsQueryRequest } from '../../../common/dto/blogs/request/get.blog.query.request';
-import { PaginationQueryDto } from '../../../common/pagination/pagination.query.dto';
 import { GetBlogResponse } from '../../../common/dto/blogs/response/get.blog.response';
+import { RequestUser } from '../../../common/dto/users/request/user.interface';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../../common/pagination/pagination.query.dto';
+import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
+import { BlogService } from '../../../core/blogs/blog.service';
+import { BlogController } from '../blog.controller';
 
 class MockJwtAuthGuard implements CanActivate {
     canActivate(): boolean {

@@ -1,17 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
+import { BlogPostDto } from '../../common/dto/blogs/request/post.blog.request';
+import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-
-import { BlogService } from '../blogs/blog.service';
 import { RabbitMQService } from '../../infra/rabbitmq/rabbitmq.service';
 import { RedisService } from '../../infra/redis/redis.service';
-
-import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.blog.response';
-import { BlogPostDto } from '../../common/dto/blogs/request/post.blog.request';
-
-import { BlogCategory } from '../../core/blogs/category/blog.category';
-
+import { BlogService } from '../blogs/blog.service';
+import { BlogCategory } from '../blogs/category/blog.category';
 
 @Injectable()
 export class TaskService implements OnModuleInit {
@@ -130,11 +126,17 @@ export class TaskService implements OnModuleInit {
                 BlogCategory.TECHEER,
             );
             blogs.posts = await this.filterPosts(blogs.posts); // 필터링
-            this.logger.debug(`필터링한 블로그 생성 요청 중 - posts: ${JSON.stringify(blogs.posts)}`, TaskService.name);
-    
+            this.logger.debug(
+                `필터링한 블로그 생성 요청 중 - posts: ${JSON.stringify(blogs.posts)}`,
+                TaskService.name,
+            );
+
             await this.blogService.createBlog(blogs);
         } catch (error) {
-            this.logger.error(`블로그 생성 중 오류 발생 - ${error}`, TaskService.name);
+            this.logger.error(
+                `블로그 생성 중 오류 발생 - ${error}`,
+                TaskService.name,
+            );
         } finally {
             this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
             await this.redisService.deleteTask(taskId);
@@ -198,11 +200,17 @@ export class TaskService implements OnModuleInit {
                 JSON.parse(taskData),
                 BlogCategory.TECHEER,
             );
-            this.logger.debug(`신규 유저의 블로그 생성 요청 중 - posts: ${blogs.posts}`, TaskService.name);
-    
+            this.logger.debug(
+                `신규 유저의 블로그 생성 요청 중 - posts: ${blogs.posts}`,
+                TaskService.name,
+            );
+
             await this.blogService.createBlog(blogs);
         } catch (error) {
-            this.logger.error(`블로그 생성 중 오류 발생 - ${error}`, TaskService.name);
+            this.logger.error(
+                `블로그 생성 중 오류 발생 - ${error}`,
+                TaskService.name,
+            );
         } finally {
             this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
             await this.redisService.deleteTask(taskId);
@@ -237,11 +245,17 @@ export class TaskService implements OnModuleInit {
                 JSON.parse(taskData),
                 BlogCategory.SHARED,
             );
-            this.logger.debug(`외부 블로그 생성 요청 중 - posts: ${post}`, TaskService.name);
-    
+            this.logger.debug(
+                `외부 블로그 생성 요청 중 - posts: ${post}`,
+                TaskService.name,
+            );
+
             await this.blogService.createBlog(post);
         } catch (error) {
-            this.logger.error(`블로그 생성 중 오류 발생 - taskId: ${taskId}, error: ${error}`, TaskService.name);
+            this.logger.error(
+                `블로그 생성 중 오류 발생 - taskId: ${taskId}, error: ${error}`,
+                TaskService.name,
+            );
         } finally {
             this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
             await this.redisService.deleteTask(taskId);

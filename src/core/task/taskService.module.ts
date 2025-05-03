@@ -1,5 +1,4 @@
 import { Module, forwardRef } from '@nestjs/common';
-
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { TaskService } from './task.service';
