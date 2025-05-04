@@ -1,6 +1,6 @@
 import { Blog, User } from '@prisma/client';
 
-type BlogWithUser = Blog & { user: User };
+export type BlogWithUser = Blog & { user: User };
 
 export class GetBlogResponse {
     readonly id: number;

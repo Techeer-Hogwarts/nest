@@ -45,6 +45,11 @@ export const ErrorCode = {
     },
     /** AwsS3 **/
     /** Blog **/
+    BLOG_NOT_FOUND: {
+        code: 'BLOG_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '존재하지 않는 블로그입니다.',
+    },
     /** Bookmark **/
     BOOKMARK_CONTENT_NOT_FOUND: {
         code: 'BOOKMARK_CONTENT_NOT_FOUND',

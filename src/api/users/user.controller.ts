@@ -1,4 +1,3 @@
-import { ApiTags } from '@nestjs/swagger';
 import {
     Body,
     Controller,
@@ -8,30 +7,14 @@ import {
     Patch,
     Post,
     Query,
-    Req,
     UploadedFile,
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags } from '@nestjs/swagger';
 
 import { PermissionRequest, User } from '@prisma/client';
-
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { CurrentUser } from '../../common/decorator/user.decorator';
-
-import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-
-import { UserService } from '../../core/users/user.service';
-
-
-import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
-import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
-import { CreateUserWithResumeRequest } from '../../common/dto/users/request/create.user.with.resume.request';
-import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
-import { UpdateUserWithExperienceRequest } from '../../common/dto/users/request/update.user.with.experience.request';
-
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
 
 import {
     ApprovePermissionDoc,
@@ -47,6 +30,17 @@ import {
     UpdateNicknameDoc,
     UpdateUserDoc,
 } from './user.docs';
+
+import { CurrentUser } from '../../common/decorator/user.decorator';
+import { ApprovePermissionRequest } from '../../common/dto/users/request/approve.permission.request';
+import { CreatePermissionRequest } from '../../common/dto/users/request/create.permission.request';
+import { CreateUserWithResumeRequest } from '../../common/dto/users/request/create.user.with.resume.request';
+import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
+import { UpdateUserWithExperienceRequest } from '../../common/dto/users/request/update.user.with.experience.request';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { JwtAuthGuard } from '../../core/auth/jwt.guard';
+import { UserService } from '../../core/users/user.service';
 
 @ApiTags('users')
 @Controller('/users')
