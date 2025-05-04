@@ -8,9 +8,6 @@ import {
     PostgresIntrospector,
     PostgresQueryCompiler,
 } from 'kysely';
-import kyselyExtension from 'prisma-extension-kysely';
-
-import { PrismaClient } from '@prisma/client';
 
 import { DB } from './db/types';
 
