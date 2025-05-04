@@ -1,6 +1,8 @@
 import { Injectable, LoggerService, LogLevel } from '@nestjs/common';
-import * as winston from 'winston';
+
 import { Request } from 'express';
+import * as winston from 'winston';
+
 import { BaseException } from '../exception/base.exception';
 
 @Injectable()

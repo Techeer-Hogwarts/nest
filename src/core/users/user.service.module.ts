@@ -1,8 +1,9 @@
-import { forwardRef, Global, Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { ResumeServiceModule } from '../resumes/resume.service.module';
 import { HttpModule } from '@nestjs/axios';
+import { Global, Module } from '@nestjs/common';
+
+import { UserService } from './user.service';
+
+import { ResumeServiceModule } from '../resumes/resume.service.module';
 import { TaskServiceModule } from '../task/taskService.module';
 import { UserExperienceServiceModule } from '../userExperiences/userExperience.service.module';
 
@@ -11,10 +12,10 @@ import { UserExperienceServiceModule } from '../userExperiences/userExperience.s
     imports: [
         HttpModule,
         TaskServiceModule,
-        forwardRef(() => ResumeServiceModule),
+        ResumeServiceModule,
         UserExperienceServiceModule,
     ],
-    providers: [UserService, PrismaService],
+    providers: [UserService],
     exports: [UserService],
 })
 export class UserServiceModule {}

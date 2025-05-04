@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UserControllerModule } from './users/user.controller.module';
+
 import { AuthControllerModule } from './auth/auth.controller.module';
 import { BlogControllerModule } from './blogs/blogs.controller.module';
 import { BookmarkControllerModule } from './bookmarks/bookmarks.controller.module';
@@ -9,9 +9,11 @@ import { ProjectTeamControllerModule } from './projectTeams/projectTeams.control
 import { ResumeControllerModule } from './resumes/resumes.controller.module';
 import { SessionControllerModule } from './sessions/sessions.controller.module';
 import { StackControllerModule } from './stacks/stacks.controller.module';
-import { TaskControllerModule } from './task/task.controller.module';
 import { StudyTeamControllerModule } from './studyTeams/studyTeams.controller.module';
-import { CoreModule } from 'src/core/core.module';
+import { TaskControllerModule } from './task/task.controller.module';
+import { UserControllerModule } from './users/user.controller.module';
+
+import { CoreModule } from '../core/core.module';
 
 @Module({
     imports: [

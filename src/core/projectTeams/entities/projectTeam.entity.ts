@@ -1,6 +1,7 @@
-import { TeamStackEntity } from 'src/core/teamstack/teamStack.entity';
-import { ProjectMemberEntity } from '../../projectMembers/entities/projectMember.entity';
 import { ProjectResultImage, ProjectTeam } from '@prisma/client';
+
+import { ProjectMemberEntity } from '../../projectMembers/entities/projectMember.entity';
+import { TeamStackEntity } from '../../teamstack/teamStack.entity';
 
 export class ProjectTeamEntity implements ProjectTeam {
     id: number;

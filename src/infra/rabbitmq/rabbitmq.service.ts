@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import * as amqp from 'amqp-connection-manager';
 import { ChannelWrapper } from 'amqp-connection-manager';
 import { ConfirmChannel } from 'amqplib';

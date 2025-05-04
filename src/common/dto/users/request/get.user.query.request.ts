@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+
 import { Type } from 'class-transformer';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class GetUserssQueryRequest {
     @ApiPropertyOptional({

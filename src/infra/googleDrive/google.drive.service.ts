@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { google, drive_v3 } from 'googleapis';
-import { Readable } from 'stream';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OnModuleInit } from '@nestjs/common';
+
+import { drive_v3, google } from 'googleapis';
+import { Readable } from 'stream';
 
 @Injectable()
 export class GoogleDriveService implements OnModuleInit {

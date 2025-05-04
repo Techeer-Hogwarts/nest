@@ -38,9 +38,49 @@ export const ErrorCode = {
         status: HttpStatus.BAD_REQUEST,
         message: '테커 회원이 아닙니다.',
     },
+    AUTH_UNAUTHORIZED: {
+        code: 'AUTH_UNAUTHORIZED',
+        status: HttpStatus.UNAUTHORIZED,
+        message: '로그인이 필요합니다.',
+    },
     /** AwsS3 **/
     /** Blog **/
     /** Bookmark **/
+    BOOKMARK_CONTENT_NOT_FOUND: {
+        code: 'BOOKMARK_CONTENT_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '해당 콘텐츠를 찾을 수 없습니다.',
+    },
+    BOOKMARK_INVALID_CATEGORY: {
+        code: 'BOOKMARK_INVALID_CATEGORY',
+        status: HttpStatus.BAD_REQUEST,
+        message: '존재하지 않는 카테고리입니다.',
+    },
+    BOOKMARK_TRANSACTION_FAILED: {
+        code: 'BOOKMARK_TRANSACTION_FAILED',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '북마크 트랜잭션 실패',
+    },
+    BOOKMARK_DUPLICATE_STATUS: {
+        code: 'BOOKMARK_DUPLICATE_STATUS',
+        status: HttpStatus.BAD_REQUEST,
+        message: '북마크 상태가 동일합니다.(중복 요청)',
+    },
+    BOOKMARK_INVALID_CONTENT_ID: {
+        code: 'BOOKMARK_INVALID_CONTENT_ID',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 콘텐츠 ID입니다.',
+    },
+    BOOKMARK_DATABASE_OPERATION_FAILED: {
+        code: 'BOOKMARK_DATABASE_OPERATION_FAILED',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '북마크 데이터베이스 작업 중 오류가 발생했습니다.',
+    },
+    BOOKMARK_DATA_TRANSFORMATION_FAILED: {
+        code: 'BOOKMARK_DATA_TRANSFORMATION_FAILED',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '데이터 변환 중 오류가 발생했습니다.',
+    },
     /** Event **/
     EVENT_NOT_FOUND: {
         code: 'EVENT_NOT_FOUND',
@@ -55,6 +95,46 @@ export const ErrorCode = {
 
     /** GoogleDrive **/
     /** Like **/
+    LIKE_INVALID_CATEGORY: {
+        code: 'LIKE_INVALID_CATEGORY',
+        status: HttpStatus.BAD_REQUEST,
+        message: '존재하지 않는 좋아요 카테고리입니다.',
+    },
+    LIKE_DUPLICATE_REQUEST: {
+        code: 'LIKE_DUPLICATE_REQUEST',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이미 좋아요를 누른 콘텐츠입니다.',
+    },
+    LIKE_CONTENT_NOT_FOUND: {
+        code: 'LIKE_CONTENT_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '해당 좋아요 콘텐츠를 찾을 수 없습니다.',
+    },
+    LIKE_INVALID_USER_ID: {
+        code: 'LIKE_INVALID_USER_ID',
+        message: '유효하지 않은 사용자 ID입니다.',
+        status: HttpStatus.BAD_REQUEST,
+    },
+    LIKE_INVALID_CONTENT_ID: {
+        code: 'LIKE_INVALID_CONTENT_ID',
+        message: '유효하지 않은 콘텐츠 ID입니다.',
+        status: HttpStatus.BAD_REQUEST,
+    },
+    LIKE_DATABASE_OPERATION_FAILED: {
+        code: 'LIKE_DATABASE_OPERATION_FAILED',
+        message: '데이터베이스 작업 중 오류가 발생했습니다.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
+    LIKE_TRANSACTION_FAILED: {
+        code: 'LIKE_TRANSACTION_FAILED',
+        message: '좋아요 처리 중 오류가 발생했습니다.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
+    LIKE_INVALID_TABLE_CONFIGURATION: {
+        code: 'LIKE_INVALID_TABLE_CONFIGURATION',
+        message: '잘못된 테이블 설정입니다.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
     /** ProjectMember **/
     PROJECT_MEMBER_NOT_FOUND: {
         code: 'PROJECT_MEMBER_NOT_FOUND',
@@ -160,6 +240,16 @@ export const ErrorCode = {
     },
     /** Resumes **/
     /** Session **/
+    SESSION_NOT_FOUND: {
+        code: 'SESSION_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '세션을 찾을 수 없습니다.',
+    },
+    SESSION_FORBIDDEN: {
+        code: 'SESSION_FORBIDDEN',
+        status: HttpStatus.FORBIDDEN,
+        message: '해당 세션에 대한 권한이 없습니다.',
+    },
     /** Stack **/
 
     /** StudyMember **/
@@ -263,19 +353,62 @@ export const ErrorCode = {
         status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 포지션입니다.',
     },
-
     USER_EXPERIENCE_INVALID_CATEGORY: {
         code: 'USER_EXPERIENCE_INVALID_CATEGORY',
         status: HttpStatus.BAD_REQUEST,
         message: '유효하지 않은 카테고리입니다.',
     },
-
     USER_EXPERIENCE_NOT_FOUND: {
         code: 'USER_EXPERIENCE_NOT_FOUND',
         status: HttpStatus.NOT_FOUND,
         message: '해당 경력 정보를 찾을 수 없습니다.',
     },
     /** User **/
+    USER_NOT_VERIFIED_EMAIL: {
+        code: 'USER_NOT_VERIFIED_EMAIL',
+        status: HttpStatus.UNAUTHORIZED,
+        message: '이메일 인증이 완료되지 않았습니다.',
+    },
+    USER_NOT_FOUND: {
+        code: 'USER_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '사용자를 찾을 수 없습니다.',
+    },
+    USER_NOT_TECHEER: {
+        code: 'USER_NOT_TECHEER',
+        status: HttpStatus.BAD_REQUEST,
+        message: '테커가 아닌 사용자입니다.',
+    },
+    USER_NOT_RESUME: {
+        code: 'USER_NOT_FOUND_RESUME',
+        status: HttpStatus.BAD_REQUEST,
+        message: '이력서 파일이 없습니다.',
+    },
+    USER_ALREADY_EXISTS: {
+        code: 'USER_ALREADY_EXISTS',
+        status: HttpStatus.CONFLICT,
+        message: '이미 가입한 이메일입니다.',
+    },
+    USER_UNAUTHORIZED_ADMIN: {
+        code: 'USER_UNAUTHORIZED_ADMIN',
+        status: HttpStatus.FORBIDDEN,
+        message: '관리자 권한이 없습니다.',
+    },
+    USER_PROFILE_IMG_FAIL: {
+        code: 'USER_PROFILE_IMG_FAIL',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '프로필 이미지를 가져오지 못했습니다.',
+    },
+    USER_INVALID_POSITION: {
+        code: 'USER_INVALID_POSITION',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 포지션 입력입니다.',
+    },
+    USER_INVALID_GRADE: {
+        code: 'USER_INVALID_GRADE',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 학년 입력입니다.',
+    },
     /** Global**/
     INTERNAL_SERVER_ERROR: {
         code: 'INTERNAL_SERVER_ERROR',

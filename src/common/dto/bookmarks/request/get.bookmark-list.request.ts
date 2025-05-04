@@ -1,7 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+
 import { Type } from 'class-transformer';
-import { ContentCategory } from '../../../../common/category/content.category';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+
+import { ContentCategory } from '../../../category/content.category';
 
 export class GetBookmarkListRequest {
     @ApiPropertyOptional({
