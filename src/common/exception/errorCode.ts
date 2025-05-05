@@ -45,7 +45,47 @@ export const ErrorCode = {
     },
     /** AwsS3 **/
     /** Blog **/
+    BLOG_NOT_FOUND: {
+        code: 'BLOG_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '존재하지 않는 블로그입니다.',
+    },
     /** Bookmark **/
+    BOOKMARK_CONTENT_NOT_FOUND: {
+        code: 'BOOKMARK_CONTENT_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '해당 콘텐츠를 찾을 수 없습니다.',
+    },
+    BOOKMARK_INVALID_CATEGORY: {
+        code: 'BOOKMARK_INVALID_CATEGORY',
+        status: HttpStatus.BAD_REQUEST,
+        message: '존재하지 않는 카테고리입니다.',
+    },
+    BOOKMARK_TRANSACTION_FAILED: {
+        code: 'BOOKMARK_TRANSACTION_FAILED',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '북마크 트랜잭션 실패',
+    },
+    BOOKMARK_DUPLICATE_STATUS: {
+        code: 'BOOKMARK_DUPLICATE_STATUS',
+        status: HttpStatus.BAD_REQUEST,
+        message: '북마크 상태가 동일합니다.(중복 요청)',
+    },
+    BOOKMARK_INVALID_CONTENT_ID: {
+        code: 'BOOKMARK_INVALID_CONTENT_ID',
+        status: HttpStatus.BAD_REQUEST,
+        message: '유효하지 않은 콘텐츠 ID입니다.',
+    },
+    BOOKMARK_DATABASE_OPERATION_FAILED: {
+        code: 'BOOKMARK_DATABASE_OPERATION_FAILED',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '북마크 데이터베이스 작업 중 오류가 발생했습니다.',
+    },
+    BOOKMARK_DATA_TRANSFORMATION_FAILED: {
+        code: 'BOOKMARK_DATA_TRANSFORMATION_FAILED',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '데이터 변환 중 오류가 발생했습니다.',
+    },
     /** Event **/
     EVENT_NOT_FOUND: {
         code: 'EVENT_NOT_FOUND',

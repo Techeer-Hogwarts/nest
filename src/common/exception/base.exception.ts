@@ -1,4 +1,5 @@
 import { HttpException } from '@nestjs/common';
+
 import { ErrorCode } from './errorCode';
 
 export class BaseException extends HttpException {

@@ -1,18 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { ResumeRepository } from './repository/resume.repository';
-import { ResumeEntity } from './entities/resume.entity';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
+
 import { Prisma, User } from '@prisma/client';
+
+import { ResumeEntity } from './entities/resume.entity';
+import { ResumeRepository } from './repository/resume.repository';
+
+import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
+import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.resumes.query.request';
+import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
 import {
     ForbiddenException,
     NotFoundResumeException,
 } from '../../common/exception/custom.exception';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { GoogleDriveService } from '../../infra/googleDrive/google.drive.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
-import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.resumes.query.request';
 
 @Injectable()
 export class ResumeService {

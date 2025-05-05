@@ -1,4 +1,3 @@
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     Controller,
     Delete,
@@ -8,16 +7,28 @@ import {
     Post,
     Put,
     Query,
-    Req,
     UseGuards,
 } from '@nestjs/common';
-import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
-import { Request } from 'express';
+import { ApiTags } from '@nestjs/swagger';
+
+import {
+    CreateSharedBlogDoc,
+    DeleteBlogDoc,
+    GetBestBlogsDoc,
+    GetBlogDoc,
+    GetBlogListDoc,
+    GetBlogsByUserDoc,
+    IncreaseBlogViewCountDoc,
+} from './blog.docs';
+
+import { CurrentUser } from '../../common/decorator/user.decorator';
+import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
+import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
+import { RequestUser } from '../../common/dto/users/request/user.interface';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { BlogService } from '../../core/blogs/blog.service';
-import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
-import { GetBlogsQueryRequest } from '../../common/dto/blogs/request/get.blog.query.request';
 
 @ApiTags('blogs')
 @Controller('/blogs')
@@ -29,26 +40,16 @@ export class BlogController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    @ApiOperation({
-        summary: '외부 블로그 게시',
-        description: '외부 블로그를 게시합니다.',
-    })
-    @ApiQuery({
-        name: 'url',
-        type: String,
-        description: '게시할 외부 블로그의 URL',
-        required: true,
-    })
+    @CreateSharedBlogDoc()
     async createSharedBlog(
-        @Req() request: Request,
+        @CurrentUser() requestUser: RequestUser,
         @Query('url') url: string,
     ): Promise<void> {
-        const user = request.user as any;
         this.logger.debug(
-            `외부 블로그 게시 요청 처리 중 - userId: ${user.id}, url: ${url}`,
+            `외부 블로그 게시 요청 처리 중 - userId: ${requestUser.id}, url: ${url}`,
             BlogController.name,
         );
-        await this.blogService.createSharedBlog(user.id, url);
+        await this.blogService.createSharedBlog(requestUser.id, url);
         this.logger.debug(
             `외부 블로그 게시 요청 처리 완료`,
             BlogController.name,
@@ -56,12 +57,9 @@ export class BlogController {
     }
 
     @Put('/:blogId')
-    @ApiOperation({
-        summary: '블로그 조회수 증가',
-        description: '블로그 조회수 증가시킵니다.',
-    })
+    @IncreaseBlogViewCountDoc()
     async increaseBlogViewCount(
-        @Param('blogId') blogId: number,
+        @Param('blogId', ParseIntPipe) blogId: number,
     ): Promise<void> {
         this.logger.debug(`블로그 조회수 증가 처리 중`, BlogController.name);
         await this.blogService.increaseBlogViewCount(blogId);
@@ -69,11 +67,7 @@ export class BlogController {
     }
 
     @Get('/best')
-    @ApiOperation({
-        summary: '블로그 게시물의 인기글 목록 조회',
-        description:
-            '2주간의 글 중 (조회수 + 좋아요수*10)을 기준으로 인기글을 조회합니다.',
-    })
+    @GetBestBlogsDoc()
     async getBestBlogs(
         @Query() query: PaginationQueryDto,
     ): Promise<GetBlogResponse[]> {
@@ -87,10 +81,7 @@ export class BlogController {
     }
 
     @Get()
-    @ApiOperation({
-        summary: '블로그 게시물 목록 조회 및 검색',
-        description: '블로그 게시물을 조회하고 검색합니다.',
-    })
+    @GetBlogListDoc()
     async getBlogList(
         @Query() query: GetBlogsQueryRequest,
     ): Promise<GetBlogResponse[]> {
@@ -107,10 +98,7 @@ export class BlogController {
     }
 
     @Get('/user/:userId')
-    @ApiOperation({
-        summary: '유저 별 블로그 게시물 목록 조회',
-        description: '지정된 유저의 블로그 게시물을 조회합니다.',
-    })
+    @GetBlogsByUserDoc()
     async getBlogsByUser(
         @Param('userId', ParseIntPipe) userId: number,
         @Query() query: PaginationQueryDto,
@@ -126,11 +114,9 @@ export class BlogController {
         );
         return result;
     }
+
     @Get('/:blogId')
-    @ApiOperation({
-        summary: '블로그 단일 조회',
-        description: '블로그 ID를 기반으로 단일 블로그 게시물을 조회합니다.',
-    })
+    @GetBlogDoc()
     async getBlog(
         @Param('blogId', ParseIntPipe) blogId: number,
     ): Promise<GetBlogResponse> {
@@ -146,11 +132,9 @@ export class BlogController {
 
         return result;
     }
+
     @Delete('/:blogId')
-    @ApiOperation({
-        summary: '블로그 삭제',
-        description: '블로그 ID를 기반으로 단일 블로그 게시물을 삭제합니다.',
-    })
+    @DeleteBlogDoc()
     async deleteBlog(
         @Param('blogId', ParseIntPipe) blogId: number,
     ): Promise<GetBlogResponse> {

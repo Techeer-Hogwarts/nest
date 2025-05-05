@@ -3,52 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import {
-    isTeamRole,
-    setTeamRole,
-    TeamRole,
-} from '../../common/category/teamCategory/teamRole.category';
-import { mapToTeamRoleNum } from '../../common/category/teamCategory/projectPositionType';
-import { MemberStatus } from '../../common/category/teamCategory/member.category';
-import { TeamType } from '../../common/category/teamCategory/teamType';
-import { CreateProjectMemberRequest } from '../../common/dto/projectMembers/request/create.projectMember.request';
-import { ProjectMemberInfoRequest } from '../../common/dto/projectMembers/request/info.projectMember.request';
-import { AddProjectMemberRequest } from '../../common/dto/projectMembers/request/add.projectMember.request';
-import { ProjectMemberResponse } from '../../common/dto/projectMembers/response/get.projectMembers.response';
-import { ExistingProjectMemberResponse } from '../../common/dto/projectMembers/response/get.existing.projectMembers.response';
-import { CreateProjectTeamRequest } from '../../common/dto/projectTeams/request/create.projectTeam.request';
-import { GetTeamQueryRequest } from '../../common/dto/projectTeams/request/get.team.query.request';
-import { IndexProjectRequest } from '../../common/dto/projectTeams/request/index.project.request';
-import { UpdateProjectTeamRequest } from '../../common/dto/projectTeams/request/update.projectTeam.request';
-import {
-    ProjectApplicantResponse,
-    ProjectTeamDetailResponse,
-    ProjectTeamListResponse,
-} from '../../common/dto/projectTeams/response/get.projectTeam.response';
-import {
-    ProjectTeamGetAllData,
-    ProjectTeamGetAllResponse,
-    StudyTeamGetAllData,
-    StudyTeamGetAllResponse,
-    TeamGetAllListResponse,
-} from '../../common/dto/projectTeams/response/get.allTeam.response';
-import { ProjectTeamLeadersAlert } from '../../common/dto/projectMembers/response/project.member.response.interface';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import {
-    mapToProjectTeamAlertPayload,
-    mapToTeamLeaderAlertPayload,
-} from '../../common/mapper/slack.mapper';
-
-import { AwsService } from '../../infra/awsS3/aws.service';
-import { IndexService } from '../../infra/index/index.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-
-import { AlertService } from '../alert/alert.service';
-import { ProjectMemberService } from '../projectMembers/projectMember.service';
-import {
-    ProjectMemberInvalidTeamRoleException,
-    ProjectMemberNotFoundException,
-} from '../projectMembers/exception/projectMember.exception';
-import {
     ProjectTeamAlreadyApprovedException,
     ProjectTeamDuplicateDeleteUpdateException,
     ProjectTeamDuplicateTeamNameException,
@@ -64,6 +18,51 @@ import {
     ProjectTeamNotFoundException,
     ProjectTeamRecruitmentEndedException,
 } from './exception/projectTeam.exception';
+
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
+import { mapToTeamRoleNum } from '../../common/category/teamCategory/projectPositionType';
+import {
+    isTeamRole,
+    setTeamRole,
+    TeamRole,
+} from '../../common/category/teamCategory/teamRole.category';
+import { TeamType } from '../../common/category/teamCategory/teamType';
+import { AddProjectMemberRequest } from '../../common/dto/projectMembers/request/add.projectMember.request';
+import { CreateProjectMemberRequest } from '../../common/dto/projectMembers/request/create.projectMember.request';
+import { ProjectMemberInfoRequest } from '../../common/dto/projectMembers/request/info.projectMember.request';
+import { ExistingProjectMemberResponse } from '../../common/dto/projectMembers/response/get.existing.projectMembers.response';
+import { ProjectMemberResponse } from '../../common/dto/projectMembers/response/get.projectMembers.response';
+import { ProjectTeamLeadersAlert } from '../../common/dto/projectMembers/response/project.member.response.interface';
+import { CreateProjectTeamRequest } from '../../common/dto/projectTeams/request/create.projectTeam.request';
+import { GetTeamQueryRequest } from '../../common/dto/projectTeams/request/get.team.query.request';
+import { IndexProjectRequest } from '../../common/dto/projectTeams/request/index.project.request';
+import { UpdateProjectTeamRequest } from '../../common/dto/projectTeams/request/update.projectTeam.request';
+import {
+    ProjectTeamGetAllData,
+    ProjectTeamGetAllResponse,
+    StudyTeamGetAllData,
+    StudyTeamGetAllResponse,
+    TeamGetAllListResponse,
+} from '../../common/dto/projectTeams/response/get.allTeam.response';
+import {
+    ProjectApplicantResponse,
+    ProjectTeamDetailResponse,
+    ProjectTeamListResponse,
+} from '../../common/dto/projectTeams/response/get.projectTeam.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import {
+    mapToProjectTeamAlertPayload,
+    mapToTeamLeaderAlertPayload,
+} from '../../common/mapper/slack.mapper';
+import { AwsService } from '../../infra/awsS3/aws.service';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import { AlertService } from '../alert/alert.service';
+import {
+    ProjectMemberInvalidTeamRoleException,
+    ProjectMemberNotFoundException,
+} from '../projectMembers/exception/projectMember.exception';
+import { ProjectMemberService } from '../projectMembers/projectMember.service';
 
 @Injectable()
 export class ProjectTeamService {

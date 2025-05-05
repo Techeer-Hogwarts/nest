@@ -2,11 +2,6 @@ import { Injectable } from '@nestjs/common';
 
 import { Prisma, StatusCategory } from '@prisma/client';
 
-import { MemberStatus } from '../../common/category/teamCategory/member.category';
-import { TeamRoleType } from '../../common/category/teamCategory/teamRole.category';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { ProjectMemberResponse } from '../../common/dto/projectMembers/response/get.projectMembers.response';
-
 import {
     ProjectMemberAlreadyActiveException,
     ProjectMemberApplicationExistsException,
@@ -14,7 +9,9 @@ import {
     ProjectMemberNotFoundException,
 } from './exception/projectMember.exception';
 
-import { PrismaService } from '../../infra/prisma/prisma.service';
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
+import { TeamRoleType } from '../../common/category/teamCategory/teamRole.category';
+import { ProjectMemberResponse } from '../../common/dto/projectMembers/response/get.projectMembers.response';
 import {
     AcceptedApplicant,
     CancelledApplicant,
@@ -24,6 +21,8 @@ import {
     RejectedApplicant,
     UpsertedApplicant,
 } from '../../common/dto/projectMembers/response/project.member.response.interface';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 @Injectable()
 export class ProjectMemberService {

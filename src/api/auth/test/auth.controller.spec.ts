@@ -1,19 +1,16 @@
 import { CanActivate } from '@nestjs/common';
-import { Response } from 'express';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-
-import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
-
-import { AuthService } from '../../../core/auth/auth.service';
-
-import { AuthController } from '../auth.controller';
+import { Response } from 'express';
 
 import { LoginRequest } from '../../../common/dto/auth/request/login.request';
 import { ResetPasswordRequest } from '../../../common/dto/auth/request/reset.password.request';
 import { SendEmailCodeRequest } from '../../../common/dto/auth/request/send.emailCode.request';
 import { VerifyEmailCodeRequest } from '../../../common/dto/auth/request/verify.emailCode.request';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { AuthService } from '../../../core/auth/auth.service';
+import { JwtAuthGuard } from '../../../core/auth/jwt.guard';
+import { AuthController } from '../auth.controller';
 
 class MockJwtAuthGuard implements CanActivate {
     canActivate(): boolean {

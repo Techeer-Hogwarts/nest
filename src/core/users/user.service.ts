@@ -1,9 +1,8 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
-import * as bcrypt from 'bcryptjs';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import * as bcrypt from 'bcryptjs';
+import { lastValueFrom } from 'rxjs';
 
 import {
     PermissionRequest,
@@ -12,24 +11,7 @@ import {
     User,
 } from '@prisma/client';
 
-import { TaskService } from '../../core/task/task.service';
-import { IndexService } from '../../infra/index/index.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-
-import { AuthService } from '../auth/auth.service';
-import { ResumeService } from '../resumes/resume.service';
-import { UserExperienceService } from '../userExperiences/userExperience.service';
-
-import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
-import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
-import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
-import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
-import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
-import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
-
-import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
-
+import { isUserGrade, UserGrade } from './category/userGrade';
 import {
     UserAlreadyExistsException,
     UserInvalidGradeException,
@@ -41,13 +23,27 @@ import {
     UserNotVerifiedEmailException,
     UserUnauthorizedAdminException,
 } from './exception/user.exception';
+import { UserDetail } from './types/user.detail.type';
 
 import {
     isStackCategory,
     StackCategory,
 } from '../../common/category/stack.category';
-import { isUserGrade, UserGrade } from './category/userGrade';
-import { UserDetail } from './types/user.detail.type';
+import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
+import { CreateUserExperienceRequest } from '../../common/dto/userExperiences/request/create.userExperience.request';
+import { UpdateUserExperienceRequest } from '../../common/dto/userExperiences/request/update.userExperience.request';
+import { CreateUserRequest } from '../../common/dto/users/request/create.user.request';
+import { GetUserssQueryRequest } from '../../common/dto/users/request/get.user.query.request';
+import { IndexUserRequest } from '../../common/dto/users/request/index.user.request';
+import { UpdateUserRequest } from '../../common/dto/users/request/update.user.request';
+import { GetUserResponse } from '../../common/dto/users/response/get.user.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
+import { ResumeService } from '../resumes/resume.service';
+import { TaskService } from '../task/task.service';
+import { UserExperienceService } from '../userExperiences/userExperience.service';
 
 type Mutable<T> = {
     -readonly [P in keyof T]: T[P];
@@ -56,8 +52,8 @@ type Mutable<T> = {
 @Injectable()
 export class UserService {
     constructor(
-        @Inject(forwardRef(() => ResumeService))
         private readonly resumeService: ResumeService,
+        @Inject(forwardRef(() => AuthService))
         private readonly authService: AuthService,
         private readonly httpService: HttpService,
         private readonly taskService: TaskService,
@@ -168,22 +164,22 @@ export class UserService {
             });
 
             // 블로그 크롤링 요청
-            // const blogUrls = [
-            //     newUser.velogUrl,
-            //     newUser.mediumUrl,
-            //     newUser.tistoryUrl,
-            // ].filter((url): url is string => !!url); // null 또는 undefined 제거
-            // await Promise.all(
-            //     blogUrls.map((url) =>
-            //         this.taskService.requestSignUpBlogFetch(newUser.id, url),
-            //     ),
-            // );
-            // this.logger.debug(
-            //     '블로그 크롤링 요청 완료',
-            //     JSON.stringify({
-            //         context: UserService.name,
-            //     }),
-            // );
+            const blogUrls = [
+                newUser.velogUrl,
+                newUser.mediumUrl,
+                newUser.tistoryUrl,
+            ].filter((url): url is string => !!url); // null 또는 undefined 제거
+            await Promise.all(
+                blogUrls.map((url) =>
+                    this.taskService.requestSignUpBlogFetch(newUser.id, url),
+                ),
+            );
+            this.logger.debug(
+                '블로그 크롤링 요청 완료',
+                JSON.stringify({
+                    context: UserService.name,
+                }),
+            );
 
             this.logger.debug('회원가입 완료', { context: UserService.name });
             // 트랜잭션 내에서 생성된 사용자 반환

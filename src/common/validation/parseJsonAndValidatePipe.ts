@@ -3,11 +3,11 @@ import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
-import { CustomWinstonLogger } from '../logger/winston.logger';
 import {
     GlobalInvalidDataTypeBody,
     GlobalInvalidInputValueException,
 } from '../exception/global.exception';
+import { CustomWinstonLogger } from '../logger/winston.logger';
 
 @Injectable()
 export class ParseJsonAndValidatePipe implements PipeTransform {

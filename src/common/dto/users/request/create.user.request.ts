@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import {
-    IsString,
-    IsNumber,
-    IsUrl,
-    IsOptional,
     IsBoolean,
-    Matches,
     IsEmail,
+    IsNumber,
+    IsOptional,
+    IsString,
+    IsUrl,
+    Matches,
 } from 'class-validator';
 
 export class CreateUserRequest {

@@ -1,21 +1,22 @@
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { IndexService } from '../../../infra/index/index.service';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { LikeService } from '../like.service';
+import { mock, MockProxy } from 'jest-mock-extended';
+
+import { GetBlogResponse } from '../../../common/dto/blogs/response/get.blog.response';
 import { CreateLikeRequest } from '../../../common/dto/likes/request/create.like.request';
 import { GetLikeListRequest } from '../../../common/dto/likes/request/get.like-list.request';
 import { GetLikeResponse } from '../../../common/dto/likes/response/get.like.response';
-import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
-import { GetBlogResponse } from '../../../common/dto/blogs/response/get.blog.response';
-import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
 import { GetProjectTeamListResponse } from '../../../common/dto/projectTeams/response/get.projectTeamList.response';
+import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
+import { IndexSessionRequest } from '../../../common/dto/sessions/request/index.session.request';
+import { GetSessionResponse } from '../../../common/dto/sessions/response/get.session.response';
 import { GetStudyTeamListResponse } from '../../../common/dto/studyTeams/response/get.studyTeamList.response';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { IndexService } from '../../../infra/index/index.service';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
 import {
     LikeContentNotFoundException,
     LikeDuplicateRequestException,
 } from '../exception/like.exception';
-import { IndexSessionRequest } from '../../../common/dto/sessions/request/index.session.request';
-import { mock, MockProxy } from 'jest-mock-extended';
+import { LikeService } from '../like.service';
 
 describe('LikeService', () => {
     let service: LikeService;

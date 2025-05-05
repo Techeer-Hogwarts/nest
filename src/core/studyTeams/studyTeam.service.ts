@@ -1,12 +1,29 @@
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@prisma/client';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { StudyMemberInfoRequest } from '../../common/dto/studyMembers/request/info.studyMember.request';
+import {
+    StudyTeamAlreadyActiveMemberException,
+    StudyTeamAlreadyRejectMemberException,
+    StudyTeamClosedRecruitException,
+    StudyTeamDuplicateDeleteUpdateException,
+    StudyTeamDuplicateTeamNameException,
+    StudyTeamInvalidApplicantException,
+    StudyTeamInvalidRecruitNumException,
+    StudyTeamInvalidUpdateMemberException,
+    StudyTeamInvalidUserException,
+    StudyTeamMissingLeaderException,
+    StudyTeamNotActiveMemberException,
+    StudyTeamNotFoundException,
+} from './exception/studyTeam.exception';
+
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
+import { TeamType } from '../../common/category/teamCategory/teamType';
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
+import { StudyMemberInfoRequest } from '../../common/dto/studyMembers/request/info.studyMember.request';
+import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
 import { IndexStudyRequest } from '../../common/dto/studyTeams/request/index.study.request';
 import { UpdateStudyTeamRequest } from '../../common/dto/studyTeams/request/update.studyTeam.request';
-import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
 import {
     ExistingStudyMemberResponse,
     GetStudyTeamResponse,
@@ -14,36 +31,18 @@ import {
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
 import { UpdateStudyTeamMember } from '../../common/dto/studyTeams/response/update.studyTeam.response.interface';
-
-import { AwsService } from '../../infra/awsS3/aws.service';
-import { IndexService } from '../../infra/index/index.service';
-import { PrismaService } from '../../infra/prisma/prisma.service';
-
-import { StudyMemberNotFoundException } from '../studyMembers/exception/study-member.exception';
-import {
-    StudyTeamDuplicateTeamNameException,
-    StudyTeamMissingLeaderException,
-    StudyTeamInvalidRecruitNumException,
-    StudyTeamInvalidUpdateMemberException,
-    StudyTeamNotFoundException,
-    StudyTeamAlreadyActiveMemberException,
-    StudyTeamInvalidApplicantException,
-    StudyTeamAlreadyRejectMemberException,
-    StudyTeamInvalidUserException,
-    StudyTeamNotActiveMemberException,
-    StudyTeamDuplicateDeleteUpdateException,
-    StudyTeamClosedRecruitException,
-} from './exception/studyTeam.exception';
-import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
-
-import { AlertService } from '../alert/alert.service';
-import { StudyMemberService } from '../studyMembers/studyMember.service';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import {
     mapToStudyAlertPayload,
     mapToTeamLeaderAlertPayload,
 } from '../../common/mapper/slack.mapper';
-import { TeamType } from '../../common/category/teamCategory/teamType';
-import { MemberStatus } from '../../common/category/teamCategory/member.category';
+import { AwsService } from '../../infra/awsS3/aws.service';
+import { IndexService } from '../../infra/index/index.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import { AlertService } from '../alert/alert.service';
+import { StudyMemberStatus } from '../studyMembers/category/StudyMemberStatus';
+import { StudyMemberNotFoundException } from '../studyMembers/exception/study-member.exception';
+import { StudyMemberService } from '../studyMembers/studyMember.service';
 
 @Injectable()
 export class StudyTeamService {
