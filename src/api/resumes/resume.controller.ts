@@ -13,16 +13,18 @@ import {
     UploadedFile,
     Patch,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiTags, ApiBody, ApiConsumes } from '@nestjs/swagger';
+
+import { Request } from 'express';
+
 import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
-import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
-import { ResumeService } from '../../core/resumes/resume.service';
 import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.resumes.query.request';
+import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
-import { Request } from 'express';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { ResumeService } from '../../core/resumes/resume.service';
 
 @ApiTags('resumes')
 @Controller('resumes')

@@ -5,17 +5,28 @@ module.exports = {
         tsconfigRootDir: __dirname,
         sourceType: 'module',
     },
-    plugins: ['@typescript-eslint/eslint-plugin'],
+    plugins: ['@typescript-eslint/eslint-plugin', 'import'],
     extends: [
         'plugin:@typescript-eslint/recommended',
         'plugin:prettier/recommended',
+        'plugin:import/errors',
+        'plugin:import/warnings',
+        'plugin:import/typescript',
     ],
     root: true,
     env: {
         node: true,
         jest: true,
     },
-    ignorePatterns: ['.eslintrc.js', 'dist/**'],
+    ignorePatterns: ['.eslintrc.js', '.eslintrc.cjs', 'dist/**'],
+    settings: {
+        'import/resolver': {
+            typescript: {},
+            node: {
+                extensions: ['.js', '.jsx', '.ts', '.tsx'],
+            },
+        },
+    },
     rules: {
         'no-console': 'warn', // console 명령어 금지
         eqeqeq: [2, 'allow-null'], // == 금지
@@ -43,5 +54,45 @@ module.exports = {
         'object-curly-spacing': ['error', 'always'], // {} 사이 공백 강제
         'function-call-argument-newline': ['off'], // 함수 호출 시 인자에 줄바꿈 금지
         'max-len': [2, 200, 4, { ignoreUrls: true }], // 한 줄의 최대 길이, url은 예외
+        'import/order': [
+            'error',
+            {
+                // import 순서 정리 
+                groups: [
+                    ['builtin', 'external'],
+                    ['parent', 'sibling'],
+                    'internal',
+                    'index',
+                    'object',
+                ],
+                pathGroups: [
+                    {
+                        pattern: '@nestjs/**',
+                        group: 'external',
+                        position: 'before',
+                    },
+                    {
+                        pattern: '@prisma/**',
+                        group: 'external',
+                        position: 'after',
+                    },
+                    {
+                        pattern: './**',
+                        group: 'sibling',
+                        position: 'before',
+                    },
+                ],
+                pathGroupsExcludedImportTypes: ['builtin'],
+                'newlines-between': 'always',
+                alphabetize: {
+                    order: 'asc',
+                    caseInsensitive: true,
+                },
+                distinctGroup: true,
+            },
+        ],
+        'import/no-absolute-path': 'error',
+        'import/no-useless-path-segments': 'error',
+        'import/no-self-import': 'error',
     },
 };

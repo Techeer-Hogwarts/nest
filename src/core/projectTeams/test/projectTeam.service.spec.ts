@@ -1,29 +1,38 @@
-import { jest } from '@jest/globals';
-
 import { Test, TestingModule } from '@nestjs/testing';
+
+import { jest } from '@jest/globals';
 
 import { Prisma } from '@prisma/client';
 
 import {
+    mockCreateProjectTeamRequest,
+    mockFile,
+    mockFiles,
+    mockProjectTeam,
+    mockProjectTeamCreatePrisma,
+    mockProjectTeamResponse,
+    mockUpdatedProject,
+    mockUpdateProjectTeamRequest,
+    mockValidStack,
+} from './mock-data';
+
+import { MemberStatus } from '../../../common/category/teamCategory/member.category';
+import {
     isTeamRole,
     TeamRole,
 } from '../../../common/category/teamCategory/teamRole.category';
-import { MemberStatus } from '../../../common/category/teamCategory/member.category';
 import { CreateProjectMemberRequest } from '../../../common/dto/projectMembers/request/create.projectMember.request';
 import { ProjectMemberInfoRequest } from '../../../common/dto/projectMembers/request/info.projectMember.request';
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-
 import { AwsService } from '../../../infra/awsS3/aws.service';
 import { IndexService } from '../../../infra/index/index.service';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
-
-import { ProjectMemberService } from '../../projectMembers/projectMember.service';
+import { AlertService } from '../../alert/alert.service';
 import {
     ProjectMemberInvalidActiveRequesterException,
     ProjectMemberNotFoundException,
 } from '../../projectMembers/exception/projectMember.exception';
-import { AlertService } from '../../alert/alert.service';
-import { ProjectTeamService } from '../projectTeam.service';
+import { ProjectMemberService } from '../../projectMembers/projectMember.service';
 import {
     ProjectTeamAlreadyApprovedException,
     ProjectTeamDuplicateTeamNameException,
@@ -37,18 +46,7 @@ import {
     ProjectTeamMissingUpdateMemberException,
     ProjectTeamRecruitmentEndedException,
 } from '../exception/projectTeam.exception';
-
-import {
-    mockCreateProjectTeamRequest,
-    mockFile,
-    mockFiles,
-    mockProjectTeam,
-    mockProjectTeamCreatePrisma,
-    mockProjectTeamResponse,
-    mockUpdatedProject,
-    mockUpdateProjectTeamRequest,
-    mockValidStack,
-} from './mock-data';
+import { ProjectTeamService } from '../projectTeam.service';
 
 describe('ProjectTeamService', () => {
     let service: ProjectTeamService;

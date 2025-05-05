@@ -1,6 +1,6 @@
-import { ConfigModule } from '@nestjs/config';
-import { Global, Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AuthService } from './auth.service';

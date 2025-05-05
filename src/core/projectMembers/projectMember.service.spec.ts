@@ -1,16 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 
-import { MemberStatus } from '../../common/category/teamCategory/member.category';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-
-import { ProjectMemberService } from './projectMember.service';
 import {
     ProjectMemberAlreadyActiveException,
     ProjectMemberApplicationExistsException,
     ProjectMemberInvalidActiveRequesterException,
     ProjectMemberNotFoundException,
 } from './exception/projectMember.exception';
+import { ProjectMemberService } from './projectMember.service';
+
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
 let prisma: DeepMockProxy<PrismaService>;

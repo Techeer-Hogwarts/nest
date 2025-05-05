@@ -1,17 +1,16 @@
-import * as bcrypt from 'bcryptjs';
-import * as nodemailer from 'nodemailer';
-import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { of } from 'rxjs';
-import Redis from 'ioredis';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import * as bcrypt from 'bcryptjs';
+import Redis from 'ioredis';
+import * as nodemailer from 'nodemailer';
+import { of } from 'rxjs';
+
 import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-
+import { UserService } from '../../users/user.service';
 import { AuthService } from '../auth.service';
-import { UserService } from '../../../core/users/user.service';
-
 import {
     AuthInvalidCodeException,
     AuthInvalidPasswordException,

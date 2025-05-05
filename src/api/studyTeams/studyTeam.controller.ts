@@ -1,35 +1,35 @@
 import {
-    Controller,
-    Post,
     Body,
-    UploadedFiles,
-    UseInterceptors,
-    UseGuards,
-    Req,
-    Patch,
-    Param,
+    Controller,
     Get,
+    Param,
+    Patch,
+    Post,
+    Req,
+    UploadedFiles,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { StudyTeamService } from '../../core/studyTeams/studyTeam.service';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { JwtAuthGuard } from '../../core/auth/jwt.guard';
+import { Request } from 'express';
+
+import { JsonBodyToDTO } from '../../common/decorator/JsonBodyToDTO';
+import { AddMemberToStudyTeamRequest } from '../../common/dto/studyMembers/request/add.studyMember.request';
+import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
+import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
+import { UpdateStudyApplicantStatusRequest } from '../../common/dto/studyTeams/request/update.applicantStatus.request';
+import { UpdateStudyTeamRequest } from '../../common/dto/studyTeams/request/update.studyTeam.request';
 import {
     GetStudyTeamResponse,
     StudyApplicantResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { StudyTeamInvalidUserException } from '../../core/studyTeams/exception/studyTeam.exception';
-
-import { JsonBodyToDTO } from '../../common/decorator/JsonBodyToDTO';
-import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
-import { UpdateStudyApplicantStatusRequest } from '../../common/dto/studyTeams/request/update.applicantStatus.request';
-import { AddMemberToStudyTeamRequest } from '../../common/dto/studyMembers/request/add.studyMember.request';
-import { UpdateStudyTeamRequest } from '../../common/dto/studyTeams/request/update.studyTeam.request';
-import { CreateStudyTeamRequest } from '../../common/dto/studyTeams/request/create.studyTeam.request';
+import { StudyTeamService } from '../../core/studyTeams/studyTeam.service';
 
 @ApiTags('studyTeams')
 @Controller('/studyTeams')

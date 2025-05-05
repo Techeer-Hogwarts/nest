@@ -1,9 +1,10 @@
 import { Transform } from 'class-transformer';
-import { GlobalLogger } from '../logger/global.logger';
+
 import {
     GlobalInvalidDataTypeBody,
     GlobalInvalidInputValueException,
 } from '../exception/global.exception';
+import { GlobalLogger } from '../logger/global.logger';
 
 export function ParseJsonArray(): PropertyDecorator {
     return Transform(({ value }) => {

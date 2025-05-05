@@ -1,5 +1,17 @@
 import { Injectable } from '@nestjs/common';
 
+import { Blog, ProjectTeam, Resume, Session, StudyTeam } from '@prisma/client';
+
+import {
+    LikeContentNotFoundException,
+    LikeDatabaseOperationException,
+    LikeDuplicateRequestException,
+    LikeInvalidCategoryException,
+    LikeInvalidContentIdException,
+    LikeInvalidUserIdException,
+    LikeTransactionFailedException,
+} from './exception/like.exception';
+
 import { GetBlogResponse } from '../../common/dto/blogs/response/get.blog.response';
 import { CreateLikeRequest } from '../../common/dto/likes/request/create.like.request';
 import { GetLikeListRequest } from '../../common/dto/likes/request/get.like-list.request';
@@ -18,18 +30,6 @@ import { CreateInteractableContentTableMap } from '../../common/types/content.ty
 
 import { IndexService } from '../../infra/index/index.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
-
-import { Blog, ProjectTeam, Resume, Session, StudyTeam } from '@prisma/client';
-
-import {
-    LikeContentNotFoundException,
-    LikeDatabaseOperationException,
-    LikeDuplicateRequestException,
-    LikeInvalidCategoryException,
-    LikeInvalidContentIdException,
-    LikeInvalidUserIdException,
-    LikeTransactionFailedException,
-} from './exception/like.exception';
 
 @Injectable()
 export class LikeService {

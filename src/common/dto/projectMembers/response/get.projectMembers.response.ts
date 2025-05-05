@@ -1,5 +1,6 @@
-import { ProjectMember, StatusCategory } from '@prisma/client';
 import { Exclude } from 'class-transformer';
+
+import { ProjectMember, StatusCategory } from '@prisma/client';
 
 export class ProjectMemberData implements Partial<ProjectMember> {
     id: number;

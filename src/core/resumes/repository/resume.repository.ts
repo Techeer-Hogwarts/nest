@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
-import { ResumeEntity } from '../entities/resume.entity';
-import { GetResumesQueryRequest } from '../../../common/dto/resumes/request/get.resumes.query.request';
-import { PaginationQueryDto } from '../../../common/pagination/pagination.query.dto';
-import { NotFoundResumeException } from '../../../common/exception/custom.exception';
+
 import { Prisma } from '@prisma/client';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
-import { IndexService } from '../../../infra/index/index.service';
+
+import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
+import { GetResumesQueryRequest } from '../../../common/dto/resumes/request/get.resumes.query.request';
 import { IndexResumeRequest } from '../../../common/dto/resumes/request/index.resume.request';
+import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
+import { NotFoundResumeException } from '../../../common/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { PaginationQueryDto } from '../../../common/pagination/pagination.query.dto';
+import { IndexService } from '../../../infra/index/index.service';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { ResumeEntity } from '../entities/resume.entity';
 
 @Injectable()
 export class ResumeRepository {

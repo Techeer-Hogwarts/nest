@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { IsOptional } from 'class-validator';
-import { TeamType } from '../../../category/teamCategory/teamType';
-import { IsTeamTypeArray } from '../../../decorator/teamType.decorator';
+
 import { PositionType } from '../../../category/teamCategory/projectPositionType';
+import { TeamType } from '../../../category/teamCategory/teamType';
 import { IsPositionArray } from '../../../decorator/projectPosition.decorator';
+import { IsTeamTypeArray } from '../../../decorator/teamType.decorator';
 import { TransformToBoolean } from '../../../decorator/transfrom.boolean.decorator';
 
 export class GetTeamQueryRequest {
