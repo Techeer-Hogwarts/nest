@@ -18,7 +18,6 @@ import { GetSessionsQueryRequest } from '../../common/dto/sessions/request/get.s
 import { IndexSessionRequest } from '../../common/dto/sessions/request/index.session.request';
 import { UpdateSessionRequest } from '../../common/dto/sessions/request/update.session.request';
 
-import { NotFoundSessionException } from 'src/common/exception/custom.exception';
 import { CreateSessionResponse } from '../../common/dto/sessions/response/create.session.response';
 import { GetSessionResponse } from '../../common/dto/sessions/response/get.session.response';
 
@@ -285,6 +284,7 @@ export class SessionService {
         const session = await this.prisma.session.findFirst({
             where: {
                 id: sessionId,
+                isDeleted: false,
             },
             include: {
                 user: true,
@@ -296,7 +296,7 @@ export class SessionService {
                 `세션 게시물을 찾을 수 없음`,
                 SessionService.name,
             );
-            throw new NotFoundSessionException();
+            throw new SessionNotFoundException();
         }
 
         if (session.userId !== userId) {
