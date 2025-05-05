@@ -281,7 +281,23 @@ export class SessionService {
     ): Promise<CreateSessionResponse> {
         this.logger.debug(`세션 게시물 수정 중`, SessionService.name);
 
-        const session = await this.findById(sessionId);
+        const session = await this.prisma.session.findFirst({
+            where: {
+                id: sessionId,
+                isDeleted: false,
+            },
+            include: {
+                user: true,
+            },
+        });
+
+        if (!session) {
+            this.logger.error(
+                `세션 게시물을 찾을 수 없음`,
+                SessionService.name,
+            );
+            throw new SessionNotFoundException();
+        }
 
         if (session.userId !== userId) {
             this.logger.error(
@@ -291,13 +307,38 @@ export class SessionService {
             throw new SessionForbiddenException();
         }
 
+        const {
+            thumbnail,
+            title,
+            presenter,
+            date,
+            position,
+            category,
+            videoUrl,
+            fileUrl,
+        } = updateSessionRequest;
+
         try {
             const updatedSession = await this.prisma.session.update({
                 where: {
                     id: sessionId,
+                    isDeleted: false,
                 },
-                data: updateSessionRequest,
+                data: {
+                    ...(thumbnail !== undefined && { thumbnail }),
+                    ...(title !== undefined && { title }),
+                    ...(presenter !== undefined && { presenter }),
+                    ...(date !== undefined && { date }),
+                    ...(position !== undefined && { position }),
+                    ...(category !== undefined && { category }),
+                    ...(videoUrl !== undefined && { videoUrl }),
+                    ...(fileUrl !== undefined && { fileUrl }),
+                },
+                include: {
+                    user: true,
+                },
             });
+
             // 인덱스 업데이트
             const indexSession = new IndexSessionRequest(updatedSession);
             this.logger.debug(
