@@ -1,10 +1,7 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
-import { Transform } from 'class-transformer';
 import {
-    IsBoolean,
     IsEnum,
-    IsOptional,
     IsString,
     IsUrl,
     IsOptional,

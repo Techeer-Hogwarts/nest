@@ -21,7 +21,6 @@ import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
 import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.resumes.query.request';
 import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
-import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.resumes.query.request';
 import { JwtAuthGuard } from '../../core/auth/jwt.guard';
 import { ResumeService } from '../../core/resumes/resume.service';
 import { 
