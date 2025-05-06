@@ -6,15 +6,15 @@ import { CrawlingBlogResponse } from '../../common/dto/blogs/response/crawling.b
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { RabbitMQService } from '../../infra/rabbitmq/rabbitmq.service';
 import { RedisService } from '../../infra/redis/redis.service';
+import { BlogService } from '../blogs/blog.service';
 import { BlogCategory } from '../blogs/category/blog.category';
-import { BlogRepository } from '../blogs/repository/blog.repository';
 
 @Injectable()
 export class TaskService implements OnModuleInit {
     constructor(
         private readonly rabbitMQService: RabbitMQService,
         private readonly redisService: RedisService,
-        private readonly blogRepository: BlogRepository,
+        private readonly blogService: BlogService,
         private readonly logger: CustomWinstonLogger,
     ) {}
 
@@ -77,7 +77,7 @@ export class TaskService implements OnModuleInit {
      */
     @Cron('0 3 * * *')
     async requestDailyUpdate(): Promise<void> {
-        const userBlogUrls = await this.blogRepository.getAllUserBlogUrl();
+        const userBlogUrls = await this.blogService.getAllUserBlogUrl();
         this.logger.debug(
             `userBlogUrls: ${JSON.stringify(userBlogUrls)}`,
             TaskService.name,
@@ -120,19 +120,29 @@ export class TaskService implements OnModuleInit {
             TaskService.name,
         );
         // 최신 블로그 글 가져오기 로직
-        const blogs = new CrawlingBlogResponse(
-            JSON.parse(taskData),
-            BlogCategory.TECHEER,
-        );
-        blogs.posts = await this.filterPosts(blogs.posts); // 필터링
-        this.logger.debug(
-            `필터링한 블로그 생성 요청 중 - posts: ${JSON.stringify(blogs.posts)}`,
-            TaskService.name,
-        );
-        await this.blogRepository.createBlog(blogs);
-        this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
-        await this.redisService.deleteTask(taskId);
+        try {
+            const blogs = new CrawlingBlogResponse(
+                JSON.parse(taskData),
+                BlogCategory.TECHEER,
+            );
+            blogs.posts = await this.filterPosts(blogs.posts); // 필터링
+            this.logger.debug(
+                `필터링한 블로그 생성 요청 중 - posts: ${JSON.stringify(blogs.posts)}`,
+                TaskService.name,
+            );
+
+            await this.blogService.createBlog(blogs);
+        } catch (error) {
+            this.logger.error(
+                `블로그 생성 중 오류 발생 - ${error}`,
+                TaskService.name,
+            );
+        } finally {
+            this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
+            await this.redisService.deleteTask(taskId);
+        }
     }
+
     // 현재 시간 기준 24시간 동안의 글 필터링
     private async filterPosts(posts: BlogPostDto[]): Promise<BlogPostDto[]> {
         const now = new Date();
@@ -185,17 +195,26 @@ export class TaskService implements OnModuleInit {
             `Fetching all blogs for task ${taskId}: ${taskData}`,
             TaskService.name,
         );
-        const blogs = new CrawlingBlogResponse(
-            JSON.parse(taskData),
-            BlogCategory.TECHEER,
-        );
-        this.logger.debug(
-            `신규 유저의 블로그 생성 요청 중 - posts: ${blogs.posts}`,
-            TaskService.name,
-        );
-        await this.blogRepository.createBlog(blogs);
-        this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
-        await this.redisService.deleteTask(taskId);
+        try {
+            const blogs = new CrawlingBlogResponse(
+                JSON.parse(taskData),
+                BlogCategory.TECHEER,
+            );
+            this.logger.debug(
+                `신규 유저의 블로그 생성 요청 중 - posts: ${blogs.posts}`,
+                TaskService.name,
+            );
+
+            await this.blogService.createBlog(blogs);
+        } catch (error) {
+            this.logger.error(
+                `블로그 생성 중 오류 발생 - ${error}`,
+                TaskService.name,
+            );
+        } finally {
+            this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
+            await this.redisService.deleteTask(taskId);
+        }
     }
 
     /**
@@ -221,16 +240,25 @@ export class TaskService implements OnModuleInit {
         taskData: string,
     ): Promise<void> {
         Logger.debug(`Fetching post details for task ${taskId}: ${taskData}`);
-        const post = new CrawlingBlogResponse(
-            JSON.parse(taskData),
-            BlogCategory.SHARED,
-        );
-        this.logger.debug(
-            `외부 블로그 생성 요청 중 - posts: ${post}`,
-            TaskService.name,
-        );
-        await this.blogRepository.createBlog(post);
-        this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
-        await this.redisService.deleteTask(taskId);
+        try {
+            const post = new CrawlingBlogResponse(
+                JSON.parse(taskData),
+                BlogCategory.SHARED,
+            );
+            this.logger.debug(
+                `외부 블로그 생성 요청 중 - posts: ${post}`,
+                TaskService.name,
+            );
+
+            await this.blogService.createBlog(post);
+        } catch (error) {
+            this.logger.error(
+                `블로그 생성 중 오류 발생 - taskId: ${taskId}, error: ${error}`,
+                TaskService.name,
+            );
+        } finally {
+            this.logger.debug('블로그 생성 후 테스크 삭제', TaskService.name);
+            await this.redisService.deleteTask(taskId);
+        }
     }
 }
