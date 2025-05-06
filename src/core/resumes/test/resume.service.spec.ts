@@ -1,253 +1,234 @@
-// import { Test, TestingModule } from '@nestjs/testing';
-// import {
-//     resumeEntity,
-//     createResumeRequest,
-//     getResumeResponse,
-//     getResumeResponseList,
-//     getResumesQueryRequest,
-//     paginationQueryDto,
-//     user,
-// } from './mock-data';
-// import { GetResumeResponse } from '../dto/response/get.resume.response';
-// import { ResumeService } from '../resume.service';
-// import { ResumeRepository } from '../repository/resume.repository';
-// import { NotFoundResumeException } from '../../../common/exception/custom.exception';
-// import { GoogleDriveService } from '../../../infra/googleDrive/google.drive.service';
-// import { PrismaService } from '../../../infra/prisma/prisma.service';
-// import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+// src/core/resumes/test/resume.service.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
+import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
+import { GetResumesQueryRequest } from '../../../common/dto/resumes/request/get.resumes.query.request';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { GoogleDriveService } from '../../../infra/googleDrive/google.drive.service';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { NotFoundResumeException } from '../../../common/exception/custom.exception';
+import { ResumeService } from '../resume.service';
+import { IndexService } from '../../../infra/index/index.service';
 
-// describe('ResumeService', (): void => {
-//     let service: ResumeService;
-//     let repository: ResumeRepository;
-//     let googleDriveService: GoogleDriveService;
+describe('ResumeService', () => {
+    let service: ResumeService;
+    let prismaService: PrismaService;
+    let googleDriveService: GoogleDriveService;
+    let logger: CustomWinstonLogger;
 
-//     const mockPrismaService = {
-//         transaction: jest.fn(),
-//     };
+    const mockUser = {
+        id: 1,
+        name: '김테커',
+        email: 'test@example.com',
+        roleId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+        stack: ['BACKEND'],
+        nickname: '김김테커',
+        year: 4,
+        password: 'passW0rd1!',
+        isLft: false,
+        githubUrl: 'https://github.com/test',
+        mainPosition: 'BACKEND',
+        subPosition: 'FRONTEND',
+        tistoryUrl: null,
+        velogUrl: null,
+        mediumUrl: null,
+        school: '테커대학교',
+        grade: '1',
+        isAuth: false,
+        profileImage: 'https://test.com/image.jpg'
+    };
 
-//     beforeEach(async (): Promise<void> => {
-//         const module: TestingModule = await Test.createTestingModule({
-//             providers: [
-//                 ResumeService,
-//                 {
-//                     provide: PrismaService,
-//                     useValue: mockPrismaService,
-//                 },
-//                 {
-//                     provide: ResumeRepository,
-//                     useValue: {
-//                         createResume: jest.fn(),
-//                         getBestResumes: jest.fn(),
-//                         getResume: jest.fn(),
-//                         getResumeList: jest.fn(),
-//                         getResumesByUser: jest.fn(),
-//                         deleteResume: jest.fn(),
-//                         updateResume: jest.fn(),
-//                         getResumeTitle: jest.fn(),
-//                         unsetMainResumeForUser: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: GoogleDriveService,
-//                     useValue: {
-//                         uploadFileBuffer: jest.fn(),
-//                         moveFileToArchive: jest.fn(),
-//                     },
-//                 },
-//                 {
-//                     provide: CustomWinstonLogger,
-//                     useValue: {
-//                         debug: jest.fn(),
-//                         error: jest.fn(),
-//                     },
-//                 },
-//             ],
-//         }).compile();
+    const mockResume = {
+        id: 1,
+        title: '테스트 이력서',
+        url: 'https://drive.google.com/file/d/test/view',
+        category: 'PORTFOLIO',
+        position: 'BACKEND',
+        isMain: false,
+        userId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+        likeCount: 0,
+        viewCount: 0,
+        user: mockUser,
+    };
 
-//         service = module.get<ResumeService>(ResumeService);
-//         repository = module.get<ResumeRepository>(ResumeRepository);
-//         googleDriveService = module.get<GoogleDriveService>(GoogleDriveService);
-//     });
+    beforeEach(async () => {
+        const mockPrismaService = {
+            resume: {
+                create: jest.fn(),
+                findMany: jest.fn(),
+                findUnique: jest.fn(),
+                update: jest.fn(),
+                delete: jest.fn(),
+            },
+            $transaction: jest.fn(),
+        };
 
-//     describe('createResume', () => {
-//         let mockPrisma: any;
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                ResumeService,
+                {
+                    provide: PrismaService,
+                    useValue: mockPrismaService,
+                },
+                {
+                    provide: GoogleDriveService,
+                    useValue: {
+                        uploadFileBuffer: jest.fn(),
+                        moveFileToArchive: jest.fn(),
+                    },
+                },
+                {
+                    provide: IndexService,
+                    useValue: {
+                        createIndex: jest.fn(),
+                        deleteIndex: jest.fn(),
+                    },
+                },
+                {
+                    provide: CustomWinstonLogger,
+                    useValue: {
+                        debug: jest.fn(),
+                        error: jest.fn(),
+                    },
+                },
+            ],
+        }).compile();
 
-//         beforeEach(() => {
-//             // Prisma.TransactionClient Mock 생성
-//             mockPrisma = {
-//                 transaction: jest.fn(),
-//             };
+        service = module.get<ResumeService>(ResumeService);
+        prismaService = module.get<PrismaService>(PrismaService);
+        googleDriveService = module.get<GoogleDriveService>(GoogleDriveService);
+        logger = module.get<CustomWinstonLogger>(CustomWinstonLogger);
+    });
 
-//             jest.clearAllMocks(); // 각 테스트 전 Mock 초기화
-//         });
+    it('should be defined', () => {
+        expect(service).toBeDefined();
+    });
 
-//         it('should successfully create a resume with prisma transaction', async () => {
-//             const mockFile: Express.Multer.File = {
-//                 buffer: Buffer.from('Test File Content'),
-//                 originalname: 'resume.pdf',
-//                 mimetype: 'application/pdf',
-//                 size: 12345,
-//                 fieldname: 'file',
-//                 encoding: '7bit',
-//                 destination: '',
-//                 filename: '',
-//                 path: '',
-//                 stream: null as any,
-//             };
+    describe('createResume', () => {
+        it('이력서를 성공적으로 생성해야 한다.', async () => {
+            const mockFile = {
+                buffer: Buffer.from('test'),
+                originalname: 'test.pdf',
+            } as Express.Multer.File;
 
-//             const formattedDate = new Date()
-//                 .toISOString()
-//                 .replace('T', '-')
-//                 .replace(/:/g, '')
-//                 .split('.')[0]
-//                 .slice(0, -2);
+            const createResumeRequest: CreateResumeRequest = {
+                title: '테스트 이력서',
+                category: 'PORTFOLIO',
+                position: 'BACKEND',
+                isMain: false,
+                url: '',
+            };
 
-//             const resumeUrl = 'https://drive.google.com/file/d/resume-id/view';
+            jest.spyOn(googleDriveService, 'uploadFileBuffer').mockResolvedValue('https://drive.google.com/file/d/test/view');
+            jest.spyOn(prismaService.resume, 'create').mockResolvedValue(mockResume);
 
-//             jest.spyOn(
-//                 googleDriveService,
-//                 'uploadFileBuffer',
-//             ).mockResolvedValue(resumeUrl);
-//             jest.spyOn(repository, 'createResume').mockResolvedValue(
-//                 resumeEntity(),
-//             );
+            const result = await service.createResume(createResumeRequest, mockFile, mockUser);
 
-//             const result = await service.createResume(
-//                 createResumeRequest,
-//                 mockFile,
-//                 user,
-//                 mockPrisma,
-//             );
+            expect(result).toBeInstanceOf(GetResumeResponse);
+            expect(googleDriveService.uploadFileBuffer).toHaveBeenCalled();
+            expect(prismaService.resume.create).toHaveBeenCalled();
+        });
+    });
 
-//             // 결과값 검증
-//             expect(result).toEqual(getResumeResponse);
+    describe('getResumeList', () => {
+        it('이력서 목록을 반환해야 한다.', async () => {
+            const query: GetResumesQueryRequest = {
+                position: ['BACKEND'],
+                year: [4],
+                category: 'PORTFOLIO',
+                offset: 0,
+                limit: 10,
+            };
 
-//             // Google Drive 업로드 호출 확인
-//             expect(googleDriveService.uploadFileBuffer).toHaveBeenCalledWith(
-//                 mockFile.buffer,
-//                 `${user.name}-${formattedDate}-${createResumeRequest.title}`,
-//             );
+            jest.spyOn(prismaService.resume, 'findMany').mockResolvedValue([mockResume]);
 
-//             // DB에 저장 호출 확인
-//             expect(repository.createResume).toHaveBeenCalledWith(
-//                 {
-//                     category: createResumeRequest.category,
-//                     position: createResumeRequest.position,
-//                     title: `${user.name}-${formattedDate}-${createResumeRequest.title}`,
-//                     url: resumeUrl,
-//                     isMain: createResumeRequest.isMain,
-//                 },
-//                 user.id,
-//                 mockPrisma, // Mock PrismaService 전달 확인
-//             );
-//         });
-//     });
+            const result = await service.getResumeList(query);
 
-//     describe('getBestResumes', (): void => {
-//         it('should return a list of GetResumeResponse objects based on pagination query', async (): Promise<void> => {
-//             jest.spyOn(repository, 'getBestResumes').mockResolvedValue(
-//                 getResumeResponseList,
-//             );
+            expect(Array.isArray(result)).toBe(true);
+            expect(result[0]).toBeInstanceOf(GetResumeResponse);
+            expect(prismaService.resume.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.any(Object),
+                    skip: query.offset,
+                    take: query.limit,
+                }),
+            );
+        });
+    });
 
-//             const result: GetResumeResponse[] =
-//                 await service.getBestResumes(paginationQueryDto);
+    describe('getResume', () => {
+        it('단일 이력서를 반환한다.', async () => {
+            prismaService.resume.findUnique.mockResolv
 
-//             expect(result).toEqual(getResumeResponseList);
-//             expect(repository.getBestResumes).toHaveBeenCalledWith(
-//                 paginationQueryDto,
-//             );
-//             expect(repository.getBestResumes).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            const result = await service.getResume(1);
 
-//     describe('getResume', (): void => {
-//         it('should return a GetResumeResponse when a resume is found', async (): Promise<void> => {
-//             jest.spyOn(repository, 'getResume').mockResolvedValue(
-//                 resumeEntity(),
-//             );
+            expect(result).toBeInstanceOf(GetResumeResponse);
+            expect(prismaService.resume.findUnique).toHaveBeenCalledWith({
+                where: { id: 1 },
+                include: expect.any(Object),
+            });
+        });
 
-//             const result: GetResumeResponse = await service.getResume(1);
+        it('이력서가 없을 경우, NotFoundException이 발생해야 한다.', async () => {
+            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(null);
 
-//             expect(result).toEqual(getResumeResponse);
-//             expect(result).toBeInstanceOf(GetResumeResponse);
-//             expect(repository.getResume).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            await expect(service.getResume(999)).rejects.toThrow(NotFoundResumeException);
+        });
+    });
 
-//     describe('getResumeList', (): void => {
-//         it('should return a list of GetResumeResponse objects based on query', async (): Promise<void> => {
-//             jest.spyOn(repository, 'getResumeList').mockResolvedValue(
-//                 getResumeResponseList,
-//             );
+    describe('deleteResume', () => {
+        it('이력서를 성공적으로 삭제해야 한다.', async () => {
+            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(mockResume);
+            jest.spyOn(prismaService.resume, 'update').mockResolvedValue({
+                ...mockResume,
+                isDeleted: true,
+            });
 
-//             const result: GetResumeResponse[] = await service.getResumeList(
-//                 getResumesQueryRequest,
-//             );
+            await service.deleteResume(mockUser, 1);
 
-//             expect(result).toEqual(getResumeResponseList);
-//             expect(
-//                 result.every(
-//                     (item: GetResumeResponse): boolean =>
-//                         item instanceof GetResumeResponse,
-//                 ),
-//             ).toBe(true);
-//             expect(repository.getResumeList).toHaveBeenCalledWith(
-//                 getResumesQueryRequest,
-//             );
-//             expect(repository.getResumeList).toHaveBeenCalledTimes(1);
-//         });
-//     });
+            expect(prismaService.resume.update).toHaveBeenCalledWith({
+                where: { id: 1 },
+                data: { isDeleted: true },
+            });
+        });
 
-//     describe('getResumesByUser', (): void => {
-//         it('should return a list of GetResumeResponse objects for a specific user', async (): Promise<void> => {
-//             jest.spyOn(repository, 'getResumesByUser').mockResolvedValue(
-//                 getResumeResponseList,
-//             );
+        it('삭제 시도한 이력서가 없을 경우, NotFoundException을 반환해야 한다.', async () => {
+            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(null);
 
-//             const result: GetResumeResponse[] = await service.getResumesByUser(
-//                 1,
-//                 paginationQueryDto,
-//             );
+            await expect(service.deleteResume(mockUser, 999)).rejects.toThrow(
+                NotFoundResumeException,
+            );
+        });
+    });
 
-//             expect(repository.getResumesByUser).toHaveBeenCalledWith(
-//                 1,
-//                 paginationQueryDto,
-//             );
-//             expect(repository.getResumesByUser).toHaveBeenCalledTimes(1);
+    describe('updateMainResume', () => {
+        it('메인 이력서를 성공적으로 변경해야 한다.', async () => {
+            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(mockResume);
+            jest.spyOn(prismaService.resume, 'update').mockResolvedValue({
+                ...mockResume,
+                isMain: true,
+            });
 
-//             expect(result).toEqual(getResumeResponseList);
-//             expect(
-//                 result.every(
-//                     (item: GetResumeResponse): boolean =>
-//                         item instanceof GetResumeResponse,
-//                 ),
-//             ).toBe(true);
-//         });
-//     });
+            await service.updateMainResume(mockUser, 1);
 
-//     describe('deleteResume', (): void => {
-//         it('should successfully delete a resume', async (): Promise<void> => {
-//             jest.spyOn(repository, 'getResume').mockResolvedValue(
-//                 resumeEntity(),
-//             );
-//             jest.spyOn(repository, 'deleteResume').mockResolvedValue(undefined);
+            expect(prismaService.resume.update).toHaveBeenCalledWith({
+                where: { id: 1 },
+                data: { isMain: true },
+            });
+        });
 
-//             await service.deleteResume(user, 1);
+        it('업데이트 시도한 이력서가 없을 경우, NotFoundException을 반환해야 한다.', async () => {
+            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(null);
 
-//             expect(repository.deleteResume).toHaveBeenCalledWith(1);
-//             expect(repository.deleteResume).toHaveBeenCalledTimes(1);
-//         });
-
-//         it('should throw NotFoundResumeException if resume does not exist', async (): Promise<void> => {
-//             jest.spyOn(repository, 'getResume').mockResolvedValue(undefined);
-//             jest.spyOn(repository, 'deleteResume').mockRejectedValue(
-//                 new NotFoundResumeException(),
-//             );
-
-//             await expect(service.deleteResume(user, 1)).rejects.toThrow(
-//                 NotFoundResumeException,
-//             );
-//             expect(repository.deleteResume).toHaveBeenCalledTimes(0);
-//         });
-//     });
-// });
+            await expect(service.updateMainResume(mockUser, 999)).rejects.toThrow(
+                NotFoundResumeException,
+            );
+        });
+    });
+});

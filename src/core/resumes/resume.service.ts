@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 
 import { ResumeEntity } from './entities/resume.entity';
-import { ResumeRepository } from './repository/resume.repository';
 
 import { CreateResumeRequest } from '../../common/dto/resumes/request/create.resume.request';
 import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.resumes.query.request';
@@ -16,8 +15,8 @@ import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
 import { GoogleDriveService } from '../../infra/googleDrive/google.drive.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
-import { IndexService } from 'src/infra/index/index.service';
-import { IndexResumeRequest } from 'src/common/dto/resumes/request/index.resume.request';
+import { IndexResumeRequest } from '../../common/dto/resumes/request/index.resume.request';
+import { IndexService } from '../../infra/index/index.service';
 
 @Injectable()
 export class ResumeService {
