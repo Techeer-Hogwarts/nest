@@ -1,102 +1,112 @@
-// import { ResumeEntity } from '../entities/resume.entity';
-// import { CreateResumeRequest } from '../dto/request/create.resume.request';
-// import { GetResumeResponse } from '../dto/response/get.resume.response';
-// import { GetResumesQueryRequest } from '../dto/request/get.resumes.query.request';
-// import { PaginationQueryDto } from '../../../common/pagination/pagination.query.dto';
-// import { UpdateResumeRequest } from '../dto/request/update.resume.request';
-// import { Request } from 'express';
+import type { Resume } from "@prisma/client";
 
-// export const user = {
-//     id: 1,
-//     createdAt: new Date('2024-09-24T08:51:54.000Z'),
-//     updatedAt: new Date('2024-09-24T08:51:54.000Z'),
-//     isDeleted: false,
-//     name: '홍길동',
-//     email: 'hong@test.com',
-//     nickname: 'hong123', // 예시 데이터 추가
-//     year: 2024,
-//     password: '1234',
-//     isLft: false,
-//     githubUrl: 'github',
-//     mediumUrl: 'blog',
-//     velogUrl: 'blog',
-//     tistoryUrl: 'blog',
-//     mainPosition: 'Backend',
-//     subPosition: 'DevOps',
-//     school: 'Test University',
-//     grade: '4학년',
-//     profileImage: 'profile-image-url',
-//     stack: [], // 빈 배열 기본값
-//     isAuth: true,
-//     roleId: 1,
-// };
+export const mockResumes: Resume[] = [
+    {
+        id: 1,
+        title: '이력서 테스트',
+        url: 'https://test.com/resume.pdf',
+        isMain: false,
+        category: 'PORTFOLIO',
+        position: 'BACKEND',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 1,
+        isDeleted: false,
+        likeCount: 0,
+        viewCount: 0,
+    },
+    {
+        id: 2,
+        title: '이력서 테스트2',
+        url: 'https://test2.com/resume.pdf',
+        isMain: false,
+        category: 'PORTFOLIO',
+        position: 'BACKEND',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 1,
+        isDeleted: false,
+        likeCount: 0,
+        viewCount: 0,
+    },
+    {
+        id: 3,
+        title: '이력서 테스트3',
+        url: 'https://test3.com/resume.pdf',
+        isMain: false,
+        category: 'PORTFOLIO',
+        position: 'BACKEND',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 2,
+        isDeleted: false,
+        likeCount: 0,
+        viewCount: 0,
+    },
+    {
+        id: 4,
+        title: '이력서 테스트4 (삭제됨)',
+        url: 'https://test4.com/resume.pdf',
+        isMain: false,
+        category: 'PORTFOLIO',
+        position: 'BACKEND',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 1,
+        isDeleted: true,
+        likeCount: 0,
+        viewCount: 0,
+    }
+];
 
-// export const request: Request = {
-//     user: user,
-// } as unknown as Request;
+export const mockUsers = [
+    {
+        id: 1,
+        name: '김테커',
+        email: 'test@example.com',
+        roleId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+        stack: ['BACKEND'],
+        nickname: '김테커',
+        year: 4,
+        password: 'passW0rd1!',
+        isLft: false,
+        githubUrl: 'https://github.com/test',
+        mainPosition: 'BACKEND',
+        subPosition: 'FRONTEND',
+        tistoryUrl: null,
+        velogUrl: null,
+        mediumUrl: null,
+        school: '테커대학교',
+        grade: '1',
+        isAuth: false,
+        profileImage: 'https://test.com/image.jpg'
+    },
+    {
+        id: 2,
+        name: '김테커2',
+        email: 'test2@example.com',
+        roleId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+        stack: ['BACKEND'],
+        nickname: '김테커2',
+        year: 4,
+        password: 'passW0rd1!',
+        isLft: false,
+        githubUrl: 'https://github.com/test',
+        mainPosition: 'BACKEND',
+        subPosition: 'FRONTEND',
+        tistoryUrl: null,
+        velogUrl: null,
+        mediumUrl: null,
+        school: '테커대학교',
+        grade: '1',
+        isAuth: false,
+        profileImage: 'https://test.com/image.jpg'
+    }
+]
 
-// export const createResumeRequest: CreateResumeRequest = {
-//     url: 'https://example.com/resume.pdf',
-//     category: 'PORTFOLIO',
-//     position: 'BACKEND',
-//     title: '스타트업',
-//     isMain: true,
-// };
-
-// export const resumeEntity = (
-//     overrides?: Partial<ResumeEntity>,
-// ): ResumeEntity => {
-//     return {
-//         id: 1,
-//         userId: 1,
-//         title: createResumeRequest.title,
-//         url: createResumeRequest.url,
-//         isMain: false,
-//         category: createResumeRequest.category,
-//         position: createResumeRequest.position,
-//         createdAt: new Date('2024-09-24T08:51:54.000Z'),
-//         updatedAt: new Date('2024-09-24T08:51:54.000Z'),
-//         isDeleted: false,
-//         likeCount: 0,
-//         viewCount: 0,
-//         user: user,
-//         ...overrides,
-//     };
-// };
-
-// export const resumeEntities: ResumeEntity[] = [
-//     resumeEntity({ id: 1 }),
-//     resumeEntity({ id: 2 }),
-// ];
-
-// export const getResumesQueryRequest: GetResumesQueryRequest = {
-//     position: ['BACKEND', 'FRONTEND'],
-//     year: [1, 2, 3],
-//     category: 'PORTFOLIO',
-//     offset: 0,
-//     limit: 10,
-// };
-
-// export const getResumeResponse: GetResumeResponse = new GetResumeResponse(
-//     resumeEntity(),
-// );
-
-// export const getResumeResponseList: GetResumeResponse[] = resumeEntities.map(
-//     (resume: ResumeEntity) => new GetResumeResponse(resume),
-// );
-
-// export const updateResumeRequest: UpdateResumeRequest = {
-//     title: 'Updated Title',
-//     url: 'https://example.com/updated-blog',
-//     isMain: false,
-//     category: 'PORTFOLIO',
-// };
-
-// export const updatedResumeEntity: ResumeEntity = resumeEntity({
-//     ...updateResumeRequest,
-// });
-
-// export const paginationQueryDto: PaginationQueryDto = {
-//     offset: 0,
-//     limit: 10,
-// };

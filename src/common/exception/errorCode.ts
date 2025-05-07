@@ -244,6 +244,11 @@ export const ErrorCode = {
         message: '이미 승인된 프로젝트 멤버입니다.',
     },
     /** Resumes **/
+    RESUME_NOT_FOUND: {
+        code: 'RESUME_NOT_FOUND',
+        status: HttpStatus.NOT_FOUND,
+        message: '이력서를 찾을 수 없습니다.',
+    },
     /** Session **/
     SESSION_NOT_FOUND: {
         code: 'SESSION_NOT_FOUND',

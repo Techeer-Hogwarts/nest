@@ -9,7 +9,6 @@ import { GetResumesQueryRequest } from '../../common/dto/resumes/request/get.res
 import { GetResumeResponse } from '../../common/dto/resumes/response/get.resume.response';
 import {
     ForbiddenException,
-    NotFoundResumeException,
 } from '../../common/exception/custom.exception';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { PaginationQueryDto } from '../../common/pagination/pagination.query.dto';
@@ -17,6 +16,7 @@ import { GoogleDriveService } from '../../infra/googleDrive/google.drive.service
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { IndexResumeRequest } from '../../common/dto/resumes/request/index.resume.request';
 import { IndexService } from '../../infra/index/index.service';
+import { ResumeNotFoundException } from './exception/resume.exception';
 
 @Injectable()
 export class ResumeService {
@@ -59,12 +59,10 @@ export class ResumeService {
                     user: true,
                 },
             })
-            .catch(() => null);
-
-        if (!resume) {
-            this.logger.error(`이력서를 찾을 수 없음`, ResumeService.name);
-            throw new NotFoundResumeException();
-        }
+            .catch(() => {
+                this.logger.error(`이력서를 찾을 수 없음`, ResumeService.name);
+                throw new ResumeNotFoundException();
+            });
         this.logger.debug(
             `이력서 상세 조회 및 viewCount 증가 성공`,
             ResumeService.name,
@@ -293,7 +291,7 @@ export class ResumeService {
                 error.code === 'P2025'
             ) {
                 this.logger.error(`이력서를 찾을 수 없음`, ResumeService.name);
-                throw new NotFoundResumeException();
+                throw new ResumeNotFoundException();
             }
             throw error;
         }
@@ -315,7 +313,7 @@ export class ResumeService {
             })
         if (!resume) {
             this.logger.error(`이력서를 찾을 수 없음`, ResumeService.name);
-            throw new NotFoundResumeException();
+            throw new ResumeNotFoundException();
         }
         if (resume.userId !== user.id) {
             this.logger.error(`작성자가 일치하지 않음`, ResumeService.name);
