@@ -12,12 +12,6 @@ export class NotFoundEventException extends HttpException {
     }
 }
 
-export class NotFoundResumeException extends HttpException {
-    constructor() {
-        super('이력서를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
-    }
-}
-
 export class ForbiddenException extends HttpException {
     constructor() {
         super(

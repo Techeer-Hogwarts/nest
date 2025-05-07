@@ -2,15 +2,15 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
 import { Transform } from 'class-transformer';
 import {
-    IsBoolean,
-    IsEnum,
-    IsOptional,
     IsString,
     IsUrl,
+    IsOptional,
+    IsBoolean,
+    IsIn,
 } from 'class-validator';
 
-import { ResumeCategory } from '../../../../core/resumes/category/resume.category';
-import { normalizeString } from '../../../category/normalize';
+import { RESUME_CATEGORY } from '../../../../core/resumes/category/resume.category';
+import { normalizeString } from '../../../../common/category/normalize';
 
 export class CreateResumeRequest {
     @IsOptional()
@@ -18,7 +18,7 @@ export class CreateResumeRequest {
     @ApiHideProperty() // Swagger에서 이 필드를 숨김
     readonly url: string;
 
-    @IsEnum(ResumeCategory, { message: '존재하지 않는 카테고리입니다.' })
+    @IsIn(RESUME_CATEGORY, { message: '존재하지 않는 카테고리입니다.' })
     @ApiProperty({
         example: 'PORTFOLIO',
         description: '이력서 타입',
