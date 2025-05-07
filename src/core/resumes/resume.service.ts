@@ -59,9 +59,15 @@ export class ResumeService {
                     user: true,
                 },
             })
-            .catch(() => {
-                this.logger.error(`이력서를 찾을 수 없음`, ResumeService.name);
-                throw new ResumeNotFoundException();
+            .catch((error) => {
+                if (
+                    error instanceof Prisma.PrismaClientKnownRequestError &&
+                    error.code === 'P2025'
+                ) {
+                    this.logger.error(`이력서를 찾을 수 없음`, ResumeService.name);
+                    throw new ResumeNotFoundException();
+                }
+                throw error;
             });
         this.logger.debug(
             `이력서 상세 조회 및 viewCount 증가 성공`,
@@ -76,7 +82,7 @@ export class ResumeService {
 
         const { offset = 0, limit = 10 } = query;
 
-        const twoWeeksAgo: Date = new Date;
+        const twoWeeksAgo: Date = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
         const resumes = await this.prisma.resume.findMany({
@@ -86,6 +92,9 @@ export class ResumeService {
                 gte: twoWeeksAgo,
                 },
             },
+            include: {
+                user: true,
+            },
                 take: limit,
                 skip: offset,
             });
@@ -94,25 +103,12 @@ export class ResumeService {
         (b.viewCount + b.likeCount * 10) - (a.viewCount + a.likeCount * 10)
         );
 
-        // 이력서 유저 정보 조회
-        const resumesWithUser = await Promise.all(
-            resumes.map(async (resume) => {
-                const user = await this.prisma.user.findUnique({
-                    where: { id: resume.userId },
-                });
-                return {
-                    ...resume,
-                    user,
-                };
-            }),
-        );
-
         this.logger.debug(
-            `${resumesWithUser.length}개의 인기 이력서 목록 조회 성공`,
+            `${resumes.length}개의 인기 이력서 목록 조회 성공`,
             ResumeService.name,
         );
 
-        return resumesWithUser.map((resume) => new GetResumeResponse(resume));
+        return resumes.map((resume) => new GetResumeResponse(resume));
     }
 
     async createResume(

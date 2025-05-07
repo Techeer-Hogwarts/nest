@@ -1,14 +1,14 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
+import { Transform } from 'class-transformer';
 import {
-    IsEnum,
     IsString,
     IsUrl,
     IsOptional,
     IsBoolean,
     IsIn,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+
 import { RESUME_CATEGORY } from '../../../../core/resumes/category/resume.category';
 import { normalizeString } from '../../../../common/category/normalize';
 
