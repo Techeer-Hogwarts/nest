@@ -1,18 +1,20 @@
 // src/core/resumes/test/resume.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
-import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
-import { GetResumesQueryRequest } from '../../../common/dto/resumes/request/get.resumes.query.request';
-import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
-import { GoogleDriveService } from '../../../infra/googleDrive/google.drive.service';
-import { PrismaService } from '../../../infra/prisma/prisma.service';
-import { ResumeService } from '../resume.service';
-import { IndexService } from '../../../infra/index/index.service';
-import { mockResumes, mockUsers } from './mock-data';
-import { ResumeNotFoundException } from '../exception/resume.exception';
-import { ForbiddenException } from '../../../common/exception/custom.exception';
 
 import type { Prisma } from '@prisma/client';
+
+import { mockResumes, mockUsers } from './mock-data';
+
+import { CreateResumeRequest } from '../../../common/dto/resumes/request/create.resume.request';
+import { GetResumesQueryRequest } from '../../../common/dto/resumes/request/get.resumes.query.request';
+import { GetResumeResponse } from '../../../common/dto/resumes/response/get.resume.response';
+import { ForbiddenException } from '../../../common/exception/custom.exception';
+import { CustomWinstonLogger } from '../../../common/logger/winston.logger';
+import { GoogleDriveService } from '../../../infra/googleDrive/google.drive.service';
+import { IndexService } from '../../../infra/index/index.service';
+import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { ResumeNotFoundException } from '../exception/resume.exception';
+import { ResumeService } from '../resume.service';
 
 describe('ResumeService', () => {
     let service: ResumeService;
@@ -89,15 +91,22 @@ describe('ResumeService', () => {
                 url: '',
             };
 
-            jest.spyOn(googleDriveService, 'uploadFileBuffer').mockResolvedValue('https://drive.google.com/file/d/test/view');
+            jest.spyOn(
+                googleDriveService,
+                'uploadFileBuffer',
+            ).mockResolvedValue('https://drive.google.com/file/d/test/view');
             jest.spyOn(prismaService.resume, 'create').mockResolvedValue({
                 ...mockResumes[0],
                 user: mockUsers[0],
             } as Prisma.ResumeGetPayload<{
-                include: { user: true }
+                include: { user: true };
             }>);
 
-            const result = await service.createResume(createResumeRequest, mockFile, mockUsers[0]);
+            const result = await service.createResume(
+                createResumeRequest,
+                mockFile,
+                mockUsers[0],
+            );
 
             expect(result).toBeInstanceOf(GetResumeResponse);
             expect(googleDriveService.uploadFileBuffer).toHaveBeenCalled();
@@ -116,10 +125,12 @@ describe('ResumeService', () => {
 
             const mockResumesWithUser = mockResumes.map((resume) => ({
                 ...resume,
-                user: mockUsers.find(user => user.id === resume.userId),
+                user: mockUsers.find((user) => user.id === resume.userId),
             }));
 
-            jest.spyOn(prismaService.resume, 'findMany').mockResolvedValue(mockResumesWithUser);
+            jest.spyOn(prismaService.resume, 'findMany').mockResolvedValue(
+                mockResumesWithUser,
+            );
 
             const result = await service.getResumeList(query);
 
@@ -130,18 +141,16 @@ describe('ResumeService', () => {
 
     describe('getResume', () => {
         it('단일 이력서를 반환한다.', async () => {
-
             const mockResumeWithUser = {
                 ...mockResumes[0],
                 user: mockUsers[0],
             };
 
-            jest.spyOn(
-                prismaService.resume,
-                'update'
-            ).mockResolvedValue(mockResumeWithUser as Prisma.ResumeGetPayload<{
-                include: { user: true }
-            }>);
+            jest.spyOn(prismaService.resume, 'update').mockResolvedValue(
+                mockResumeWithUser as Prisma.ResumeGetPayload<{
+                    include: { user: true };
+                }>,
+            );
 
             const result = await service.getResume(1);
 
@@ -150,12 +159,13 @@ describe('ResumeService', () => {
         });
 
         it('이력서가 없을 경우, NotFoundException이 발생해야 한다.', async () => {
-            jest.spyOn(
-                prismaService.resume,
-                'update'
-            ).mockRejectedValue(new Error());
+            jest.spyOn(prismaService.resume, 'update').mockRejectedValue(
+                new Error(),
+            );
 
-            await expect(service.getResume(0)).rejects.toThrow(ResumeNotFoundException);
+            await expect(service.getResume(0)).rejects.toThrow(
+                ResumeNotFoundException,
+            );
         });
     });
 
@@ -189,17 +199,18 @@ describe('ResumeService', () => {
                 ...mockResumes[0],
                 user: mockUser,
             };
-            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(mockResumeWithUser);
-            jest.spyOn(
-                prismaService.resume,
-                'update'
-            ).mockResolvedValue(mockResumeWithUser as Prisma.ResumeGetPayload<{
-                include: { user: true }
-            }>);
+            jest.spyOn(prismaService.resume, 'findUnique').mockResolvedValue(
+                mockResumeWithUser,
+            );
+            jest.spyOn(prismaService.resume, 'update').mockResolvedValue(
+                mockResumeWithUser as Prisma.ResumeGetPayload<{
+                    include: { user: true };
+                }>,
+            );
 
-            await expect(service.deleteResume(mockUsers[1], mockResumeWithUser.id)).rejects.toThrow(
-                ForbiddenException
-            )
-        })
+            await expect(
+                service.deleteResume(mockUsers[1], mockResumeWithUser.id),
+            ).rejects.toThrow(ForbiddenException);
+        });
     });
 });
