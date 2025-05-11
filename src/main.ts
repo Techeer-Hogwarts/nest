@@ -1,14 +1,18 @@
 import tracing from './trace';
 tracing.start();
-import { AppModule } from './app.module';
+
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
-import { PrismaService } from './infra/prisma/prisma.service';
+
 import * as cookieParser from 'cookie-parser';
-import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import * as basicAuth from 'express-basic-auth';
+
+import { AppModule } from './app.module';
+import { GlobalExceptionsFilter } from './common/exception/global-exception.filter';
 import { CustomWinstonLogger } from './common/logger/winston.logger';
+import { JsonBodyPipe } from './common/pipe/jsonBody.pipe';
+import { PrismaService } from './infra/prisma/prisma.service';
 
 async function bootstrap(): Promise<void> {
     try {
@@ -94,8 +98,9 @@ async function bootstrap(): Promise<void> {
         SwaggerModule.setup('api/v1/docs', app, document);
 
         customLogger.log('Swagger 모듈 설정이 완료되었습니다.');
-
+        const jsonBodyPipe = app.get(JsonBodyPipe);
         app.useGlobalPipes(
+            jsonBodyPipe,
             new ValidationPipe({
                 transform: true, // DTO에서 정의한 타입으로 자동 변환
                 forbidNonWhitelisted: true, // DTO에 없는 값이 들어오면 예외 발생
@@ -131,6 +136,7 @@ async function bootstrap(): Promise<void> {
         await app.listen(8000);
         customLogger.log('애플리케이션이 포트 8000에서 작동 중입니다.');
     } catch (error) {
+        throw new Error(`부트스트랩 중 오류 발생: ${error.message}`);
         process.exit(1);
     }
 }

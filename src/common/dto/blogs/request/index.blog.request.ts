@@ -1,4 +1,4 @@
-import { BlogEntity } from '../../../../core/blogs/entities/blog.entity';
+import { BlogWithUser } from '../response/get.blog.response';
 
 export class IndexBlogRequest {
     readonly date: string;
@@ -11,7 +11,7 @@ export class IndexBlogRequest {
     readonly userName: string;
     readonly userProfileImage: string;
 
-    constructor(blog: BlogEntity) {
+    constructor(blog: BlogWithUser) {
         this.date = blog.date.toISOString();
         this.id = String(blog.id);
         this.stack = blog.tags;

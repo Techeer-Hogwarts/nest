@@ -1,25 +1,28 @@
 import {
-    Injectable,
     ExecutionContext,
-    UnauthorizedException,
-    Inject,
     forwardRef,
+    Inject,
+    Injectable,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserRepository } from '../users/repository/user.repository';
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
 import { AuthGuard } from '@nestjs/passport';
+
 import {
-    NotFoundUserException,
-    InvalidTokenException,
-} from '../../common/exception/custom.exception';
+    AuthNotFoundUserException,
+    AuthUnauthorizedException,
+    AuthVerificationFailedException,
+} from './exception/auth.exception';
+
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { UserService } from '../users/user.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
     constructor(
         private readonly jwtService: JwtService,
-        @Inject(forwardRef(() => UserRepository))
-        private readonly userRepository: UserRepository,
+        @Inject(forwardRef(() => UserService))
+        private readonly userService: UserService,
         private readonly logger: CustomWinstonLogger,
     ) {
         super();
@@ -53,21 +56,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
                     this.logger.error(
                         `리프레시 토큰 재발급 실패: ${refreshError}`,
                     );
-                    throw new UnauthorizedException(
-                        '토큰이 제공되지 않았습니다.',
-                    );
+                    throw new AuthUnauthorizedException();
                 }
             } else {
-                throw new UnauthorizedException('토큰이 제공되지 않았습니다.');
+                throw new AuthUnauthorizedException();
             }
         }
 
         try {
             // access_token 검증 및 디코딩
             const decoded = this.jwtService.verify(token);
-            const user = await this.userRepository.findById(decoded.id);
+            const user = await this.userService.findById(decoded.id);
             if (!user) {
-                throw new UnauthorizedException('존재하지 않는 사용자입니다.');
+                throw new AuthNotFoundUserException();
             }
             request.user = user;
             return true;
@@ -89,13 +90,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
                         // 새 토큰으로 재검증
                         const newDecoded =
                             this.jwtService.verify(newAccessToken);
-                        const newUser = await this.userRepository.findById(
+                        const newUser = await this.userService.findById(
                             newDecoded.id,
                         );
                         if (!newUser) {
-                            throw new UnauthorizedException(
-                                '존재하지 않는 사용자입니다.',
-                            );
+                            throw new AuthNotFoundUserException();
                         }
                         request.user = newUser;
                         return true;
@@ -103,9 +102,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
                         this.logger.error(
                             `리프레시 토큰 재발급 실패: ${refreshError}`,
                         );
-                        throw new UnauthorizedException(
-                            '토큰 재발급에 실패했습니다.',
-                        );
+                        throw new AuthVerificationFailedException();
                     }
                 }
             }
@@ -117,24 +114,26 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // 리프레시 토큰을 사용해 새로운 액세스 토큰 발급
     async refresh(refreshToken: string): Promise<string> {
         try {
-            const decoded = this.jwtService.verify(refreshToken);
-            const user = await this.userRepository.findById(decoded.id);
+            const decoded = this.jwtService.verify(refreshToken, {
+                ignoreExpiration: false,
+            });
+            const user = await this.userService.findById(decoded.id);
 
             if (!user) {
                 this.logger.error('사용자를 찾을 수 없습니다.');
-                throw new NotFoundUserException();
+                throw new AuthNotFoundUserException();
             }
 
             // 새로운 액세스 토큰 발급
             const newAccessToken = this.jwtService.sign(
                 { id: user.id },
-                { expiresIn: '15m' },
+                { expiresIn: '60m' },
             );
             this.logger.debug('액세스 토큰 재발급');
             return newAccessToken;
         } catch (error) {
-            this.logger.error('토큰 재발급 실패');
-            throw new InvalidTokenException();
+            this.logger.error(`토큰 재발급 실패: ${error.message}`);
+            throw new AuthUnauthorizedException();
         }
     }
 }

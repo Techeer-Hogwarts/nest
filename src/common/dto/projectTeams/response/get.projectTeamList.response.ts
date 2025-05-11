@@ -1,5 +1,9 @@
-import { ProjectResultImage, TeamStack } from '@prisma/client';
-import { ProjectTeamEntity } from '../../../../core/projectTeams/entities/projectTeam.entity';
+import { ProjectResultImage, TeamStack, ProjectTeam } from '@prisma/client';
+
+type ProjectTeamWithRelations = ProjectTeam & {
+    resultImages: ProjectResultImage[];
+    teamStacks: TeamStack[];
+};
 
 export class GetProjectTeamListResponse {
     private readonly id: number;
@@ -14,7 +18,7 @@ export class GetProjectTeamListResponse {
     private readonly resultImages: ProjectResultImage[];
     private readonly teamStacks: TeamStack[];
 
-    constructor(project: ProjectTeamEntity) {
+    constructor(project: ProjectTeamWithRelations) {
         this.id = project.id;
         this.name = project.name;
         this.frontendNum = project.frontendNum;

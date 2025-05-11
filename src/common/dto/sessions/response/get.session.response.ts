@@ -1,4 +1,10 @@
-import { SessionEntity } from '../../../../core/sessions/entities/session.entity';
+import { Session, User } from '@prisma/client';
+
+interface UserInfo {
+    name: string;
+    nickname: string;
+    profileImage: string;
+}
 
 export class GetSessionResponse {
     readonly id: number;
@@ -9,31 +15,31 @@ export class GetSessionResponse {
     readonly date: string;
     readonly position: string;
     readonly category: string;
-    readonly videoUrl: string;
-    readonly fileUrl: string;
+    readonly videoUrl: string | null;
+    readonly fileUrl: string | null;
     readonly likeCount: number;
     readonly viewCount: number;
 
-    readonly user: { name: string; nickname: string; profileImage: string };
+    readonly user: UserInfo;
 
-    constructor(sessionEntity: SessionEntity) {
-        this.id = sessionEntity.id;
-        this.userId = sessionEntity.userId;
-        this.thumbnail = sessionEntity.thumbnail;
-        this.title = sessionEntity.title;
-        this.presenter = sessionEntity.presenter;
-        this.date = sessionEntity.date;
-        this.position = sessionEntity.position;
-        this.category = sessionEntity.category;
-        this.videoUrl = sessionEntity.videoUrl;
-        this.fileUrl = sessionEntity.fileUrl;
-        this.likeCount = sessionEntity.likeCount;
-        this.viewCount = sessionEntity.viewCount;
+    constructor(session: Session & { user: User }) {
+        this.id = session.id;
+        this.userId = session.userId;
+        this.thumbnail = session.thumbnail;
+        this.title = session.title;
+        this.presenter = session.presenter;
+        this.date = session.date;
+        this.position = session.position;
+        this.category = session.category;
+        this.videoUrl = session.videoUrl;
+        this.fileUrl = session.fileUrl;
+        this.likeCount = session.likeCount;
+        this.viewCount = session.viewCount;
 
         this.user = {
-            name: sessionEntity.user.name,
-            nickname: sessionEntity.user.nickname,
-            profileImage: sessionEntity.user.profileImage,
+            name: session.user.name,
+            nickname: session.user.nickname,
+            profileImage: session.user.profileImage,
         };
     }
 }

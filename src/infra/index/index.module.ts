@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
-import { IndexService } from './index.service';
 import { ConfigModule } from '@nestjs/config';
+
+import { IndexService } from './index.service';
 
 @Global()
 @Module({

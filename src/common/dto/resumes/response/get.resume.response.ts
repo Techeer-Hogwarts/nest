@@ -1,5 +1,6 @@
-import { ResumeEntity } from '../../../../core/resumes/entities/resume.entity';
-import { UserEntity } from '../../../../core/users/entities/user.entity';
+import { Resume, User } from '@prisma/client';
+
+type ResumeWithUser = Resume & { user: User };
 
 export class GetResumeResponse {
     readonly id: number;
@@ -15,7 +16,7 @@ export class GetResumeResponse {
 
     readonly user: GetResumeAuthorResponse;
 
-    constructor(resume: ResumeEntity) {
+    constructor(resume: ResumeWithUser) {
         this.id = resume.id;
         this.createdAt = resume.createdAt;
         this.updatedAt = resume.updatedAt;
@@ -47,7 +48,7 @@ export class GetResumeAuthorResponse {
     readonly velogUrl: string;
     readonly roleId: number;
 
-    constructor(user: UserEntity) {
+    constructor(user: User) {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;

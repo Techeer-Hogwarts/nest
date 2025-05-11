@@ -1,3 +1,6 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
+import { Transform, Type } from 'class-transformer';
 import {
     IsArray,
     IsEnum,
@@ -5,10 +8,9 @@ import {
     IsOptional,
     IsString,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { StackCategory } from '../../../../common/category/stack.category';
-import { normalizeString } from '../../../../common/category/normalize';
+
+import { normalizeString } from '../../../category/normalize';
+import { StackCategory } from '../../../category/stack.category';
 
 export class GetResumesQueryRequest {
     @ApiPropertyOptional({

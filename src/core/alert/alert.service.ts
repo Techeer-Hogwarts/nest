@@ -1,9 +1,11 @@
+import { Injectable } from '@nestjs/common';
+
 import axios from 'axios';
+
+import { CreatePersonalAlertRequest } from '../../common/dto/alert/request/create.personal.alert.request';
 import { CreateProjectAlertRequest } from '../../common/dto/alert/request/create.project.alert.request';
 import { CreateStudyAlertRequest } from '../../common/dto/alert/request/create.study.alert.request';
-import { Injectable } from '@nestjs/common';
 import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import { CreatePersonalAlertRequest } from '../../common/dto/alert/request/create.personal.alert.request';
 
 const SLACKBOT_URL = process.env.SLACKBOT_URL;
 const SLACKBOT_PERSONAL_URL = process.env.SLACKBOT_PERSONAL_URL;
@@ -11,7 +13,7 @@ const SLACKBOT_PERSONAL_URL = process.env.SLACKBOT_PERSONAL_URL;
 type SlackAlertPayload = CreateProjectAlertRequest | CreateStudyAlertRequest;
 
 @Injectable()
-export class AlertServcie {
+export class AlertService {
     constructor(private readonly logger: CustomWinstonLogger) {}
 
     /**
@@ -37,6 +39,7 @@ export class AlertServcie {
             this.logger.debug('User alert sent successfully!');
         } catch (error) {
             this.logger.error('Error sending user alert:', error);
+            throw error;
         }
     }
 }

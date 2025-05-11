@@ -1,13 +1,20 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Request } from 'express';
-import { UserRepository } from '../users/repository/user.repository';
-import { UserEntity } from '../users/entities/user.entity';
 
+import { Request } from 'express';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+
+import { User } from '@prisma/client';
+
+import { AuthUnauthorizedException } from './exception/auth.exception';
+
+import { UserService } from '../users/user.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(private readonly userRepository: UserRepository) {
+    constructor(
+        @Inject(forwardRef(() => UserService))
+        private readonly userService: UserService,
+    ) {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
                 (request: Request): string | null => {
@@ -18,11 +25,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: any): Promise<UserEntity> {
+    async validate(payload: any): Promise<User> {
         // 토큰에서 사용자 ID 추출 후 사용자 정보 검증
-        const user = await this.userRepository.findById(payload.id);
+        const user = await this.userService.findById(payload.id);
         if (!user) {
-            throw new UnauthorizedException('존재하지 않는 사용자입니다.');
+            throw new AuthUnauthorizedException();
         }
         return user; // 사용자 정보를 반환하여 request.user에 저장
     }

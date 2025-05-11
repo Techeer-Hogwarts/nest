@@ -1,5 +1,6 @@
-import { BlogEntity } from '../../../../core/blogs/entities/blog.entity';
-import { UserEntity } from '../../../../core/users/entities/user.entity';
+import { Blog, User } from '@prisma/client';
+
+export type BlogWithUser = Blog & { user: User };
 
 export class GetBlogResponse {
     readonly id: number;
@@ -17,7 +18,7 @@ export class GetBlogResponse {
     };
     readonly user?: GetBlogAuthorResponse;
 
-    constructor(blog: BlogEntity) {
+    constructor(blog: BlogWithUser) {
         this.id = blog.id;
         this.title = blog.title;
         this.url = blog.url;
@@ -42,7 +43,7 @@ export class GetBlogAuthorResponse {
     readonly roleId: number;
     readonly profileImage: string;
 
-    constructor(user: UserEntity) {
+    constructor(user: User) {
         this.id = user.id;
         this.name = user.name;
         this.nickname = user.nickname;

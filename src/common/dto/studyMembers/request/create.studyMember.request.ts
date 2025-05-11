@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
 import { Type } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateStudyMemberRequest {
     @IsNotEmpty()

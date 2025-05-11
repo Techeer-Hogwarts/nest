@@ -1,27 +1,28 @@
 import { Injectable } from '@nestjs/common';
+
 import { StatusCategory } from '@prisma/client';
 
-import { CustomWinstonLogger } from '../../common/logger/winston.logger';
-import {
-    StudyMemberIsActiveMemberException,
-    StudyMemberNotFoundException,
-} from './exception/study-member.exception';
-import { StudyTeamMissingLeaderException } from '../studyTeams/exception/studyTeam.exception';
 import { StudyMemberStatus } from './category/StudyMemberStatus';
+import { StudyMemberNotFoundException } from './exception/study-member.exception';
 
-import { PrismaService } from '../../infra/prisma/prisma.service';
-
+import { MemberStatus } from '../../common/category/teamCategory/member.category';
 import { CreateStudyMemberRequest } from '../../common/dto/studyMembers/request/create.studyMember.request';
-
 import {
-    ApplicantSummaryResponse,
     ApplicantDetailResponse,
+    ApplicantSummaryResponse,
 } from '../../common/dto/studyMembers/response/get.applicant.studyMember.response';
 import {
     StudyApplicantResponse,
     StudyLeadersMailResponse,
     StudyMemberResponse,
 } from '../../common/dto/studyTeams/response/get.studyTeam.response';
+import { CustomWinstonLogger } from '../../common/logger/winston.logger';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import {
+    StudyTeamAlreadyActiveMemberException,
+    StudyTeamAlreadyAppliedException,
+    StudyTeamMissingLeaderException,
+} from '../studyTeams/exception/studyTeam.exception';
 
 @Injectable()
 export class StudyMemberService {
@@ -90,12 +91,9 @@ export class StudyMemberService {
     async cancelStudyApplication(
         studyMemberId: number,
     ): Promise<StudyMemberResponse> {
-        const cancelledStudyMember = await this.prisma.studyMember.update({
+        const cancelledStudyMember = await this.prisma.studyMember.delete({
             where: {
                 id: studyMemberId,
-            },
-            data: {
-                isDeleted: true,
             },
             include: {
                 user: {
@@ -115,10 +113,20 @@ export class StudyMemberService {
     ): Promise<StudyApplicantResponse> {
         const { studyTeamId, summary } = createStudyMemberRequest;
         // 이미 승인된 신청(또는 멤버인 경우)는 재신청을 막음
-        const isActive = await this.isActiveStudyMember(studyTeamId, userId);
-        if (isActive) {
-            throw new StudyMemberIsActiveMemberException();
+        const applicant = await this.findPendingAndApprovedStatusStudyMember(
+            studyTeamId,
+            userId,
+        );
+        if (applicant?.status === StudyMemberStatus.PENDING) {
+            throw new StudyTeamAlreadyAppliedException();
         }
+        if (
+            applicant?.status === StudyMemberStatus.APPROVED &&
+            !applicant?.isDeleted
+        ) {
+            throw new StudyTeamAlreadyActiveMemberException();
+        }
+
         this.logger.debug('스터디 팀 지원: 지원자 검증 완료');
 
         // upsert를 사용하여 기존 내역이 있으면 업데이트, 없으면 새로 생성
@@ -342,5 +350,18 @@ export class StudyMemberService {
             '스터디 멤버인지 확인: 존재하지 않는 스터디 멤버 확인 완료',
         );
         return !!existingMember;
+    }
+
+    async findPendingAndApprovedStatusStudyMember(
+        studyTeamId: number,
+        userId: number,
+    ): Promise<ApplicantDetailResponse> {
+        return await this.prisma.studyMember.findFirst({
+            where: {
+                studyTeamId: studyTeamId,
+                userId: userId,
+                status: { in: [MemberStatus.APPROVED, MemberStatus.PENDING] },
+            },
+        });
     }
 }

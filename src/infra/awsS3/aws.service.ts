@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { NotApprovedFileExtension } from '../../common/exception/custom.exception';
+
 import { VALID_IMAGE_EXTENSIONS } from './aws.valid-extensions';
+
+import { NotApprovedFileExtension } from '../../common/exception/custom.exception';
 
 @Injectable()
 export class AwsService {
@@ -49,6 +52,9 @@ export class AwsService {
         folderPath: string,
         urlPrefix: string,
     ): Promise<string[]> {
+        if (!files || files.length < 1) {
+            return [];
+        }
         // 파일 데이터를 가공한다.[파일 이름, 원본 파일, 확장자(검증 포함)]
         const fileData = files.map((file, index) => {
             const ext = this.parseFileExtension(file.originalname);

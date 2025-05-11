@@ -1,3 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+import { Type } from 'class-transformer';
 import {
     IsString,
     IsNotEmpty,
@@ -7,9 +10,11 @@ import {
     Min,
     IsArray,
     ArrayNotEmpty,
+    ValidateNested,
 } from 'class-validator';
-import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+
+import { ParseJsonArray } from '../../../decorator/transform.parseJson.decorator';
+import { ProjectMemberInfoRequest } from '../../projectMembers/request/info.projectMember.request';
 
 export class CreateProjectTeamRequest {
     @IsNotEmpty()
@@ -121,37 +126,11 @@ export class CreateProjectTeamRequest {
     })
     stacks?: number[];
 
-    @IsOptional()
     @IsArray()
-    @Transform(({ value }) => {
-        try {
-            return typeof value === 'string' ? JSON.parse(value) : value;
-        } catch (e) {
-            throw new Error('projectMember는 유효한 JSON 배열이어야 합니다.');
-        }
-    })
+    @ValidateNested({ each: true })
+    @Type(() => ProjectMemberInfoRequest)
     @ApiProperty({
-        type: 'array',
-        items: {
-            type: 'object',
-            properties: {
-                userId: {
-                    type: 'number',
-                    description: '사용자 ID',
-                    example: 1,
-                },
-                isLeader: {
-                    type: 'boolean',
-                    description: '리더 여부',
-                    example: true,
-                },
-                teamRole: {
-                    type: 'string',
-                    description: '팀 내 역할',
-                    example: 'Frontend',
-                },
-            },
-        },
+        type: [ProjectMemberInfoRequest],
         example: [
             {
                 userId: 1,
@@ -165,22 +144,8 @@ export class CreateProjectTeamRequest {
             },
         ],
     })
-    projectMember: {
-        userId: number;
-        isLeader: boolean;
-        teamRole: string;
-    }[];
+    projectMember: ProjectMemberInfoRequest[];
 
-    @IsOptional()
-    @IsArray()
-    @ArrayNotEmpty()
-    @Transform(({ value }) => {
-        try {
-            return typeof value === 'string' ? JSON.parse(value) : value;
-        } catch (e) {
-            throw new Error('teamStacks는 유효한 JSON 배열이어야 합니다.');
-        }
-    })
     @ApiProperty({
         type: 'array',
         items: {
@@ -209,11 +174,9 @@ export class CreateProjectTeamRequest {
             },
         ],
     })
+    @IsOptional()
+    @IsArray()
+    @ArrayNotEmpty()
+    @ParseJsonArray()
     teamStacks?: { stack: string; isMain: boolean }[];
-
-    @ApiHideProperty() // Swagger에 표시되지 않도록 설정
-    resultImages?: string[]; // 사용자가 입력하지 않음, 서버에서 자동 추가
-
-    @ApiHideProperty()
-    mainImages?: string[];
 }

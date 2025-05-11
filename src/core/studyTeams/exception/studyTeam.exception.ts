@@ -1,9 +1,15 @@
-import { ErrorCode } from '../../../common/exception/errorCode';
 import { BaseException } from '../../../common/exception/base.exception';
+import { ErrorCode } from '../../../common/exception/errorCode';
 
-export class StudyTeamBadRequestException extends BaseException {
+export class StudyTeamClosedRecruitException extends BaseException {
     constructor() {
-        super(ErrorCode.STUDY_TEAM_INVALID_RECRUIT_NUM);
+        super(ErrorCode.STUDY_TEAM_CLOSED_RECRUIT);
+    }
+}
+
+export class StudyTeamAlreadyAppliedException extends BaseException {
+    constructor() {
+        super(ErrorCode.STUDY_TEAM_ALREADY_APPLIED);
     }
 }
 
@@ -16,6 +22,12 @@ export class StudyTeamNotFoundException extends BaseException {
 export class StudyTeamDuplicateTeamNameException extends BaseException {
     constructor() {
         super(ErrorCode.STUDY_TEAM_DUPLICATE_TEAM_NAME);
+    }
+}
+
+export class StudyTeamDuplicateDeleteUpdateException extends BaseException {
+    constructor() {
+        super(ErrorCode.STUDY_TEAM_DUPLICATE_DELETE_UPDATE);
     }
 }
 

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsString, IsUrl } from 'class-validator';
-import { ResumeCategory } from '../../../../core/resumes/category/resume.category';
+import { IsBoolean, IsIn, IsString, IsUrl } from 'class-validator';
+import { RESUME_CATEGORY, ResumeCategory } from '../../../../core/resumes/category/resume.category';
 
 export class UpdateResumeRequest {
     @IsString()
@@ -24,11 +24,11 @@ export class UpdateResumeRequest {
     })
     readonly isMain: boolean;
 
-    @IsEnum(ResumeCategory, { message: '존재하지 않는 카테고리입니다.' })
+    @IsIn(RESUME_CATEGORY, { message: '존재하지 않는 카테고리입니다.' })
     @ApiProperty({
         example: 'PORTFOLIO',
         description: '이력서 타입',
-        enum: ResumeCategory,
+        enum: RESUME_CATEGORY
     })
     readonly category: string;
 }

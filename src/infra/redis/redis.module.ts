@@ -1,8 +1,11 @@
-import { Module, Global } from '@nestjs/common';
-import Redis from 'ioredis';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaService } from '../../infra/prisma/prisma.service';
+
+import Redis from 'ioredis';
+
 import { RedisService } from './redis.service';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Global() // 전역 모듈로 설정
 @Module({

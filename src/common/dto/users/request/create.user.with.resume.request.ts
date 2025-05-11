@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { IsOptional, ValidateNested } from 'class-validator';
-import { CreateUserRequest } from './create.user.request';
+import { Type } from 'class-transformer';
+
 import { CreateResumeRequest } from '../../resumes/request/create.resume.request';
-import { CreateExperienceDto } from '../../userExperiences/request/create.experience.request';
+import { CreateUserRequest } from './create.user.request';
+import { CreateUserExperienceListRequest } from '../../userExperiences/request/create.userExperience.list.request';
 
 export class CreateUserWithResumeRequest {
     @ApiProperty({ type: CreateUserRequest })
@@ -21,10 +22,10 @@ export class CreateUserWithResumeRequest {
     createResumeRequest?: CreateResumeRequest;
 
     @ApiProperty({
-        type: CreateExperienceDto,
+        type: CreateUserExperienceListRequest,
         description: '사용자의 경력 정보',
     })
     @ValidateNested()
-    @Type(() => CreateExperienceDto)
-    createUserExperienceRequest: CreateExperienceDto;
+    @Type(() => CreateUserExperienceListRequest)
+    createUserExperienceRequest: CreateUserExperienceListRequest;
 }
