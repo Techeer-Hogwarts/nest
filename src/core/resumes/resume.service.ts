@@ -163,7 +163,9 @@ export class ResumeService {
         // 데이터베이스에 저장
         const resume: ResumeEntity = await prisma.resume.create({
             data: {
-                ...createResumeRequest,
+                category: createResumeRequest.category,
+                position: createResumeRequest.position,
+                isMain: createResumeRequest.isMain,
                 title: fullTitle,
                 url: resumeUrl,
                 user: { connect: { id: user.id } },
